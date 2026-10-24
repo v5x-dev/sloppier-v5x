@@ -1,5 +1,5 @@
 {
-  "name": "sloppier-v5x",
+  "name": "code-by-v5x",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -20,7 +20,7 @@
     "node": ">=22.12.0"
   },
   "workspaces": [
-    "apps/*",
+    "apps/*/*",
     "packages/*"
   ]
 }

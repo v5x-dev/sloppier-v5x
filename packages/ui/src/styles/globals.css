@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/merriweather";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
@@ -49,9 +50,12 @@
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
     --font-serif: 'Merriweather Variable', serif;
+    --font-mono: 'JetBrains Mono Variable', monospace;
 }
 
 :root {
+    /* Read inside the @pierre/diffs shadow root for code. */
+    --diffs-font-family: var(--font-mono);
     --background: oklch(1 0 0);
     --foreground: oklch(0.147 0.004 49.3);
     --card: oklch(1 0 0);

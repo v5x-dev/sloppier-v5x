@@ -1,0 +1,30 @@
+{
+  "name": "@workspace/backend",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "codegen": "convex codegen",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests"
+  },
+  "exports": {
+    "./api": "./convex/_generated/api.js",
+    "./dataModel": "./convex/_generated/dataModel.d.ts"
+  },
+  "dependencies": {
+    "@convex-dev/presence": "^0.4.0",
+    "@pierre/storage": "^1.17.1",
+    "boring-name-generator": "1.0.3",
+    "convex": "^1.48.0",
+    "fflate": "^0.8.3",
+    "yjs": "^13.6.33"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "convex-test": "^0.0.65",
+    "vitest": "^5.0.5"
+  }
+}
