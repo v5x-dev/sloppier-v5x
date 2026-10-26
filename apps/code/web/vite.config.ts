@@ -15,7 +15,7 @@ const config = defineConfig({
     viteReact(),
   ],
   server: {
-    allowedHosts: ["dev.xdvaychyt7al.opentunnel.xyz"],
+    allowedHosts: ["dev.xdvaychyt7al.opentunnel.xyz", "code-dev.v5x.dev"],
   },
 })
 
