@@ -1,3 +1,4 @@
+import { ProgramHistory } from "@/components/program-history"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import {
@@ -240,6 +241,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   const listFiles = useAction(api.codeStorage.listFiles)
   const readFile = useAction(api.codeStorage.readFile)
   const commitFiles = useAction(api.codeStorage.commitFiles)
+  const restoreHistoryFile = useAction(api.codeStorage.restoreHistoryFile)
 
   const [paths, setPaths] = useState<string[] | null>(null)
   const [listError, setListError] = useState<string | null>(null)
@@ -389,6 +391,35 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
       for (const change of changes)
         committed.current.set(change.path, change.contents)
       syncDirty()
+    } finally {
+      operationBusy.current = false
+    }
+  }
+
+  async function restoreFile(sha: string, path: string) {
+    if (operationBusy.current || dirtyPaths.length || !syncedRef.current)
+      throw new Error("Commit and sync current changes before restoring.")
+    operationBusy.current = true
+    try {
+      const result = await restoreHistoryFile({
+        projectId: program._id,
+        sha,
+        path,
+      })
+      committed.current.set(path, result.contents)
+      syncDirty()
+      setLoaded((current) => ({
+        ...current,
+        [path]: {
+          ...current[path],
+          contents: result.contents,
+          truncated: false,
+        },
+      }))
+      setReadError((current) => ({ ...current, [path]: undefined }))
+      await loadPaths()
+      openFile(path)
+      return result.warning
     } finally {
       operationBusy.current = false
     }
@@ -817,6 +848,12 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             </Tooltip>
           }
         >
+          <ProgramHistory
+            projectId={program._id}
+            revision={program.repositoryHeadSha}
+            canRestore={dirtyPaths.length === 0 && allSynced}
+            onRestore={restoreFile}
+          />
           <ProgramUpload
             buildAction={
               <ProgramBuild

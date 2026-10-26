@@ -1,6 +1,7 @@
 "use node"
 
-import { internal } from "./_generated/api"
+import { api, internal } from "./_generated/api"
+import { restoreUpdate, visibleHistoryPath } from "./lib/history"
 import { action, internalAction, type ActionCtx } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 import {
@@ -32,7 +33,10 @@ export const buildManifest = action({
   args: { projectId: v.id("projects") },
   handler: async (ctx, { projectId }) => {
     const project = await requireAuthorizedProject(ctx, projectId)
-    const repo = storage().repo({ id: project.repositoryId, defaultBranch: "main" })
+    const repo = storage().repo({
+      id: project.repositoryId,
+      defaultBranch: "main",
+    })
     const history = await repo.listCommits({ branch: "main", limit: 1 })
     const sha = history.commits[0]?.sha
     if (!sha) throw new Error("Repository has no committed source.")
@@ -40,10 +44,18 @@ export const buildManifest = action({
     let cursor: string | undefined
     do {
       const page = await repo.listFiles({ ref: sha, cursor, limit: 500 })
-      paths.push(...page.paths.filter(path => !path.startsWith(".v5x/") && !isBuildDependency(project.template, path)))
-      if (paths.length > 3000) throw new Error("Source snapshot exceeds 3,000 files.")
+      paths.push(
+        ...page.paths.filter(
+          (path) =>
+            !path.startsWith(".v5x/") &&
+            !isBuildDependency(project.template, path)
+        )
+      )
+      if (paths.length > 3000)
+        throw new Error("Source snapshot exceeds 3,000 files.")
       cursor = page.hasMore ? page.nextCursor : undefined
-      if (page.hasMore && !cursor) throw new Error("Source pagination did not advance.")
+      if (page.hasMore && !cursor)
+        throw new Error("Source pagination did not advance.")
     } while (cursor)
     return { sha, paths }
   },
@@ -568,5 +580,187 @@ export const openLiveFile = action({
       actorId: identity!.subject,
       contents,
     })
+  },
+})
+
+function validateHistorySha(sha: string) {
+  if (!/^[a-f0-9]{40,64}$/i.test(sha))
+    throw new ConvexError("Invalid commit reference.")
+  return sha
+}
+
+export const history = action({
+  args: { projectId: v.id("projects"), cursor: v.optional(v.string()) },
+  handler: async (ctx, { projectId, cursor }) => {
+    const project = await requireAuthorizedProject(ctx, projectId)
+    const repo = storage().repo({
+      id: project.repositoryId,
+      defaultBranch: "main",
+    })
+    const page = await repo.listCommits({ branch: "main", cursor, limit: 30 })
+    // Backup commits contain only reserved .v5x paths. Inspect paths rather than messages.
+    const commits: Array<{
+      sha: string
+      message: string
+      author: string
+      date: string
+    }> = []
+    for (let index = 0; index < page.commits.length; index += 5) {
+      const batch = page.commits.slice(index, index + 5)
+      const diffs = await Promise.all(
+        batch.map((commit) => repo.getCommitDiff({ sha: commit.sha }))
+      )
+      batch.forEach((commit, offset) => {
+        const diff = diffs[offset]
+        if (
+          [...diff.files, ...diff.filteredFiles].some((file) =>
+            visibleHistoryPath(file.path)
+          )
+        )
+          commits.push({
+            sha: commit.sha,
+            message: commit.message,
+            author: commit.authorName,
+            date: commit.date.toISOString(),
+          })
+      })
+    }
+    return {
+      commits,
+      hasMore: page.hasMore,
+      ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
+    }
+  },
+})
+
+export const historyFiles = action({
+  args: { projectId: v.id("projects"), sha: v.string() },
+  handler: async (ctx, { projectId, sha }) => {
+    const project = await requireAuthorizedProject(ctx, projectId)
+    const repo = storage().repo({
+      id: project.repositoryId,
+      defaultBranch: "main",
+    })
+    const diff = await repo.getCommitDiff({ sha: validateHistorySha(sha) })
+    return [...diff.files, ...diff.filteredFiles]
+      .filter((file) => visibleHistoryPath(file.path))
+      .map((file) => ({ path: file.path, state: file.state }))
+  },
+})
+
+export const historyDiff = action({
+  args: { projectId: v.id("projects"), sha: v.string(), path: v.string() },
+  handler: async (ctx, { projectId, sha, path }) => {
+    const project = await requireAuthorizedProject(ctx, projectId)
+    const repo = storage().repo({
+      id: project.repositoryId,
+      defaultBranch: "main",
+    })
+    const diff = await repo.getCommitDiff({
+      sha: validateHistorySha(sha),
+      paths: [validateRepositoryPath(path)],
+    })
+    const file = diff.files.find((file) => file.path === path)
+    if (!file || new TextEncoder().encode(file.raw).length > 512 * 1024)
+      return {
+        raw: null,
+        message: "This file is binary or too large to preview.",
+      }
+    return { raw: file.raw, message: null }
+  },
+})
+
+export const restoreHistoryFile = action({
+  args: { projectId: v.id("projects"), sha: v.string(), path: v.string() },
+  handler: async (
+    ctx,
+    { projectId, sha, path }
+  ): Promise<{
+    commitSha: string
+    contents: string
+    warning: string | null
+  }> => {
+    const project = await requireAuthorizedProject(ctx, projectId)
+    validateHistorySha(sha)
+    validateRepositoryPath(path)
+    const repo = storage().repo({
+      id: project.repositoryId,
+      defaultBranch: "main",
+    })
+    const response = await repo.getFileStream({
+      path,
+      ref: sha,
+      headers: { range: "bytes=0-262144" },
+    })
+    const empty =
+      response.status === 416 &&
+      response.headers.get("content-range") === "bytes */0"
+    if (!response.ok && !empty)
+      throw new ConvexError("This file does not exist at the selected commit.")
+    const bytes = empty ? new ArrayBuffer(0) : await response.arrayBuffer()
+    const total = Number(
+      response.headers.get("content-range")?.split("/").at(-1)
+    )
+    if (bytes.byteLength > 256 * 1024 || total > bytes.byteLength)
+      throw new ConvexError(
+        "Only text files up to 256 KiB can be restored here."
+      )
+    let contents: string
+    try {
+      contents = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+    } catch {
+      throw new ConvexError("Only UTF-8 text files can be restored here.")
+    }
+    if (contents.includes("\0"))
+      throw new ConvexError("Binary files cannot be restored here.")
+    // Build a normal Yjs replacement so concurrent edits remain mergeable.
+    let documentId: Id<"crdtDocuments"> | null = null
+    let afterSequence = 0
+    let replayBytes = 0
+    const updates: ArrayBuffer[] = []
+    while (true) {
+      const page = await ctx.runQuery(api.crdt.updatesSince, {
+        projectId,
+        path,
+        afterSequence,
+      })
+      if (documentId && documentId !== page.documentId)
+        throw new ConvexError("The live file changed. Try again.")
+      documentId = page.documentId
+      for (const update of page.updates) {
+        replayBytes += update.bytes.byteLength
+        if (replayBytes > 8 * 1024 * 1024)
+          throw new ConvexError(
+            "This live document is too large to restore here."
+          )
+        updates.push(update.bytes)
+        afterSequence = update.sequence
+      }
+      if (!page.hasMore) break
+    }
+    const update = documentId ? restoreUpdate(updates, contents) : null
+    if (update && update.byteLength > 512 * 1024)
+      throw new ConvexError("This restore exceeds the live editing limit.")
+    const result = await ctx.runAction(api.codeStorage.commitFiles, {
+      projectId,
+      message: `Restore ${path} from ${sha.slice(0, 8)}`.slice(0, 200),
+      changes: [{ operation: "put", path, contents }],
+    })
+    let warning: string | null = null
+    if (documentId && update) {
+      try {
+        await ctx.runMutation(api.crdt.appendUpdate, {
+          projectId,
+          path,
+          documentId,
+          updateId: `restore-${result.commitSha}`,
+          bytes: update,
+        })
+      } catch {
+        warning =
+          "The restore commit was saved, but the live editor changed during restore. Reopen the program to load the saved version."
+      }
+    }
+    return { commitSha: result.commitSha, contents, warning }
   },
 })

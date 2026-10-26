@@ -28,3 +28,11 @@ Backend tests cover membership, simultaneous initialization, retries, malformed 
 For a local four-account recording, run `node apps/code/web/scripts/collaboration-demo.mjs` from the repository root. This requires the backend's `.env.local` to select a `dev:` deployment and working Convex CLI credentials. The script registers an ephemeral public JWT key, creates a demo program and memberships for Alice, Ben, Clara, and Diego, and starts a loopback-only Vite server on port 3001. Open each printed URL in a separate browser session. The accounts use normal Convex authentication and workspace authorization. Tokens expire after one hour; the private signing key stays in process memory. Stop the script with Ctrl+C to clear the demo JWT provider settings. Demo workspace data remains available for inspection.
 
 The frontend honors `VITE_CODE_DEMO_ACCOUNTS` only in Vite development mode. Never configure `CODE_DEMO_JWKS` or `CODE_DEMO_ISSUER` on a production deployment. These variables explicitly enable the additional JWT provider; ordinary WorkOS sign-in stays available.
+
+## Program history
+
+The actions bar's history button opens a popover with source commits, authors, timestamps, and paginated results. Select a commit to inspect changed files and unified Pierre diffs. Reserved `.v5x/` backup-only commits are omitted based on their changed paths. Large or binary diffs display a preview-unavailable message.
+
+Restore file copies that file's contents from the selected commit into a new commit on `main`. It supports UTF-8 text up to 256 KiB, including files deleted from the current tree. To recover a file deleted in a historical commit, select an earlier commit where it exists. The popover requires local edits to be committed and synced, then shows the path and revision before restoration.
+
+Open collaborative documents receive the restore as a normal Yjs replacement. Edits made concurrently after the restore snapshot remain mergeable. If saving succeeds but the live update fails, the popover reports that the commit exists and the program must be reopened. Restoring never rewinds the branch or removes earlier commits.

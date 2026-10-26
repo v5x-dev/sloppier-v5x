@@ -18,6 +18,7 @@ import type * as files from "../files.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_buildDependencies from "../lib/buildDependencies.js";
 import type * as lib_crdtBackup from "../lib/crdtBackup.js";
+import type * as lib_history from "../lib/history.js";
 import type * as lib_paths from "../lib/paths.js";
 import type * as lib_templateCatalog from "../lib/templateCatalog.js";
 import type * as lib_templates from "../lib/templates.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/buildDependencies": typeof lib_buildDependencies;
   "lib/crdtBackup": typeof lib_crdtBackup;
+  "lib/history": typeof lib_history;
   "lib/paths": typeof lib_paths;
   "lib/templateCatalog": typeof lib_templateCatalog;
   "lib/templates": typeof lib_templates;
