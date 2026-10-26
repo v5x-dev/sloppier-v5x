@@ -1,6 +1,6 @@
+import { replayLiveDocument, LiveReplayError } from "./lib/liveReplay"
 "use node"
 
-import * as Y from "yjs"
 import {
   literalPattern,
   matchesSearchPath,
@@ -791,31 +791,24 @@ export const restoreHistoryFile = action({
     if (contents.includes("\0"))
       throw new ConvexError("Binary files cannot be restored here.")
     // Build a normal Yjs replacement so concurrent edits remain mergeable.
-    let documentId: Id<"crdtDocuments"> | null = null
-    let afterSequence = 0
-    let replayBytes = 0
-    const updates: ArrayBuffer[] = []
-    while (true) {
-      const page = await ctx.runQuery(api.crdt.updatesSince, {
-        projectId,
-        path,
-        afterSequence,
-      })
-      if (documentId && documentId !== page.documentId)
+    let replay
+    try {
+      replay = await replayLiveDocument(
+        (afterSequence) => ctx.runQuery(api.crdt.updatesSince, {
+          projectId, path, afterSequence,
+        }),
+        { used: 0, limit: 8 * 1024 * 1024 }
+      )
+    } catch (error) {
+      if (error instanceof LiveReplayError) {
+        if (error.reason === "limit")
+          throw new ConvexError("This live document is too large to restore here.")
         throw new ConvexError("The live file changed. Try again.")
-      documentId = page.documentId
-      for (const update of page.updates) {
-        replayBytes += update.bytes.byteLength
-        if (replayBytes > 8 * 1024 * 1024)
-          throw new ConvexError(
-            "This live document is too large to restore here."
-          )
-        updates.push(update.bytes)
-        afterSequence = update.sequence
       }
-      if (!page.hasMore) break
+      throw error
     }
-    const update = documentId ? restoreUpdate(updates, contents) : null
+    const { documentId } = replay
+    const update = documentId ? restoreUpdate([replay.snapshot], contents) : null
     if (update && update.byteLength > 512 * 1024)
       throw new ConvexError("This restore exceeds the live editing limit.")
     const result = await ctx.runAction(api.codeStorage.commitFiles, {
@@ -916,41 +909,27 @@ export const searchProject = action({
     const docs = await ctx.runQuery(api.search.liveDocuments, { projectId })
     const drafts = new Map<string, string>()
     let skipped = 0
-    let replayBytes = 0
+    const replayBudget = { used: 0, limit: 16 * 1024 * 1024 }
     for (const [index, document] of docs
       .filter((document) => matchesSearchPath(document.path, filters))
       .entries()) {
       // Never show a committed match as current when its live text could not be read.
       drafts.set(document.path, "")
-      if (index >= 100 || replayBytes >= 16 * 1024 * 1024) {
+      if (index >= 100 || replayBudget.used >= replayBudget.limit) {
         skipped++
         continue
       }
-      const doc = new Y.Doc()
       try {
-        let afterSequence = 0
-        while (true) {
-          const page = await ctx.runQuery(api.crdt.updatesSince, {
-            projectId,
-            path: document.path,
-            afterSequence,
-          })
-          if (page.documentId !== document.id)
-            throw new Error("Live document changed")
-          for (const update of page.updates) {
-            replayBytes += update.bytes.byteLength
-            if (replayBytes > 16 * 1024 * 1024)
-              throw new Error("Live search limit")
-            Y.applyUpdate(doc, new Uint8Array(update.bytes))
-            afterSequence = update.sequence
-          }
-          if (!page.hasMore) break
-        }
-        drafts.set(document.path, doc.getText("source").toString())
+        const replay = await replayLiveDocument(
+          (afterSequence) => ctx.runQuery(api.crdt.updatesSince, {
+            projectId, path: document.path, afterSequence,
+          }),
+          replayBudget,
+          document.id
+        )
+        drafts.set(document.path, replay.contents)
       } catch {
         skipped++
-      } finally {
-        doc.destroy()
       }
     }
     const result = overlaySearch(files, drafts, query, matchCase, filters)

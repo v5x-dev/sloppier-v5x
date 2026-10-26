@@ -119,7 +119,7 @@ export class LanguageClient {
   private documents = new Map<string, OpenDocument>()
   private generation = 0
   private ready = false
-  private readyListeners = new Set<() => void>()
+  private readyListeners = new Set<(ready: boolean) => void>()
   private controller: AbortController | null = null
 
   constructor(
@@ -131,7 +131,8 @@ export class LanguageClient {
     return this.ready
   }
 
-  onReady(listener: () => void) {
+  /** Called when the session becomes ready or stops being ready. */
+  onReadyChange(listener: (ready: boolean) => void) {
     this.readyListeners.add(listener)
     return () => void this.readyListeners.delete(listener)
   }
@@ -200,8 +201,7 @@ export class LanguageClient {
       )
       this.notify("initialized", {})
       for (const document of this.documents.values()) this.didOpen(document)
-      this.ready = true
-      for (const listener of this.readyListeners) listener()
+      this.setReady(true)
     } catch {
       if (generation === this.generation && !controller.signal.aborted)
         setTimeout(() => {
@@ -251,6 +251,21 @@ export class LanguageClient {
 
   version(path: string) {
     return this.documents.get(path)?.version
+  }
+
+  formatting(path: string, signal: AbortSignal) {
+    if (!this.ready || !this.documents.has(path))
+      return Promise.reject(
+        new RequestCancelled("Language server is connecting.")
+      )
+    return this.call(
+      "textDocument/formatting",
+      {
+        textDocument: { uri: this.uri(path) },
+        options: { tabSize: 2, insertSpaces: true },
+      },
+      signal
+    ).then((result) => (result as LspTextEdit[] | null) ?? [])
   }
 
   completion(
@@ -379,10 +394,16 @@ export class LanguageClient {
       })
   }
 
+  private setReady(ready: boolean) {
+    if (this.ready === ready) return
+    this.ready = ready
+    for (const listener of this.readyListeners) listener(ready)
+  }
+
   private reset() {
     this.controller?.abort()
     this.controller = null
-    this.ready = false
+    this.setReady(false)
     this.root = null
     this.outbox = []
     this.sessionId = crypto.randomUUID()

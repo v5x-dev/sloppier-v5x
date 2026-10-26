@@ -1,3 +1,4 @@
+import * as Y from "yjs"
 import { describe, expect, it, vi } from "vitest"
 import { LanguageClient, type LspRange } from "../src/lib/language-client"
 
@@ -77,5 +78,40 @@ describe("language navigation", () => {
     expect(await client.hover("main.cpp", range.start, signal)).toEqual({
       contents: { kind: "plaintext", value: "Robot documentation" },
     })
+  })
+})
+
+describe("document formatting", () => {
+  it("requests formatting for the open document and handles no edits", async () => {
+    const { client, call } = setup(null)
+    const doc = new Y.Doc()
+    const close = client.openDocument("src/my robot.cpp", doc.getText("source"))
+    // The transport is isolated above; mark the initialized session ready.
+    const internals = client as unknown as { ready: boolean }
+    internals.ready = true
+    const signal = new AbortController().signal
+    expect(await client.formatting("src/my robot.cpp", signal)).toEqual([])
+    expect(call).toHaveBeenCalledWith(
+      "textDocument/formatting",
+      {
+        textDocument: {
+          uri: "file:///home/builder/language/session/src/my%20robot.cpp",
+        },
+        options: { tabSize: 2, insertSpaces: true },
+      },
+      signal
+    )
+    internals.ready = false
+    close()
+    doc.destroy()
+  })
+
+  it("does not queue formatting before initialization or for closed files", async () => {
+    const { client, call } = setup([])
+    const signal = new AbortController().signal
+    await expect(client.formatting("main.cpp", signal)).rejects.toThrow()
+    ;(client as unknown as { ready: boolean }).ready = true
+    await expect(client.formatting("main.cpp", signal)).rejects.toThrow()
+    expect(call).not.toHaveBeenCalled()
   })
 })

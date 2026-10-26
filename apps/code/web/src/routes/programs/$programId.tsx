@@ -1,3 +1,4 @@
+import type { FormatChange } from "@/components/editor-formatting"
 import { MachineStatus } from "@/components/machine-status"
 import { ProgramPathPreview } from "@/components/program-path-preview"
 import { ActionTooltip } from "@/components/action-tooltip"
@@ -31,6 +32,7 @@ import {
   CaretLeftIcon,
   FileDashedIcon,
   GitCommitIcon,
+  TextAlignLeftIcon,
   WarningCircleIcon,
   XIcon,
 } from "@phosphor-icons/react"
@@ -309,7 +311,31 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   const [diagnosticTarget, setDiagnosticTarget] = useState<
     (DiagnosticTarget & { path: string }) | null
   >(null)
+  const [formatActions, setFormatActions] = useState<
+    Record<string, (() => void) | null>
+  >({})
+  const onFormatChange = useCallback<FormatChange>((path, action) => {
+    setFormatActions((current) => ({ ...current, [path]: action }))
+  }, [])
   const [activePath, setActivePath] = useState<string | null>(null)
+  const formatFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      !(event.ctrlKey || event.metaKey) ||
+      event.altKey ||
+      event.shiftKey ||
+      event.isComposing ||
+      event.key.toLowerCase() !== "p"
+    )
+      return
+    event.preventDefault()
+    event.stopPropagation()
+    if (!event.repeat && activePath) formatActions[activePath]?.()
+  })
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => formatFromKeyboard(event)
+    window.addEventListener("keydown", keydown, true)
+    return () => window.removeEventListener("keydown", keydown, true)
+  }, [])
   const [loaded, setLoaded] = useState<Partial<Record<string, LoadedFile>>>({})
   const [readError, setReadError] = useState<Partial<Record<string, string>>>(
     {}
@@ -917,6 +943,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                     ) : loaded[path] ? (
                       <FileEditor
                         projectId={program._id}
+                        onFormatChange={onFormatChange}
                         path={path}
                         diagnosticTarget={
                           diagnosticTarget?.path === path
@@ -973,6 +1000,19 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             activePath={activePath}
             leftAction={
               <>
+                <ActionTooltip label="Format document (Ctrl/Cmd+P)">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Format document"
+                    disabled={!activePath || !formatActions[activePath]}
+                    onClick={() => {
+                      if (activePath) formatActions[activePath]?.()
+                    }}
+                  >
+                    <TextAlignLeftIcon />
+                  </Button>
+                </ActionTooltip>
                 <ProgramHistory
                   projectId={program._id}
                   revision={program.repositoryHeadSha}
@@ -1167,6 +1207,7 @@ function SortableFileTab({
 }
 
 function FileEditor({
+  onFormatChange,
   diagnosticTarget,
   projectId,
   path,
@@ -1180,6 +1221,7 @@ function FileEditor({
   projectId: Id<"projects">
   path: string
   loaded: LoadedFile
+  onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   active: boolean
   onSyncChange: (synced: boolean) => void
@@ -1219,6 +1261,7 @@ function FileEditor({
         </>
       ) : (
         <LiveFileEditor
+          onFormatChange={onFormatChange}
           projectId={projectId}
           path={path}
           active={active}

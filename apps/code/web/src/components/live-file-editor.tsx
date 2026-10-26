@@ -1,3 +1,4 @@
+import { useEditorFormatting, type FormatChange } from "./editor-formatting"
 import { useEditorNavigation } from "./editor-navigation"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
@@ -52,6 +53,7 @@ type Props = {
   projectId: Id<"projects">
   path: string
   active: boolean
+  onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   onChange: (text: string) => void
   onPeopleChange: (people: LivePerson[]) => void
@@ -63,6 +65,7 @@ export function LiveFileEditor({
   path,
   active,
   diagnosticTarget,
+  onFormatChange,
   onChange,
   onSyncChange,
   onPeopleChange,
@@ -520,6 +523,7 @@ export function LiveFileEditor({
           <PierreFile
             key={binding.shared.clientID}
             binding={binding}
+            onFormatChange={onFormatChange}
             diagnosticTarget={active ? diagnosticTarget : undefined}
             path={path}
             projectId={projectId}
@@ -532,11 +536,13 @@ export function LiveFileEditor({
 
 function PierreFile({
   diagnosticTarget,
+  onFormatChange,
   binding,
   path,
   projectId,
 }: {
   binding: PierreCollaboration
+  onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   path: string
   projectId: Id<"projects">
@@ -557,6 +563,7 @@ function PierreFile({
       })
     }
   }, [binding, diagnosticTarget])
+  useEditorFormatting(binding, path, onFormatChange)
   const completion = useEditorCompletion(binding, path)
   const navigation = useEditorNavigation(binding, path, completion.wrapper)
   const file = useRef({

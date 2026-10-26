@@ -20,6 +20,7 @@ import type * as lib_buildDependencies from "../lib/buildDependencies.js";
 import type * as lib_crdtBackup from "../lib/crdtBackup.js";
 import type * as lib_folderImport from "../lib/folderImport.js";
 import type * as lib_history from "../lib/history.js";
+import type * as lib_liveReplay from "../lib/liveReplay.js";
 import type * as lib_paths from "../lib/paths.js";
 import type * as lib_projectSearch from "../lib/projectSearch.js";
 import type * as lib_templateCatalog from "../lib/templateCatalog.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   "lib/crdtBackup": typeof lib_crdtBackup;
   "lib/folderImport": typeof lib_folderImport;
   "lib/history": typeof lib_history;
+  "lib/liveReplay": typeof lib_liveReplay;
   "lib/paths": typeof lib_paths;
   "lib/projectSearch": typeof lib_projectSearch;
   "lib/templateCatalog": typeof lib_templateCatalog;
