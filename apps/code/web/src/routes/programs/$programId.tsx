@@ -80,6 +80,7 @@ import { useAction, useMutation, useQuery } from "convex/react"
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -279,6 +280,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   const syncedRef = useRef(allSynced)
   syncedRef.current = allSynced
   const operationBusy = useRef(false)
+  const savePending = useRef(false)
   const initialOpen = useRef(false)
 
   async function prepareSource() {
@@ -380,7 +382,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
     )
   }, [])
 
-  async function commit(message: string) {
+  async function commit(message?: string) {
     if (!syncedRef.current)
       throw new Error(
         "Wait for live changes to finish syncing before committing."
@@ -397,7 +399,16 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
       throw new Error("Wait for the current file operation to finish.")
     operationBusy.current = true
     try {
-      await commitFiles({ projectId: program._id, message, changes })
+      const changedPaths = changes.map(({ path }) => path).sort()
+      const generatedMessage =
+        changedPaths.length === 1
+          ? `Update ${changedPaths[0]}`
+          : `Update ${changedPaths.length} files: ${changedPaths.join(", ")}`
+      await commitFiles({
+        projectId: program._id,
+        message: message ?? generatedMessage.slice(0, 200),
+        changes,
+      })
       for (const change of changes)
         committed.current.set(change.path, change.contents)
       syncDirty()
@@ -405,6 +416,58 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
       operationBusy.current = false
     }
   }
+
+  const saveFromKeyboard = useEffectEvent(
+    (event: KeyboardEvent, signal: AbortSignal) => {
+      if (
+        !(event.ctrlKey || event.metaKey) ||
+        event.altKey ||
+        event.shiftKey ||
+        event.isComposing ||
+        event.key.toLowerCase() !== "s"
+      )
+        return
+      event.preventDefault()
+      event.stopPropagation()
+      if (event.repeat || savePending.current) return
+      if (
+        ![...drafts.current].some(
+          ([path, text]) => committed.current.get(path) !== text
+        )
+      )
+        return
+      savePending.current = true
+      void (async () => {
+        try {
+          await waitForSourceSync(() => syncedRef.current, signal)
+          signal.throwIfAborted()
+          await commit()
+          if (!signal.aborted)
+            toast.add({ type: "success", title: "Changes committed" })
+        } catch (error) {
+          if (!signal.aborted)
+            toast.add({
+              type: "error",
+              title: "Could not commit",
+              description: errorMessage(error),
+            })
+        } finally {
+          savePending.current = false
+        }
+      })()
+    }
+  )
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const onKeyDown = (event: KeyboardEvent) =>
+      saveFromKeyboard(event, controller.signal)
+    window.addEventListener("keydown", onKeyDown, true)
+    return () => {
+      controller.abort()
+      window.removeEventListener("keydown", onKeyDown, true)
+    }
+  }, [])
 
   async function restoreFile(sha: string, path: string) {
     if (operationBusy.current || dirtyPaths.length || !syncedRef.current)
@@ -869,7 +932,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                 <TooltipContent>
                   {dirtyPaths.length === 0
                     ? "No changes"
-                    : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
+                    : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}. Ctrl/Cmd+S commits with an automatic message.`}
                 </TooltipContent>
               </Tooltip>
             </>
