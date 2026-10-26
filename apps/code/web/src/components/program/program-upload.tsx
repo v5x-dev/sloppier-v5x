@@ -15,6 +15,7 @@ import {
   CpuIcon,
   DownloadSimpleIcon,
   PlugIcon,
+  PlugsConnectedIcon,
 } from "@phosphor-icons/react"
 import {
   FileExitAction,
@@ -45,6 +46,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { Progress } from "@workspace/ui/components/progress"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
@@ -311,7 +313,7 @@ export function ProgramUpload({
               />
             }
           >
-            <PlugIcon />
+            {connected ? <PlugsConnectedIcon /> : <PlugIcon />}
           </PopoverTrigger>
         </ActionTooltip>
         <PopoverContent
@@ -502,9 +504,9 @@ export function ProgramUpload({
               {message}
             </div>
             {progress !== null && (
-              <progress
+              <Progress
                 aria-label="File upload progress"
-                className="h-1 w-full accent-primary"
+                className="w-full"
                 value={progress}
                 max={100}
               />

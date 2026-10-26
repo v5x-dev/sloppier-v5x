@@ -373,13 +373,98 @@ describe("browser transports", () => {
 })
 
 describe("program uploads", () => {
-  it("uploads ini, cold library, link, and hot binary in order with gzip", async () => {
+  it("switches a controller to download mode before writing and restores pit mode", async () => {
+    const { uploadProgram } = await import("../src")
+    const transport = new FakeTransport()
+    transport.type = "controller"
+    const connection = await Connection.open(transport)
+    let download = false
+    transport.respond = (data) => {
+      if (data[4] === 0xa4) {
+        transport.system(
+          new Uint8Array([0xaa, 0x55, 0xa4, 7, 1, 0, 0, 0, 0, 0x11, 2])
+        )
+        return
+      }
+      if (data[5] === 0x10) download = data[8] === 1
+      transport.system(
+        reply(
+          data[5] === 0x11 ? [0, 16, 0, 0, 0, 0, 0, 0, 0, 0] : [],
+          data[5],
+          data[5] === 0x13 && !download ? 0xd7 : 0x76
+        )
+      )
+    }
+    try {
+      await uploadProgram(
+        connection,
+        { type: "monolith", data: new Uint8Array([1, 2, 3]) },
+        { slot: 1, name: "Robot" }
+      )
+      const channels = transport.writes.filter((data) => data[5] === 0x10)
+      expect(channels.map((data) => data[8])).toEqual([1, 0])
+      expect(download).toBe(false)
+      const binary = transport.writes.filter((data) => data[5] === 0x11)[1]
+      expect(new DataView(binary.buffer).getUint32(15, true)).toBe(0x03800000)
+    } finally {
+      await connection.close()
+    }
+  })
+  it("restores the controller radio after a failed transfer without hiding its error", async () => {
+    const { uploadProgram } = await import("../src")
+    const transport = new FakeTransport()
+    transport.type = "controller"
+    const connection = await Connection.open(transport)
+    transport.respond = (data) => {
+      if (data[4] === 0xa4) {
+        transport.system(
+          new Uint8Array([0xaa, 0x55, 0xa4, 7, 1, 0, 0, 0, 0, 0x11, 2])
+        )
+        return
+      }
+      transport.system(
+        reply(
+          [],
+          data[5],
+          data[5] === 0x11
+            ? 0xd7
+            : data[5] === 0x10 && data[8] === 0
+              ? 0xd0
+              : 0x76
+        )
+      )
+    }
+    try {
+      await expect(
+        uploadProgram(
+          connection,
+          { type: "monolith", data: new Uint8Array([1]) },
+          { slot: 1, name: "Robot" }
+        )
+      ).rejects.toMatchObject({ ack: 0xd7 })
+      expect(
+        transport.writes
+          .filter((data) => data[5] === 0x10)
+          .map((data) => data[8])
+      ).toEqual([1, 0])
+    } finally {
+      await connection.close()
+    }
+  })
+  it("uploads a PROS library before stopping and replacing the slot with a linked hot binary", async () => {
     const { uploadProgram, FileExitAction } = await import("../src")
     const transport = new FakeTransport(),
       connection = await Connection.open(transport)
     transport.respond = (data) =>
       transport.system(
-        reply(data[5] === 0x11 ? [0, 16, 0, 0, 48, 0, 0, 0, 0, 0] : [], data[5])
+        reply(
+          data[5] === 0x11
+            ? [0, 16, 0, 0, 48, 0, 0, 0, 0, 0]
+            : data[5] === 0x19
+              ? [255]
+              : [],
+          data[5]
+        )
       )
     const hot = new Uint8Array([1, 2, 3]),
       cold = new Uint8Array([8, 9])
@@ -397,19 +482,29 @@ describe("program uploads", () => {
     const names = init.map(
       (data) => new TextDecoder().decode(data.slice(35, 59)).split("\0")[0]
     )
-    expect(names).toEqual(["slot_2.ini", "slot_2_lib.bin", "slot_2.bin"])
+    expect(names[0]).toMatch(/^[A-Za-z0-9_-]{22}$/)
+    expect(names.slice(1)).toEqual(["slot_2.ini", "slot_2.bin"])
+    expect(init.map((data) => data[9])).toEqual([0x18, 1, 1])
+    const link = transport.writes.find((data) => data[5] === 0x15)!
+    expect(link[7]).toBe(0x18)
+    expect(new TextDecoder().decode(link.slice(9, 32)).split("\0")[0]).toBe(
+      names[0]
+    )
+    expect(
+      init.map((data) => new DataView(data.buffer).getUint32(15, true))
+    ).toEqual([0x03800000, 0x03800000, 0x07800000])
     expect(transport.writes.map((data) => data[5])).toEqual([
-      0x11, 0x13, 0x12, 0x11, 0x13, 0x12, 0x11, 0x15, 0x13, 0x12,
+      0x19, 0x11, 0x13, 0x12, 0x18, 0x11, 0x13, 0x12, 0x11, 0x15, 0x13, 0x12,
     ])
     expect(
       transport.writes.filter((data) => data[5] === 0x12).map((data) => data[7])
     ).toEqual([0, 0, 1])
     const chunks = transport.writes.filter((data) => data[5] === 0x13)
-    const ini = new TextDecoder().decode(chunks[0].slice(11, -2))
+    const ini = new TextDecoder().decode(chunks[1].slice(11, -2))
     expect(ini).toContain("slot=1")
     expect(ini).toContain("name=Robot")
     for (const [index, original] of [
-      [1, cold],
+      [0, cold],
       [2, hot],
     ] as const) {
       const fileSize = new DataView(init[index].buffer).getUint32(11, true)
@@ -420,6 +515,44 @@ describe("program uploads", () => {
       ).arrayBuffer()
       expect(new Uint8Array(decompressed)).toEqual(original)
     }
+    // The next upload must query the same library and skip its transfer.
+    transport.writes.length = 0
+    transport.respond = (data) => {
+      let payload: number[] = []
+      if (data[5] === 0x19) {
+        const metadata = new Uint8Array(25)
+        const view = new DataView(metadata.buffer)
+        view.setUint32(
+          1,
+          new DataView(init[0].buffer).getUint32(11, true),
+          true
+        )
+        view.setUint32(
+          9,
+          new DataView(init[0].buffer).getUint32(19, true),
+          true
+        )
+        payload = [...metadata]
+      } else if (data[5] === 0x11) payload = [0, 16, 0, 0, 48, 0, 0, 0, 0, 0]
+      transport.system(reply(payload, data[5]))
+    }
+    await uploadProgram(
+      connection,
+      { type: "hot-cold", hot, cold },
+      {
+        slot: 3,
+        name: "Another program",
+        compress: true,
+      }
+    )
+    expect(
+      transport.writes.filter((data) => data[5] === 0x11).map((data) => data[9])
+    ).toEqual([1, 1])
+    const query = transport.writes.find((data) => data[5] === 0x19)!
+    expect(query[7]).toBe(0x18)
+    expect(new TextDecoder().decode(query.slice(9, 32)).split("\0")[0]).toBe(
+      names[0]
+    )
     await connection.close()
   })
   it("rejects invalid program metadata before sending any packets", async () => {

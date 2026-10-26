@@ -1,4 +1,4 @@
-# V5 serial
+# v5x serial
 
 TypeScript browser port of [vexide/vex-v5-serial](https://github.com/vexide/vex-v5-serial), based on commit `b3a712a16c9c6819b69faacfee2284826a138070`. The upstream MIT license is included in [LICENSE](./LICENSE).
 
@@ -82,3 +82,7 @@ bun run --cwd packages/serial test
 `logStatus()` returns the recorded event count. `logRead(offset, count)` reads event records using the upstream VEXos packet layout. For the latest 20 records, request `logRead(Math.min(count, 20), Math.min(count, 20))`. Each record contains `code`, `type`, `description`, `spare`, and `time` in milliseconds since boot. Upstream leaves the event-code meanings undocumented, so consumers should display raw values rather than assign guessed descriptions.
 
 The editor's Robot console opens from the rightmost actions-bar button. It shares the upload connection, reads USB FIFO output or Bluetooth notifications, sends newline-terminated commands, and provides run/stop controls and a manual event-log refresh. Device operations pause console requests during uploads. Console output stays in browser memory and is limited to 200,000 characters. Hardware validation is still required.
+
+Hot/cold uploads require both non-empty packages. Following [PROS CLI](https://github.com/purduesigbots/pros-cli/blob/develop/pros/serial/devices/vex/v5_device.py), the cold library is stored in vendor namespace `0x18` at `0x03800000`; the slot binary links to it and loads at `0x07800000`. The library uploads first, then the running program stops before the INI and hot binary are replaced. Matching library size and CRC skip the cold transfer. Compression defaults to gzip and can be disabled.
+
+Library names use the first 128 bits of a SHA-256 hash of the cold binary, encoded as URL-safe base64. PROS CLI derives names from project template metadata, which this binary-only API does not receive. This implementation does not evict old libraries automatically.

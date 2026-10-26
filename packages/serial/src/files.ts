@@ -40,6 +40,7 @@ export enum FileVendor {
   Sys = 0x0f,
   Dev1 = 0x10,
   Dev2 = 0x18,
+  Pros = 0x18,
   Dev3 = 0x20,
   Dev4 = 0x28,
   Dev5 = 0x30,
@@ -263,6 +264,8 @@ export async function uploadFile(
   options: UploadFileOptions
 ): Promise<void> {
   const address = options.address ?? 0
+  const requestOptions =
+    connection.type === "controller" ? { timeout: 2000 } : {}
   const initialized = await connection.request(
     fileTransferInitialize({
       operation: FileTransferOperation.Write,
@@ -276,11 +279,13 @@ export async function uploadFile(
         extension: options.fileName.split(".").pop() ?? "bin",
       },
       fileName: options.fileName,
-    })
+    }),
+    requestOptions
   )
   if (options.linkedFile)
     await connection.request(
-      fileLink(options.linkedFile.fileName, options.linkedFile.vendor)
+      fileLink(options.linkedFile.fileName, options.linkedFile.vendor),
+      requestOptions
     )
   const chunkSize = maxChunkSize(connection, initialized.windowSize)
   for (let offset = 0; offset < data.length; offset += chunkSize) {
@@ -289,13 +294,13 @@ export async function uploadFile(
     padded.set(chunk)
     const command = fileDataWrite(address + offset, padded)
     if (connection.type === "bluetooth") await connection.send(command)
-    else await connection.request(command)
+    else await connection.request(command, requestOptions)
     options.onProgress?.(
       Math.min(100, ((offset + chunk.length) / data.length) * 100)
     )
   }
   await connection.request(fileTransferExit(options.afterUpload), {
-    timeout: 1000,
+    timeout: connection.type === "controller" ? 2000 : 1000,
   })
   if (!data.length) options.onProgress?.(100)
 }
