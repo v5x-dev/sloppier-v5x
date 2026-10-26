@@ -73,6 +73,7 @@ import {
   WorkspaceTeam,
   WorkspaceInvitations,
 } from "@/components/workspace-team"
+import { ImportFolder } from "@/components/import-folder"
 import { AuthGate } from "@/components/auth-gate"
 import { RepositoryStatusBadge } from "@/components/repository-status-badge"
 import { errorMessage } from "@/lib/errors"
@@ -131,6 +132,7 @@ function ProgramsPage() {
                 Your programs
               </h1>
               <div className="flex items-center gap-2">
+                <ImportFolder key={workspace._id} workspaceId={workspace._id} />
                 <NewProgramDialog workspaceId={workspace._id} />
               </div>
             </div>

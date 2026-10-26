@@ -16,7 +16,7 @@ docker build --platform linux/amd64 -t YOUR_REGISTRY/v5x-build:VERSION infra/bui
 docker push YOUR_REGISTRY/v5x-build:VERSION
 ```
 
-The image installs Clang, GNU Arm Embedded, Python, and Make. SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode projects use the supplied Makefile. The cloud must be able to pull the image.
+The image installs Clang, clangd, GNU Arm Embedded, Python, and Make. clangd serves editor autocomplete; see [Autocomplete](autocomplete.md). SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode projects use the supplied Makefile. The cloud must be able to pull the image.
 
 Build uploads omit the managed paths listed in `packages/backend/convex/lib/buildDependencies.ts`. The image links those paths from its read-only dependency tree into each build directory. `src/`, `include/main.h`, robot-specific headers such as `autons.hpp` and `subsystems.hpp`, `Makefile`, and `project.pros` remain repository-owned. Existing repositories may still have older committed copies; builds ignore those and use the image versions.
 
@@ -45,10 +45,10 @@ Cloud API contracts were checked against [Smolmachines API reference](https://sm
 The `fabulous-hornet-670` development deployment has a dedicated Smolmachines API key for machine create/read/exec/delete and this pinned image:
 
 ```text
-registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:3ffb27d2495535f2d57bd839d405b18ac0e2064a553c322aedd862cd846bbd44
+registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:297e7cbcac1a1856b656d869de507dd3231fba6df91cadd6b0fc7c5d827270a1
 ```
 
-The image is also tagged `20261025-direct-builds`. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
+The image is also tagged `20261026-clangd` and includes clangd for autocomplete. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
 
 Cloud verification compiled all four templates from editable-only snapshots. Direct-connection verification built EZ-Template, received logs before completion, downloaded both package binaries without Convex storage, and rejected the scoped token on other cloud API routes. A browser build also populated the client-only binary folder. Local PCH reuse and header invalidation checks pass for all four templates.
 

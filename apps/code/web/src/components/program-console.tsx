@@ -1,3 +1,4 @@
+import { ActionTooltip } from "./action-tooltip"
 import { useEffect, useRef, useState } from "react"
 import {
   TerminalIcon,
@@ -116,22 +117,25 @@ export function ProgramConsole({
   const disabled = !connection || busy || pending
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Open robot console"
-        title={
+      <ActionTooltip
+        label={
           connection
             ? "Robot console"
             : "Connect a V5 brain to open the console"
         }
-        disabled={!connection}
-        onClick={() => {
-          if (connection) setOpen(true)
-        }}
       >
-        <TerminalIcon />
-      </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Open robot console"
+          disabled={!connection}
+          onClick={() => {
+            if (connection) setOpen(true)
+          }}
+        >
+          <TerminalIcon />
+        </Button>
+      </ActionTooltip>
       <Sheet
         open={open && Boolean(connection)}
         onOpenChange={(nextOpen) => setOpen(nextOpen && Boolean(connection))}

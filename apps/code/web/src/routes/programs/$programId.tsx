@@ -1,3 +1,4 @@
+import { ActionTooltip } from "@/components/action-tooltip"
 import { ProgramSearch } from "@/components/program-search"
 import { ProgramHistory } from "@/components/program-history"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
@@ -78,6 +79,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from "@workspace/ui/components/tooltip"
 import { useAction, useMutation, useQuery } from "convex/react"
 import {
@@ -101,6 +103,7 @@ import {
   AvatarImage,
 } from "@workspace/ui/components/avatar"
 import { LiveFileEditor, type LivePerson } from "@/components/live-file-editor"
+import { LanguageSession } from "@/components/language-session"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
 import { AuthGate } from "@/components/auth-gate"
 import { errorMessage } from "@/lib/errors"
@@ -723,320 +726,322 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   }
 
   return (
-    <SidebarProvider
-      className="h-svh min-h-0"
-      style={
-        {
-          "--sidebar-width": "18rem",
-          // The theme's border is translucent in dark mode, so it shifts shade
-          // where the sidebar and bar outlines overlap. Use a stronger opaque
-          // color so the joined shape's edge stays visible.
-          "--sidebar-border":
-            "color-mix(in oklab, var(--foreground) 20%, var(--background))",
-        } as React.CSSProperties
-      }
-    >
-      <Sidebar variant="floating">
-        <SidebarHeader className="flex-row items-center gap-1 p-1 text-muted-foreground">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            render={<Link to="/" aria-label="All programs" />}
-            nativeButton={false}
-          >
-            <CaretLeftIcon />
-          </Button>
-          <span className="truncate text-xs font-medium">{program.name}</span>
-        </SidebarHeader>
-        <SidebarContent className="overflow-hidden">
-          {listError ? (
-            <Empty className="h-full">
-              <EmptyHeader>
-                <EmptyTitle>Could not list files</EmptyTitle>
-                <EmptyDescription>{listError}</EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button variant="outline" size="sm" onClick={loadPaths}>
-                  Try again
-                </Button>
-              </EmptyContent>
-            </Empty>
-          ) : paths === null ? (
-            <div className="flex h-full items-center justify-center">
-              <Spinner className="text-muted-foreground" />
-            </div>
-          ) : (
-            <RepositoryExplorer
-              binaries={binaries}
-              paths={paths}
-              dirtyPaths={dirtyPaths}
-              activePath={activePath}
-              projectId={program._id}
-              style={treeStyle}
-              readBytes={readBytes}
-              apply={applyExplorerUpdate}
-              onOpen={openFile}
-            />
-          )}
-        </SidebarContent>
-        <SidebarFooter className="items-start p-3">
-          <AvatarGroup aria-label="People in this file">
-            {(activePath ? (filePeople[activePath] ?? []) : []).map(
-              (person) => (
-                <Avatar
-                  key={person.id}
-                  size="sm"
-                  title={person.name}
-                  aria-label={person.name}
-                >
-                  {person.imageUrl && (
-                    <AvatarImage src={person.imageUrl} alt={person.name} />
-                  )}
-                  <AvatarFallback
-                    style={{
-                      backgroundColor: `${person.color}33`,
-                      color: person.color,
+    <LanguageSession prepareSource={prepareSource}>
+      <SidebarProvider
+        className="h-svh min-h-0"
+        style={
+          {
+            "--sidebar-width": "18rem",
+            // The theme's border is translucent in dark mode, so it shifts shade
+            // where the sidebar and bar outlines overlap. Use a stronger opaque
+            // color so the joined shape's edge stays visible.
+            "--sidebar-border":
+              "color-mix(in oklab, var(--foreground) 20%, var(--background))",
+          } as React.CSSProperties
+        }
+      >
+        <Sidebar variant="floating">
+          <SidebarHeader className="flex-row items-center gap-1 p-1 text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              render={<Link to="/" aria-label="All programs" />}
+              nativeButton={false}
+            >
+              <CaretLeftIcon />
+            </Button>
+            <span className="truncate text-xs font-medium">{program.name}</span>
+          </SidebarHeader>
+          <SidebarContent className="overflow-hidden">
+            {listError ? (
+              <Empty className="h-full">
+                <EmptyHeader>
+                  <EmptyTitle>Could not list files</EmptyTitle>
+                  <EmptyDescription>{listError}</EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button variant="outline" size="sm" onClick={loadPaths}>
+                    Try again
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            ) : paths === null ? (
+              <div className="flex h-full items-center justify-center">
+                <Spinner className="text-muted-foreground" />
+              </div>
+            ) : (
+              <RepositoryExplorer
+                binaries={binaries}
+                paths={paths}
+                dirtyPaths={dirtyPaths}
+                activePath={activePath}
+                projectId={program._id}
+                style={treeStyle}
+                readBytes={readBytes}
+                apply={applyExplorerUpdate}
+                onOpen={openFile}
+              />
+            )}
+          </SidebarContent>
+          <SidebarFooter className="items-start p-3">
+            <AvatarGroup aria-label="People in this file">
+              {(activePath ? (filePeople[activePath] ?? []) : []).map(
+                (person) => (
+                  <Avatar
+                    key={person.id}
+                    size="sm"
+                    title={person.name}
+                    aria-label={person.name}
+                  >
+                    {person.imageUrl && (
+                      <AvatarImage src={person.imageUrl} alt={person.name} />
+                    )}
+                    <AvatarFallback
+                      style={{
+                        backgroundColor: `${person.color}33`,
+                        color: person.color,
+                      }}
+                    >
+                      {person.name
+                        .trim()
+                        .split(/\s+/)
+                        .slice(0, 2)
+                        .map((part) => part[0])
+                        .join("")
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )
+              )}
+            </AvatarGroup>
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset className="min-h-0 min-w-0 pt-2">
+          <div className="flex min-h-0 min-w-0 flex-1">
+            <Tabs
+              value={activePath}
+              onValueChange={(value) => {
+                if (typeof value === "string") selectTab(value)
+              }}
+              className="min-h-0 min-w-0 flex-1 gap-0"
+            >
+              {openPaths.length > 0 && (
+                <div className="shrink-0 overflow-x-auto overflow-y-hidden">
+                  <DndContext
+                    sensors={tabSensors}
+                    collisionDetection={closestCenter}
+                    modifiers={[
+                      restrictToHorizontalAxis,
+                      restrictToParentElement,
+                    ]}
+                    onDragEnd={({ active, over }) => {
+                      if (!over || active.id === over.id) return
+                      setOpenPaths((current) => {
+                        const from = current.indexOf(String(active.id))
+                        const to = current.indexOf(String(over.id))
+                        return from < 0 || to < 0
+                          ? current
+                          : arrayMove(current, from, to)
+                      })
                     }}
                   >
-                    {person.name
-                      .trim()
-                      .split(/\s+/)
-                      .slice(0, 2)
-                      .map((part) => part[0])
-                      .join("")
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              )
-            )}
-          </AvatarGroup>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset className="min-h-0 min-w-0 pt-2">
-        <div className="flex min-h-0 min-w-0 flex-1">
-          <Tabs
-            value={activePath}
-            onValueChange={(value) => {
-              if (typeof value === "string") selectTab(value)
-            }}
-            className="min-h-0 min-w-0 flex-1 gap-0"
-          >
-            {openPaths.length > 0 && (
-              <div className="shrink-0 overflow-x-auto overflow-y-hidden">
-                <DndContext
-                  sensors={tabSensors}
-                  collisionDetection={closestCenter}
-                  modifiers={[
-                    restrictToHorizontalAxis,
-                    restrictToParentElement,
-                  ]}
-                  onDragEnd={({ active, over }) => {
-                    if (!over || active.id === over.id) return
-                    setOpenPaths((current) => {
-                      const from = current.indexOf(String(active.id))
-                      const to = current.indexOf(String(over.id))
-                      return from < 0 || to < 0
-                        ? current
-                        : arrayMove(current, from, to)
-                    })
-                  }}
-                >
-                  <SortableContext
-                    items={openPaths}
-                    strategy={horizontalListSortingStrategy}
-                  >
-                    <SortableTabsList
-                      aria-label="Open files"
-                      className="h-8! justify-start"
+                    <SortableContext
+                      items={openPaths}
+                      strategy={horizontalListSortingStrategy}
                     >
-                      {openPaths.map((path) => (
-                        <SortableFileTab
-                          key={path}
-                          path={path}
-                          dirty={dirtyPaths.includes(path)}
-                          onClose={() => closeTab(path)}
-                        />
-                      ))}
-                    </SortableTabsList>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            )}
-            <>
-              {openPaths.map((path) => (
-                // Each file owns its scroll container and stays mounted while
-                // inactive, retaining its selection, draft, and undo history.
-                <TabsContent
-                  key={loaded[path]?.editorKey ?? path}
-                  value={path}
-                  keepMounted
-                  className="no-scrollbar relative min-h-0 overflow-auto"
-                  onScroll={(event) => {
-                    if (path === activePath) {
-                      scrollPositions.current.set(
-                        path,
-                        event.currentTarget.scrollTop
-                      )
-                    }
-                  }}
-                >
-                  {readError[path] ? (
-                    <Empty className="h-full">
-                      <EmptyHeader>
-                        <EmptyMedia variant="icon">
-                          <WarningCircleIcon />
-                        </EmptyMedia>
-                        <EmptyTitle>Could not open this file</EmptyTitle>
-                        <EmptyDescription>{readError[path]}</EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
-                  ) : loaded[path] ? (
-                    <FileEditor
-                      projectId={program._id}
-                      path={path}
-                      diagnosticTarget={
-                        diagnosticTarget?.path === path
-                          ? diagnosticTarget
-                          : undefined
-                      }
-                      active={path === activePath}
-                      onPeopleChange={(people) =>
-                        setFilePeople((current) =>
-                          JSON.stringify(current[path]) ===
-                          JSON.stringify(people)
-                            ? current
-                            : { ...current, [path]: people }
+                      <SortableTabsList
+                        aria-label="Open files"
+                        className="h-8! justify-start"
+                      >
+                        {openPaths.map((path) => (
+                          <SortableFileTab
+                            key={path}
+                            path={path}
+                            dirty={dirtyPaths.includes(path)}
+                            onClose={() => closeTab(path)}
+                          />
+                        ))}
+                      </SortableTabsList>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              )}
+              <>
+                {openPaths.map((path) => (
+                  // Each file owns its scroll container and stays mounted while
+                  // inactive, retaining its selection, draft, and undo history.
+                  <TabsContent
+                    key={loaded[path]?.editorKey ?? path}
+                    value={path}
+                    keepMounted
+                    className="relative no-scrollbar min-h-0 overflow-auto"
+                    onScroll={(event) => {
+                      if (path === activePath) {
+                        scrollPositions.current.set(
+                          path,
+                          event.currentTarget.scrollTop
                         )
                       }
-                      onSyncChange={(synced) =>
-                        setLiveSync((current) =>
-                          current[path] === synced
-                            ? current
-                            : { ...current, [path]: synced }
-                        )
-                      }
-                      loaded={loaded[path]}
-                      scrollPositions={scrollPositions.current}
-                      onChange={(text) => {
-                        drafts.current.set(path, text)
-                        syncDirty()
-                      }}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Spinner className="text-muted-foreground" />
-                    </div>
-                  )}
-                </TabsContent>
-              ))}
-            </>
-            {openPaths.length === 0 && (
-              <Empty className="flex-1">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <FileDashedIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>Pick a file</EmptyTitle>
-                  <EmptyDescription>
-                    Choose a file from the tree to start editing.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
-            )}
-          </Tabs>
-        </div>
-        <ActionsBar
-          activePath={activePath}
-          leftAction={
-            <>
-              <ProgramHistory
-                projectId={program._id}
-                revision={program.repositoryHeadSha}
-                canRestore={dirtyPaths.length === 0 && allSynced}
-                onRestore={restoreFile}
-              />
-              <Tooltip>
-                <TooltipTrigger render={<span className="inline-flex" />}>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={
-                      dirtyPaths.length === 0
-                        ? "No changes"
-                        : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
-                    }
-                    disabled={dirtyPaths.length === 0 || !allSynced}
-                    onClick={() => setCommitOpen(true)}
+                    }}
                   >
-                    <GitCommitIcon />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {dirtyPaths.length === 0
-                    ? "No changes"
-                    : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}. Ctrl/Cmd+S commits with an automatic message.`}
-                </TooltipContent>
-              </Tooltip>
-              <ProgramSearch
-                projectId={program._id}
-                revision={program.repositoryHeadSha}
-                getDrafts={getSearchDrafts}
-                subscribeDrafts={subscribeSearchDrafts}
-                onSelect={(path, line, column) => {
-                  setDiagnosticTarget((current) => ({
-                    path,
-                    line,
-                    column,
-                    request: (current?.request ?? 0) + 1,
-                  }))
-                  openFile(path)
-                }}
-              />
-            </>
-          }
-        >
-          <ProgramUpload
-            buildAction={
-              <ProgramBuild
-                dirty={dirtyPaths.length > 0}
-                prepareSource={prepareSource}
-                paths={paths ?? []}
-                currentSha={program.repositoryHeadSha}
-                onDiagnostic={(path, diagnostic) => {
-                  setDiagnosticTarget((current) => ({
-                    path,
-                    line: diagnostic.line,
-                    column: diagnostic.column,
-                    request: (current?.request ?? 0) + 1,
-                  }))
-                  openFile(path)
-                }}
-              />
+                    {readError[path] ? (
+                      <Empty className="h-full">
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <WarningCircleIcon />
+                          </EmptyMedia>
+                          <EmptyTitle>Could not open this file</EmptyTitle>
+                          <EmptyDescription>{readError[path]}</EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    ) : loaded[path] ? (
+                      <FileEditor
+                        projectId={program._id}
+                        path={path}
+                        diagnosticTarget={
+                          diagnosticTarget?.path === path
+                            ? diagnosticTarget
+                            : undefined
+                        }
+                        active={path === activePath}
+                        onPeopleChange={(people) =>
+                          setFilePeople((current) =>
+                            JSON.stringify(current[path]) ===
+                            JSON.stringify(people)
+                              ? current
+                              : { ...current, [path]: people }
+                          )
+                        }
+                        onSyncChange={(synced) =>
+                          setLiveSync((current) =>
+                            current[path] === synced
+                              ? current
+                              : { ...current, [path]: synced }
+                          )
+                        }
+                        loaded={loaded[path]}
+                        scrollPositions={scrollPositions.current}
+                        onChange={(text) => {
+                          drafts.current.set(path, text)
+                          syncDirty()
+                        }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Spinner className="text-muted-foreground" />
+                      </div>
+                    )}
+                  </TabsContent>
+                ))}
+              </>
+              {openPaths.length === 0 && (
+                <Empty className="flex-1">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <FileDashedIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Pick a file</EmptyTitle>
+                    <EmptyDescription>
+                      Choose a file from the tree to start editing.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              )}
+            </Tabs>
+          </div>
+          <ActionsBar
+            activePath={activePath}
+            leftAction={
+              <>
+                <ProgramHistory
+                  projectId={program._id}
+                  revision={program.repositoryHeadSha}
+                  canRestore={dirtyPaths.length === 0 && allSynced}
+                  onRestore={restoreFile}
+                />
+                <Tooltip>
+                  <TooltipTrigger render={<span className="inline-flex" />}>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={
+                        dirtyPaths.length === 0
+                          ? "No changes"
+                          : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
+                      }
+                      disabled={dirtyPaths.length === 0 || !allSynced}
+                      onClick={() => setCommitOpen(true)}
+                    >
+                      <GitCommitIcon />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {dirtyPaths.length === 0
+                      ? "No changes"
+                      : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}. Ctrl/Cmd+S commits with an automatic message.`}
+                  </TooltipContent>
+                </Tooltip>
+                <ProgramSearch
+                  projectId={program._id}
+                  revision={program.repositoryHeadSha}
+                  getDrafts={getSearchDrafts}
+                  subscribeDrafts={subscribeSearchDrafts}
+                  onSelect={(path, line, column) => {
+                    setDiagnosticTarget((current) => ({
+                      path,
+                      line,
+                      column,
+                      request: (current?.request ?? 0) + 1,
+                    }))
+                    openFile(path)
+                  }}
+                />
+              </>
             }
-            name={program.name}
-            dirty={dirtyPaths.length > 0}
-            prepareProgram={(signal, onStage) =>
-              prepareUploadBuild({
-                commitChanges: async (signal) => {
-                  await waitForSourceSync(() => syncedRef.current, signal)
-                  await commit("Save changes before upload")
-                },
-                prepareSource,
-                request: buildRequest,
-                signal,
-                onStage,
-              })
-            }
-          />
-        </ActionsBar>
-      </SidebarInset>
-      <CommitDialog
-        open={commitOpen}
-        onOpenChange={setCommitOpen}
-        paths={dirtyPaths}
-        onCommit={commit}
-      />
-    </SidebarProvider>
+          >
+            <ProgramUpload
+              buildAction={
+                <ProgramBuild
+                  dirty={dirtyPaths.length > 0}
+                  prepareSource={prepareSource}
+                  paths={paths ?? []}
+                  currentSha={program.repositoryHeadSha}
+                  onDiagnostic={(path, diagnostic) => {
+                    setDiagnosticTarget((current) => ({
+                      path,
+                      line: diagnostic.line,
+                      column: diagnostic.column,
+                      request: (current?.request ?? 0) + 1,
+                    }))
+                    openFile(path)
+                  }}
+                />
+              }
+              name={program.name}
+              dirty={dirtyPaths.length > 0}
+              prepareProgram={(signal, onStage) =>
+                prepareUploadBuild({
+                  commitChanges: async (signal) => {
+                    await waitForSourceSync(() => syncedRef.current, signal)
+                    await commit("Save changes before upload")
+                  },
+                  prepareSource,
+                  request: buildRequest,
+                  signal,
+                  onStage,
+                })
+              }
+            />
+          </ActionsBar>
+        </SidebarInset>
+        <CommitDialog
+          open={commitOpen}
+          onOpenChange={setCommitOpen}
+          paths={dirtyPaths}
+          onCommit={commit}
+        />
+      </SidebarProvider>
+    </LanguageSession>
   )
 }
 
@@ -1214,33 +1219,37 @@ function ActionsBar({
   const joined = !isMobile && state === "expanded"
 
   return (
-    <div
-      className={cn(
-        "relative z-20 mr-2 mb-2 flex h-9 shrink-0 items-center gap-1 bg-sidebar px-2 text-sidebar-foreground shadow-[0_0_0_1px_var(--sidebar-border)]",
-        joined
-          ? cn(
-              "-ml-4 rounded-r-lg pl-4 [clip-path:inset(calc(var(--radius-lg)*-1)_-1px_-1px_0)]",
-              "before:absolute before:-top-px before:left-0 before:h-px before:w-2 before:bg-sidebar",
-              "after:pointer-events-none after:absolute after:bottom-full after:left-2 after:size-(--radius-lg) after:bg-[radial-gradient(circle_at_100%_0,transparent_calc(var(--radius-lg)-1.5px),var(--sidebar-border)_calc(var(--radius-lg)-1px),var(--sidebar-border)_calc(var(--radius-lg)-0.5px),var(--sidebar)_var(--radius-lg))]"
-            )
-          : "ml-2 rounded-lg"
-      )}
-    >
-      {leftAction}
-      {/* On mobile the sidebar is a sheet, so the bar carries its toggle and
+    <TooltipProvider>
+      <div
+        className={cn(
+          "relative z-20 mr-2 mb-2 flex h-9 shrink-0 items-center gap-1 bg-sidebar px-2 text-sidebar-foreground shadow-[0_0_0_1px_var(--sidebar-border)]",
+          joined
+            ? cn(
+                "-ml-4 rounded-r-lg pl-4 [clip-path:inset(calc(var(--radius-lg)*-1)_-1px_-1px_0)]",
+                "before:absolute before:-top-px before:left-0 before:h-px before:w-2 before:bg-sidebar",
+                "after:pointer-events-none after:absolute after:bottom-full after:left-2 after:size-(--radius-lg) after:bg-[radial-gradient(circle_at_100%_0,transparent_calc(var(--radius-lg)-1.5px),var(--sidebar-border)_calc(var(--radius-lg)-1px),var(--sidebar-border)_calc(var(--radius-lg)-0.5px),var(--sidebar)_var(--radius-lg))]"
+              )
+            : "ml-2 rounded-lg"
+        )}
+      >
+        {leftAction}
+        {/* On mobile the sidebar is a sheet, so the bar carries its toggle and
           the open file's path. */}
-      {isMobile ? (
-        <>
-          <SidebarTrigger />
-          <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-            {activePath}
-          </span>
-        </>
-      ) : (
-        <div className="flex-1" />
-      )}
-      {children}
-    </div>
+        {isMobile ? (
+          <>
+            <ActionTooltip label="Toggle sidebar">
+              <SidebarTrigger />
+            </ActionTooltip>
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {activePath}
+            </span>
+          </>
+        ) : (
+          <div className="flex-1" />
+        )}
+        {children}
+      </div>
+    </TooltipProvider>
   )
 }
 

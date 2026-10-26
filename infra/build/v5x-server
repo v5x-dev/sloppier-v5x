@@ -28,29 +28,33 @@ def append(text):
     with LOCK:
         STATE['logs'] = (STATE['logs'] + re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text))[-200000:]
 
+def extract(snapshot, target):
+    """Mirror a validated source ZIP into target, keeping unchanged files' metadata."""
+    with zipfile.ZipFile(io.BytesIO(snapshot)) as archive:
+        entries = archive.infolist()
+        if len(entries) > 3000 or sum(e.file_size for e in entries) > 96*1024*1024:
+            raise ValueError('Source snapshot exceeds build limits.')
+        expected = set()
+        for entry in entries:
+            path = pathlib.PurePosixPath(entry.filename)
+            if path.is_absolute() or '..' in path.parts or '\\' in entry.filename or entry.is_dir():
+                raise ValueError('Invalid source path.')
+            expected.add(entry.filename)
+        target.mkdir(parents=True, exist_ok=True)
+        for path in target.rglob('*'):
+            if path.is_symlink(): path.unlink()
+            elif path.is_file() and str(path.relative_to(target)) not in expected: path.unlink()
+        for entry in entries:
+            path = target / entry.filename
+            if not path.resolve().is_relative_to(target): raise ValueError('Invalid source path.')
+            path.parent.mkdir(parents=True, exist_ok=True)
+            data = archive.read(entry)
+            if not path.exists() or path.read_bytes() != data: path.write_bytes(data)
+
 def compile_source(snapshot, commit):
     global ARTIFACT
     try:
-        with zipfile.ZipFile(io.BytesIO(snapshot)) as archive:
-            entries = archive.infolist()
-            if len(entries) > 3000 or sum(e.file_size for e in entries) > 96*1024*1024:
-                raise ValueError('Source snapshot exceeds build limits.')
-            expected = set()
-            for entry in entries:
-                path = pathlib.PurePosixPath(entry.filename)
-                if path.is_absolute() or '..' in path.parts or '\\' in entry.filename or entry.is_dir():
-                    raise ValueError('Invalid source path.')
-                expected.add(entry.filename)
-            SOURCE.mkdir(parents=True, exist_ok=True)
-            for path in SOURCE.rglob('*'):
-                if path.is_symlink(): path.unlink()
-                elif path.is_file() and str(path.relative_to(SOURCE)) not in expected: path.unlink()
-            for entry in entries:
-                path = SOURCE / entry.filename
-                if not path.resolve().is_relative_to(SOURCE): raise ValueError('Invalid source path.')
-                path.parent.mkdir(parents=True, exist_ok=True)
-                data = archive.read(entry)
-                if not path.exists() or path.read_bytes() != data: path.write_bytes(data)
+        extract(snapshot, SOURCE)
         process = subprocess.Popen(['/usr/local/bin/v5x-build', TEMPLATE], cwd=SOURCE,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
         def timeout():
@@ -90,6 +94,120 @@ def compile_source(snapshot, commit):
     finally:
         with LOCK: STATE['building'] = False
 
+LANGUAGE_ROOT = pathlib.Path('/home/builder/language')
+LANGUAGE_LOCK = threading.Lock()
+LANGUAGE = {}
+MAX_LANGUAGE_SESSIONS = 3
+
+class LanguageSession:
+    """One clangd per browser session, so collaborators' unsaved buffers never collide."""
+    def __init__(self, key, snapshot):
+        self.root = LANGUAGE_ROOT / key
+        extract(snapshot, self.root)
+        commands = self.root / '.v5x-commands.jsonl'
+        commands.unlink(missing_ok=True)
+        # Run the template's real make rules with v5x-cxx recording each compile,
+        # so completion sees the same flags, defines, and SDK as builds.
+        subprocess.run(['nice', '-n', '10', '/usr/local/bin/v5x-build', TEMPLATE], cwd=self.root,
+                       env={**os.environ, 'V5X_RECORD': str(commands)}, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, timeout=90, check=False)
+        entries = {}
+        if commands.exists():
+            for line in commands.read_text().splitlines():
+                entry = json.loads(line)
+                entries[entry['file']] = entry
+        (self.root / 'compile_commands.json').write_text(json.dumps(list(entries.values())))
+        self.process = subprocess.Popen(
+            ['nice', '-n', '10', 'clangd', '--background-index=false', '--pch-storage=memory', '-j=1',
+             '--query-driver=/usr/bin/arm-none-eabi-*,/usr/bin/clang*', '--compile-commands-dir=' + str(self.root),
+             '--log=error'],
+            cwd=self.root, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            start_new_session=True)
+        self.outbox = []
+        self.changed = threading.Condition()
+        self.write_lock = threading.Lock()
+        self.seen = time.time()
+        threading.Thread(target=self.read, daemon=True).start()
+    def read(self):
+        stream = self.process.stdout
+        while True:
+            length = None
+            while True:
+                line = stream.readline()
+                if not line: return self.stop()
+                line = line.strip()
+                if not line: break
+                name, _, value = line.decode('ascii', 'replace').partition(':')
+                if name.lower() == 'content-length': length = int(value)
+            if length is None: continue
+            message = json.loads(stream.read(length))
+            with self.changed:
+                self.outbox.append(message)
+                del self.outbox[:-2000]
+                self.changed.notify_all()
+    def send(self, messages):
+        with self.write_lock:
+            for message in messages:
+                body = json.dumps(message).encode()
+                self.process.stdin.write(b'Content-Length: %d\r\n\r\n' % len(body) + body)
+            self.process.stdin.flush()
+    def poll(self, timeout):
+        self.seen = time.time()
+        with self.changed:
+            if not self.outbox and self.alive(): self.changed.wait(timeout)
+            messages, self.outbox = self.outbox, []
+        self.seen = time.time()
+        return messages
+    def alive(self): return self.process.poll() is None
+    def stop(self):
+        import signal
+        try: os.killpg(self.process.pid, signal.SIGKILL)
+        except ProcessLookupError: pass
+        with self.changed: self.changed.notify_all()
+
+def language_janitor():
+    while True:
+        time.sleep(10)
+        with LANGUAGE_LOCK:
+            for key, session in list(LANGUAGE.items()):
+                if session.seen < time.time() - 60 or not session.alive():
+                    session.stop()
+                    del LANGUAGE[key]
+                    shutil.rmtree(session.root, ignore_errors=True)
+
+def language_key(data):
+    key = data['sessionId']
+    if not isinstance(key, str) or not 8 <= len(key) <= 64 or not key.replace('-', '').isalnum():
+        raise ValueError('Invalid session.')
+    return key
+
+def language_request(path, data):
+    key = language_key(data)
+    if path == '/language/open':
+        with LOCK:
+            upload = UPLOADS.pop(data['id'])
+        with LANGUAGE_LOCK:
+            previous = LANGUAGE.pop(key, None)
+            if previous: previous.stop()
+            while len(LANGUAGE) >= MAX_LANGUAGE_SESSIONS:
+                oldest = min(LANGUAGE, key=lambda k: LANGUAGE[k].seen)
+                LANGUAGE.pop(oldest).stop()
+        session = LanguageSession(key, bytes(upload['data']))
+        with LANGUAGE_LOCK: LANGUAGE[key] = session
+        return {'root': str(session.root)}
+    with LANGUAGE_LOCK: session = LANGUAGE.get(key)
+    if not session or not session.alive(): return {'closed': True}
+    if path == '/language/send':
+        messages = data['messages']
+        if not isinstance(messages, list): raise ValueError('Invalid messages.')
+        session.seen = time.time()
+        session.send(messages)
+        return {}
+    if path == '/language/poll':
+        # Held below the browser's 30-second request timeout.
+        return {'messages': session.poll(20)}
+    raise KeyError(path)
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass  # Never log bearer tokens or URL query strings.
     def send(self, code, data, content_type='application/json'):
@@ -122,6 +240,13 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= 2*1024*1024: raise ValueError('Invalid request size.')
             data = json.loads(self.rfile.read(length))
             path = urlparse(self.path).path
+            if path.startswith('/language/'):
+                # Long polls and clangd startup must not hold the build lock.
+                try: result = language_request(path, data)
+                except KeyError: return self.send(404, b'{}')
+                except (OSError, subprocess.SubprocessError) as error:
+                    return self.send(503, json.dumps({'error': f'Language server failed: {error}'}).encode())
+                return self.send(200, json.dumps(result).encode())
             with LOCK:
                 now = time.time()
                 for key in list(UPLOADS):
@@ -166,4 +291,5 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     ROOT.mkdir(parents=True, exist_ok=True)
+    threading.Thread(target=language_janitor, daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', 8080), Handler).serve_forever()

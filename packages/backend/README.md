@@ -31,6 +31,14 @@ build dependencies are supplied by the build image and are not committed to
 program Git repositories. The template research and first-party sources are in
 [`docs/research/code-templates.md`](../../docs/research/code-templates.md).
 
+## Folder imports
+
+The dashboard's **Import folder** action imports a local project folder into a
+new repository. Source is staged in authenticated batches before the project is
+created. Repository setup preserves the uploaded files instead of seeding a
+template, and failed setup can be retried from the original staged contents.
+See [folder import](../../docs/folder-import.md) for exclusions, limits, and cleanup.
+
 ## Files and live editing
 
 - `codeStorage.listFiles` reads a page of up to 500 repository paths from Code

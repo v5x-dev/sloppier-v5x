@@ -42,14 +42,21 @@ const fileChangeValidator = v.union(
 // Pin one committed source snapshot for direct browser-to-machine builds.
 export const buildManifest = action({
   args: { projectId: v.id("projects") },
-  handler: async (ctx, { projectId }) => {
+  handler: async (
+    ctx,
+    { projectId }
+  ): Promise<{ sha: string; paths: string[] }> => {
     const project = await requireAuthorizedProject(ctx, projectId)
     const repo = storage().repo({
       id: project.repositoryId,
       defaultBranch: "main",
     })
-    const history = await repo.listCommits({ branch: "main", limit: 1 })
-    const sha = history.commits[0]?.sha
+    // Live-edit backups also commit to main, but only under .v5x/. Pin the
+    // recorded source head so builds, stale-diagnostic checks, and upload
+    // reuse all compare the same SHA that users' commits record.
+    const sha =
+      project.repositoryHeadSha ??
+      (await repo.listCommits({ branch: "main", limit: 1 })).commits[0]?.sha
     if (!sha) throw new Error("Repository has no committed source.")
     const paths: string[] = []
     let cursor: string | undefined
@@ -328,12 +335,58 @@ export const provisionProject = internalAction({
     if (!project || project.repositoryStatus === "ready") return
 
     try {
-      const files = (await loadTemplateFiles(project.template, project.name))
-        .filter(
-          (file) =>
-            !isFirmwarePath(file.path) &&
-            !isBuildDependency(project.template, file.path)
+      if (project.importId) {
+        const source = await ctx.runQuery(
+          internal.projects.folderImportSource,
+          { importId: project.importId }
         )
+        if (
+          !source ||
+          source.projectId !== projectId ||
+          source.paths.length !== source.expectedFiles
+        )
+          throw new Error("Folder import source is incomplete.")
+        const repo = await getOrCreateRepository(
+          storage(),
+          project.repositoryId
+        )
+        let headSha = ""
+        for (let sequence = 0; sequence < source.batches; sequence++) {
+          const batch = await ctx.runQuery(
+            internal.projects.folderImportBatch,
+            { importId: project.importId, sequence }
+          )
+          if (!batch) throw new Error("Folder import batch is missing.")
+          const result = await commitChanges(
+            repo,
+            batch.files.map((file) => ({
+              operation: "put" as const,
+              path: file.path,
+              contents: new Uint8Array(file.contents),
+            })),
+            `Import ${project.name} folder`,
+            commitAuthor("V5X Import", "imports@v5x.local")
+          )
+          headSha = result.commitSha
+        }
+        await ctx.runMutation(internal.projects.markRepositoryReady, {
+          projectId,
+          headSha,
+          files: source.paths,
+          origin: "user",
+        })
+        await ctx.scheduler.runAfter(0, internal.projects.cleanupFolderImport, {
+          importId: project.importId,
+        })
+        return
+      }
+      const files = (
+        await loadTemplateFiles(project.template, project.name)
+      ).filter(
+        (file) =>
+          !isFirmwarePath(file.path) &&
+          !isBuildDependency(project.template, file.path)
+      )
       const store = storage()
       const repo = await getOrCreateRepository(store, project.repositoryId)
 

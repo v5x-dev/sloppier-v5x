@@ -1,3 +1,4 @@
+import { ActionTooltip } from "./action-tooltip"
 import { format, formatDistanceToNow } from "date-fns"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAction } from "convex/react"
@@ -175,18 +176,19 @@ export function ProgramHistory({
         if (!restoring) setOpen(value)
       }}
     >
-      <PopoverTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Program history"
-            title="Program history"
-          />
-        }
-      >
-        <ClockCounterClockwiseIcon />
-      </PopoverTrigger>
+      <ActionTooltip label="Program history">
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Program history"
+            />
+          }
+        >
+          <ClockCounterClockwiseIcon />
+        </PopoverTrigger>
+      </ActionTooltip>
       <PopoverContent
         side="top"
         align="start"

@@ -54,7 +54,31 @@ export default defineSchema({
     .index("by_workspace", ["workspaceId"])
     .index("by_email", ["email"]),
 
+  programImports: defineTable({
+    workspaceId: v.id("workspaces"),
+    userId: v.string(),
+    name: v.string(),
+    template: v.union(
+      v.literal("vexcode"),
+      v.literal("jar"),
+      v.literal("pros"),
+      v.literal("ez-template")
+    ),
+    expectedFiles: v.number(),
+    paths: v.array(v.string()),
+    totalBytes: v.number(),
+    batches: v.number(),
+    expiresAt: v.number(),
+    projectId: v.optional(v.id("projects")),
+  }),
+  programImportBatches: defineTable({
+    importId: v.id("programImports"),
+    sequence: v.number(),
+    files: v.array(v.object({ path: v.string(), contents: v.bytes() })),
+  }).index("by_import_sequence", ["importId", "sequence"]),
+
   projects: defineTable({
+    importId: v.optional(v.id("programImports")),
     workspaceId: v.id("workspaces"),
     name: v.string(),
     template: v.union(

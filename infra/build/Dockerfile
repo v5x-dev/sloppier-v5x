@@ -3,6 +3,8 @@ ARG TOOLCHAIN_IMAGE=ubuntu:24.04
 FROM ${TOOLCHAIN_IMAGE}
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make clang gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib ca-certificates && rm -rf /var/lib/apt/lists/*
+# Completion runs clangd beside builds; a separate layer keeps toolchain layers reusable.
+RUN apt-get update && apt-get install -y --no-install-recommends clangd && rm -rf /var/lib/apt/lists/*
 COPY vendor/sdk /opt/vex/sdk
 COPY vendor/deps /opt/v5x/deps
 COPY v5x-build v5x-cxx v5x-server /usr/local/bin/

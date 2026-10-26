@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { ActionTooltip } from "./action-tooltip"
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
 import {
   HammerIcon,
   XIcon,
@@ -90,8 +91,8 @@ export function ProgramBuild({
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
   }, [logs, open, tab])
-  async function build() {
-    setOpen(true)
+  async function build(showSheet = true) {
+    if (showSheet) setOpen(true)
     setPending(true)
     try {
       await submitBuild(request, await prepareSource())
@@ -105,38 +106,64 @@ export function ProgramBuild({
       setPending(false)
     }
   }
+  function buildOrOpen() {
+    if (building || !ready) setOpen(true)
+    else void build()
+  }
+  const buildFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      !(event.ctrlKey || event.metaKey) ||
+      event.altKey ||
+      event.shiftKey ||
+      event.isComposing ||
+      event.repeat ||
+      event.key.toLowerCase() !== "b"
+    )
+      return
+    event.preventDefault()
+    if (building || !ready) return
+    void build(false)
+  })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => buildFromKeyboard(event)
+    window.addEventListener("keydown", onKeyDown, true)
+    return () => window.removeEventListener("keydown", onKeyDown, true)
+  }, [])
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={state?.building ? "View build logs" : "Build program"}
-        title={state?.building ? "View build logs" : "Build program"}
-        aria-busy={building}
-        onClick={() => {
-          if (building || !ready) setOpen(true)
-          else void build()
-        }}
+      <ActionTooltip
+        label={state?.building ? "View build logs" : "Build program"}
       >
-        <HammerIcon />
-      </Button>
-      {revision && (
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`View build problems, ${errors} errors, ${warnings} warnings`}
-          title="View build problems"
-          onClick={() => {
-            setTab("problems")
-            setOpen(true)
-          }}
+          aria-label={state?.building ? "View build logs" : "Build program"}
+          aria-busy={building}
+          onClick={buildOrOpen}
         >
-          {errors ? (
-            <WarningCircleIcon className="text-destructive" />
-          ) : (
-            <FileCodeIcon />
-          )}
+          {building ? <Spinner /> : <HammerIcon />}
         </Button>
+      </ActionTooltip>
+      {revision && diagnostics.length > 0 && (
+        <ActionTooltip
+          label={`View build problems, ${errors} errors, ${warnings} warnings`}
+        >
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`View build problems, ${errors} errors, ${warnings} warnings`}
+            onClick={() => {
+              setTab("problems")
+              setOpen(true)
+            }}
+          >
+            {errors ? (
+              <WarningCircleIcon className="text-destructive" />
+            ) : (
+              <FileCodeIcon />
+            )}
+          </Button>
+        </ActionTooltip>
       )}
       <Sheet
         open={open}
@@ -224,7 +251,7 @@ export function ProgramBuild({
                   </Badge>
                 </TabsTrigger>
                 <TabsTrigger value="output" className="px-2 text-xs">
-                  Build output
+                  Output
                 </TabsTrigger>
               </TabsList>
               <div

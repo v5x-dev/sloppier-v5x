@@ -31,6 +31,8 @@ import {
   source,
 } from "@/lib/live-document"
 import { errorMessage } from "@/lib/errors"
+import { useEditorCompletion } from "./editor-completion"
+import { useLanguageClient } from "./language-session"
 
 const createEditor: EditorFactory<undefined, { name: string }> = (
   type,
@@ -67,6 +69,9 @@ export function LiveFileEditor({
   const client = useConvex()
   const connection = useConvexConnectionState()
   const { user } = useAuth()
+  const language = useLanguageClient()
+  const languageRef = useRef(language)
+  languageRef.current = language
   const host = useRef<HTMLDivElement>(null)
   const callbacks = useRef({ onChange, onSyncChange, onPeopleChange })
   callbacks.current = { onChange, onSyncChange, onPeopleChange }
@@ -122,6 +127,7 @@ export function LiveFileEditor({
     let stopUpdates: (() => void) | undefined
     let stopStorage: (() => void) | undefined
     let stopPresence: (() => void) | undefined
+    let stopLanguage: (() => void) | undefined
     let sequence = 0
     let documentId: Id<"crdtDocuments"> | undefined
     let replaced = false
@@ -359,6 +365,7 @@ export function LiveFileEditor({
         )
       )
       bindingRef.current = collaboration
+      stopLanguage = languageRef.current?.openDocument(path, source(doc))
       setBinding(collaboration)
       setReady(true)
       changed()
@@ -464,6 +471,7 @@ export function LiveFileEditor({
       stopUpdates?.()
       stopStorage?.()
       stopPresence?.()
+      stopLanguage?.()
       collaboration?.destroy()
       bindingRef.current = null
       awareness.destroy()
@@ -548,44 +556,54 @@ function PierreFile({
       })
     }
   }, [binding, diagnosticTarget])
+  const completion = useEditorCompletion(binding, path)
   const file = useRef({
     name: path,
     contents: binding.document.getText(),
     cacheKey: `${projectId}:${path}:${binding.shared.clientID}`,
   }).current
   return (
-    <EditProvider createEditor={createEditor}>
-      <File<undefined, { name: string }>
-        file={file}
-        edit
-        options={editorThemeOptions}
-        editorOptions={{
-          initialState: { type: "file", document: binding.document },
-          onAttach: (editor) => {
-            binding.attach(editor)
-            const target = targetRef.current
-            if (target && appliedTarget.current !== target.request) {
-              appliedTarget.current = target.request
-              editor.focus({
-                lineNumber: target.line,
-                character: Math.max(0, (target.column ?? 1) - 1),
-              })
-            }
-          },
-          renderCaret: (caret) => {
-            const marker = document.createElement("span")
-            marker.setAttribute("aria-label", `${caret.metadata.name}'s cursor`)
-            marker.style.cssText = `display:block;position:relative;width:2px;height:100%;background:${caret.metadata.color}`
-            const label = document.createElement("span")
-            label.textContent = caret.metadata.name
-            label.style.cssText = `position:absolute;bottom:100%;left:0;white-space:nowrap;padding:2px 4px;border-radius:3px 3px 3px 0;font:11px var(--font-serif);color:#111;background:${caret.metadata.color}`
-            marker.append(label)
-            return marker
-          },
-        }}
-        onEditChange={(event) => binding.localChange(event)}
-        onEditComplete={() => "accept"}
-      />
-    </EditProvider>
+    <div ref={completion.wrapper} className="contents">
+      <EditProvider createEditor={createEditor}>
+        <File<undefined, { name: string }>
+          file={file}
+          edit
+          options={editorThemeOptions}
+          editorOptions={{
+            initialState: { type: "file", document: binding.document },
+            onAttach: (editor) => {
+              binding.attach(editor)
+              const target = targetRef.current
+              if (target && appliedTarget.current !== target.request) {
+                appliedTarget.current = target.request
+                editor.focus({
+                  lineNumber: target.line,
+                  character: Math.max(0, (target.column ?? 1) - 1),
+                })
+              }
+            },
+            renderCaret: (caret) => {
+              const marker = document.createElement("span")
+              marker.setAttribute(
+                "aria-label",
+                `${caret.metadata.name}'s cursor`
+              )
+              marker.style.cssText = `display:block;position:relative;width:2px;height:100%;background:${caret.metadata.color}`
+              const label = document.createElement("span")
+              label.textContent = caret.metadata.name
+              label.style.cssText = `position:absolute;bottom:100%;left:0;white-space:nowrap;padding:2px 4px;border-radius:3px 3px 3px 0;font:11px var(--font-serif);color:#111;background:${caret.metadata.color}`
+              marker.append(label)
+              return marker
+            },
+          }}
+          onEditChange={(event) => {
+            binding.localChange(event)
+            completion.onLocalChange(event)
+          }}
+          onEditComplete={() => "accept"}
+        />
+      </EditProvider>
+      {completion.popup}
+    </div>
   )
 }

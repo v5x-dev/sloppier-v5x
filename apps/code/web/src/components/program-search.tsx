@@ -1,3 +1,4 @@
+import { ActionTooltip } from "./action-tooltip"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { useAction, useQuery } from "convex/react"
 import { MagnifyingGlassIcon, FileCodeIcon, XIcon } from "@phosphor-icons/react"
@@ -233,15 +234,16 @@ export function ProgramSearch({
   }
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Search project"
-        title="Search project (Ctrl/Cmd+Shift+F)"
-        onClick={() => setOpen(true)}
-      >
-        <MagnifyingGlassIcon />
-      </Button>
+      <ActionTooltip label="Search program">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Search program"
+          onClick={() => setOpen(true)}
+        >
+          <MagnifyingGlassIcon />
+        </Button>
+      </ActionTooltip>
       <Sheet
         open={open}
         onOpenChange={setOpen}
@@ -256,7 +258,7 @@ export function ProgramSearch({
       >
         <SheetContent
           side="right"
-          aria-label="Search project"
+          aria-label="Search program"
           showCloseButton={false}
           onKeyDown={(event) => {
             if (

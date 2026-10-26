@@ -14,7 +14,8 @@ export type BuildStatus = {
   artifactId: string | null
 }
 
-export async function submitBuild(
+/** Upload a source snapshot in chunks that fit the cloud request limit. */
+export async function uploadSource(
   request: BuildRequest,
   source: BuildSource,
   signal?: AbortSignal
@@ -28,6 +29,15 @@ export async function submitBuild(
       text += String.fromCharCode(byte)
     await request("/upload", { id, offset, data: btoa(text) }, signal)
   }
+  return id
+}
+
+export async function submitBuild(
+  request: BuildRequest,
+  source: BuildSource,
+  signal?: AbortSignal
+) {
+  const id = await uploadSource(request, source, signal)
   await request("/build", { id, commit: source.sha }, signal)
 }
 

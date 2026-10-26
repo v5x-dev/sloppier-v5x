@@ -1,6 +1,8 @@
+import { ActionTooltip } from "./action-tooltip"
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useId,
   useRef,
   useState,
@@ -40,6 +42,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { toast } from "@workspace/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
 
 import { ProgramConsole } from "./program-console"
@@ -122,7 +125,7 @@ export function ProgramUpload({
     })
   }, [consoleConnection])
 
-  async function operation(action: () => Promise<void>) {
+  async function operation(action: () => Promise<void>, notify = false) {
     if (busyRef.current) return
     busyRef.current = true
     setBusy(true)
@@ -132,6 +135,13 @@ export function ProgramUpload({
       await consoleQueue.current
       await action()
     } catch (err) {
+      // Keyboard-started work has no open popover to show the error in.
+      if (notify)
+        toast.add({
+          type: "error",
+          title: "Could not upload",
+          description: errorMessage(err),
+        })
       if (mounted.current) {
         setError(errorMessage(err))
         setMessage(null)
@@ -204,7 +214,7 @@ export function ProgramUpload({
       setMessage("V5 brain connected")
     })
   }
-  function upload() {
+  function upload(fromKeyboard = false) {
     void operation(async () => {
       const selected = device.current
       if (!selected || !paired) return
@@ -240,13 +250,13 @@ export function ProgramUpload({
             setProgress(Math.round(percent))
           },
         })
+        const uploaded = `Uploaded to slot ${targetSlot}${run ? " and started" : ""}.`
         if (mounted.current) {
           setSuccess(true)
-          setMessage(
-            `Uploaded to slot ${targetSlot}${run ? " and started" : ""}.`
-          )
+          setMessage(uploaded)
           setProgress(null)
         }
+        if (fromKeyboard) toast.add({ type: "success", title: uploaded })
       } catch (err) {
         if (!preparing) await disconnect().catch(() => {})
         throw err
@@ -254,24 +264,52 @@ export function ProgramUpload({
         preparation.current = null
         if (mounted.current) setProgress(null)
       }
-    })
+    }, fromKeyboard)
   }
+  const uploadLabel = !connected
+    ? "Connect a V5 brain to upload"
+    : !paired
+      ? "Pair your V5 brain to upload"
+      : "Upload to V5 brain"
+  const uploadFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      !(event.ctrlKey || event.metaKey) ||
+      !event.shiftKey ||
+      event.altKey ||
+      event.isComposing ||
+      event.repeat ||
+      event.key.toLowerCase() !== "b"
+    )
+      return
+    event.preventDefault()
+    if (!paired) {
+      toast.add({ type: "error", title: uploadLabel })
+      return
+    }
+    upload(true)
+  })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => uploadFromKeyboard(event)
+    window.addEventListener("keydown", onKeyDown, true)
+    return () => window.removeEventListener("keydown", onKeyDown, true)
+  }, [])
 
   return (
     <>
       <Popover open={connectOpen} onOpenChange={setConnectOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Connect V5 brain"
-              title="Connect V5 brain"
-            />
-          }
-        >
-          <PlugIcon />
-        </PopoverTrigger>
+        <ActionTooltip label={"Connect V5 brain"}>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Connect V5 brain"
+              />
+            }
+          >
+            <PlugIcon />
+          </PopoverTrigger>
+        </ActionTooltip>
         <PopoverContent
           side="top"
           align="end"
@@ -378,18 +416,20 @@ export function ProgramUpload({
       </Popover>
       {buildAction}
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Upload to V5 brain"
-              title="Upload to V5 brain"
-            />
-          }
-        >
-          <DownloadSimpleIcon />
-        </PopoverTrigger>
+        <ActionTooltip label={uploadLabel}>
+          <PopoverTrigger
+            disabled={!connected || !paired}
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Upload to V5 brain"
+              />
+            }
+          >
+            <DownloadSimpleIcon />
+          </PopoverTrigger>
+        </ActionTooltip>
         <PopoverContent
           side="top"
           align="end"
@@ -470,7 +510,7 @@ export function ProgramUpload({
           </div>
           <Button
             disabled={busy || !paired}
-            onClick={upload}
+            onClick={() => upload()}
             className="w-full"
           >
             <ArrowUpIcon />
