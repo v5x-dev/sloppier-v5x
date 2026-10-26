@@ -4,7 +4,7 @@
     {
       "type": "frame",
       "id": "Qw1Ws",
-      "x": 0,
+      "x": 473,
       "y": 0,
       "name": "Dashboard",
       "theme": {
@@ -612,7 +612,7 @@
     {
       "type": "frame",
       "id": "A2VpW",
-      "x": 473,
+      "x": 0,
       "y": 0,
       "name": "Sign in",
       "theme": {
@@ -897,63 +897,13 @@
                           "alignItems": "center",
                           "children": [
                             {
-                              "type": "frame",
-                              "id": "yDSRN",
-                              "name": "Microsoft icon",
-                              "width": 20,
-                              "height": 20,
-                              "layout": "vertical",
-                              "gap": 2,
-                              "children": [
-                                {
-                                  "type": "frame",
-                                  "id": "j1JAth",
-                                  "name": "Top row",
-                                  "gap": 2,
-                                  "children": [
-                                    {
-                                      "type": "rectangle",
-                                      "id": "BzqYk",
-                                      "name": "Red",
-                                      "fill": "#F25022",
-                                      "width": 9,
-                                      "height": 9
-                                    },
-                                    {
-                                      "type": "rectangle",
-                                      "id": "OEKDN",
-                                      "name": "Green",
-                                      "fill": "#7FBA00",
-                                      "width": 9,
-                                      "height": 9
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "dl0qe",
-                                  "name": "Bottom row",
-                                  "gap": 2,
-                                  "children": [
-                                    {
-                                      "type": "rectangle",
-                                      "id": "X2Wujh",
-                                      "name": "Blue",
-                                      "fill": "#00A4EF",
-                                      "width": 9,
-                                      "height": 9
-                                    },
-                                    {
-                                      "type": "rectangle",
-                                      "id": "FuI99",
-                                      "name": "Yellow",
-                                      "fill": "#FFB900",
-                                      "width": 9,
-                                      "height": 9
-                                    }
-                                  ]
-                                }
-                              ]
+                              "type": "icon",
+                              "id": "p7CZ84",
+                              "width": 24,
+                              "height": 24,
+                              "icon": "windows-logo",
+                              "library": "phosphor",
+                              "fill": "#ffffff"
                             }
                           ]
                         }

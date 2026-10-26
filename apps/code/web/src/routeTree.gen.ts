@@ -14,6 +14,9 @@ import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InvitesInvitationIdRouteImport } from './routes/invites/$invitationId'
 import { Route as ProgramsProgramIdRouteImport } from './routes/programs/$programId'
+import { Route as User_managementAuthenticateRouteImport } from './routes/user_management.authenticate'
+import { Route as User_managementAuthorizeRouteImport } from './routes/user_management.authorize'
+import { Route as User_managementSessionsLogoutRouteImport } from './routes/user_management.sessions.logout'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +43,24 @@ const ProgramsProgramIdRoute = ProgramsProgramIdRouteImport.update({
   path: '/programs/$programId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const User_managementAuthenticateRoute =
+  User_managementAuthenticateRouteImport.update({
+    id: '/user_management/authenticate',
+    path: '/user_management/authenticate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const User_managementAuthorizeRoute =
+  User_managementAuthorizeRouteImport.update({
+    id: '/user_management/authorize',
+    path: '/user_management/authorize',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const User_managementSessionsLogoutRoute =
+  User_managementSessionsLogoutRouteImport.update({
+    id: '/user_management/sessions/logout',
+    path: '/user_management/sessions/logout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +68,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
+  '/user_management/authenticate': typeof User_managementAuthenticateRoute
+  '/user_management/authorize': typeof User_managementAuthorizeRoute
+  '/user_management/sessions/logout': typeof User_managementSessionsLogoutRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +78,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
+  '/user_management/authenticate': typeof User_managementAuthenticateRoute
+  '/user_management/authorize': typeof User_managementAuthorizeRoute
+  '/user_management/sessions/logout': typeof User_managementSessionsLogoutRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +89,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
+  '/user_management/authenticate': typeof User_managementAuthenticateRoute
+  '/user_management/authorize': typeof User_managementAuthorizeRoute
+  '/user_management/sessions/logout': typeof User_managementSessionsLogoutRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +101,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/invites/$invitationId'
     | '/programs/$programId'
+    | '/user_management/authenticate'
+    | '/user_management/authorize'
+    | '/user_management/sessions/logout'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +111,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/invites/$invitationId'
     | '/programs/$programId'
+    | '/user_management/authenticate'
+    | '/user_management/authorize'
+    | '/user_management/sessions/logout'
   id:
     | '__root__'
     | '/'
@@ -85,6 +121,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/invites/$invitationId'
     | '/programs/$programId'
+    | '/user_management/authenticate'
+    | '/user_management/authorize'
+    | '/user_management/sessions/logout'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +132,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   InvitesInvitationIdRoute: typeof InvitesInvitationIdRoute
   ProgramsProgramIdRoute: typeof ProgramsProgramIdRoute
+  User_managementAuthenticateRoute: typeof User_managementAuthenticateRoute
+  User_managementAuthorizeRoute: typeof User_managementAuthorizeRoute
+  User_managementSessionsLogoutRoute: typeof User_managementSessionsLogoutRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +174,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramsProgramIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/user_management/authenticate': {
+      id: '/user_management/authenticate'
+      path: '/user_management/authenticate'
+      fullPath: '/user_management/authenticate'
+      preLoaderRoute: typeof User_managementAuthenticateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/user_management/authorize': {
+      id: '/user_management/authorize'
+      path: '/user_management/authorize'
+      fullPath: '/user_management/authorize'
+      preLoaderRoute: typeof User_managementAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/user_management/sessions/logout': {
+      id: '/user_management/sessions/logout'
+      path: '/user_management/sessions/logout'
+      fullPath: '/user_management/sessions/logout'
+      preLoaderRoute: typeof User_managementSessionsLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -141,6 +204,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   InvitesInvitationIdRoute: InvitesInvitationIdRoute,
   ProgramsProgramIdRoute: ProgramsProgramIdRoute,
+  User_managementAuthenticateRoute: User_managementAuthenticateRoute,
+  User_managementAuthorizeRoute: User_managementAuthorizeRoute,
+  User_managementSessionsLogoutRoute: User_managementSessionsLogoutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -2,7 +2,7 @@
 import { convexTest } from "convex-test"
 import { describe, expect, it } from "vitest"
 import schema from "../convex/schema"
-import { api } from "../convex/_generated/api"
+import { api, internal } from "../convex/_generated/api"
 
 const modules = import.meta.glob("../convex/**/*.ts")
 
@@ -93,5 +93,66 @@ describe("program management", () => {
     expect((await owner.query(api.programs.get, { programId })).name).toBe(
       "Robot"
     )
+  })
+})
+
+describe("repository provisioning recovery", () => {
+  it("exposes retry when the provisioning job terminates without updating the program", async () => {
+    const { t, programId } = await setup()
+    const jobId = await t.run(async (ctx) => {
+      const jobId = await ctx.scheduler.runAfter(
+        60_000,
+        internal.codeStorage.provisionProgram,
+        { programId }
+      )
+      await ctx.scheduler.cancel(jobId)
+      await ctx.db.patch(programId, {
+        repositoryStatus: "provisioning",
+        repositoryProvisioningJob: jobId,
+      })
+      return jobId
+    })
+    await t.mutation(internal.programs.checkProvisioning, { programId, jobId })
+    const program = await t.run((ctx) => ctx.db.get(programId))
+    expect(program?.repositoryStatus).toBe("failed")
+    expect(program?.repositoryError).toContain("retry")
+  })
+
+  it("ignores a terminated job from an earlier attempt and completed programs", async () => {
+    const { t, programId } = await setup()
+    const { oldJob, newJob } = await t.run(async (ctx) => {
+      const oldJob = await ctx.scheduler.runAfter(
+        60_000,
+        internal.codeStorage.provisionProgram,
+        { programId }
+      )
+      const newJob = await ctx.scheduler.runAfter(
+        60_000,
+        internal.codeStorage.provisionProgram,
+        { programId }
+      )
+      await ctx.scheduler.cancel(oldJob)
+      await ctx.scheduler.cancel(newJob)
+      await ctx.db.patch(programId, {
+        repositoryStatus: "provisioning",
+        repositoryProvisioningJob: newJob,
+      })
+      return { oldJob, newJob }
+    })
+    await t.mutation(internal.programs.checkProvisioning, {
+      programId,
+      jobId: oldJob,
+    })
+    expect(
+      (await t.run((ctx) => ctx.db.get(programId)))?.repositoryStatus
+    ).toBe("provisioning")
+    await t.run((ctx) => ctx.db.patch(programId, { repositoryStatus: "ready" }))
+    await t.mutation(internal.programs.checkProvisioning, {
+      programId,
+      jobId: newJob,
+    })
+    expect(
+      (await t.run((ctx) => ctx.db.get(programId)))?.repositoryStatus
+    ).toBe("ready")
   })
 })

@@ -3,14 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "uniwind-types.d.ts"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", "uniwind-types.d.ts"]
 }

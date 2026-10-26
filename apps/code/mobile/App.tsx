@@ -19,29 +19,38 @@ import {
   Text as NativeText,
   useColorScheme,
   View,
-  type ImageSourcePropType,
 } from "react-native"
+
+import {
+  AppleLogo,
+  ArrowRight,
+  EnvelopeSimple,
+  GithubLogo,
+  GoogleLogo,
+  WindowsLogo,
+  type Icon,
+} from "phosphor-react-native"
 
 const providers = [
   {
     id: "google",
     name: "Google",
-    source: require("./assets/phosphor/google-logo.png"),
+    icon: GoogleLogo,
   },
   {
     id: "microsoft",
     name: "Microsoft",
-    source: require("./assets/phosphor/microsoft-logo.png"),
+    icon: WindowsLogo,
   },
   {
     id: "github",
     name: "GitHub",
-    source: require("./assets/phosphor/github-logo.png"),
+    icon: GithubLogo,
   },
   {
     id: "apple",
     name: "Apple",
-    source: require("./assets/phosphor/apple-logo.png"),
+    icon: AppleLogo,
   },
 ] as const
 
@@ -138,9 +147,9 @@ export default function SignInScreen() {
     backgroundColor: string,
     cornerRadius: number
   ) => ({
-    backgroundColor,
+    backgroundColor: usesLiquidGlass ? "transparent" : backgroundColor,
     borderColor: colors.cardBorder,
-    borderWidth: 1,
+    borderWidth: usesLiquidGlass ? 0 : 1,
     borderRadius: cornerRadius,
   })
 
@@ -214,8 +223,8 @@ export default function SignInScreen() {
                         ...glassSurfaceStyle(colors.card, 16),
                       }}
                     >
-                      <HostedImage
-                        source={require("./assets/phosphor/envelope-simple.png")}
+                      <HostedIcon
+                        icon={EnvelopeSimple}
                         size={18}
                         tintColor={colors.mutedForeground}
                       />
@@ -259,8 +268,8 @@ export default function SignInScreen() {
                       testID="continue-with-email"
                       variant="text"
                     >
-                      <HostedImage
-                        source={require("./assets/phosphor/arrow-right.png")}
+                      <HostedIcon
+                        icon={ArrowRight}
                         size={22}
                         tintColor={colors.primaryForeground}
                       />
@@ -322,9 +331,10 @@ export default function SignInScreen() {
                       <Button
                         key={provider.id}
                         disabled={isSigningIn}
-                        onPress={() =>
+                        onPress={() => {
+                          setFeedback(null)
                           void signIn({ provider: provider.id })
-                        }
+                        }}
                         modifiers={glassModifiers("roundedRectangle", 16)}
                         style={{
                           width: "22.8%",
@@ -335,8 +345,8 @@ export default function SignInScreen() {
                         testID={`sign-in-${provider.id}`}
                         variant="text"
                       >
-                        <HostedImage
-                          source={provider.source}
+                        <HostedIcon
+                          icon={provider.icon}
                           size={26}
                           tintColor={colors.foreground}
                           buttonHeight={52}
@@ -360,7 +370,10 @@ export default function SignInScreen() {
                     <NativeText
                       accessibilityRole="link"
                       disabled={isSigningIn}
-                      onPress={() => { setFeedback(null); void signIn({ signUp: true }) }}
+                      onPress={() => {
+                        setFeedback(null)
+                        void signIn({ signUp: true })
+                      }}
                       testID="sign-up"
                       style={{
                         fontFamily: "Merriweather",
@@ -381,13 +394,13 @@ export default function SignInScreen() {
   )
 }
 
-function HostedImage({
-  source,
+function HostedIcon({
+  icon: IconComponent,
   size,
   tintColor,
   buttonHeight,
 }: {
-  source: ImageSourcePropType
+  icon: Icon
   size: number
   tintColor: string
   buttonHeight?: number
@@ -402,11 +415,7 @@ function HostedImage({
           justifyContent: "center",
         }}
       >
-        <Image
-          source={source}
-          resizeMode="contain"
-          style={{ width: size, height: size, tintColor }}
-        />
+        <IconComponent size={size} color={tintColor} weight="regular" />
       </View>
     </RNHostView>
   )

@@ -94,6 +94,7 @@ export default defineSchema({
       v.literal("ready"),
       v.literal("failed")
     ),
+    repositoryProvisioningJob: v.optional(v.id("_scheduled_functions")),
     repositoryHeadSha: v.optional(v.string()),
     repositoryError: v.optional(v.string()),
     createdBy: v.string(),

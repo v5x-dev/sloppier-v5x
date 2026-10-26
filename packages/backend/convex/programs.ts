@@ -4,7 +4,9 @@ import {
   internalQuery,
   mutation,
   query,
+  type MutationCtx,
 } from "./_generated/server"
+import type { Id } from "./_generated/dataModel"
 import { ConvexError, v } from "convex/values"
 import {
   requireIdentity,
@@ -116,9 +118,7 @@ export const create = mutation({
       repositoryId: `programs/${programId}`,
     })
 
-    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProgram, {
-      programId,
-    })
+    await scheduleProvisioning(ctx, programId)
 
     return programId
   },
@@ -141,9 +141,7 @@ export const retryProvisioning = mutation({
       repositoryStatus: "provisioning",
       repositoryError: undefined,
     })
-    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProgram, {
-      programId,
-    })
+    await scheduleProvisioning(ctx, programId)
     return programId
   },
 })
@@ -391,9 +389,7 @@ export const finishFolderImport = mutation({
     })
     await ctx.db.patch(programId, { repositoryId: `programs/${programId}` })
     await ctx.db.patch(importId, { programId })
-    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProgram, {
-      programId,
-    })
+    await scheduleProvisioning(ctx, programId)
     return programId
   },
 })
@@ -438,5 +434,51 @@ export const cleanupFolderImport = internalMutation({
       if (program) await ctx.db.patch(program._id, { importId: undefined })
       await ctx.db.delete(importId)
     }
+  },
+})
+
+// Runtime crashes bypass an action's catch block. Check its scheduler result
+// separately so a failed setup always exposes the retry button.
+async function scheduleProvisioning(
+  ctx: MutationCtx,
+  programId: Id<"programs">
+) {
+  const jobId = await ctx.scheduler.runAfter(
+    0,
+    internal.codeStorage.provisionProgram,
+    {
+      programId,
+    }
+  )
+  await ctx.db.patch(programId, { repositoryProvisioningJob: jobId })
+  await ctx.scheduler.runAfter(10_000, internal.programs.checkProvisioning, {
+    programId,
+    jobId,
+  })
+}
+
+export const checkProvisioning = internalMutation({
+  args: { programId: v.id("programs"), jobId: v.id("_scheduled_functions") },
+  handler: async (ctx, { programId, jobId }) => {
+    const program = await ctx.db.get(programId)
+    if (
+      program?.repositoryStatus !== "provisioning" ||
+      program.repositoryProvisioningJob !== jobId
+    )
+      return
+    const job = await ctx.db.system.get(jobId)
+    if (job?.state.kind === "pending" || job?.state.kind === "inProgress") {
+      await ctx.scheduler.runAfter(
+        10_000,
+        internal.programs.checkProvisioning,
+        { programId, jobId }
+      )
+      return
+    }
+    await ctx.db.patch(programId, {
+      repositoryStatus: "failed",
+      repositoryError:
+        "Repository setup stopped unexpectedly. Please retry setup.",
+    })
   },
 })
