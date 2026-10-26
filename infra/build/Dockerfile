@@ -2,7 +2,14 @@
 ARG TOOLCHAIN_IMAGE=ubuntu:24.04
 FROM ${TOOLCHAIN_IMAGE}
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends python3 make clang gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib ca-certificates && rm -rf /var/lib/apt/lists/*
+# The Cortex-A9 V5 brain uses only thumb/v7-a+simd/softfp for every PROS and VEXcode flag set; drop other ARM multilibs.
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make clang gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib ca-certificates && rm -rf /var/lib/apt/lists/* \
+ && for root in /usr/lib/arm-none-eabi/newlib /usr/lib/gcc/arm-none-eabi/*; do \
+      find "$root/arm" "$root/thumb" -mindepth 1 -maxdepth 1 ! -name v7-a+simd -exec rm -rf {} + \
+      && find "$root/arm" -mindepth 1 -exec rm -rf {} + \
+      && find "$root/thumb/v7-a+simd" -mindepth 1 -maxdepth 1 ! -name softfp -exec rm -rf {} +; \
+    done \
+ && rm -rf /usr/share/doc /usr/share/man /usr/share/info
 # Completion runs clangd beside builds; a separate layer keeps toolchain layers reusable.
 RUN apt-get update && apt-get install -y --no-install-recommends clangd && rm -rf /var/lib/apt/lists/*
 COPY vendor/sdk /opt/vex/sdk

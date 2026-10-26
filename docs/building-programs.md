@@ -45,10 +45,10 @@ Cloud API contracts were checked against [Smolmachines API reference](https://sm
 The `fabulous-hornet-670` development deployment has a dedicated Smolmachines API key for machine create/read/exec/delete and this pinned image:
 
 ```text
-registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:297e7cbcac1a1856b656d869de507dd3231fba6df91cadd6b0fc7c5d827270a1
+registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:5c6d1d2c1cd6545c0d6118025719194c1694316ca988b2896a6e5631facf92cb
 ```
 
-The image is also tagged `20261026-clangd` and includes clangd for autocomplete. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
+The image is also tagged `20261026-slim` and includes clangd for autocomplete. It keeps only the `thumb/v7-a+simd/softfp` ARM multilib, the one every V5 template selects for the Cortex-A9, which cuts the unpacked image from 3.6 GB to 0.96 GB. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
 
 Cloud verification compiled all four templates from editable-only snapshots. Direct-connection verification built EZ-Template, received logs before completion, downloaded both package binaries without Convex storage, and rejected the scoped token on other cloud API routes. A browser build also populated the client-only binary folder. Local PCH reuse and header invalidation checks pass for all four templates.
 
