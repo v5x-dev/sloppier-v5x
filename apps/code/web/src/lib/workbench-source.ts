@@ -407,19 +407,31 @@ export class WorkbenchSource {
     return bytes.buffer
   }
 
-  prepareSource = async () => {
+  prepareSource = () => this.prepareSnapshot(1)
+
+  // Independent repository reads overlap without flooding a Chromebook with
+  // requests. The build snapshot still follows its existing serial path.
+  prepareLanguageSource = () => this.prepareSnapshot(6)
+
+  private async prepareSnapshot(concurrency: number) {
     const { sha, paths } = await this.actions.buildManifest({
       programId: this.programId,
     })
     const files: Record<string, Uint8Array> = {}
     let total = 0
-    for (const path of paths) {
-      const bytes = new Uint8Array(await this.readBytes(path, true, sha))
-      total += bytes.length
-      if (total > 96 * 1024 * 1024)
-        throw new Error("Source snapshot exceeds 96 MiB.")
-      files[path] = bytes
-    }
+    let next = 0
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, paths.length) }, async () => {
+        while (next < paths.length) {
+          const path = paths[next++]
+          const bytes = new Uint8Array(await this.readBytes(path, true, sha))
+          total += bytes.length
+          if (total > 96 * 1024 * 1024)
+            throw new Error("Source snapshot exceeds 96 MiB.")
+          files[path] = bytes
+        }
+      })
+    )
     return { sha, files }
   }
 

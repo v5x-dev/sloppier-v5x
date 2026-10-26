@@ -1,13 +1,31 @@
 # Autocomplete
 
-C and C++ editors get clangd completion and signature help. clangd runs on the program's build machine, beside builds, and the browser talks to it over the same direct, token-scoped Smolmachines connection used for builds. Convex only mints the connect token; no language traffic passes through it.
+C and C++ completion, signature help, hover, definitions, and formatting run in a
+browser worker using clangd compiled to WebAssembly. Smolmachines only build V5
+binaries. Opening a language session does not upload source to a build machine,
+start clangd there, or send HTTP language requests.
 
 ## How it works
 
-- **Session.** `LanguageSession` (`apps/code/web/src/components/editor/language-session.tsx`) owns one `LanguageClient` per tab. When the build machine is ready, it uploads the latest committed snapshot with the build upload chunks and calls `POST /language/open`. Each tab gets its own clangd, so collaborators' unsaved buffers never collide.
-- **Workspace.** `v5x-server` extracts the snapshot to `/home/builder/language/<session>`, separate from the build directory. It then runs the template's real `v5x-build` with `V5X_RECORD` set. In that mode `v5x-cxx` records each compile command instead of compiling, which yields a `compile_commands.json` with exactly the build's flags, defines, SDK paths, and managed dependencies. clangd runs `nice`d with `-j=1`, no background index, and `--query-driver` for the ARM toolchain. Up to three sessions run per machine, and a session is stopped 60 seconds after its last poll.
-- **Transport.** `POST /language/send` carries batched JSON-RPC messages to clangd, in order. `POST /language/poll` long-polls for clangd's messages, held for 20 seconds, which is under the browser's 30-second request timeout. Neither route holds the build lock. When the server answers `{"closed": true}` (machine replaced or session expired), the client re-uploads and reopens.
-- **Live buffers.** `LiveFileEditor` registers each open C/C++ file's Yjs text. Local and remote Yjs deltas become incremental `didChange` notifications with UTF-16 positions, so completion sees uncommitted edits. Files not open in this tab come from the last commit.
+`LanguageSession` owns one `LanguageClient` and one worker per tab. Startup reads
+one pinned source snapshot, with at most six repository reads in flight, and
+transfers its buffers to the worker. The worker installs source at `/workspace`
+and loads the template's SDK headers into its own memory filesystem. Collaborators
+have separate workers and unsaved buffers.
+
+The client batches JSON-RPC messages through `postMessage`. Local and remote Yjs
+edits become incremental `didChange` notifications with UTF-16 positions. Edits
+reach clangd before completion requests. Cancellation and stale-response handling
+follow the same rules as other editor operations. Closed files use the pinned
+snapshot; open files use their live Yjs contents.
+
+clangd runs with one parsing job, memory-backed preambles, no background index,
+no clang-tidy, no automatic include insertion, and at most 100 completion results.
+The compiler targets ARM, using the same PROS/newlib and VEX headers as builds.
+Template defaults live in `compile_flags.txt`. Custom Makefile execution stays on
+the build machine; programs with custom analysis flags should supply `.clangd`,
+`compile_flags.txt`, or `compile_commands.json` using `/workspace` paths.
+
 - **Editor UI.** `useEditorCompletion` (`components/editor/editor-completion.tsx`) follows VS Code's defaults:
   - Identifier characters open quick suggestions after 50 ms, except in comments and strings.
   - clangd's trigger characters (`.`, `->`, `::`, `#include` `"`/`<`/`/`) request immediately.
@@ -21,46 +39,73 @@ C and C++ editors get clangd completion and signature help. clangd runs on the p
 
 Rules that don't depend on the editor (word boundaries, fuzzy match, snippet expansion) live in `lib/completion.ts`. The LSP client lives in `lib/language-client.ts`.
 
-## Toolchain image
+## Runtime and SDK assets
 
-`infra/build/Dockerfile` installs clangd in its own layer. The development deployment's image adds that layer and the updated `v5x-*` scripts on top of the previous published image (`20261026-language`, `sha256:6761b05f…`). That way the registry only receives small new layers; a freshly rebuilt multi-GB toolchain layer fails to upload with 502s.
+`bun run prepare-language` in `apps/code/web` prepares the runtime and SDKs before
+both development and production builds. Upstream downloads are SHA-256 pinned,
+verified on every preparation, and cached outside `public/`. Generation fails on
+an unexpected upstream layout or integrity mismatch.
 
-## Checking it in a browser (agents)
+Generated assets have content hashes in their names and immutable caching. The
+small runtime and SDK manifests revalidate. The Wasm file is stored as gzip and
+served with `Content-Encoding: gzip` and `Content-Type: application/wasm`, so the
+browser can decompress and compile it as a stream. The generator checks the
+Cloudflare 25 MiB per-file limit. Source arrays transfer to the worker, and the
+memory filesystem takes ownership of SDK/source buffers without another copy.
 
-Signing in needs a real WorkOS account. Use demo accounts instead:
+SDK archives are checked in under `infra/language/sdk` so CI and browser sessions
+need no running build machine. PROS and EZ share one newlib download. VEXcode and
+JAR share one VEX SDK download. To regenerate from an installed toolchain image:
 
 ```sh
-node apps/code/web/scripts/completion-demo.mjs pros   # or ez-template, vexcode, jar
+python3 infra/build/prepare-language-sdk.py <toolchain-image>
 ```
 
-This requires `packages/backend/.env.local` to select a `dev:` deployment and working Convex CLI credentials. It registers an ephemeral demo JWT key, creates a program owned by `code-demo-alice`, starts Vite on `127.0.0.1:3001`, and prints the program URL. Ctrl+C stops Vite and clears the demo JWT settings. The machine starts when the page opens; allow about a minute for it and for clangd's first parse.
+The build image and `Smolfile` no longer install clangd. `v5x-server` no longer
+exposes `/language/*`, creates language workspaces, or starts a language janitor.
+Deploy a rebuilt image to remove those services from existing hosted machines.
 
-Run it in the background, then drive it with agent-browser:
+The app sends COOP `same-origin` and COEP `credentialless` headers because the
+pthread runtime requires `SharedArrayBuffer`. Vite applies the same headers during
+development. Cloudflare static-asset headers are in `public/_headers`.
+
+## Benchmarking
+
+The benchmark starts a local static asset server and real headless Chromium. It
+needs no account, Convex credentials, build machine, or editor UI automation.
 
 ```sh
-export AGENT_BROWSER_SESSION=completion-check
-agent-browser set viewport 1440 900
-agent-browser open "<printed Alice URL>"
-agent-browser wait 15000
-agent-browser snapshot -i -c                      # find the textbox "src/main.cpp" ref
-agent-browser click @eN
-agent-browser press Control+End
-agent-browser keyboard inserttext "void probe() { pros:"
-agent-browser wait 20000                          # machine + clangd warm-up
-agent-browser press ":"                           # trigger character → menu
-agent-browser press M; agent-browser press o; agent-browser press t
-agent-browser screenshot completion.png
-agent-browser press Tab                           # accept; Control+z undoes it in one step
+cd apps/code/web
+bun run prepare-language
+bun run benchmark-language
 ```
 
-Notes:
+Install Playwright or point `PLAYWRIGHT_MODULE` at an existing installation.
+`CHROMIUM_PATH` defaults to `/usr/bin/chromium`. Set `LANGUAGE_TEMPLATE` to `pros`,
+`ez-template`, `vexcode`, or `jar`; `BENCHMARK_RUNS` defaults to two worker sessions.
+`BENCHMARK_OUTPUT` saves JSON. `WORKER_BUNDLE` can point at the production worker
+bundle to verify Vite output instead of the benchmark's Bun bundle.
 
-- Press keys one at a time. `keyboard type`/`inserttext` arrive as one multi-character edit, which deliberately doesn't trigger suggestions, just as pasting doesn't.
-- The program's live draft persists across reloads. Reset the test line before rerunning.
-- Hot module reloads remount the editor and drop focus. Reload the page after editing completion code.
-- In the Network panel, `connect/8080/language/*` requests show the direct machine traffic.
+The harness measures worker startup, first completion, median and 95th-percentile
+completion after incremental edits, Wasm heap size, main-thread long tasks, and
+main-thread heartbeat delays. It also checks ARM SDK completion, hover, definition
+reads, formatting, Unicode framing, and missing-header diagnostics.
 
-To test the server without a browser, run the image locally (`docker run -p 18080:8080 -e V5X_TEMPLATE=pros <image>`). Then call `/upload`, `/language/open`, `/language/send`, and `/language/poll` with plain JSON; no token is needed locally.
+Chrome page CPU throttling does **not** throttle dedicated workers. Constrain the
+whole browser process group instead. For example, on a systemd Linux host:
+
+```sh
+systemd-run --user --scope -p CPUQuota=100% -p MemoryMax=2G \
+  env BENCHMARK_ENVIRONMENT="one CPU quota, 2 GiB process-group limit" \
+  bun scripts/benchmark-language.mjs
+```
+
+These limits are a reproducible proxy, not measurements from Chromebook hardware.
+Heap measurements exclude JavaScript, compiler code, browser processes, and GPU
+memory. Network timing uses localhost, so it does not represent a school network.
+
+Run the regression checks with `bun run --cwd apps/code/web test` and
+`python3 infra/build/test-build-server.py` from the repository root.
 
 ## Definitions and hover documentation
 
@@ -78,12 +123,5 @@ highlighted. When clangd returns several locations, the first location is used.
 Pending requests are canceled on navigation or another request, and responses
 for an older document version are ignored.
 
-Toolchain definitions use the direct, session-scoped `POST /language/read`
-endpoint. It accepts only local file URIs resolving inside that language
-session or the installed SDK/compiler header directories. Reads reject binary,
-non-UTF-8, and files larger than 512 KiB. Symlinks are resolved before checking
-the allowed directories. Rebuild and publish the build-machine image with the
-updated `v5x-server`, then update `SMOL_BUILD_IMAGE`, to enable this endpoint on
-hosted machines. Repository navigation and hover use the existing LSP routes.
-
-Check the reader with `python3 infra/build/test-language-read.py`.
+SDK definition reads stay inside the worker's filesystem. They accept only
+program and SDK paths, valid UTF-8 text, and files no larger than 512 KiB.

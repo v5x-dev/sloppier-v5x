@@ -12,19 +12,6 @@ args = sys.argv[1:]
 source = next((a for a in args if a.endswith(('.cpp', '.cc', '.cxx'))), None)
 if '-c' not in args or not source:
     os.execvp(compiler, [compiler, *args])
-record = os.environ.get('V5X_RECORD')
-if record:
-    # Language workspaces need the build's exact compile commands, not objects.
-    import json
-    entry = {'directory': os.getcwd(), 'file': os.path.abspath(source), 'arguments': [compiler, *args]}
-    with open(record, 'a') as log:
-        fcntl.flock(log, fcntl.LOCK_EX)
-        log.write(json.dumps(entry) + '\n')
-    if '-o' in args:
-        output = pathlib.Path(args[args.index('-o') + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.touch()
-    sys.exit(0)
 flags = []
 skip = False
 for arg in args:

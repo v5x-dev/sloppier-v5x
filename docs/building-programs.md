@@ -16,7 +16,7 @@ docker build --platform linux/amd64 -t YOUR_REGISTRY/v5x-build:VERSION infra/bui
 docker push YOUR_REGISTRY/v5x-build:VERSION
 ```
 
-The image installs Clang, clangd, GNU Arm Embedded, Python, and Make. clangd serves editor autocomplete; see [Autocomplete](autocomplete.md). SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode programs use the supplied Makefile. The cloud must be able to pull the image.
+The image installs Clang, GNU Arm Embedded, Python, and Make. Editor autocomplete runs in a browser worker; see [Autocomplete](autocomplete.md). SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode programs use the supplied Makefile. The cloud must be able to pull the image.
 
 Build uploads omit the managed paths listed in `packages/backend/convex/lib/buildDependencies.ts`. The image links those paths from its read-only dependency tree into each build directory. `src/`, `include/main.h`, robot-specific headers such as `autons.hpp` and `subsystems.hpp`, `Makefile`, and `project.pros` remain repository-owned. Existing repositories may still have older committed copies; builds ignore those and use the image versions.
 
@@ -51,7 +51,7 @@ registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppi
 
 Its startup checkpoint is `ckpt-07de92dae97d43d99f3418183fe577e0`.
 
-The image is also tagged `20261026-slim` and includes clangd for autocomplete. It keeps only the `thumb/v7-a+simd/softfp` ARM multilib, the one every V5 template selects for the Cortex-A9, which cuts the unpacked image from 3.6 GB to 0.96 GB. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
+The previous image is also tagged `20261026-slim`. Rebuild the image to remove its older machine-side clangd service. It keeps only the `thumb/v7-a+simd/softfp` ARM multilib, the one every V5 template selects for the Cortex-A9, which cuts the unpacked image from 3.6 GB to 0.96 GB. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
 
 Cloud verification compiled all four templates from editable-only snapshots. Direct-connection verification built EZ-Template, received logs before completion, downloaded both package binaries without Convex storage, and rejected the scoped token on other cloud API routes. A browser build also populated the client-only binary folder. Local PCH reuse and header invalidation checks pass for all four templates.
 

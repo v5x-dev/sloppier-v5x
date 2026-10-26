@@ -10,8 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make cl
       && find "$root/thumb/v7-a+simd" -mindepth 1 -maxdepth 1 ! -name softfp -exec rm -rf {} +; \
     done \
  && rm -rf /usr/share/doc /usr/share/man /usr/share/info
-# Completion runs clangd beside builds; a separate layer keeps toolchain layers reusable.
-RUN apt-get update && apt-get install -y --no-install-recommends clangd && rm -rf /var/lib/apt/lists/*
 COPY vendor/sdk /opt/vex/sdk
 COPY vendor/deps /opt/v5x/deps
 COPY v5x-build v5x-cxx v5x-server /usr/local/bin/

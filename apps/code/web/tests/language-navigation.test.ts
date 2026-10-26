@@ -8,7 +8,7 @@ const range: LspRange = {
 }
 function setup(result: unknown) {
   const client = new LanguageClient(
-    () => null,
+    { start: vi.fn(), send: vi.fn(), read: vi.fn(), stop: vi.fn() },
     async () => {
       throw new Error("unused")
     }

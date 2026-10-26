@@ -216,4 +216,34 @@ describe("workbench source", () => {
       },
     ])
   })
+  it("loads language snapshots in parallel with a fixed request bound and one source revision", async () => {
+    const { source, actions } = setup()
+    const paths = Array.from(
+      { length: 20 },
+      (_, index) => `include/header-${index}.hpp`
+    )
+    actions.buildManifest.mockResolvedValue({ sha: "pinned", paths })
+    let active = 0,
+      peak = 0
+    actions.readFile.mockImplementation(async () => {
+      active++
+      peak = Math.max(peak, active)
+      await Promise.resolve()
+      active--
+      return {
+        bytes: new TextEncoder().encode("header").buffer,
+        contentRange: null,
+        contentType: "text/plain",
+      }
+    })
+    const snapshot = await source.prepareLanguageSource()
+    expect(Object.keys(snapshot.files).sort()).toEqual([...paths].sort())
+    expect(peak).toBeGreaterThan(1)
+    expect(peak).toBeLessThanOrEqual(6)
+    expect(
+      actions.readFile.mock.calls.every(
+        (call) => (call as unknown as [{ ref: string }])[0].ref === "pinned"
+      )
+    ).toBe(true)
+  })
 })

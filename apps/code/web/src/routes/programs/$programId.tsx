@@ -425,7 +425,8 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
 
   return (
     <LanguageSession
-      prepareSource={prepareSource}
+      template={program.template}
+      prepareSource={source.prepareLanguageSource}
       onDefinition={(path, line, column) => {
         if (!paths?.includes(path)) return false
         setDiagnosticTarget((current) => ({

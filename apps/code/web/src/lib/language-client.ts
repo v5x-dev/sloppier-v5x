@@ -1,14 +1,9 @@
 import type { HoverContents } from "./hover-content"
 import type * as Y from "yjs"
-import {
-  uploadSource,
-  type BuildRequest,
-  type BuildSource,
-} from "./build-program"
+import type { BuildSource } from "./build-program"
+import type { LanguageTransport } from "./language/worker-transport"
 
-// Minimal LSP client for clangd on the build machine. Messages travel through
-// the same direct, token-scoped connection as builds: batched POSTs out and
-// long polls back, so nothing passes through Convex.
+// Incremental LSP client. The transport owns the browser worker and SDK files.
 
 export type LspPosition = { line: number; character: number }
 export type LspRange = { start: LspPosition; end: LspPosition }
@@ -111,7 +106,6 @@ export class LanguageClient {
   triggerCharacters = new Set<string>()
   signatureTriggerCharacters = new Set<string>()
   private root: string | null = null
-  private sessionId = crypto.randomUUID()
   private nextId = 1
   private pending = new Map<number, Pending>()
   private outbox: Message[] = []
@@ -123,7 +117,7 @@ export class LanguageClient {
   private controller: AbortController | null = null
 
   constructor(
-    private readonly request: () => BuildRequest | null,
+    private readonly transport: LanguageTransport,
     private readonly prepareSource: () => Promise<BuildSource>
   ) {}
 
@@ -137,55 +131,56 @@ export class LanguageClient {
     return () => void this.readyListeners.delete(listener)
   }
 
-  /** Start or restart the session from the latest committed snapshot. */
+  /** Start or restart the worker from the latest source snapshot. */
   async start() {
     const generation = ++this.generation
     this.reset()
     const controller = new AbortController()
     this.controller = controller
-    const request = this.request()
-    if (!request) return
     try {
-      const source = await this.prepareSource()
-      const id = await uploadSource(request, source, controller.signal)
-      const opened = (await (
-        await request(
-          "/language/open",
-          { sessionId: this.sessionId, id },
-          controller.signal
-        )
-      ).json()) as { root: string }
+      const root = await this.transport.start(
+        this.prepareSource(),
+        (message) => {
+          if (generation === this.generation) this.receive(message)
+        },
+        () => {
+          if (generation === this.generation) this.reset()
+        }
+      )
       if (generation !== this.generation) return
-      this.root = opened.root
-      void this.poll(generation, controller.signal)
-      const result = (await this.call("initialize", {
-        processId: null,
-        rootUri: `file://${this.root}`,
-        capabilities: {
-          general: { positionEncodings: ["utf-16"] },
-          textDocument: {
-            synchronization: { dynamicRegistration: false },
-            hover: { contentFormat: ["markdown", "plaintext"] },
-            definition: { linkSupport: true },
-            completion: {
-              contextSupport: true,
-              completionItem: {
-                snippetSupport: true,
-                labelDetailsSupport: true,
-                documentationFormat: ["plaintext", "markdown"],
+      this.root = root
+      const result = (await this.call(
+        "initialize",
+        {
+          processId: null,
+          rootUri: `file://${this.root}`,
+          capabilities: {
+            general: { positionEncodings: ["utf-16"] },
+            textDocument: {
+              synchronization: { dynamicRegistration: false },
+              hover: { contentFormat: ["markdown", "plaintext"] },
+              definition: { linkSupport: true },
+              completion: {
+                contextSupport: true,
+                completionItem: {
+                  snippetSupport: true,
+                  labelDetailsSupport: true,
+                  documentationFormat: ["plaintext", "markdown"],
+                },
               },
-            },
-            signatureHelp: {
-              contextSupport: true,
-              signatureInformation: {
-                documentationFormat: ["plaintext", "markdown"],
-                parameterInformation: { labelOffsetSupport: true },
-                activeParameterSupport: true,
+              signatureHelp: {
+                contextSupport: true,
+                signatureInformation: {
+                  documentationFormat: ["plaintext", "markdown"],
+                  parameterInformation: { labelOffsetSupport: true },
+                  activeParameterSupport: true,
+                },
               },
             },
           },
         },
-      })) as {
+        AbortSignal.any([controller.signal, AbortSignal.timeout(30_000)])
+      )) as {
         capabilities: {
           completionProvider?: { triggerCharacters?: string[] }
           signatureHelpProvider?: { triggerCharacters?: string[] }
@@ -204,9 +199,7 @@ export class LanguageClient {
       this.setReady(true)
     } catch {
       if (generation === this.generation && !controller.signal.aborted)
-        setTimeout(() => {
-          if (generation === this.generation) void this.start()
-        }, 5000)
+        this.reset()
     }
   }
 
@@ -350,21 +343,8 @@ export class LanguageClient {
   }
 
   async readDefinition(uri: string, signal: AbortSignal) {
-    const request = this.request()
-    if (!request || !this.ready)
-      throw new Error("Language server is connecting.")
-    const response = await request(
-      "/language/read",
-      { sessionId: this.sessionId, uri },
-      signal
-    )
-    const result = (await response.json()) as {
-      path: string
-      contents: string
-      closed?: boolean
-    }
-    if (result.closed) throw new Error("Language session expired. Try again.")
-    return result
+    if (!this.ready) throw new Error("Language server is connecting.")
+    return this.transport.read(uri, signal)
   }
 
   private uri(path: string) {
@@ -401,12 +381,12 @@ export class LanguageClient {
   }
 
   private reset() {
+    this.transport.stop()
     this.controller?.abort()
     this.controller = null
     this.setReady(false)
     this.root = null
     this.outbox = []
-    this.sessionId = crypto.randomUUID()
     for (const pending of this.pending.values())
       pending.reject(new RequestCancelled("Language server restarted."))
     this.pending.clear()
@@ -443,54 +423,21 @@ export class LanguageClient {
   private enqueue(message: Message) {
     const first = this.outbox.length === 0
     this.outbox.push(message)
-    // Keystrokes in one task share a request; sends stay strictly ordered so
+    // Keystrokes in one task share a worker message; sends stay ordered so
     // didChange always reaches clangd before the completion that follows it.
     if (first) this.sending = this.sending.then(() => this.flush())
   }
 
-  private async flush() {
+  private flush() {
     const messages = this.outbox
     this.outbox = []
-    const request = this.request()
-    if (!messages.length || !request || !this.root) return
-    const generation = this.generation
+    if (!messages.length || !this.root) return
     try {
-      const response = (await (
-        await request("/language/send", {
-          sessionId: this.sessionId,
-          messages: messages.map((m) => ({ jsonrpc: "2.0", ...m })),
-        })
-      ).json()) as { closed?: boolean }
-      if (response.closed && generation === this.generation) void this.start()
+      this.transport.send(
+        messages.map((message) => ({ jsonrpc: "2.0", ...message }))
+      )
     } catch {
-      if (generation === this.generation) void this.start()
-    }
-  }
-
-  private async poll(generation: number, signal: AbortSignal) {
-    let failures = 0
-    const stopped = () => generation !== this.generation || signal.aborted
-    while (!stopped()) {
-      const request = this.request()
-      try {
-        if (!request) throw new Error("Build machine is connecting.")
-        const response = (await (
-          await request("/language/poll", { sessionId: this.sessionId }, signal)
-        ).json()) as { messages?: Message[]; closed?: boolean }
-        if (response.closed) {
-          if (generation === this.generation) void this.start()
-          return
-        }
-        failures = 0
-        for (const message of response.messages ?? []) this.receive(message)
-      } catch {
-        if (stopped()) return
-        if (++failures >= 5) {
-          if (generation === this.generation) void this.start()
-          return
-        }
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-      }
+      this.reset()
     }
   }
 

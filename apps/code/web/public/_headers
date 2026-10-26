@@ -1,0 +1,10 @@
+/language/*
+  Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=31536000, immutable
+/language/runtime.json
+  Cache-Control: no-cache
+/language/sdk.json
+  Cache-Control: no-cache
+/language/*.wasm
+  Content-Type: application/wasm
+  Content-Encoding: gzip

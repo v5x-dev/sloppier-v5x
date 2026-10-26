@@ -17,3 +17,8 @@ todos.json
 
 # typescript
 *.tsbuildinfo
+
+# Reproducible browser language runtime and SDK assets
+apps/code/web/public/language/
+.firecrawl/
+apps/code/web/.cache/
