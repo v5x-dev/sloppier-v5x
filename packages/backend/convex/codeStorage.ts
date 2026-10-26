@@ -23,7 +23,7 @@ import {
 } from "@pierre/storage"
 import { ConvexError, v } from "convex/values"
 import { loadTemplateFiles } from "./lib/templates"
-import { isBuildDependency } from "./lib/buildDependencies"
+import { isBuildDependency, isFirmwarePath } from "./lib/buildDependencies"
 import { validateRepositoryPath } from "./lib/paths"
 
 const MAX_COMMIT_BYTES = 512 * 1024
@@ -222,6 +222,14 @@ export const commitFiles = action({
     const paths = new Set<string>()
     const changes = args.changes.map((change) => {
       const path = validateRepositoryPath(change.path)
+      if (
+        change.operation === "put" &&
+        (isFirmwarePath(path) || isBuildDependency(project.template, path))
+      ) {
+        throw new ConvexError(
+          `${path} is firmware or a managed build dependency and cannot be committed.`
+        )
+      }
       if (paths.has(path)) {
         throw new ConvexError(`A commit can change ${path} only once.`)
       }
@@ -320,7 +328,12 @@ export const provisionProject = internalAction({
     if (!project || project.repositoryStatus === "ready") return
 
     try {
-      const files = await loadTemplateFiles(project.template, project.name)
+      const files = (await loadTemplateFiles(project.template, project.name))
+        .filter(
+          (file) =>
+            !isFirmwarePath(file.path) &&
+            !isBuildDependency(project.template, file.path)
+        )
       const store = storage()
       const repo = await getOrCreateRepository(store, project.repositoryId)
 

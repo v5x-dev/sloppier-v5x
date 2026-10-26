@@ -23,9 +23,10 @@ import fails, the project is marked `failed`; members can call
 Call `projects.listTemplates` to get the template IDs and display labels.
 
 The JAR starter is pinned to a JAR-Template commit. PROS and EZ-Template use
-the pinned EZ-Template 3.2.2 example archive: the PROS template keeps the PROS
-4.1.1 kernel files, and the EZ template keeps its complete source and firmware
-tree. The template research and first-party sources are in
+the pinned EZ-Template 3.2.2 example archive. Program repositories contain the
+starter source and configuration; firmware, SDK headers, and other managed
+build dependencies are supplied by the build image and are not committed to
+program Git repositories. The template research and first-party sources are in
 [`docs/research/code-templates.md`](../../docs/research/code-templates.md).
 
 ## Files and live editing

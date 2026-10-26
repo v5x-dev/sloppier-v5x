@@ -17,6 +17,25 @@
       "layout": "none",
       "children": [
         {
+          "type": "path",
+          "id": "Hc5nm",
+          "x": 8,
+          "y": 8,
+          "name": "Continuous sidebar and toolbar shell",
+          "geometry": "M7.2 0h257.6q7.2 0 7.2 7.2v701.6q0 7.2 7.2 7.2h1063.6q7.2 0 7.2 7.2v21.6q0 7.2-7.2 7.2h-1335.6q-7.2 0-7.2-7.2v-737.6q0-7.2 7.2-7.2z",
+          "viewBox": [
+            0,
+            0,
+            1350,
+            752
+          ],
+          "fill": "$sidebar",
+          "width": 1350,
+          "height": 752,
+          "stroke": "#47413D",
+          "strokeWidth": 1
+        },
+        {
           "type": "frame",
           "id": "k2ABhq",
           "x": 8,
@@ -24,10 +43,9 @@
           "name": "Floating repository sidebar",
           "width": 272,
           "height": 752,
-          "fill": "$sidebar",
+          "fill": "#00000000",
           "cornerRadius": "$radius-lg",
           "stroke": "#47413D",
-          "strokeWidth": 1,
           "layout": "vertical",
           "children": [
             {
@@ -35,7 +53,7 @@
               "id": "s2GjI",
               "name": "Program navigation",
               "width": "fill_container",
-              "height": 40,
+              "height": 36,
               "gap": 4,
               "padding": 4,
               "alignItems": "center",
@@ -44,8 +62,8 @@
                   "type": "frame",
                   "id": "kgjG5",
                   "name": "All programs button",
-                  "width": 32,
-                  "height": 32,
+                  "width": 24,
+                  "height": 28,
                   "justifyContent": "center",
                   "alignItems": "center",
                   "children": [
@@ -53,8 +71,8 @@
                       "type": "icon",
                       "id": "AkOOr",
                       "name": "All programs",
-                      "width": 16,
-                      "height": 16,
+                      "width": 14,
+                      "height": 14,
                       "icon": "chevron-left",
                       "library": "lucide",
                       "fill": "$muted-foreground"
@@ -66,7 +84,7 @@
                   "id": "X6HNeH",
                   "name": "Program name",
                   "fill": "$muted-foreground",
-                  "content": "Competition Robot",
+                  "content": "luxuriant-achiever-2933",
                   "fontFamily": "Merriweather",
                   "fontSize": 12,
                   "fontWeight": "500"
@@ -80,19 +98,243 @@
               "width": "fill_container",
               "height": "fill_container",
               "layout": "vertical",
-              "gap": 1,
-              "padding": 8,
+              "padding": [
+                0,
+                8
+              ],
               "children": [
+                {
+                  "type": "frame",
+                  "id": "V7sZ3A",
+                  "name": "Explorer file actions",
+                  "width": "fill_container",
+                  "height": 28,
+                  "gap": 2,
+                  "padding": [
+                    0,
+                    0,
+                    4,
+                    0
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ahUt5",
+                      "name": "New file",
+                      "width": 24,
+                      "height": 24,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ChyhR",
+                          "name": "New file icon",
+                          "width": 12,
+                          "height": 12,
+                          "icon": "file-plus",
+                          "library": "lucide",
+                          "fill": "$sidebar-foreground"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "sThma",
+                      "name": "New folder",
+                      "width": 24,
+                      "height": 24,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "jKxkM",
+                          "name": "New folder icon",
+                          "width": 12,
+                          "height": 12,
+                          "icon": "folder-plus",
+                          "library": "lucide",
+                          "fill": "$sidebar-foreground"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "z7Bl2",
+                      "name": "Collapse all folders",
+                      "width": 24,
+                      "height": 24,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "l3F0M9",
+                          "name": "Collapse all folders icon",
+                          "width": 12,
+                          "height": 12,
+                          "icon": "fold-vertical",
+                          "library": "lucide",
+                          "fill": "$sidebar-foreground"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "YPP6c",
+                  "name": "Explorer bin",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 4,
+                  "padding": [
+                    0,
+                    4
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Z10Lu",
+                      "name": "bin icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "chevron-down",
+                      "library": "lucide",
+                      "fill": "$sidebar-foreground"
+                    },
+                    {
+                      "type": "text",
+                      "id": "I6cCZ",
+                      "name": "bin filename",
+                      "fill": "$sidebar-foreground",
+                      "content": "bin",
+                      "fontFamily": "Merriweather",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ly5xu",
+                  "name": "Explorer cold.package.bin",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 4,
+                  "padding": [
+                    0,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "wDnYh",
+                      "name": "cold.package.bin icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "file",
+                      "library": "lucide",
+                      "fill": "$muted-foreground"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uRi8A",
+                      "name": "cold.package.bin filename",
+                      "fill": "$sidebar-foreground",
+                      "content": "cold.package.bin",
+                      "fontFamily": "Merriweather",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EkU9S",
+                  "name": "Explorer hot.package.bin",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 4,
+                  "padding": [
+                    0,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "a4Ivw",
+                      "name": "hot.package.bin icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "file",
+                      "library": "lucide",
+                      "fill": "$muted-foreground"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RC1c7",
+                      "name": "hot.package.bin filename",
+                      "fill": "$sidebar-foreground",
+                      "content": "hot.package.bin",
+                      "fontFamily": "Merriweather",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "o9p8qN",
+                  "name": "Explorer firmware",
+                  "width": "fill_container",
+                  "height": 24,
+                  "fill": "$sidebar-accent",
+                  "cornerRadius": 4,
+                  "gap": 4,
+                  "padding": [
+                    0,
+                    4
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "rZOFN",
+                      "name": "firmware icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "chevron-right",
+                      "library": "lucide",
+                      "fill": "$sidebar-foreground"
+                    },
+                    {
+                      "type": "text",
+                      "id": "o5wz1",
+                      "name": "firmware filename",
+                      "fill": "$sidebar-foreground",
+                      "content": "firmware",
+                      "fontFamily": "Merriweather",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
                 {
                   "type": "frame",
                   "id": "idqDr",
                   "name": "Explorer include",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    8
+                    4
                   ],
                   "alignItems": "center",
                   "children": [
@@ -109,7 +351,10 @@
                     {
                       "type": "icon",
                       "id": "EfNzR",
+                      "x": 27,
+                      "y": 7,
                       "name": "include icon",
+                      "enabled": false,
                       "width": 14,
                       "height": 14,
                       "icon": "folder-open",
@@ -123,8 +368,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "include",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -133,11 +378,11 @@
                   "id": "jngvm",
                   "name": "Explorer main.h",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    24
+                    20
                   ],
                   "alignItems": "center",
                   "children": [
@@ -165,8 +410,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "main.h",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -175,11 +420,11 @@
                   "id": "P3Oyl",
                   "name": "Explorer pros",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    24
+                    20
                   ],
                   "alignItems": "center",
                   "children": [
@@ -196,7 +441,10 @@
                     {
                       "type": "icon",
                       "id": "kPoAz",
+                      "x": 43,
+                      "y": 7,
                       "name": "pros icon",
+                      "enabled": false,
                       "width": 14,
                       "height": 14,
                       "icon": "folder",
@@ -210,8 +458,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "pros",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -220,11 +468,11 @@
                   "id": "I1mIA",
                   "name": "Explorer src",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    8
+                    4
                   ],
                   "alignItems": "center",
                   "children": [
@@ -241,7 +489,10 @@
                     {
                       "type": "icon",
                       "id": "ZxgcW",
+                      "x": 27,
+                      "y": 7,
                       "name": "src icon",
+                      "enabled": false,
                       "width": 14,
                       "height": 14,
                       "icon": "folder-open",
@@ -255,8 +506,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "src",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -265,13 +516,13 @@
                   "id": "ODd7F",
                   "name": "Explorer main.cpp",
                   "width": "fill_container",
-                  "height": 28,
+                  "height": 24,
                   "fill": "$sidebar-accent",
                   "cornerRadius": 4,
-                  "gap": 7,
+                  "gap": 4,
                   "padding": [
                     0,
-                    24
+                    20
                   ],
                   "alignItems": "center",
                   "children": [
@@ -299,8 +550,8 @@
                       "fill": "$sidebar-accent-foreground",
                       "content": "main.cpp",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -309,11 +560,11 @@
                   "id": "tAjga",
                   "name": "Explorer autonomous.cpp",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    24
+                    20
                   ],
                   "alignItems": "center",
                   "children": [
@@ -341,8 +592,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "autonomous.cpp",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -351,11 +602,11 @@
                   "id": "pgvSG",
                   "name": "Explorer drive.cpp",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    24
+                    20
                   ],
                   "alignItems": "center",
                   "children": [
@@ -383,8 +634,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "drive.cpp",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -393,11 +644,11 @@
                   "id": "XLnl7",
                   "name": "Explorer .gitignore",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    8
+                    4
                   ],
                   "alignItems": "center",
                   "children": [
@@ -425,8 +676,8 @@
                       "fill": "$sidebar-foreground",
                       "content": ".gitignore",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -435,11 +686,11 @@
                   "id": "Q6Z0dh",
                   "name": "Explorer Makefile",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    8
+                    4
                   ],
                   "alignItems": "center",
                   "children": [
@@ -467,8 +718,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "Makefile",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -477,11 +728,11 @@
                   "id": "JyvTP",
                   "name": "Explorer project.pros",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    8
+                    4
                   ],
                   "alignItems": "center",
                   "children": [
@@ -509,8 +760,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "project.pros",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
@@ -519,11 +770,11 @@
                   "id": "C9wf0F",
                   "name": "Explorer README.md",
                   "width": "fill_container",
-                  "height": 28,
-                  "gap": 7,
+                  "height": 24,
+                  "gap": 4,
                   "padding": [
                     0,
-                    8
+                    4
                   ],
                   "alignItems": "center",
                   "children": [
@@ -551,8 +802,8 @@
                       "fill": "$sidebar-foreground",
                       "content": "README.md",
                       "fontFamily": "Merriweather",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 }
@@ -2910,7 +3161,7 @@
           "name": "Joined actions toolbar",
           "width": 1086,
           "height": 36,
-          "fill": "$sidebar",
+          "fill": "#00000000",
           "cornerRadius": [
             0,
             7.2,
@@ -2918,7 +3169,6 @@
             0
           ],
           "stroke": "#47413D",
-          "strokeWidth": 1,
           "gap": 4,
           "padding": [
             0,
@@ -3062,16 +3312,6 @@
               ]
             }
           ]
-        },
-        {
-          "type": "rectangle",
-          "id": "Z6W6NW",
-          "x": 271,
-          "y": 725,
-          "name": "Sidebar toolbar shared edge",
-          "fill": "$sidebar",
-          "width": 10,
-          "height": 34
         }
       ]
     }

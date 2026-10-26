@@ -144,11 +144,7 @@ function ProgramPage() {
   const program = useQuery(api.projects.get, { projectId })
 
   if (program === undefined) {
-    return (
-      <div className="flex h-svh items-center justify-center">
-        <Spinner className="size-5 text-muted-foreground" />
-      </div>
-    )
+    return <ProgramBootShape />
   }
 
   if (program.repositoryStatus === "ready") {
@@ -163,6 +159,56 @@ function ProgramPage() {
     <div className="flex h-svh flex-col">
       <ProvisioningState program={program} />
     </div>
+  )
+}
+
+// Convex has no project result during SSR. Render the empty workbench frame so
+// the page has its final shape before the project query hydrates.
+function ProgramBootShape() {
+  return (
+    <SidebarProvider
+      className="h-svh min-h-0"
+      style={
+        {
+          "--sidebar-width": "18rem",
+          "--sidebar-border":
+            "color-mix(in oklab, var(--foreground) 20%, var(--background))",
+        } as React.CSSProperties
+      }
+    >
+      <Sidebar variant="floating">
+        <SidebarHeader className="flex-row items-center gap-1 p-1 text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            render={<Link to="/" aria-label="All programs" />}
+            nativeButton={false}
+          >
+            <CaretLeftIcon />
+          </Button>
+        </SidebarHeader>
+        <SidebarContent className="overflow-hidden" />
+        <SidebarFooter className="items-start p-3" />
+      </Sidebar>
+      <SidebarInset className="min-h-0 min-w-0 pt-2">
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <Empty className="flex-1">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileDashedIcon />
+              </EmptyMedia>
+              <EmptyTitle>Pick a file</EmptyTitle>
+              <EmptyDescription>
+                Choose a file from the tree to start editing.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </div>
+        <ActionsBar activePath={null} leftAction={null}>
+          {null}
+        </ActionsBar>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 
@@ -819,7 +865,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                   key={loaded[path]?.editorKey ?? path}
                   value={path}
                   keepMounted
-                  className="no-scrollbar min-h-0 overflow-auto"
+                  className="no-scrollbar relative min-h-0 overflow-auto"
                   onScroll={(event) => {
                     if (path === activePath) {
                       scrollPositions.current.set(
@@ -872,7 +918,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                       }}
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center">
                       <Spinner className="text-muted-foreground" />
                     </div>
                   )}

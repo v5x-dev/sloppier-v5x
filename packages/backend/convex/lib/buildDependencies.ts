@@ -22,3 +22,7 @@ export function isBuildDependency(template: ProgramTemplate, path: string) {
     (prefix) => path === prefix || path.startsWith(`${prefix}/`)
   )
 }
+
+export function isFirmwarePath(path: string) {
+  return path === "firmware" || path.startsWith("firmware/")
+}

@@ -16,9 +16,9 @@ docker build --platform linux/amd64 -t YOUR_REGISTRY/v5x-build:VERSION infra/bui
 docker push YOUR_REGISTRY/v5x-build:VERSION
 ```
 
-The image installs Clang, GNU Arm Embedded, Python, and Make. SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. JAR uses its upstream make rules. Generic VEXcode projects use the supplied Makefile. The cloud must be able to pull the image.
+The image installs Clang, GNU Arm Embedded, Python, and Make. SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode projects use the supplied Makefile. The cloud must be able to pull the image.
 
-Build uploads omit the managed paths listed in `packages/backend/convex/lib/buildDependencies.ts`. The image links those paths from its read-only dependency tree into each build directory. `src/`, `include/main.h`, robot-specific headers such as `autons.hpp` and `subsystems.hpp`, `Makefile`, and `project.pros` remain repository-owned. Existing repositories may still contain copies of managed files; builds use the image versions.
+Build uploads omit the managed paths listed in `packages/backend/convex/lib/buildDependencies.ts`. The image links those paths from its read-only dependency tree into each build directory. `src/`, `include/main.h`, robot-specific headers such as `autons.hpp` and `subsystems.hpp`, `Makefile`, and `project.pros` remain repository-owned. Existing repositories may still have older committed copies; builds ignore those and use the image versions.
 
 C++ compilation uses a precompiled `vex.h` or `main.h`. The wrapper hashes compiler options and project header contents, serializes creation with a file lock, and reuses the result across builds on the same machine. Header changes invalidate it. Machine deletion clears the cache.
 

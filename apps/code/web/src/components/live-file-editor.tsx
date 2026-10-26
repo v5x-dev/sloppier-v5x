@@ -578,7 +578,7 @@ function PierreFile({
             marker.style.cssText = `display:block;position:relative;width:2px;height:100%;background:${caret.metadata.color}`
             const label = document.createElement("span")
             label.textContent = caret.metadata.name
-            label.style.cssText = `position:absolute;bottom:100%;left:0;white-space:nowrap;padding:2px 4px;border-radius:3px 3px 3px 0;font:11px sans-serif;color:#111;background:${caret.metadata.color}`
+            label.style.cssText = `position:absolute;bottom:100%;left:0;white-space:nowrap;padding:2px 4px;border-radius:3px 3px 3px 0;font:11px var(--font-serif);color:#111;background:${caret.metadata.color}`
             marker.append(label)
             return marker
           },

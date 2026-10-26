@@ -131,21 +131,12 @@ export function RepositoryExplorer(props: Props) {
   // Pierre captures its initial callbacks, so selection must read current binaries.
   const openRef = useRef(onOpen)
   openRef.current = onOpen
-  const generatedRef = useRef(generatedPaths)
-  generatedRef.current = generatedPaths
   const resetting = useRef(false)
   const { model } = useFileTree({
     paths: [],
     flattenEmptyDirectories: true,
     initialExpansion: "closed",
     density: "compact",
-    renderRowDecoration: ({ item }) =>
-      barePath(item.path) === "bin" && generatedRef.current.length
-        ? {
-            text: "client only",
-            title: "Generated binaries are read-only and excluded from Git.",
-          }
-        : null,
     onSelectionChange: (selected) => {
       if (resetting.current) return
       const path = selected.at(-1)
