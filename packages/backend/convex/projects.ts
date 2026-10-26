@@ -7,6 +7,7 @@ import {
 } from "./_generated/server"
 import { ConvexError, v } from "convex/values"
 import {
+  requireIdentity,
   requireProjectMembership,
   requireWorkspaceMembership,
 } from "./lib/auth"
@@ -23,6 +24,14 @@ const templateValidator = v.union(
 export const listTemplates = query({
   args: {},
   handler: async () => programTemplates,
+})
+
+export const generateName = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireIdentity(ctx)
+    return generateBoringName({ number: true }).dashed
+  },
 })
 
 export const listByWorkspace = query({

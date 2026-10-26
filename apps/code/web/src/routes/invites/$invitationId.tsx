@@ -9,5 +9,18 @@ export const Route = createFileRoute("/invites/$invitationId")({
 function InvitationPage() {
   const { invitationId } = Route.useParams()
   const navigate = Route.useNavigate()
-  return <AuthGate><main className="mx-auto flex min-h-svh max-w-xl items-center px-6 py-12"><div className="w-full"><WorkspaceInvitations invitationId={invitationId} onAccepted={() => void navigate({ to: "/" })} /></div></main></AuthGate>
+  return (
+    <AuthGate>
+      <main className="mx-auto flex min-h-svh max-w-xl items-center px-6 py-12">
+        <div className="w-full">
+          <WorkspaceInvitations
+            invitationId={invitationId}
+            onAccepted={(workspace) =>
+              void navigate({ to: "/", search: { workspace } })
+            }
+          />
+        </div>
+      </main>
+    </AuthGate>
+  )
 }

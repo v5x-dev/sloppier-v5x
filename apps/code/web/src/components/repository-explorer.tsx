@@ -62,7 +62,6 @@ type Props = {
   readBytes: (path: string, saved?: boolean) => Promise<ArrayBuffer>
   apply: (update: ExplorerUpdate) => Promise<void>
   onOpen: (path: string) => void
-  onRefresh: () => Promise<void>
 }
 
 type Prompt = {
@@ -70,8 +69,6 @@ type Prompt = {
   entries: ExplorerEntry[]
   folder: string
 }
-type SearchResult = { path: string; line: number; text: string }
-const textDecoder = new TextDecoder("utf-8", { fatal: true })
 
 export function RepositoryExplorer(props: Props) {
   const { dirtyPaths, activePath } = props
@@ -119,11 +116,6 @@ export function RepositoryExplorer(props: Props) {
     entry: ExplorerEntry
     context: ContextMenuOpenContext
   } | null>(null)
-  const [searchFolder, setSearchFolder] = useState<string | null>(null)
-  const [query, setQuery] = useState("")
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [searchStatus, setSearchStatus] = useState("")
-  const searchRun = useRef(0)
   const uploadInput = useRef<HTMLInputElement>(null)
   const uploadFolder = useRef("")
   const initialized = useRef(false)
@@ -190,13 +182,6 @@ export function RepositoryExplorer(props: Props) {
     if (!model.getItem(activePath)?.isSelected())
       model.getItem(activePath)?.select()
   }, [model, activePath, paths])
-
-  useEffect(
-    () => () => {
-      searchRun.current++
-    },
-    []
-  )
 
   function selectionFor(entry: ExplorerEntry) {
     const selection = model.getSelectedPaths()
@@ -434,56 +419,6 @@ export function RepositoryExplorer(props: Props) {
     })
   }
 
-  async function find() {
-    const runId = ++searchRun.current
-    setResults([])
-    if (!query || searchFolder === null) {
-      setSearchStatus("")
-      return
-    }
-    setSearchStatus("Searching…")
-    const found: SearchResult[] = []
-    let skipped = 0
-    const needle = query.toLocaleLowerCase()
-    try {
-      for (const path of paths.filter(
-        (candidate) => !searchFolder || containsPath(searchFolder, candidate)
-      )) {
-        if (runId !== searchRun.current) return
-        try {
-          const bytes = await readBytes(path)
-          if (runId !== searchRun.current) return
-          const text = textDecoder.decode(bytes)
-          if (text.includes("\0")) {
-            skipped++
-            continue
-          }
-          text.split("\n").forEach((line, index) => {
-            if (
-              line.toLocaleLowerCase().includes(needle) &&
-              found.length < 1000
-            )
-              found.push({
-                path,
-                line: index + 1,
-                text: line.trim().slice(0, 240),
-              })
-          })
-          if (found.length >= 1000) break
-        } catch {
-          skipped++
-        }
-      }
-      if (runId !== searchRun.current) return
-      setResults(found)
-      setSearchStatus(
-        `${found.length === 1000 ? "First " : ""}${found.length} results${skipped ? `; ${skipped} binary or unreadable files skipped` : ""}`
-      )
-    } catch (error) {
-      if (runId === searchRun.current) setSearchStatus(errorMessage(error))
-    }
-  }
-
   async function copyText(text: string) {
     await navigator.clipboard.writeText(text)
   }
@@ -508,36 +443,23 @@ export function RepositoryExplorer(props: Props) {
               disabled={readOnly}
               onClick={() => openPrompt("file")}
             >
-              New File…
+              New File
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={readOnly}
               onClick={() => openPrompt("directory")}
             >
-              New Folder…
+              New Folder
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                context.close({ restoreFocus: false })
-                setSearchFolder(folder)
-                setResults([])
-                setSearchStatus("")
-              }}
-            >
-              Find in Folder…
-            </DropdownMenuItem>
-            {entry.path && (
+            {entry.path && !expanded && (
               <DropdownMenuItem
                 onClick={() => {
                   if (handle && "toggle" in handle) handle.toggle()
                 }}
               >
-                {expanded ? "Collapse Folder" : "Expand Folder"}
+                Expand Folder
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => void run(props.onRefresh)}>
-              Refresh
-            </DropdownMenuItem>
           </>
         )}
         {entry.kind === "directory" && <DropdownMenuSeparator />}
@@ -547,13 +469,19 @@ export function RepositoryExplorer(props: Props) {
               disabled={selectedReadOnly}
               onClick={() => setClipboard({ entries, cut: true })}
             >
-              Cut<DropdownMenuShortcut>Ctrl+X</DropdownMenuShortcut>
+              Cut
+              <DropdownMenuShortcut className="font-mono tracking-normal">
+                Ctrl+X
+              </DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={selectedReadOnly}
               onClick={() => setClipboard({ entries, cut: false })}
             >
-              Copy<DropdownMenuShortcut>Ctrl+C</DropdownMenuShortcut>
+              Copy
+              <DropdownMenuShortcut className="font-mono tracking-normal">
+                Ctrl+C
+              </DropdownMenuShortcut>
             </DropdownMenuItem>
           </>
         )}
@@ -561,12 +489,15 @@ export function RepositoryExplorer(props: Props) {
           disabled={!clipboard || readOnly}
           onClick={() => void run(() => paste(folder))}
         >
-          Paste<DropdownMenuShortcut>Ctrl+V</DropdownMenuShortcut>
+          Paste
+          <DropdownMenuShortcut className="font-mono tracking-normal">
+            Ctrl+V
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {entry.path && (
           <DropdownMenuItem onClick={() => void run(() => download(entries))}>
-            Download…
+            Download
           </DropdownMenuItem>
         )}
         {entry.kind === "directory" && (
@@ -577,7 +508,7 @@ export function RepositoryExplorer(props: Props) {
               uploadInput.current?.click()
             }}
           >
-            Upload Files…
+            Upload Files
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
@@ -612,15 +543,20 @@ export function RepositoryExplorer(props: Props) {
               disabled={entries.length !== 1 || selectedReadOnly}
               onClick={() => openPrompt("rename")}
             >
-              Rename…<DropdownMenuShortcut>F2</DropdownMenuShortcut>
+              Rename
+              <DropdownMenuShortcut className="font-mono tracking-normal">
+                F2
+              </DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               disabled={selectedReadOnly}
               onClick={() => openPrompt("delete")}
             >
-              Delete Permanently
-              <DropdownMenuShortcut>Delete</DropdownMenuShortcut>
+              Delete
+              <DropdownMenuShortcut className="font-mono tracking-normal">
+                Delete
+              </DropdownMenuShortcut>
             </DropdownMenuItem>
           </>
         )}
@@ -832,71 +768,13 @@ export function RepositoryExplorer(props: Props) {
               >
                 {busy && <Spinner />}
                 {prompt?.kind === "delete"
-                  ? "Delete permanently"
+                  ? "Delete"
                   : prompt?.kind === "rename"
                     ? "Rename"
                     : "Create"}
               </Button>
             </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={searchFolder !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            searchRun.current++
-            setSearchFolder(null)
-          }
-        }}
-      >
-        <DialogContent className="max-h-[80svh] sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Find in {searchFolder || "repository"}</DialogTitle>
-            <DialogDescription>
-              Search file contents, ignoring case.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="flex gap-2"
-            onSubmit={(event) => {
-              event.preventDefault()
-              void find()
-            }}
-          >
-            <Input
-              aria-label="Search text"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              autoFocus
-            />
-            <Button type="submit" disabled={!query}>
-              Search
-            </Button>
-          </form>
-          <p role="status" className="text-sm text-muted-foreground">
-            {searchStatus}
-          </p>
-          <div className="min-h-0 overflow-auto">
-            {results.map((result, index) => (
-              <button
-                key={`${result.path}:${result.line}:${index}`}
-                className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-accent"
-                onClick={() => {
-                  onOpen(result.path)
-                  setSearchFolder(null)
-                  searchRun.current++
-                }}
-              >
-                <span className="font-medium">
-                  {result.path}:{result.line}
-                </span>
-                <span className="block truncate text-muted-foreground">
-                  {result.text}
-                </span>
-              </button>
-            ))}
-          </div>
         </DialogContent>
       </Dialog>
     </div>

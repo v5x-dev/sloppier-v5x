@@ -11,7 +11,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
-import { restrictToHorizontalAxis } from "@dnd-kit/modifiers"
+import {
+  restrictToHorizontalAxis,
+  restrictToParentElement,
+} from "@dnd-kit/modifiers"
 import {
   SortableContext,
   arrayMove,
@@ -773,7 +776,6 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
               readBytes={readBytes}
               apply={applyExplorerUpdate}
               onOpen={openFile}
-              onRefresh={loadPaths}
             />
           )}
         </SidebarContent>
@@ -824,7 +826,10 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                 <DndContext
                   sensors={tabSensors}
                   collisionDetection={closestCenter}
-                  modifiers={[restrictToHorizontalAxis]}
+                  modifiers={[
+                    restrictToHorizontalAxis,
+                    restrictToParentElement,
+                  ]}
                   onDragEnd={({ active, over }) => {
                     if (!over || active.id === over.id) return
                     setOpenPaths((current) => {
@@ -1071,9 +1076,14 @@ function SortableFileTab({
       ref={setNodeRef}
       className={cn(
         "group/tab relative flex shrink-0 items-center",
-        isDragging && "z-10 rounded-md bg-background"
+        isDragging && "z-10"
       )}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={{
+        transform: CSS.Transform.toString(
+          transform ? { ...transform, y: 0 } : null
+        ),
+        transition,
+      }}
     >
       <TabsTrigger
         ref={setActivatorNodeRef}
@@ -1086,7 +1096,11 @@ function SortableFileTab({
         aria-roledescription="sortable tab"
         value={path}
         title={path}
-        className="flex-none touch-pan-y px-3 pr-8"
+        className={cn(
+          "flex-none touch-pan-y px-3 pr-8",
+          isDragging &&
+            "bg-background text-foreground shadow-sm dark:border-input dark:bg-input/30 dark:text-foreground"
+        )}
         onAuxClick={(event) => {
           if (event.button === 1) {
             event.preventDefault()

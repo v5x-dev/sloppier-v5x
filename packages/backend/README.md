@@ -8,8 +8,10 @@ Convex regenerate the local function and component references.
 
 ## Program and repository lifecycle
 
-Create a workspace with `workspaces.create`, then add collaborators using
-`workspaces.addMember` with each collaborator's WorkOS subject as `userId`.
+Create workspaces and manage their teams from the avatar menu in the dashboard header. Admins invite
+collaborators by email, choose a member or admin role, revoke invitations, and
+remove members. Recipients accept from the avatar menu or an invitation link.
+See [workspace invitations](../../docs/workspaces.md) for setup and behavior.
 Create a program with
 `projects.create({ workspaceId, template })`. The backend generates a dashed
 name with `boring-name-generator`; callers can pass `name` to choose one
@@ -63,13 +65,16 @@ binding.
 
 Set these in each Convex deployment's environment settings:
 
-| Variable             | Required | Purpose                                                                                                        |
-| -------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `WORKOS_CLIENT_ID`   | Yes      | AuthKit issuer/JWKS configuration in `convex/auth.config.ts`. Use the matching WorkOS environment's Client ID. |
-| `PIERRE_ORG`         | Yes      | Code Storage organization name.                                                                                |
-| `PIERRE_PRIVATE_KEY` | Yes      | Code Storage PKCS#8 PEM signing key. Keep it server-side.                                                      |
+| Variable                | Required           | Purpose                                                                                                                                        |
+| ----------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WORKOS_CLIENT_ID`      | Yes                | AuthKit issuer/JWKS configuration in `convex/auth.config.ts`. Use the matching WorkOS environment's Client ID.                                 |
+| `WORKOS_API_KEY`        | For invitations    | Server-side verification of account email when AuthKit JWTs omit verified email claims. Use the same WorkOS environment as `WORKOS_CLIENT_ID`. |
+| `RESEND_API_KEY`        | For email delivery | Server-only Resend API key.                                                                                                                    |
+| `WORKSPACE_INVITE_FROM` | For email delivery | Sender address on a verified Resend domain.                                                                                                    |
+| `APP_URL`               | For email delivery | Public HTTPS web app origin, used in invitation links.                                                                                         |
+| `PIERRE_ORG`            | Yes                | Code Storage organization name.                                                                                                                |
+| `PIERRE_PRIVATE_KEY`    | Yes                | Code Storage PKCS#8 PEM signing key. Keep it server-side.                                                                                      |
 
 The web and mobile apps also need the Convex deployment URL and the public
-WorkOS Client ID/redirect URI in their own app configuration. The backend does
-not read `WORKOS_API_KEY`; add it only if a WorkOS Component or server-side
-WorkOS API workflow is introduced.
+WorkOS Client ID/redirect URI in their own app configuration. Never expose
+`WORKOS_API_KEY` or `RESEND_API_KEY` through Vite environment variables.

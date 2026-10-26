@@ -1,4 +1,11 @@
-import { CodeIcon, PlusIcon, SignOutIcon } from "@phosphor-icons/react"
+import {
+  BuildingsIcon,
+  CodeIcon,
+  EnvelopeSimpleIcon,
+  PlusIcon,
+  SignOutIcon,
+  UsersIcon,
+} from "@phosphor-icons/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useAuth } from "@/lib/auth"
 import { api } from "@workspace/backend/api"
@@ -16,6 +23,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import {
@@ -56,15 +65,21 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
-import { useMutation, useQuery } from "convex/react"
+import { useAction, useMutation, useQuery } from "convex/react"
 import { formatDistanceToNow } from "date-fns"
-import { useState } from "react"
-import { NewWorkspace, WorkspaceTeam, WorkspaceInvitations } from "@/components/workspace-team"
+import { useEffect, useState } from "react"
+import {
+  NewWorkspace,
+  WorkspaceTeam,
+  WorkspaceInvitations,
+} from "@/components/workspace-team"
 import { AuthGate } from "@/components/auth-gate"
 import { RepositoryStatusBadge } from "@/components/repository-status-badge"
 import { errorMessage } from "@/lib/errors"
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search): { workspace?: string } =>
+    typeof search.workspace === "string" ? { workspace: search.workspace } : {},
   component: () => (
     <AuthGate>
       <ProgramsPage />
@@ -83,7 +98,10 @@ const templateIcons: Record<Template, string> = {
 
 function ProgramsPage() {
   const workspaces = useQuery(api.workspaces.listMine)
-  const [selectedId, setSelectedId] = useState<Id<"workspaces"> | null>(null)
+  const search = Route.useSearch()
+  const [selectedId, setSelectedId] = useState<string | null>(
+    search.workspace ?? null
+  )
 
   const available = (workspaces ?? []).flatMap(({ workspace }) =>
     workspace ? [workspace] : []
@@ -93,9 +111,16 @@ function ProgramsPage() {
 
   return (
     <div className="min-h-svh">
-      <AppHeader />
+      <AppHeader
+        workspaces={available}
+        workspace={workspace}
+        isAdmin={
+          workspaces?.find((entry) => entry.workspace?._id === workspace?._id)
+            ?.role === "admin"
+        }
+        onSelect={setSelectedId}
+      />
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-        <WorkspaceInvitations onAccepted={setSelectedId} />
         {/* AuthGate creates the first workspace; show loading until it lands. */}
         {!workspace ? (
           <ProgramListSkeleton />
@@ -106,31 +131,6 @@ function ProgramsPage() {
                 Your programs
               </h1>
               <div className="flex items-center gap-2">
-                <NewWorkspace onCreated={setSelectedId} />
-                {workspaces?.find(entry => entry.workspace?._id === workspace._id)?.role === "admin" && <WorkspaceTeam key={workspace._id} workspace={workspace} />}
-                {available.length > 0 && (
-                  <Select
-                    value={workspace._id}
-                    onValueChange={(value) =>
-                      setSelectedId(value)
-                    }
-                    items={available.map(({ _id, name }) => ({
-                      value: _id,
-                      label: name,
-                    }))}
-                  >
-                    <SelectTrigger className="min-w-40" aria-label="Workspace">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {available.map(({ _id, name }) => (
-                        <SelectItem key={_id} value={_id}>
-                          {name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
                 <NewProgramDialog workspaceId={workspace._id} />
               </div>
             </div>
@@ -142,8 +142,27 @@ function ProgramsPage() {
   )
 }
 
-function AppHeader() {
+function AppHeader({
+  workspaces,
+  workspace,
+  isAdmin,
+  onSelect,
+}: {
+  workspaces: Doc<"workspaces">[]
+  workspace: Doc<"workspaces"> | undefined
+  isAdmin: boolean
+  onSelect: (id: Id<"workspaces">) => void
+}) {
   const { user, signOut } = useAuth()
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false)
+  const [managingTeam, setManagingTeam] = useState(false)
+  const [viewingInvitations, setViewingInvitations] = useState(false)
+  const syncProfile = useAction(api.workspaces.syncProfile)
+  useEffect(() => {
+    // Profile refresh is optional for browsing. The invitation dialog shows
+    // verification errors and offers a retry before accepting any invitation.
+    void syncProfile({}).catch(() => undefined)
+  }, [syncProfile])
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
   const initials =
     [user?.firstName, user?.lastName]
@@ -155,7 +174,7 @@ function AppHeader() {
 
   return (
     <header className="border-b">
-      <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-6">
+      <div className="mx-auto flex min-h-14 max-w-4xl items-center justify-between gap-4 px-6 py-2">
         <Link to="/" aria-label="code (by v5x) home" className="text-primary">
           <span
             aria-hidden="true"
@@ -180,6 +199,38 @@ function AppHeader() {
                 <span className="truncate font-normal">{user?.email}</span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={workspace?._id ?? ""}
+                onValueChange={(value) => {
+                  const selected = workspaces.find(
+                    (entry) => entry._id === value
+                  )
+                  if (selected) onSelect(selected._id)
+                }}
+              >
+                {workspaces.map((entry) => (
+                  <DropdownMenuRadioItem key={entry._id} value={entry._id}>
+                    <BuildingsIcon />
+                    <span className="truncate">{entry.name}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuItem onClick={() => setCreatingWorkspace(true)}>
+                <PlusIcon />
+                New workspace
+              </DropdownMenuItem>
+              {workspace && isAdmin && (
+                <DropdownMenuItem onClick={() => setManagingTeam(true)}>
+                  <UsersIcon />
+                  Manage team
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => setViewingInvitations(true)}>
+                <EnvelopeSimpleIcon />
+                Invitations
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => signOut()}>
                 <SignOutIcon />
                 Sign out
@@ -187,6 +238,38 @@ function AppHeader() {
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        <NewWorkspace
+          open={creatingWorkspace}
+          onOpenChange={setCreatingWorkspace}
+          onCreated={onSelect}
+        />
+        {workspace && isAdmin && (
+          <WorkspaceTeam
+            key={workspace._id}
+            workspace={workspace}
+            open={managingTeam}
+            onOpenChange={setManagingTeam}
+          />
+        )}
+        <Dialog open={viewingInvitations} onOpenChange={setViewingInvitations}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invitations</DialogTitle>
+              <DialogDescription>
+                Join a workspace using an invitation sent to your account email.
+              </DialogDescription>
+            </DialogHeader>
+            {viewingInvitations && (
+              <WorkspaceInvitations
+                showEmpty
+                onAccepted={(workspaceId) => {
+                  onSelect(workspaceId)
+                  setViewingInvitations(false)
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </header>
   )
@@ -261,20 +344,44 @@ function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const templates = useQuery(api.projects.listTemplates)
   const createProgram = useMutation(api.projects.create)
+  const generateName = useMutation(api.projects.generateName)
   const navigate = Route.useNavigate()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
+  const [generatedName, setGeneratedName] = useState("")
   const [template, setTemplate] = useState<Template>("pros")
   const [pending, setPending] = useState(false)
 
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setGeneratedName("")
+    void generateName({})
+      .then((suggestion) => {
+        if (!cancelled) setGeneratedName(suggestion)
+      })
+      .catch((error) => {
+        if (!cancelled)
+          toast.add({
+            type: "error",
+            title: "Could not suggest a name",
+            description: errorMessage(error),
+          })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, generateName])
+
   async function submit(event: React.FormEvent) {
     event.preventDefault()
+    if (!name.trim() && !generatedName) return
     setPending(true)
     try {
       const programId = await createProgram({
         workspaceId,
         template,
-        ...(name.trim() ? { name } : {}),
+        name: name.trim() || generatedName,
       })
       setOpen(false)
       setName("")
@@ -292,16 +399,15 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>
+      <DialogTrigger render={<Button size="icon" />}>
         <PlusIcon data-icon="inline-start" />
-        New program
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-6">
           <DialogHeader>
             <DialogTitle>New program</DialogTitle>
             <DialogDescription>
-              Pick a starter. Leave the name blank to get a generated one.
+              Pick a starter. Leave the name blank to use the suggested name.
             </DialogDescription>
           </DialogHeader>
           <FieldGroup>
@@ -333,7 +439,7 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
                 id="program-name"
                 value={name}
                 maxLength={80}
-                placeholder="minor-shaman-1239"
+                placeholder={generatedName || "Program name"}
                 onChange={(event) => setName(event.target.value)}
               />
             </Field>
@@ -342,7 +448,10 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
             <DialogClose render={<Button variant="outline" type="button" />}>
               Cancel
             </DialogClose>
-            <Button type="submit" disabled={pending}>
+            <Button
+              type="submit"
+              disabled={pending || (!name.trim() && !generatedName)}
+            >
               {pending && <Spinner data-icon="inline-start" />}
               Create program
             </Button>

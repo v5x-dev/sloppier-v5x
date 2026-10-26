@@ -44,7 +44,12 @@ export default defineSchema({
     role: v.union(v.literal("admin"), v.literal("member")),
     invitedBy: v.string(),
     expiresAt: v.number(),
-    delivery: v.union(v.literal("pending"), v.literal("sent"), v.literal("unavailable"), v.literal("failed")),
+    delivery: v.union(
+      v.literal("pending"),
+      v.literal("sent"),
+      v.literal("unavailable"),
+      v.literal("failed")
+    ),
   })
     .index("by_workspace", ["workspaceId"])
     .index("by_email", ["email"]),
