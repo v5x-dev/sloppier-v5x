@@ -1,6 +1,5 @@
 "use node"
 
-import * as Y from "yjs"
 import { internal } from "./_generated/api"
 import { action, internalAction, type ActionCtx } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
@@ -12,6 +11,7 @@ import {
 } from "@pierre/storage"
 import { ConvexError, v } from "convex/values"
 import { loadTemplateFiles } from "./lib/templates"
+import { isBuildDependency } from "./lib/buildDependencies"
 import { validateRepositoryPath } from "./lib/paths"
 
 const MAX_COMMIT_BYTES = 512 * 1024
@@ -26,6 +26,28 @@ const fileChangeValidator = v.union(
   }),
   v.object({ operation: v.literal("delete"), path: v.string() })
 )
+
+// Pin one committed source snapshot for direct browser-to-machine builds.
+export const buildManifest = action({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, { projectId }) => {
+    const project = await requireAuthorizedProject(ctx, projectId)
+    const repo = storage().repo({ id: project.repositoryId, defaultBranch: "main" })
+    const history = await repo.listCommits({ branch: "main", limit: 1 })
+    const sha = history.commits[0]?.sha
+    if (!sha) throw new Error("Repository has no committed source.")
+    const paths: string[] = []
+    let cursor: string | undefined
+    do {
+      const page = await repo.listFiles({ ref: sha, cursor, limit: 500 })
+      paths.push(...page.paths.filter(path => !path.startsWith(".v5x/") && !isBuildDependency(project.template, path)))
+      if (paths.length > 3000) throw new Error("Source snapshot exceeds 3,000 files.")
+      cursor = page.hasMore ? page.nextCursor : undefined
+      if (page.hasMore && !cursor) throw new Error("Source pagination did not advance.")
+    } while (cursor)
+    return { sha, paths }
+  },
+})
 
 export const listFiles = action({
   args: {
@@ -314,43 +336,49 @@ export const provisionProject = internalAction({
   },
 })
 
+// Previously scheduled per-update jobs join the same repository queue.
 export const persistCrdtUpdate = internalAction({
   args: { updateRowId: v.id("crdtUpdates") },
-  handler: async (ctx, { updateRowId }) => {
-    const record = await ctx.runQuery(internal.crdt.getUpdateForStorage, {
-      updateRowId,
-    })
-    if (!record || record.update.storageStatus === "persisted") return
+  handler: async (ctx, args) => {
+    await ctx.runMutation(internal.backups.enqueueUpdate, args)
+  },
+})
 
+export const persistProjectUpdates = internalAction({
+  args: { jobId: v.id("crdtBackupJobs"), generation: v.number() },
+  handler: async (ctx, args) => {
+    const batch = await ctx.runQuery(internal.backups.batch, args)
+    if (!batch) return
+    const updateIds = batch.updates.map((update) => update._id)
     try {
-      const { update, document, project } = record
-      if (project.repositoryStatus !== "ready") {
-        throw new Error("Program repository is not ready.")
+      if (!batch.updates.length) {
+        await ctx.runMutation(internal.backups.complete, { ...args, updateIds })
+        return
       }
-      const fileName = `${document._id}-${String(update.sequence).padStart(12, "0")}.bin`
-      const path = `.v5x/${fileName}`
       const repo = storage().repo({
-        id: project.repositoryId,
+        id: batch.project.repositoryId,
         defaultBranch: "main",
       })
       const result = await commitChanges(
         repo,
-        [{ operation: "put", path, contents: new Uint8Array(update.bytes) }],
-        `Persist live edit ${document.path} (${update.sequence})`,
-        commitAuthor("V5X Collaborator", `${update.actorId}@users.v5x.local`)
+        batch.updates.map((update) => ({
+          operation: "put" as const,
+          path: `.v5x/${update.documentId}-${String(update.sequence).padStart(12, "0")}.bin`,
+          contents: new Uint8Array(update.bytes),
+        })),
+        `Back up ${batch.updates.length} live edits`,
+        commitAuthor("V5X Collaborators", "collaborators@users.v5x.local")
       )
-      await ctx.runMutation(internal.crdt.markUpdatePersisted, {
-        updateRowId,
+      await ctx.runMutation(internal.backups.complete, {
+        ...args,
+        updateIds,
         commitSha: result.commitSha,
       })
-      await ctx.runMutation(internal.projects.recordRepositoryHead, {
-        projectId: project._id,
-        headSha: result.commitSha,
-      })
     } catch (error) {
-      await ctx.runMutation(internal.crdt.markUpdatePersistenceFailed, {
-        updateRowId,
-        message: publicErrorMessage(error),
+      await ctx.runMutation(internal.backups.complete, {
+        ...args,
+        updateIds,
+        error: publicErrorMessage(error),
       })
     }
   },
@@ -533,18 +561,12 @@ export const openLiveFile = action({
     }
     if (contents.includes("\0"))
       throw new ConvexError("Binary files cannot be edited as text.")
-    const doc = new Y.Doc()
-    try {
-      doc.getText("source").insert(0, contents)
-      const identity = await ctx.auth.getUserIdentity()
-      return await ctx.runMutation(internal.crdt.initializeDocument, {
-        projectId: args.projectId,
-        path,
-        actorId: identity!.subject,
-        bytes: Y.encodeStateAsUpdate(doc).buffer as ArrayBuffer,
-      })
-    } finally {
-      doc.destroy()
-    }
+    const identity = await ctx.auth.getUserIdentity()
+    return ctx.runMutation(internal.crdt.initializeDocument, {
+      projectId: args.projectId,
+      path,
+      actorId: identity!.subject,
+      contents,
+    })
   },
 })

@@ -1,6 +1,6 @@
 import { WarningCircleIcon } from "@phosphor-icons/react"
 import { Link, Navigate, createFileRoute } from "@tanstack/react-router"
-import { useAuth } from "@workos-inc/authkit-react"
+import { useAuth } from "@/lib/auth"
 import { Button } from "@workspace/ui/components/button"
 import {
   Empty,

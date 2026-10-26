@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { FileTree, useFileTree } from "@pierre/trees/react"
 import type { ContextMenuOpenContext } from "@pierre/trees"
 import { Button } from "@workspace/ui/components/button"
@@ -23,14 +23,16 @@ import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import {
-  ArrowClockwiseIcon,
   ArrowsInLineVerticalIcon,
   FilePlusIcon,
   FolderPlusIcon,
 } from "@phosphor-icons/react"
+import type { useProgramBinaries } from "@/hooks/use-program-binaries"
 import { errorMessage } from "@/lib/errors"
 import {
   assertAvailable,
+  assertRepositoryPaths,
+  isClientBuildPath,
   barePath,
   containsPath,
   copyDestination,
@@ -51,6 +53,7 @@ export type ExplorerUpdate = {
 }
 
 type Props = {
+  binaries: ReturnType<typeof useProgramBinaries>
   paths: string[]
   dirtyPaths: string[]
   activePath: string | null
@@ -71,7 +74,37 @@ type SearchResult = { path: string; line: number; text: string }
 const textDecoder = new TextDecoder("utf-8", { fatal: true })
 
 export function RepositoryExplorer(props: Props) {
-  const { paths, dirtyPaths, activePath, onOpen } = props
+  const { dirtyPaths, activePath } = props
+  const binaries = props.binaries
+  const generatedPaths = useMemo(
+    () => Object.keys(binaries.files),
+    [binaries.files]
+  )
+  const paths = useMemo(
+    () => [...new Set([...props.paths, ...generatedPaths])].sort(),
+    [props.paths, generatedPaths]
+  )
+  const isReadOnly = (path: string) => isClientBuildPath(path, generatedPaths)
+  async function readBytes(path: string, saved?: boolean) {
+    const binary = binaries.files[path]
+    return binary ? new Uint8Array(binary).buffer : props.readBytes(path, saved)
+  }
+  function onOpen(path: string) {
+    const binary = binaries.files[path]
+    if (binary)
+      saveDownload(new Uint8Array(binary).buffer, path.split("/").at(-1)!)
+    else props.onOpen(path)
+  }
+  async function apply(update: ExplorerUpdate) {
+    assertRepositoryPaths(
+      [
+        ...update.changes.map((change) => change.path),
+        ...(update.moves ?? []).flatMap((move) => [move.from, move.to]),
+      ],
+      generatedPaths
+    )
+    await props.apply(update)
+  }
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
   const [clipboard, setClipboard] = useState<{
@@ -95,22 +128,41 @@ export function RepositoryExplorer(props: Props) {
   const uploadFolder = useRef("")
   const initialized = useRef(false)
   const knownPaths = useRef<string[]>([])
+  // Pierre captures its initial callbacks, so selection must read current binaries.
+  const openRef = useRef(onOpen)
+  openRef.current = onOpen
+  const generatedRef = useRef(generatedPaths)
+  generatedRef.current = generatedPaths
+  const resetting = useRef(false)
   const { model } = useFileTree({
     paths: [],
     flattenEmptyDirectories: true,
     initialExpansion: "closed",
     density: "compact",
+    renderRowDecoration: ({ item }) =>
+      barePath(item.path) === "bin" && generatedRef.current.length
+        ? {
+            text: "client only",
+            title: "Generated binaries are read-only and excluded from Git.",
+          }
+        : null,
     onSelectionChange: (selected) => {
+      if (resetting.current) return
       const path = selected.at(-1)
-      if (path && model.getItem(path)?.isDirectory() === false) onOpen(path)
+      if (path && model.getItem(path)?.isDirectory() === false)
+        openRef.current(path)
     },
   })
 
   useEffect(() => {
     // Reset implicit directories too, preserving expanded folders and selection.
+    resetting.current = true
     if (!initialized.current) {
       model.resetPaths(paths, {
-        initialExpandedPaths: activePath ? ancestors(activePath) : [],
+        initialExpandedPaths: [
+          ...(activePath ? ancestors(activePath) : []),
+          ...(generatedPaths.length ? ["bin"] : []),
+        ],
       })
       initialized.current = true
     } else {
@@ -119,11 +171,17 @@ export function RepositoryExplorer(props: Props) {
         const handle = model.getItem(path)
         return handle && "isExpanded" in handle && handle.isExpanded()
       })
+      if (
+        generatedPaths.length &&
+        !knownPaths.current.some((path) => containsPath("bin", path))
+      )
+        expanded.push("bin")
       const selectedPaths = model.getSelectedPaths()
       model.resetPaths(paths, { initialExpandedPaths: expanded })
       for (const path of selectedPaths) model.getItem(path)?.select()
     }
     knownPaths.current = paths
+    resetting.current = false
   }, [model, paths])
 
   useEffect(() => {
@@ -180,6 +238,12 @@ export function RepositoryExplorer(props: Props) {
   }
 
   function ask(kind: Prompt["kind"], entry: ExplorerEntry) {
+    if (
+      isReadOnly(entry.path) ||
+      (kind === "delete" &&
+        selectionFor(entry).some((item) => isReadOnly(item.path)))
+    )
+      return
     setPromptOpen(true)
     setPromptError(null)
     setValue(kind === "rename" ? barePath(entry.path).split("/").at(-1)! : "")
@@ -208,6 +272,10 @@ export function RepositoryExplorer(props: Props) {
     destinations: string[],
     move: boolean
   ) {
+    assertRepositoryPaths(
+      [...entries.map((entry) => entry.path), ...destinations],
+      generatedPaths
+    )
     const changes: RepositoryChange[] = []
     const moves: { from: string; to: string }[] = []
     for (const [index, entry] of entries.entries()) {
@@ -222,13 +290,13 @@ export function RepositoryExplorer(props: Props) {
       for (const path of sources) {
         const destination = `${to}${path.slice(from.length)}`
         // Moving preserves the saved version; the parent remaps unsaved drafts.
-        const contents = await props.readBytes(path, move)
+        const contents = await readBytes(path, move)
         changes.push({ operation: "put", path: destination, contents })
         if (move) changes.push({ operation: "delete", path })
       }
       if (move) moves.push({ from, to })
     }
-    await props.apply({
+    await apply({
       changes,
       moves,
       requireAbsentPaths: destinations,
@@ -250,7 +318,7 @@ export function RepositoryExplorer(props: Props) {
       const entry = prompt.entries[0]
       if (prompt.kind === "delete") {
         const removed = filesUnder(prompt.entries)
-        await props.apply({
+        await apply({
           changes: removed.map((path) => ({ operation: "delete", path })),
           removed,
           message:
@@ -271,7 +339,7 @@ export function RepositoryExplorer(props: Props) {
         // Git stores files, so keep newly created empty folders with .gitkeep.
         const path =
           prompt.kind === "directory" ? `${destination}/.gitkeep` : destination
-        await props.apply({
+        await apply({
           changes: [{ operation: "put", path, contents: "" }],
           requireAbsentPaths: [destination],
           message: `Create ${destination}`.slice(0, 200),
@@ -308,7 +376,7 @@ export function RepositoryExplorer(props: Props) {
       entries.length === 1 &&
       entries[0].kind === "file"
     ) {
-      saveDownload(await props.readBytes(files[0]), files[0].split("/").at(-1)!)
+      saveDownload(await readBytes(files[0]), files[0].split("/").at(-1)!)
       return
     }
     // Use the browser directory picker for folder downloads, as VS Code web does.
@@ -340,7 +408,7 @@ export function RepositoryExplorer(props: Props) {
       })
       const writer = await file.createWritable()
       try {
-        await writer.write(await props.readBytes(path))
+        await writer.write(await readBytes(path))
       } finally {
         await writer.close()
       }
@@ -368,7 +436,7 @@ export function RepositoryExplorer(props: Props) {
         contents: await file.arrayBuffer(),
       })
     }
-    await props.apply({
+    await apply({
       changes,
       requireAbsentPaths: changes.map((change) => change.path),
       message: `Upload ${files.length} file${files.length === 1 ? "" : "s"}`,
@@ -392,7 +460,7 @@ export function RepositoryExplorer(props: Props) {
       )) {
         if (runId !== searchRun.current) return
         try {
-          const bytes = await props.readBytes(path)
+          const bytes = await readBytes(path)
           if (runId !== searchRun.current) return
           const text = textDecoder.decode(bytes)
           if (text.includes("\0")) {
@@ -433,6 +501,8 @@ export function RepositoryExplorer(props: Props) {
     const folder =
       entry.kind === "directory" ? barePath(entry.path) : parentPath(entry.path)
     const entries = selectionFor(entry)
+    const readOnly = isReadOnly(entry.path)
+    const selectedReadOnly = entries.some((item) => isReadOnly(item.path))
     const handle = model.getItem(entry.path)
     const expanded = handle && "isExpanded" in handle && handle.isExpanded()
     const openPrompt = (kind: Prompt["kind"]) => {
@@ -443,10 +513,16 @@ export function RepositoryExplorer(props: Props) {
       <>
         {entry.kind === "directory" && (
           <>
-            <DropdownMenuItem onClick={() => openPrompt("file")}>
+            <DropdownMenuItem
+              disabled={readOnly}
+              onClick={() => openPrompt("file")}
+            >
               New File…
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => openPrompt("directory")}>
+            <DropdownMenuItem
+              disabled={readOnly}
+              onClick={() => openPrompt("directory")}
+            >
               New Folder…
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -477,11 +553,13 @@ export function RepositoryExplorer(props: Props) {
         {entry.path && (
           <>
             <DropdownMenuItem
+              disabled={selectedReadOnly}
               onClick={() => setClipboard({ entries, cut: true })}
             >
               Cut<DropdownMenuShortcut>Ctrl+X</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem
+              disabled={selectedReadOnly}
               onClick={() => setClipboard({ entries, cut: false })}
             >
               Copy<DropdownMenuShortcut>Ctrl+C</DropdownMenuShortcut>
@@ -489,7 +567,7 @@ export function RepositoryExplorer(props: Props) {
           </>
         )}
         <DropdownMenuItem
-          disabled={!clipboard}
+          disabled={!clipboard || readOnly}
           onClick={() => void run(() => paste(folder))}
         >
           Paste<DropdownMenuShortcut>Ctrl+V</DropdownMenuShortcut>
@@ -502,6 +580,7 @@ export function RepositoryExplorer(props: Props) {
         )}
         {entry.kind === "directory" && (
           <DropdownMenuItem
+            disabled={readOnly}
             onClick={() => {
               uploadFolder.current = folder
               uploadInput.current?.click()
@@ -539,13 +618,14 @@ export function RepositoryExplorer(props: Props) {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              disabled={entries.length !== 1}
+              disabled={entries.length !== 1 || selectedReadOnly}
               onClick={() => openPrompt("rename")}
             >
               Rename…<DropdownMenuShortcut>F2</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
+              disabled={selectedReadOnly}
               onClick={() => openPrompt("delete")}
             >
               Delete Permanently
@@ -569,6 +649,7 @@ export function RepositoryExplorer(props: Props) {
       path: barePath(path),
       kind: model.getItem(path)?.isDirectory() ? "directory" : "file",
     }
+    if (selectionFor(entry).some((item) => isReadOnly(item.path))) return
     const modifier = event.ctrlKey || event.metaKey
     let action: (() => void) | undefined
     if (event.key === "F2") action = () => ask("rename", entry)
@@ -600,8 +681,7 @@ export function RepositoryExplorer(props: Props) {
       onKeyDownCapture={keyboard}
       aria-busy={busy}
     >
-      <div className="flex shrink-0 items-center justify-end gap-0.5 px-2 pb-1">
-        {busy && <Spinner className="mr-auto size-3" />}
+      <div className="flex shrink-0 items-center justify-start gap-0.5 px-2 pb-1">
         <Button
           variant="ghost"
           size="icon-xs"
@@ -623,15 +703,6 @@ export function RepositoryExplorer(props: Props) {
         <Button
           variant="ghost"
           size="icon-xs"
-          aria-label="Refresh Explorer"
-          disabled={busy}
-          onClick={() => void run(props.onRefresh)}
-        >
-          <ArrowClockwiseIcon />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
           aria-label="Collapse all folders"
           onClick={() => {
             const directories = new Set(paths.flatMap(ancestors))
@@ -643,6 +714,7 @@ export function RepositoryExplorer(props: Props) {
         >
           <ArrowsInLineVerticalIcon />
         </Button>
+        {busy && <Spinner className="ml-1 size-3" />}
       </div>
       <div
         className="min-h-0 flex-1"
@@ -675,6 +747,16 @@ export function RepositoryExplorer(props: Props) {
           )}
         />
       </div>
+      {binaries.loading && (
+        <p role="status" className="px-3 py-1 text-xs text-muted-foreground">
+          Downloading build binaries…
+        </p>
+      )}
+      {binaries.error && (
+        <p role="alert" className="px-3 py-1 text-xs text-destructive">
+          {binaries.error}
+        </p>
+      )}
       {menu && (
         <ExplorerMenu context={menu.context} busy={busy}>
           {menuItems(menu.entry, menu.context)}

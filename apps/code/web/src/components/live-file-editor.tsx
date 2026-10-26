@@ -1,5 +1,6 @@
+import { editorThemeOptions } from "@/lib/editor-theme"
 import { useEffect, useRef, useState } from "react"
-import { useAuth } from "@workos-inc/authkit-react"
+import { useAuth } from "@/lib/auth"
 import { useConvex, useConvexConnectionState } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
@@ -36,11 +37,19 @@ const createEditor: EditorFactory<undefined, { name: string }> = (
   key
 ) => new Editor(type, options, key)
 
+export type LivePerson = {
+  id: string
+  name: string
+  color: string
+  imageUrl?: string
+}
+
 type Props = {
   projectId: Id<"projects">
   path: string
   active: boolean
   onChange: (text: string) => void
+  onPeopleChange: (people: LivePerson[]) => void
   onSyncChange: (synced: boolean) => void
 }
 
@@ -50,19 +59,17 @@ export function LiveFileEditor({
   active,
   onChange,
   onSyncChange,
+  onPeopleChange,
 }: Props) {
   const client = useConvex()
   const connection = useConvexConnectionState()
   const { user } = useAuth()
   const host = useRef<HTMLDivElement>(null)
-  const callbacks = useRef({ onChange, onSyncChange })
-  callbacks.current = { onChange, onSyncChange }
+  const callbacks = useRef({ onChange, onSyncChange, onPeopleChange })
+  callbacks.current = { onChange, onSyncChange, onPeopleChange }
   const [ready, setReady] = useState(false)
   const [status, setStatus] = useState("Opening live document…")
   const [error, setError] = useState<string | null>(null)
-  const [people, setPeople] = useState<
-    Array<{ id: number; name: string; color: string }>
-  >([])
   const retry = useRef(() => {})
   const awarenessRef = useRef<Awareness | null>(null)
   const [binding, setBinding] = useState<PierreCollaboration | null>(null)
@@ -228,16 +235,24 @@ export function LiveFileEditor({
     const awarenessChanged = (_: unknown, origin: unknown) => {
       if (isDisposed()) return
       collaboration?.renderCarets()
-      setPeople(
-        [...awareness.getStates()].flatMap(([id, state]) => {
-          const person = state.user
-          return person &&
-            typeof person.name === "string" &&
-            typeof person.color === "string"
-            ? [{ id, name: person.name, color: person.color }]
-            : []
+      const people = new Map<string, LivePerson>()
+      for (const [clientId, state] of awareness.getStates()) {
+        const person = state.user
+        if (
+          typeof person?.name !== "string" ||
+          typeof person.color !== "string"
+        )
+          continue
+        const id = typeof person.id === "string" ? person.id : String(clientId)
+        people.set(id, {
+          id,
+          name: person.name,
+          color: person.color,
+          imageUrl:
+            typeof person.imageUrl === "string" ? person.imageUrl : undefined,
         })
-      )
+      }
+      callbacks.current.onPeopleChange([...people.values()])
       if (origin !== REMOTE) {
         clearTimeout(awarenessTimer)
         awarenessTimer = setTimeout(publish, 80)
@@ -248,10 +263,26 @@ export function LiveFileEditor({
       [user.firstName, user.lastName].filter(Boolean).join(" ") ||
       user.email ||
       "Collaborator"
-    const color = ["#e879f9", "#22d3ee", "#fb923c", "#4ade80", "#a5b4fc"][
-      Array.from(userId).reduce((n, c) => n + c.charCodeAt(0), 0) % 5
+    const color = [
+      "#e879f9",
+      "#22d3ee",
+      "#fb923c",
+      "#4ade80",
+      "#a5b4fc",
+      "#facc15",
+      "#f87171",
+      "#2dd4bf",
+    ][
+      (Array.from(userId).reduce(
+        (hash, c) => Math.imul(hash ^ c.charCodeAt(0), 16777619),
+        2166136261
+      ) >>>
+        0) %
+        8
     ]
     awareness.setLocalStateField("user", {
+      id: userId,
+      imageUrl: user.profilePictureUrl,
       name,
       color,
       colorLight: `${color}33`,
@@ -421,6 +452,7 @@ export function LiveFileEditor({
     window.addEventListener("beforeunload", beforeUnload)
     return () => {
       disposed = true
+      callbacks.current.onPeopleChange([])
       clearInterval(timer)
       clearInterval(selectionTimer)
       clearTimeout(sendTimer)
@@ -450,28 +482,11 @@ export function LiveFileEditor({
 
   return (
     <div className="flex min-h-full flex-col">
-      <div className="sticky top-0 z-10 flex min-h-8 items-center justify-between gap-3 border-b bg-background px-3 py-1 text-xs text-muted-foreground">
-        <span role="status" aria-live="polite">
-          {!connection.isWebSocketConnected
-            ? "Offline · changes kept on this device"
-            : status}
-        </span>
-        <div
-          className="flex items-center gap-2"
-          aria-label="People in this file"
-        >
-          {people.map((person) => (
-            <span
-              key={person.id}
-              title={person.name}
-              className="max-w-28 truncate"
-              style={{ color: person.color }}
-            >
-              {person.name}
-            </span>
-          ))}
-        </div>
-      </div>
+      <span className="sr-only" role="status" aria-live="polite">
+        {!connection.isWebSocketConnected
+          ? "Offline · changes kept on this device"
+          : status}
+      </span>
       {error && (
         <div
           role="alert"
@@ -521,15 +536,19 @@ function PierreFile({
       <File<undefined, { name: string }>
         file={file}
         edit
-        options={{ themeType: "dark", disableFileHeader: true }}
+        options={editorThemeOptions}
         editorOptions={{
           initialState: { type: "file", document: binding.document },
           onAttach: (editor) => binding.attach(editor),
           renderCaret: (caret) => {
+            const marker = document.createElement("span")
+            marker.setAttribute("aria-label", `${caret.metadata.name}'s cursor`)
+            marker.style.cssText = `display:block;position:relative;width:2px;height:100%;background:${caret.metadata.color}`
             const label = document.createElement("span")
             label.textContent = caret.metadata.name
-            label.style.cssText = `position:absolute;bottom:100%;left:0;white-space:nowrap;padding:2px 4px;border-radius:3px;font:10px sans-serif;color:#111;background:${caret.metadata.color}`
-            return label
+            label.style.cssText = `position:absolute;bottom:100%;left:0;white-space:nowrap;padding:2px 4px;border-radius:3px 3px 3px 0;font:11px sans-serif;color:#111;background:${caret.metadata.color}`
+            marker.append(label)
+            return marker
           },
         }}
         onEditChange={(event) => binding.localChange(event)}

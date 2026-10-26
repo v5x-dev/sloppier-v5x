@@ -156,3 +156,9 @@ describe("Pierre collaboration", () => {
     expect(source(a).toString()).toBe(alice.document.getText())
   })
 })
+
+test("collaborative documents retain the file language for syntax highlighting", () => {
+  const doc = new Y.Doc()
+  const { document } = editor(doc)
+  expect(document.languageId).toBe("cpp")
+})

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { useAuth } from "@workos-inc/authkit-react"
+import { useAuth } from "@/lib/auth"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { useEffect } from "react"
 

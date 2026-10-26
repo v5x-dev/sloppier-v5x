@@ -2,6 +2,20 @@ import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 
 export default defineSchema({
+  programSessions: defineTable({
+    projectId: v.id("projects"),
+    sessionId: v.string(),
+    userId: v.string(),
+    expiresAt: v.number(),
+  }).index("by_project_session", ["projectId", "sessionId"]),
+  buildMachines: defineTable({
+    projectId: v.id("projects"),
+    machineId: v.optional(v.string()),
+    status: v.string(),
+    logs: v.string(),
+    building: v.boolean(),
+    artifactId: v.optional(v.id("_storage")),
+  }).index("by_project", ["projectId"]),
   workspaces: defineTable({
     name: v.string(),
     ownerId: v.string(),
@@ -59,6 +73,7 @@ export default defineSchema({
   }).index("by_project_path", ["projectId", "path"]),
 
   crdtUpdates: defineTable({
+    projectId: v.optional(v.id("projects")),
     documentId: v.id("crdtDocuments"),
     sequence: v.number(),
     updateId: v.string(),
@@ -74,7 +89,14 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_document_sequence", ["documentId", "sequence"])
-    .index("by_document_update", ["documentId", "updateId"]),
+    .index("by_document_update", ["documentId", "updateId"])
+    .index("by_project_storage", ["projectId", "storageStatus"]),
+
+  crdtBackupJobs: defineTable({
+    projectId: v.id("projects"),
+    generation: v.number(),
+    attempts: v.number(),
+  }).index("by_project", ["projectId"]),
 
   presenceSessions: defineTable({
     projectId: v.id("projects"),

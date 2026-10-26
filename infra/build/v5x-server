@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Private build service, reachable through machine/port-scoped cloud tokens."""
+import base64
+import io
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import threading
+import time
+import uuid
+import zipfile
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse
+
+ROOT = pathlib.Path('/home/builder/workspace')
+SOURCE = ROOT / 'source'
+LOCK = threading.RLock()
+STATE = {'logs': 'Build machine is ready.', 'building': False, 'artifactId': None}
+ARTIFACT = None
+TEMPLATE = os.environ['V5X_TEMPLATE']
+UPLOADS = {}
+VIEWERS = {}
+
+def append(text):
+    import re
+    with LOCK:
+        STATE['logs'] = (STATE['logs'] + re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text))[-200000:]
+
+def compile_source(snapshot, commit):
+    global ARTIFACT
+    try:
+        with zipfile.ZipFile(io.BytesIO(snapshot)) as archive:
+            entries = archive.infolist()
+            if len(entries) > 3000 or sum(e.file_size for e in entries) > 96*1024*1024:
+                raise ValueError('Source snapshot exceeds build limits.')
+            expected = set()
+            for entry in entries:
+                path = pathlib.PurePosixPath(entry.filename)
+                if path.is_absolute() or '..' in path.parts or '\\' in entry.filename or entry.is_dir():
+                    raise ValueError('Invalid source path.')
+                expected.add(entry.filename)
+            SOURCE.mkdir(parents=True, exist_ok=True)
+            for path in SOURCE.rglob('*'):
+                if path.is_symlink(): path.unlink()
+                elif path.is_file() and str(path.relative_to(SOURCE)) not in expected: path.unlink()
+            for entry in entries:
+                path = SOURCE / entry.filename
+                if not path.resolve().is_relative_to(SOURCE): raise ValueError('Invalid source path.')
+                path.parent.mkdir(parents=True, exist_ok=True)
+                data = archive.read(entry)
+                if not path.exists() or path.read_bytes() != data: path.write_bytes(data)
+        process = subprocess.Popen(['/usr/local/bin/v5x-build', TEMPLATE], cwd=SOURCE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
+        def timeout():
+            import signal
+            try: os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError: pass
+        timer = threading.Timer(240, timeout)
+        timer.start()
+        try:
+            import codecs
+            decoder = codecs.getincrementaldecoder('utf-8')('replace')
+            while True:
+                chunk = process.stdout.read1(8192)
+                if not chunk: break
+                append(decoder.decode(chunk))
+            append(decoder.decode(b'', final=True))
+            code = process.wait()
+        finally: timer.cancel()
+        if code == 0:
+            output = io.BytesIO()
+            with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
+                total = 0
+                for folder in ('bin', 'build'):
+                    for path in (SOURCE / folder).rglob('*.bin'):
+                        if path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(SOURCE):
+                            total += path.stat().st_size
+                            if total > 64*1024*1024: raise ValueError('Binaries exceed 64 MiB.')
+                            archive.write(path, str(path.relative_to(SOURCE)))
+            data = output.getvalue()
+            if len(data) > 32*1024*1024: raise ValueError('Artifacts exceed 32 MiB.')
+            with LOCK:
+                ARTIFACT = data
+                STATE['artifactId'] = str(uuid.uuid4())
+        append(f'\nBuild {"succeeded" if code == 0 else f"failed (exit {code})"}.')
+    except Exception as error:
+        append(f'\nBuild failed: {error}')
+    finally:
+        with LOCK: STATE['building'] = False
+
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, *args): pass  # Never log bearer tokens or URL query strings.
+    def send(self, code, data, content_type='application/json'):
+        self.send_response(code)
+        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Length', str(len(data)))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cache-Control', 'no-store')
+        self.end_headers()
+        self.wfile.write(data)
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.end_headers()
+    def do_GET(self):
+        path = urlparse(self.path).path
+        with LOCK:
+            if path == '/health':
+                code, data, content_type = 200, json.dumps({'building': STATE['building'], 'viewers': sum(expiry > time.time() for expiry in VIEWERS.values())}).encode(), 'application/json'
+            elif path == '/status': code, data, content_type = 200, json.dumps(STATE).encode(), 'application/json'
+            elif path == '/artifact' and ARTIFACT: code, data, content_type = 200, ARTIFACT, 'application/zip'
+            else: code, data, content_type = 404, b'{}', 'application/json'
+        # A slow binary download must not block log updates or viewer heartbeats.
+        self.send(code, data, content_type)
+    def do_POST(self):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if not 0 < length <= 2*1024*1024: raise ValueError('Invalid request size.')
+            data = json.loads(self.rfile.read(length))
+            path = urlparse(self.path).path
+            with LOCK:
+                now = time.time()
+                for key in list(UPLOADS):
+                    if UPLOADS[key]['expires'] < now: del UPLOADS[key]
+                if path == '/presence':
+                    session = data['sessionId']
+                    if not isinstance(session, str) or not 8 <= len(session) <= 128: raise ValueError('Invalid session.')
+                    for key in list(VIEWERS):
+                        if VIEWERS[key] < now: del VIEWERS[key]
+                    if data.get('leave'): VIEWERS.pop(session, None)
+                    else:
+                        if len(VIEWERS) >= 1000 and session not in VIEWERS: raise ValueError('Too many viewers.')
+                        VIEWERS[session] = now + 35
+                    self.send(200, b'{}')
+                elif path == '/upload':
+                    key = data['id']
+                    if not isinstance(key, str) or len(key) > 128: raise ValueError('Invalid upload ID.')
+                    if key not in UPLOADS:
+                        if len(UPLOADS) >= 4: raise ValueError('Too many uploads.')
+                        UPLOADS[key] = {'data': bytearray(), 'expires': now + 300}
+                    upload = UPLOADS[key]
+                    if data['offset'] != len(upload['data']): raise ValueError('Invalid upload offset.')
+                    chunk = base64.b64decode(data['data'], validate=True)
+                    if len(upload['data']) + len(chunk) > 96*1024*1024: raise ValueError('Source too large.')
+                    upload['data'].extend(chunk)
+                    self.send(200, b'{}')
+                elif path == '/build':
+                    if (ROOT / 'draining').exists():
+                        self.send(503, b'{"error":"Build machine is updating."}')
+                        return
+                    if STATE['building']:
+                        self.send(409, b'{"error":"A build is already running."}')
+                        return
+                    upload = UPLOADS.pop(data['id'])
+                    commit = str(data['commit'])[:80]
+                    STATE.update(building=True, logs=f'Building commit {commit}\n')
+                    threading.Thread(target=compile_source, args=(bytes(upload['data']), commit), daemon=True).start()
+                    self.send(202, b'{}')
+                else: self.send(404, b'{}')
+        except (ValueError, KeyError, TypeError) as error:
+            self.send(400, json.dumps({'error': str(error)}).encode())
+
+if __name__ == '__main__':
+    ROOT.mkdir(parents=True, exist_ok=True)
+    ThreadingHTTPServer(('0.0.0.0', 8080), Handler).serve_forever()

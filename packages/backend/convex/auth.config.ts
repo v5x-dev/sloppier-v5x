@@ -18,4 +18,16 @@ const providers = clientId
     ]
   : []
 
+// Opt-in public keys for short-lived development demo accounts. No signing key
+// is sent to Convex. Production deployments must leave this unset.
+if (process.env.CODE_DEMO_JWKS && process.env.CODE_DEMO_ISSUER) {
+  providers.push({
+    type: "customJwt",
+    issuer: process.env.CODE_DEMO_ISSUER,
+    algorithm: "RS256",
+    jwks: `data:application/json;base64,${process.env.CODE_DEMO_JWKS}`,
+    applicationID: "code-collaboration-demo",
+  })
+}
+
 export default { providers }

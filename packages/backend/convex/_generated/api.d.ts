@@ -8,10 +8,16 @@
  * @module
  */
 
+import type * as backups from "../backups.js";
+import type * as buildConnection from "../buildConnection.js";
+import type * as buildWorker from "../buildWorker.js";
+import type * as builds from "../builds.js";
 import type * as codeStorage from "../codeStorage.js";
 import type * as crdt from "../crdt.js";
 import type * as files from "../files.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_buildDependencies from "../lib/buildDependencies.js";
+import type * as lib_crdtBackup from "../lib/crdtBackup.js";
 import type * as lib_paths from "../lib/paths.js";
 import type * as lib_templateCatalog from "../lib/templateCatalog.js";
 import type * as lib_templates from "../lib/templates.js";
@@ -26,10 +32,16 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  backups: typeof backups;
+  buildConnection: typeof buildConnection;
+  buildWorker: typeof buildWorker;
+  builds: typeof builds;
   codeStorage: typeof codeStorage;
   crdt: typeof crdt;
   files: typeof files;
   "lib/auth": typeof lib_auth;
+  "lib/buildDependencies": typeof lib_buildDependencies;
+  "lib/crdtBackup": typeof lib_crdtBackup;
   "lib/paths": typeof lib_paths;
   "lib/templateCatalog": typeof lib_templateCatalog;
   "lib/templates": typeof lib_templates;

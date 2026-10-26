@@ -1,0 +1,342 @@
+{
+  "name": "v5x-birds-of-paradise",
+  "displayName": "Birds of Paradise",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#372725",
+    "editor.foreground": "#E6E1C4",
+    "editorCursor.foreground": "#DDDDDD",
+    "editor.selectionBackground": "#bf4826"
+  },
+  "tokenColors": [
+    {
+      "name": "Comment",
+      "scope": "comment",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#6B4E32"
+      }
+    },
+    {
+      "name": "Python Docstring",
+      "scope": "string.quoted.double.block.python",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#6B4E32"
+      }
+    },
+    {
+      "name": "Constant",
+      "scope": "constant",
+      "settings": {
+        "foreground": "#6C99BB"
+      }
+    },
+    {
+      "name": "Entity",
+      "scope": "entity",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#EFAC32"
+      }
+    },
+    {
+      "name": "Keyword",
+      "scope": "keyword",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#EF5D32"
+      }
+    },
+    {
+      "name": "Storage",
+      "scope": "storage",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#EF5D32"
+      }
+    },
+    {
+      "name": "String",
+      "scope": "string",
+      "settings": {
+        "foreground": "#D9D762"
+      }
+    },
+    {
+      "name": "Support",
+      "scope": "support",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#E6E1C4"
+      }
+    },
+    {
+      "name": "Variable",
+      "scope": "variable",
+      "settings": {
+        "foreground": "#7DAF9C"
+      }
+    },
+    {
+      "name": "Invalid \u2013 Deprecated",
+      "scope": "invalid.deprecated",
+      "settings": {
+        "fontStyle": "italic underline",
+        "foreground": "#CC4232"
+      }
+    },
+    {
+      "name": "Invalid \u2013 Illegal",
+      "scope": "invalid.illegal",
+      "settings": {
+        "background": "#CC4232",
+        "foreground": "#E6E1C4"
+      }
+    },
+    {
+      "name": "\u2666 String constant",
+      "scope": "string constant",
+      "settings": {
+        "fontStyle": "italic",
+        "foreground": "#D9D762"
+      }
+    },
+    {
+      "name": "\u2666 String.regexp",
+      "scope": "string.regexp",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#8856D2"
+      }
+    },
+    {
+      "name": "\u2666 String.regexp.\u00abspecial\u00bb",
+      "scope": "string.regexp constant.character.escape, string.regexp source.ruby.embedded, string.regexp string.regexp.arbitrary-repitition",
+      "settings": {
+        "foreground": "#BE73FD"
+      }
+    },
+    {
+      "name": "\u2666 String variable",
+      "scope": "string variable",
+      "settings": {
+        "foreground": "#8A9A95"
+      }
+    },
+    {
+      "name": "\u2666 Support.function",
+      "scope": "support.function",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#EFAC32"
+      }
+    },
+    {
+      "name": "\u2666 Support.constant",
+      "scope": "support.constant",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#6C99BB"
+      }
+    },
+    {
+      "name": "c C/C++ Preprocessor Line",
+      "scope": "meta.preprocessor.c",
+      "settings": {
+        "foreground": "#8996A8"
+      }
+    },
+    {
+      "name": "c C/C++ Preprocessor Directive",
+      "scope": "meta.preprocessor.c keyword",
+      "settings": {
+        "foreground": "#AFC4DB"
+      }
+    },
+    {
+      "name": "\u2718 Doctype/XML Processing",
+      "scope": "meta.tag.sgml.doctype, meta.tag.sgml.doctype entity, meta.tag.sgml.doctype string, meta.tag.preprocessor.xml, meta.tag.preprocessor.xml entity, meta.tag.preprocessor.xml string",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#86B4BB"
+      }
+    },
+    {
+      "name": "\u2718 Meta.tag.\u00aball\u00bb",
+      "scope": "declaration.tag, declaration.tag entity, meta.tag, meta.tag entity",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#86B4BB"
+      }
+    },
+    {
+      "name": "\u2387 diff.header",
+      "scope": "meta.diff, meta.diff.header, meta.separator",
+      "settings": {
+        "background": "#0E2231",
+        "fontStyle": "italic",
+        "foreground": "#F8F8F8"
+      }
+    },
+    {
+      "name": "\u2387 diff.deleted",
+      "scope": "markup.deleted",
+      "settings": {
+        "background": "#8c1c12",
+        "foreground": "#F8F8F8"
+      }
+    },
+    {
+      "name": "\u2387 diff.changed",
+      "scope": "markup.changed",
+      "settings": {
+        "background": "#4A410D",
+        "foreground": "#F8F8F8"
+      }
+    },
+    {
+      "name": "\u2387 diff.inserted",
+      "scope": "markup.inserted",
+      "settings": {
+        "background": "#69a860",
+        "foreground": "#F8F8F8"
+      }
+    },
+    {
+      "name": "markup.underline.link.markdown",
+      "scope": "markup.underline.link.markdown",
+      "settings": {
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "name": "SASS @import",
+      "scope": "keyword.control.at-rule.sass",
+      "settings": {
+        "fontStyle": "",
+        "foreground": "#EF5D32"
+      }
+    },
+    {
+      "name": "SASS $variable",
+      "scope": "variable.parameter",
+      "settings": {
+        "foreground": "#7DAF9C"
+      }
+    },
+    {
+      "name": "SASS Attributes",
+      "scope": "keyword.control.untitled, entity.other.attribute-name.class, entity.other.attribute-name.idruby-slim-tmbundle, entity.other.attribute-name.tag.pseudo-class",
+      "settings": {
+        "foreground": "#EF5D32"
+      }
+    },
+    {
+      "name": "SASS Properties",
+      "scope": "support.type.property-name",
+      "settings": {
+        "foreground": "#EFAC32"
+      }
+    },
+    {
+      "name": "SASS Values",
+      "scope": "support.constant.property-value",
+      "settings": {
+        "foreground": "#6C99BB"
+      }
+    },
+    {
+      "name": "CSS Attributes",
+      "scope": "meta.selector.css entity.name.tag, meta.selector.css entity.other.attribute-name.class, meta.selector.css entity.other.attribute-name.id",
+      "settings": {
+        "foreground": "#EFAC32"
+      }
+    },
+    {
+      "name": "Slim tag",
+      "scope": "entity.name.tag.slim",
+      "settings": {
+        "foreground": "#ef5d32"
+      }
+    },
+    {
+      "name": "CSS Values",
+      "scope": "meta.property-group support.constant.property-value.css, meta.property-value support.constant.property-value.css",
+      "settings": {
+        "foreground": "#C699BB"
+      }
+    },
+    {
+      "name": "CSS Constants",
+      "scope": "meta.property-value support.constant.named-color.css, meta.property-value constant",
+      "settings": {
+        "foreground": "#6C99BB"
+      }
+    },
+    {
+      "name": "CSS Values",
+      "scope": "entity.name.class",
+      "settings": {
+        "foreground": "#503936"
+      }
+    },
+    {
+      "name": "yaml tag",
+      "scope": "entity.name.tag.yaml, punctuation.separator.key-value.yaml",
+      "settings": {
+        "foreground": "#EFAC32"
+      }
+    },
+    {
+      "name": "Class Name",
+      "scope": "support.class",
+      "settings": {
+        "foreground": "#7DAF9C"
+      }
+    },
+    {
+      "name": "GitGutter deleted",
+      "scope": "markup.deleted.git_gutter",
+      "settings": {
+        "foreground": "#F92672"
+      }
+    },
+    {
+      "name": "GitGutter inserted",
+      "scope": "markup.inserted.git_gutter",
+      "settings": {
+        "foreground": "#A6E22E"
+      }
+    },
+    {
+      "name": "GitGutter changed",
+      "scope": "markup.changed.git_gutter",
+      "settings": {
+        "foreground": "#967EFB"
+      }
+    },
+    {
+      "name": "GitGutter ignored",
+      "scope": "markup.ignored.git_gutter",
+      "settings": {
+        "foreground": "#565656"
+      }
+    },
+    {
+      "name": "GitGutter untracked",
+      "scope": "markup.untracked.git_gutter",
+      "settings": {
+        "foreground": "#565656"
+      }
+    },
+    {
+      "name": "Birds of Paradise Zed comment color",
+      "scope": ["comment", "punctuation.definition.comment"],
+      "settings": {
+        "foreground": "#6B4E32",
+        "fontStyle": ""
+      }
+    }
+  ]
+}

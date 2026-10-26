@@ -1,0 +1,19 @@
+{
+  "name": "@workspace/serial",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./protocol": "./src/protocol.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "format": "prettier --write src tests README.md"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.5"
+  }
+}

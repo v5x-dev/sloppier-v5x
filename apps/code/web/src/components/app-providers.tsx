@@ -2,13 +2,16 @@ import { ConvexProviderWithAuthKit } from "@convex-dev/workos"
 import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react"
 import { Toaster } from "@workspace/ui/components/toast"
 import { useRouter } from "@tanstack/react-router"
-import { ConvexReactClient } from "convex/react"
+import { demoAccount, useDemoConvexAuth } from "@/lib/auth"
+import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react"
 import type { ReactNode } from "react"
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const router = useRouter()
+
+  const content = <Toaster>{children}</Toaster>
 
   return (
     <AuthKitProvider
@@ -24,9 +27,15 @@ export function AppProviders({ children }: { children: ReactNode }) {
         })
       }}
     >
-      <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
-        <Toaster>{children}</Toaster>
-      </ConvexProviderWithAuthKit>
+      {demoAccount() ? (
+        <ConvexProviderWithAuth client={convex} useAuth={useDemoConvexAuth}>
+          {content}
+        </ConvexProviderWithAuth>
+      ) : (
+        <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
+          {content}
+        </ConvexProviderWithAuthKit>
+      )}
     </AuthKitProvider>
   )
 }

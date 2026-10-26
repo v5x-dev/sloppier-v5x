@@ -1,3 +1,4 @@
+import { getFiletypeFromFileName } from "@pierre/diffs"
 import { TextDocument } from "@pierre/diffs/edit"
 import type {
   Editor,
@@ -22,7 +23,7 @@ export class CollaborativeTextDocument extends TextDocument<"file", undefined> {
     readonly undoManager: Y.UndoManager,
     readonly onLimit: () => void
   ) {
-    super(path, source(shared).toString())
+    super(path, source(shared).toString(), getFiletypeFromFileName(path))
   }
   override get canUndo() {
     return this.undoManager.canUndo()

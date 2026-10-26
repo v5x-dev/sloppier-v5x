@@ -1,6 +1,6 @@
 import { CodeIcon, PlusIcon, SignOutIcon } from "@phosphor-icons/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { useAuth } from "@workos-inc/authkit-react"
+import { useAuth } from "@/lib/auth"
 import { api } from "@workspace/backend/api"
 import type { Doc, Id } from "@workspace/backend/dataModel"
 import {

@@ -1,3 +1,4 @@
+import { editorThemeOptions } from "@/lib/editor-theme"
 import {
   DndContext,
   KeyboardSensor,
@@ -51,6 +52,7 @@ import { Input } from "@workspace/ui/components/input"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarInset,
   SidebarProvider,
@@ -85,10 +87,22 @@ import {
   type ExplorerUpdate,
 } from "@/components/repository-explorer"
 import { containsPath } from "@/lib/explorer"
-import { LiveFileEditor } from "@/components/live-file-editor"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarImage,
+} from "@workspace/ui/components/avatar"
+import { LiveFileEditor, type LivePerson } from "@/components/live-file-editor"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
 import { AuthGate } from "@/components/auth-gate"
 import { errorMessage } from "@/lib/errors"
+import { ProgramConnection } from "@/components/program-connection"
+import { ProgramBuild } from "@/components/program-build"
+import { ProgramUpload } from "@/components/program-upload"
+import { useProgramBinaries } from "@/hooks/use-program-binaries"
+import { prepareUploadBuild, waitForSourceSync } from "@/lib/build-program"
+import { useProgramConnection } from "@/components/program-connection"
 
 export const Route = createFileRoute("/programs/$programId")({
   component: () => (
@@ -132,7 +146,11 @@ function ProgramPage() {
   }
 
   if (program.repositoryStatus === "ready") {
-    return <Workbench key={program._id} program={program} />
+    return (
+      <ProgramConnection key={program._id} projectId={program._id}>
+        <Workbench program={program} />
+      </ProgramConnection>
+    )
   }
 
   return (
@@ -213,6 +231,9 @@ type LoadedFile = {
 }
 
 function Workbench({ program }: { program: Doc<"projects"> }) {
+  const binaries = useProgramBinaries()
+  const { request: buildRequest } = useProgramConnection()
+  const buildManifest = useAction(api.codeStorage.buildManifest)
   const listFiles = useAction(api.codeStorage.listFiles)
   const readFile = useAction(api.codeStorage.readFile)
   const commitFiles = useAction(api.codeStorage.commitFiles)
@@ -235,10 +256,27 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   const scrollPositions = useRef(new Map<string, number>())
   const [dirtyPaths, setDirtyPaths] = useState<string[]>([])
   const [commitOpen, setCommitOpen] = useState(false)
+  const [filePeople, setFilePeople] = useState<Record<string, LivePerson[]>>({})
   const [liveSync, setLiveSync] = useState<Record<string, boolean>>({})
   const allSynced = Object.values(liveSync).every(Boolean)
+  const syncedRef = useRef(allSynced)
+  syncedRef.current = allSynced
   const operationBusy = useRef(false)
   const initialOpen = useRef(false)
+
+  async function prepareSource() {
+    const { sha, paths } = await buildManifest({ projectId: program._id })
+    const files: Record<string, Uint8Array> = {}
+    let total = 0
+    for (const path of paths) {
+      const bytes = new Uint8Array(await readBytes(path, true, sha))
+      total += bytes.length
+      if (total > 96 * 1024 * 1024)
+        throw new Error("Source snapshot exceeds 96 MiB.")
+      files[path] = bytes
+    }
+    return { sha, files }
+  }
 
   const loadPaths = useCallback(async () => {
     setListError(null)
@@ -325,15 +363,18 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   }, [])
 
   async function commit(message: string) {
-    if (!allSynced)
+    if (!syncedRef.current)
       throw new Error(
         "Wait for live changes to finish syncing before committing."
       )
-    const changes = dirtyPaths.map((path) => ({
-      operation: "put" as const,
-      path,
-      contents: drafts.current.get(path) ?? "",
-    }))
+    const changes = [...drafts.current]
+      .filter(([path, text]) => committed.current.get(path) !== text)
+      .map(([path, text]) => ({
+        operation: "put" as const,
+        path,
+        contents: text,
+      }))
+    if (!changes.length) return
     if (operationBusy.current)
       throw new Error("Wait for the current file operation to finish.")
     operationBusy.current = true
@@ -385,7 +426,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   }
 
   async function applyExplorerUpdate(update: ExplorerUpdate) {
-    if (!allSynced)
+    if (!syncedRef.current)
       throw new Error(
         "Wait for live changes to finish syncing before changing files."
       )
@@ -566,6 +607,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             </div>
           ) : (
             <RepositoryExplorer
+              binaries={binaries}
               paths={paths}
               dirtyPaths={dirtyPaths}
               activePath={activePath}
@@ -578,6 +620,38 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             />
           )}
         </SidebarContent>
+        <SidebarFooter className="items-start p-3">
+          <AvatarGroup aria-label="People in this file">
+            {(activePath ? (filePeople[activePath] ?? []) : []).map(
+              (person) => (
+                <Avatar
+                  key={person.id}
+                  size="sm"
+                  title={person.name}
+                  aria-label={person.name}
+                >
+                  {person.imageUrl && (
+                    <AvatarImage src={person.imageUrl} alt={person.name} />
+                  )}
+                  <AvatarFallback
+                    style={{
+                      backgroundColor: `${person.color}33`,
+                      color: person.color,
+                    }}
+                  >
+                    {person.name
+                      .trim()
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join("")
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              )
+            )}
+          </AvatarGroup>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="min-h-0 min-w-0 pt-2">
         <div className="flex min-h-0 min-w-0 flex-1">
@@ -660,6 +734,14 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                       projectId={program._id}
                       path={path}
                       active={path === activePath}
+                      onPeopleChange={(people) =>
+                        setFilePeople((current) =>
+                          JSON.stringify(current[path]) ===
+                          JSON.stringify(people)
+                            ? current
+                            : { ...current, [path]: people }
+                        )
+                      }
                       onSyncChange={(synced) =>
                         setLiveSync((current) =>
                           current[path] === synced
@@ -697,29 +779,55 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             )}
           </Tabs>
         </div>
-        <ActionsBar activePath={activePath}>
-          <Tooltip>
-            <TooltipTrigger render={<span className="inline-flex" />}>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={
-                  dirtyPaths.length === 0
-                    ? "No changes"
-                    : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
-                }
-                disabled={dirtyPaths.length === 0 || !allSynced}
-                onClick={() => setCommitOpen(true)}
-              >
-                <GitCommitIcon />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {dirtyPaths.length === 0
-                ? "No changes"
-                : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
-            </TooltipContent>
-          </Tooltip>
+        <ActionsBar
+          activePath={activePath}
+          leftAction={
+            <Tooltip>
+              <TooltipTrigger render={<span className="inline-flex" />}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={
+                    dirtyPaths.length === 0
+                      ? "No changes"
+                      : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
+                  }
+                  disabled={dirtyPaths.length === 0 || !allSynced}
+                  onClick={() => setCommitOpen(true)}
+                >
+                  <GitCommitIcon />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {dirtyPaths.length === 0
+                  ? "No changes"
+                  : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
+              </TooltipContent>
+            </Tooltip>
+          }
+        >
+          <ProgramUpload
+            buildAction={
+              <ProgramBuild
+                dirty={dirtyPaths.length > 0}
+                prepareSource={prepareSource}
+              />
+            }
+            name={program.name}
+            dirty={dirtyPaths.length > 0}
+            prepareProgram={(signal, onStage) =>
+              prepareUploadBuild({
+                commitChanges: async (signal) => {
+                  await waitForSourceSync(() => syncedRef.current, signal)
+                  await commit("Save changes before upload")
+                },
+                prepareSource,
+                request: buildRequest,
+                signal,
+                onStage,
+              })
+            }
+          />
         </ActionsBar>
       </SidebarInset>
       <CommitDialog
@@ -819,6 +927,7 @@ function FileEditor({
   loaded,
   active,
   onSyncChange,
+  onPeopleChange,
   scrollPositions,
   onChange,
 }: {
@@ -827,6 +936,7 @@ function FileEditor({
   loaded: LoadedFile
   active: boolean
   onSyncChange: (synced: boolean) => void
+  onPeopleChange: (people: LivePerson[]) => void
   scrollPositions: Map<string, number>
   onChange: (text: string) => void
 }) {
@@ -858,10 +968,7 @@ function FileEditor({
               ? "This file is not UTF-8 text and is read-only."
               : "Files larger than 256 KiB are read-only. Preview limited to 512 KiB."}
           </p>
-          <File
-            file={file}
-            options={{ themeType: "dark", disableFileHeader: true }}
-          />
+          <File file={file} options={editorThemeOptions} />
         </>
       ) : (
         <LiveFileEditor
@@ -870,6 +977,7 @@ function FileEditor({
           active={active}
           onChange={onChange}
           onSyncChange={onSyncChange}
+          onPeopleChange={onPeopleChange}
         />
       )}
     </div>
@@ -882,10 +990,12 @@ function FileEditor({
 // hides the part of its top outline that falls inside the sidebar. The `after`
 // fillet rounds the inside corner where the sidebar meets the bar.
 function ActionsBar({
+  leftAction,
   activePath,
   children,
 }: {
   activePath: string | null
+  leftAction: React.ReactNode
   children: React.ReactNode
 }) {
   const { isMobile, state } = useSidebar()
@@ -904,6 +1014,7 @@ function ActionsBar({
           : "ml-2 rounded-lg"
       )}
     >
+      {leftAction}
       {/* On mobile the sidebar is a sheet, so the bar carries its toggle and
           the open file's path. */}
       {isMobile ? (

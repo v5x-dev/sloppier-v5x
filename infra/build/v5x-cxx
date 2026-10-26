@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Generate and reuse a PCH with exactly the translation unit's compiler flags."""
+import fcntl
+import hashlib
+import os
+import pathlib
+import subprocess
+import sys
+
+compiler = os.environ['V5X_REAL_CXX']
+args = sys.argv[1:]
+source = next((a for a in args if a.endswith(('.cpp', '.cc', '.cxx'))), None)
+if '-c' not in args or not source:
+    os.execvp(compiler, [compiler, *args])
+flags = []
+skip = False
+for arg in args:
+    if skip:
+        skip = False
+        continue
+    if arg in ('-o', '-MF', '-MT', '-MQ'):
+        skip = True
+    elif arg not in ('-c', source, '-MMD', '-MD', '-MP'):
+        flags.append(arg)
+header = pathlib.Path(os.environ['V5X_PCH_HEADER'])
+digest = hashlib.sha256((compiler + repr(flags)).encode())
+# Include all project headers, including those outside include/, to invalidate cached PCHs.
+for path in sorted(pathlib.Path.cwd().rglob('*')):
+    if path.is_file() and path.suffix in ('.h', '.hpp', '.hh', '.hxx', '.inc'):
+        digest.update(str(path).encode())
+        digest.update(path.read_bytes())
+        if 'clang' in pathlib.Path(compiler).name:
+            digest.update(str((path.stat().st_mtime_ns, path.stat().st_ino)).encode())
+cache = pathlib.Path('/home/builder/.cache/v5x-pch') / digest.hexdigest()
+cache.mkdir(parents=True, exist_ok=True)
+with (cache / 'lock').open('w') as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    prefix = cache / 'prefix.h'
+    pch = cache / 'prefix.h.gch'
+    if not pch.exists():
+        print('Precompiling ' + header.name, flush=True)
+        prefix.write_text('#include "' + str(header) + '"\n')
+        subprocess.run([compiler, *flags, '-x', 'c++-header', str(prefix), '-o', str(pch)], check=True)
+# Clang validates header metadata too. Uploads preserve unchanged headers, and
+# the cache key includes metadata to invalidate headers restored to older contents.
+extra = ['-include-pch', str(pch)] if 'clang' in pathlib.Path(compiler).name else ['-include', str(prefix), '-Werror=invalid-pch']
+os.execvp(compiler, [compiler, *extra, *args])

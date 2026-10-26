@@ -84,3 +84,22 @@ export function copyDestination(
   }
   return destination
 }
+
+// Build outputs share the tree's paths, but cannot enter any Git operation.
+export function isClientBuildPath(
+  path: string,
+  generatedPaths: readonly string[]
+) {
+  return generatedPaths.length > 0 && containsPath("bin", barePath(path))
+}
+
+export function assertRepositoryPaths(
+  paths: readonly string[],
+  generatedPaths: readonly string[]
+) {
+  if (paths.some((path) => isClientBuildPath(path, generatedPaths))) {
+    throw new Error(
+      "Build binaries are client-only and cannot be changed or copied into the repository."
+    )
+  }
+}

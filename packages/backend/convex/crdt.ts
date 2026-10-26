@@ -1,4 +1,5 @@
 import * as Y from "yjs"
+import { enqueueBackup } from "./lib/crdtBackup"
 import { internal } from "./_generated/api"
 import {
   internalMutation,
@@ -82,20 +83,18 @@ export const appendUpdate = mutation({
       if (duplicate.storageStatus === "failed") {
         await ctx.db.patch(duplicate._id, {
           storageStatus: "pending",
+          projectId: args.projectId,
           storageError: undefined,
         })
-        await ctx.scheduler.runAfter(
-          0,
-          internal.codeStorage.persistCrdtUpdate,
-          { updateRowId: duplicate._id }
-        )
+        await enqueueBackup(ctx, args.projectId)
       }
       return { sequence: duplicate.sequence, duplicate: true }
     }
 
     const sequence = document.lastSequence + 1
     await ctx.db.patch(document._id, { lastSequence: sequence, updatedAt: now })
-    const updateRowId = await ctx.db.insert("crdtUpdates", {
+    await ctx.db.insert("crdtUpdates", {
+      projectId: args.projectId,
       documentId: document._id,
       sequence,
       updateId: args.updateId,
@@ -105,9 +104,7 @@ export const appendUpdate = mutation({
       createdAt: now,
     })
 
-    await ctx.scheduler.runAfter(0, internal.codeStorage.persistCrdtUpdate, {
-      updateRowId,
-    })
+    await enqueueBackup(ctx, args.projectId)
 
     return { sequence, duplicate: false }
   },
@@ -198,12 +195,11 @@ export const retryPersistence = mutation({
     }
 
     await ctx.db.patch(update._id, {
+      projectId: args.projectId,
       storageStatus: "pending",
       storageError: undefined,
     })
-    await ctx.scheduler.runAfter(0, internal.codeStorage.persistCrdtUpdate, {
-      updateRowId: update._id,
-    })
+    await enqueueBackup(ctx, args.projectId)
     return { queued: true }
   },
 })
@@ -262,7 +258,8 @@ export const initializeDocument = internalMutation({
   args: {
     projectId: v.id("projects"),
     path: v.string(),
-    bytes: v.bytes(),
+    bytes: v.optional(v.bytes()),
+    contents: v.optional(v.string()),
     actorId: v.string(),
   },
   handler: async (ctx, args) => {
@@ -273,7 +270,18 @@ export const initializeDocument = internalMutation({
       )
       .unique()
     if (existing) return existing._id
-    if (args.bytes.byteLength > MAX_UPDATE_BYTES) {
+    let bytes = args.bytes
+    if (!bytes) {
+      if (args.contents === undefined) throw new ConvexError("Missing source.")
+      const seed = new Y.Doc()
+      try {
+        seed.getText("source").insert(0, args.contents)
+        bytes = Y.encodeStateAsUpdate(seed).buffer as ArrayBuffer
+      } finally {
+        seed.destroy()
+      }
+    }
+    if (bytes.byteLength > MAX_UPDATE_BYTES) {
       throw new ConvexError("This file is too large for live editing.")
     }
     const file = await ctx.db
@@ -291,18 +299,17 @@ export const initializeDocument = internalMutation({
       createdAt: now,
       updatedAt: now,
     })
-    const updateRowId = await ctx.db.insert("crdtUpdates", {
+    await ctx.db.insert("crdtUpdates", {
+      projectId: args.projectId,
       documentId,
       sequence: 1,
       updateId: "initial-source",
       actorId: args.actorId,
-      bytes: args.bytes,
+      bytes,
       storageStatus: "pending",
       createdAt: now,
     })
-    await ctx.scheduler.runAfter(0, internal.codeStorage.persistCrdtUpdate, {
-      updateRowId,
-    })
+    await enqueueBackup(ctx, args.projectId)
     return documentId
   },
 })

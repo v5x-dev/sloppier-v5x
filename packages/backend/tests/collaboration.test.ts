@@ -173,3 +173,96 @@ describe("live document backend", () => {
     )
   })
 })
+
+describe("repository backup queue", () => {
+  test("concurrent writers share one job and edits arriving during a backup are drained next", async () => {
+    const { t, args, bytes, alice, bob, seed } = await setup()
+    await t.mutation(internal.crdt.initializeDocument, {
+      ...args,
+      bytes,
+      actorId: "alice",
+    })
+    const jobs = () => t.run((ctx) => ctx.db.query("crdtBackupJobs").collect())
+    const [job] = await jobs()
+    const first = await t.query(internal.backups.batch, {
+      jobId: job._id,
+      generation: 0,
+    })
+    expect(first?.updates).toHaveLength(1)
+    const vector = Y.encodeStateVector(seed)
+    seed.getText("source").insert(0, "// concurrent edit\n")
+    const edit = Y.encodeStateAsUpdate(seed, vector).buffer as ArrayBuffer
+    await Promise.all(
+      [alice, bob, alice, bob].map((user, i) =>
+        user.mutation(api.crdt.appendUpdate, {
+          ...args,
+          bytes: edit,
+          updateId: `parallel-${i}`,
+        })
+      )
+    )
+    expect(await jobs()).toHaveLength(1)
+    await t.mutation(internal.backups.complete, {
+      jobId: job._id,
+      generation: 0,
+      updateIds: first!.updates.map((u) => u._id),
+      commitSha: "first",
+    })
+    const second = await t.query(internal.backups.batch, {
+      jobId: job._id,
+      generation: 1,
+    })
+    expect(second?.updates).toHaveLength(4)
+    await t.mutation(internal.backups.complete, {
+      jobId: job._id,
+      generation: 1,
+      updateIds: second!.updates.map((u) => u._id),
+      commitSha: "second",
+    })
+    expect(await jobs()).toHaveLength(0)
+    const rows = await t.run((ctx) => ctx.db.query("crdtUpdates").collect())
+    expect(rows.every((r) => r.storageStatus === "persisted")).toBe(true)
+  })
+
+  test("transient branch conflicts retry without reporting failed backups, and stale workers cannot acknowledge edits", async () => {
+    const { t, args, bytes } = await setup()
+    await t.mutation(internal.crdt.initializeDocument, {
+      ...args,
+      bytes,
+      actorId: "alice",
+    })
+    const [job] = await t.run((ctx) => ctx.db.query("crdtBackupJobs").collect())
+    const batch = await t.query(internal.backups.batch, {
+      jobId: job._id,
+      generation: 0,
+    })
+    const updateIds = batch!.updates.map((u) => u._id)
+    await t.mutation(internal.backups.complete, {
+      jobId: job._id,
+      generation: 0,
+      updateIds,
+      error: "base_ref does not match current head",
+    })
+    expect(
+      (await t.run((ctx) => ctx.db.get(updateIds[0])))?.storageStatus
+    ).toBe("pending")
+    await t.mutation(internal.backups.complete, {
+      jobId: job._id,
+      generation: 0,
+      updateIds,
+      commitSha: "stale",
+    })
+    expect(
+      (await t.run((ctx) => ctx.db.get(updateIds[0])))?.storageStatus
+    ).toBe("pending")
+    await t.mutation(internal.backups.complete, {
+      jobId: job._id,
+      generation: 1,
+      updateIds,
+      commitSha: "retry",
+    })
+    expect(
+      (await t.run((ctx) => ctx.db.get(updateIds[0])))?.storageStatus
+    ).toBe("persisted")
+  })
+})

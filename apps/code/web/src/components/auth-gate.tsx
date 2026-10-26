@@ -1,5 +1,5 @@
 import { SignInIcon } from "@phosphor-icons/react"
-import { useAuth } from "@workos-inc/authkit-react"
+import { useAuth } from "@/lib/auth"
 import { Button } from "@workspace/ui/components/button"
 import {
   Empty,
