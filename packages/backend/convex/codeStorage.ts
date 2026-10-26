@@ -1,5 +1,6 @@
+"use node"
+
 import { replayLiveDocument, LiveReplayError } from "./lib/liveReplay"
-;("use node")
 
 import {
   literalPattern,

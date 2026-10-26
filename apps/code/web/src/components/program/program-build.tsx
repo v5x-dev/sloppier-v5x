@@ -67,6 +67,14 @@ export function ProgramBuild({
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState("problems")
   const [pending, setPending] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+  const [fallbackStartedAt, setFallbackStartedAt] = useState<number | null>(
+    null
+  )
+  const [connectingStartedAt, setConnectingStartedAt] = useState<number | null>(
+    null
+  )
+  const sawBuilding = useRef(false)
   const logs = state?.logs ?? ""
   const diagnostics = useMemo(() => parseBuildDiagnostics(logs), [logs])
   const groups = useMemo(() => {
@@ -87,7 +95,35 @@ export function ProgramBuild({
   const stale = diagnosticsAreStale(logs, currentSha, dirty)
   const revision = diagnosticRevision(logs)
   const building = pending || Boolean(state?.building)
+  const startedAt = state?.startedAt ?? fallbackStartedAt
+  const elapsedSeconds =
+    startedAt == null
+      ? null
+      : Math.max(0, Math.floor((now - startedAt) / 1000))
+  const connectingSeconds =
+    connectingStartedAt == null
+      ? null
+      : Math.max(0, Math.floor((now - connectingStartedAt) / 1000))
   const succeeded = !building && logs.trimEnd().endsWith("Build succeeded.")
+  useEffect(() => {
+    if (state?.building) {
+      sawBuilding.current = true
+      setFallbackStartedAt((current) => current ?? Date.now())
+    } else if (sawBuilding.current) {
+      sawBuilding.current = false
+      setFallbackStartedAt(null)
+    }
+  }, [state?.building])
+  useEffect(() => {
+    if (!ready) setConnectingStartedAt((current) => current ?? Date.now())
+    else setConnectingStartedAt(null)
+  }, [ready])
+  useEffect(() => {
+    if (!building && ready) return
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [building, ready])
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
   }, [logs, open, tab])
@@ -95,7 +131,13 @@ export function ProgramBuild({
     if (showSheet) setOpen(true)
     setPending(true)
     try {
-      await submitBuild(request, await prepareSource())
+      await submitBuild(
+        (path, body, signal) => {
+          if (path === "/build") setFallbackStartedAt(Date.now())
+          return request(path, body, signal)
+        },
+        await prepareSource()
+      )
     } catch (error) {
       toast.add({
         type: "error",
@@ -182,8 +224,8 @@ export function ProgramBuild({
           className="gap-0 font-serif data-[side=bottom]:h-[55svh]"
         >
           <SheetHeader className="flex-row items-center gap-3 border-b">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <SheetTitle className="flex shrink-0 items-center gap-2">
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+              <SheetTitle className="flex shrink-0 items-center gap-2 text-sm">
                 <HammerIcon className="size-4 text-muted-foreground" />
                 Build
               </SheetTitle>
@@ -193,9 +235,21 @@ export function ProgramBuild({
                     <>
                       <Spinner className="size-3" />
                       Building committed source
+                      {elapsedSeconds !== null && (
+                        <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+                          {elapsedSeconds}s
+                        </span>
+                      )}
                     </>
                   ) : !ready ? (
-                    "Connecting to the build service…"
+                    <>
+                      <span>Connecting to the build service…</span>
+                      {connectingSeconds !== null && (
+                        <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+                          {connectingSeconds}s
+                        </span>
+                      )}
+                    </>
                   ) : succeeded ? (
                     "Build succeeded"
                   ) : revision ? (

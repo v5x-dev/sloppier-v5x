@@ -13,7 +13,12 @@ import type { Id } from "@workspace/backend/dataModel"
 import { errorMessage } from "@/lib/errors"
 
 type Connection = { baseUrl: string; token: string; expiresAt: string }
-type Status = { logs: string; building: boolean; artifactId: string | null }
+type Status = {
+  logs: string
+  building: boolean
+  startedAt?: number | null
+  artifactId: string | null
+}
 type Channel = {
   machineStatus: string | null
   status: Status | null

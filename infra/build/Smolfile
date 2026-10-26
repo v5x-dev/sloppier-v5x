@@ -1,0 +1,20 @@
+# V5 build machine. Run prepare-sdk.sh and prepare-dependencies.ts first, then from this directory:
+#   smolvm machine create --name v5x-build-golden -s Smolfile && smolvm machine start --name v5x-build-golden
+#   smolvm machine stop --name v5x-build-golden && smolvm pack create --from-vm v5x-build-golden --output v5x-build
+#   smol pack push registry.smolmachines.com/tenants/<tenant>/sloppier-v5x-build:<tag> -f v5x-build.smolmachine
+image = "ubuntu:24.04"
+cpus = 2
+memory = 2048
+net = true
+user = "builder"
+workdir = "/home/builder/workspace"
+cmd = ["/usr/local/bin/v5x-server"]
+volumes = ["./:/src:ro"]
+init = [
+  "apt-get update && apt-get install -y --no-install-recommends python3 make clang clangd gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib ca-certificates && rm -rf /var/lib/apt/lists/*",
+  # The Cortex-A9 V5 brain uses only thumb/v7-a+simd/softfp for every PROS and VEXcode flag set; drop other ARM multilibs.
+  "for root in /usr/lib/arm-none-eabi/newlib /usr/lib/gcc/arm-none-eabi/*; do find \"$root/arm\" \"$root/thumb\" -mindepth 1 -maxdepth 1 ! -name v7-a+simd -exec rm -rf {} +; find \"$root/arm\" -mindepth 1 -exec rm -rf {} +; find \"$root/thumb/v7-a+simd\" -mindepth 1 -maxdepth 1 ! -name softfp -exec rm -rf {} +; done; rm -rf /usr/share/doc /usr/share/man /usr/share/info",
+  "mkdir -p /opt/vex /opt/v5x && rm -rf /opt/vex/sdk /opt/v5x/deps && cp -r /src/vendor/sdk /opt/vex/sdk && cp -r /src/vendor/deps /opt/v5x/deps",
+  "install -m 755 /src/v5x-build /src/v5x-cxx /src/v5x-server /usr/local/bin/ && install -m 644 /src/vexcode.mk /opt/v5x/vexcode.mk",
+  "id -u builder >/dev/null 2>&1 || useradd --create-home builder; mkdir -p /home/builder/workspace && chown -R builder:builder /home/builder",
+]

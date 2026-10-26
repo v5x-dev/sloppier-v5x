@@ -11,6 +11,7 @@ export type BuildRequest = (
 export type BuildStatus = {
   logs: string
   building: boolean
+  startedAt?: number | null
   artifactId: string | null
 }
 

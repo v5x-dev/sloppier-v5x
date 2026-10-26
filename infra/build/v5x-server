@@ -17,7 +17,7 @@ from urllib.parse import urlparse, unquote
 ROOT = pathlib.Path('/home/builder/workspace')
 SOURCE = ROOT / 'source'
 LOCK = threading.RLock()
-STATE = {'logs': 'Build machine is ready.', 'building': False, 'artifactId': None}
+STATE = {'logs': 'Build machine is ready.', 'building': False, 'startedAt': None, 'artifactId': None}
 ARTIFACT = None
 TEMPLATE = os.environ['V5X_TEMPLATE']
 UPLOADS = {}
@@ -92,7 +92,7 @@ def compile_source(snapshot, commit):
     except Exception as error:
         append(f'\nBuild failed: {error}')
     finally:
-        with LOCK: STATE['building'] = False
+        with LOCK: STATE.update(building=False, startedAt=None)
 
 LANGUAGE_ROOT = pathlib.Path('/home/builder/language')
 LANGUAGE_LOCK = threading.Lock()
@@ -306,7 +306,7 @@ class Handler(BaseHTTPRequestHandler):
                         return
                     upload = UPLOADS.pop(data['id'])
                     commit = str(data['commit'])[:80]
-                    STATE.update(building=True, logs=f'Building commit {commit}\n')
+                    STATE.update(building=True, startedAt=int(now * 1000), logs=f'Building commit {commit}\n')
                     threading.Thread(target=compile_source, args=(bytes(upload['data']), commit), daemon=True).start()
                     self.send(202, b'{}')
                 else: self.send(404, b'{}')
