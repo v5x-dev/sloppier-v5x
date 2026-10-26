@@ -44,3 +44,5 @@ The leftmost actions-bar button opens the search sheet on the right. Ctrl/Cmd + 
 Search combines committed files with collaborative documents and local editor drafts. It excludes reserved `.v5x/` files and displays up to 300 matches. Collaborative replay is bounded to 100 documents and 16 MiB per search; the sheet reports skipped files and truncated results. Search does not require a robot connection.
 
 Search scope can be narrowed to source and header files, excluding bundled toolchain and library directories. The path field intersects that scope: `src/` searches a directory recursively, `*.cpp` matches filenames anywhere, and `src/**/*.cpp` matches nested paths. Both saved results and live drafts are filtered before applying the match limit.
+
+Use Up/Down in the search field or result list to move the selected match into view, then Enter to open it. Arrow navigation from the search field keeps focus there so typing can continue. Changing the query or filters selects the first available result.

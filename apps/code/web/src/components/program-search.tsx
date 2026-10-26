@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { useAction, useQuery } from "convex/react"
 import { MagnifyingGlassIcon, FileCodeIcon, XIcon } from "@phosphor-icons/react"
 import { api } from "@workspace/backend/api"
@@ -128,6 +128,12 @@ export function ProgramSearch({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const input = useRef<HTMLInputElement>(null)
+  const resultsId = useId()
+  const resultButtons = useRef(new Map<string, HTMLButtonElement>())
+  const [selection, setSelection] = useState<{
+    scope: string
+    key: string
+  } | null>(null)
   const pendingJump = useRef<{
     path: string
     line: number
@@ -201,7 +207,30 @@ export function ProgramSearch({
       }),
     [result, getDrafts, query, matchCase, sourceOnly, pathFilter, version]
   )
-  const count = merged.files.reduce((sum, file) => sum + file.matches.length, 0)
+  const matches = merged.files.flatMap((file) =>
+    file.matches.map((match) => ({
+      path: file.path,
+      ...match,
+      key: JSON.stringify([file.path, match.line, match.column]),
+    }))
+  )
+  const count = matches.length
+  const scope = JSON.stringify([query, matchCase, sourceOnly, pathFilter])
+  const selectedIndex =
+    selection?.scope === scope
+      ? matches.findIndex((match) => match.key === selection.key)
+      : -1
+  const selected = matches.at(selectedIndex < 0 ? 0 : selectedIndex)
+  useEffect(() => {
+    if (open && selected)
+      resultButtons.current
+        .get(selected.key)
+        ?.scrollIntoView({ block: "nearest" })
+  }, [open, selected?.key])
+  function openMatch(target: { path: string; line: number; column: number }) {
+    pendingJump.current = target
+    setOpen(false)
+  }
   return (
     <>
       <Button
@@ -229,6 +258,46 @@ export function ProgramSearch({
           side="right"
           aria-label="Search project"
           showCloseButton={false}
+          onKeyDown={(event) => {
+            if (
+              event.nativeEvent.isComposing ||
+              event.altKey ||
+              event.ctrlKey ||
+              event.metaKey
+            )
+              return
+            const target = event.target as HTMLElement
+            if (
+              target !== input.current &&
+              !target.closest("[data-search-result]")
+            )
+              return
+            if (!matches.length) return
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault()
+              const direction = event.key === "ArrowDown" ? 1 : -1
+              const index =
+                selectedIndex < 0
+                  ? direction > 0
+                    ? 0
+                    : matches.length - 1
+                  : Math.max(
+                      0,
+                      Math.min(matches.length - 1, selectedIndex + direction)
+                    )
+              const next = matches[index]
+              setSelection({ scope, key: next.key })
+              if (target !== input.current)
+                resultButtons.current.get(next.key)?.focus()
+            } else if (
+              event.key === "Enter" &&
+              selected &&
+              target === input.current
+            ) {
+              event.preventDefault()
+              openMatch(selected)
+            }
+          }}
           className="gap-0 font-serif data-[side=right]:w-full data-[side=right]:sm:max-w-lg"
         >
           <div className="space-y-3 border-b p-4">
@@ -240,6 +309,16 @@ export function ProgramSearch({
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search for text…"
                 aria-label="Search text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={count > 0}
+                aria-controls={resultsId}
+                aria-activedescendant={
+                  selected
+                    ? `${resultsId}-${matches.indexOf(selected)}`
+                    : undefined
+                }
+                aria-describedby={`${resultsId}-help`}
                 className="font-mono"
               />
               <Button
@@ -312,6 +391,10 @@ export function ProgramSearch({
                     : `${count} ${count === 1 ? "match" : "matches"} in ${merged.files.length} ${merged.files.length === 1 ? "file" : "files"}`}
             </p>
           </div>
+          <p id={`${resultsId}-help`} className="sr-only">
+            Use the up and down arrow keys to select a match. Press Enter to
+            open it.
+          </p>
           <div
             className="min-h-0 flex-1 overflow-y-auto p-2"
             aria-busy={loading}
@@ -338,39 +421,72 @@ export function ProgramSearch({
                 No matches. Try a different search.
               </p>
             )}
-            {merged.files.map((file) => (
-              <section key={file.path} className="mb-3">
-                <h3 className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
-                  <FileCodeIcon className="shrink-0 text-primary" />
-                  <span className="min-w-0 flex-1 truncate font-mono">
-                    {file.path}
-                  </span>
-                  <span className="ml-auto shrink-0 tabular-nums">
-                    {file.matches.length}
-                  </span>
-                </h3>
-                {file.matches.map((match) => (
-                  <button
-                    key={`${match.line}:${match.column}`}
-                    type="button"
-                    className="flex w-full items-baseline gap-3 rounded-md px-3 py-2 text-left font-mono text-xs hover:bg-accent focus-visible:bg-accent focus-visible:outline-ring"
-                    onClick={() => {
-                      pendingJump.current = {
-                        path: file.path,
-                        line: match.line,
-                        column: match.column,
-                      }
-                      setOpen(false)
-                    }}
-                  >
-                    <span className="w-8 shrink-0 text-right text-muted-foreground tabular-nums">
-                      {match.line}
+            <div id={resultsId} role="listbox" aria-label="Search results">
+              {merged.files.map((file) => (
+                <section
+                  key={file.path}
+                  role="group"
+                  aria-label={file.path}
+                  className="mb-3"
+                >
+                  <h3 className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+                    <FileCodeIcon className="shrink-0 text-primary" />
+                    <span className="min-w-0 flex-1 truncate font-mono">
+                      {file.path}
                     </span>
-                    <SearchSnippet path={file.path} match={match} />
-                  </button>
-                ))}
-              </section>
-            ))}
+                    <span className="ml-auto shrink-0 tabular-nums">
+                      {file.matches.length}
+                    </span>
+                  </h3>
+                  {file.matches.map((match) => (
+                    <button
+                      key={`${match.line}:${match.column}`}
+                      type="button"
+                      role="option"
+                      data-search-result=""
+                      id={`${resultsId}-${matches.findIndex((item) => item.path === file.path && item.line === match.line && item.column === match.column)}`}
+                      aria-selected={
+                        selected?.path === file.path &&
+                        selected.line === match.line &&
+                        selected.column === match.column
+                      }
+                      ref={(element) => {
+                        const key = JSON.stringify([
+                          file.path,
+                          match.line,
+                          match.column,
+                        ])
+                        if (element) resultButtons.current.set(key, element)
+                        else resultButtons.current.delete(key)
+                      }}
+                      onFocus={() =>
+                        setSelection({
+                          scope,
+                          key: JSON.stringify([
+                            file.path,
+                            match.line,
+                            match.column,
+                          ]),
+                        })
+                      }
+                      className="flex w-full items-baseline gap-3 rounded-md px-3 py-2 text-left font-mono text-xs hover:bg-accent focus-visible:bg-accent focus-visible:outline-ring aria-selected:bg-primary/10 aria-selected:ring-1 aria-selected:ring-primary/40 aria-selected:ring-inset"
+                      onClick={() =>
+                        openMatch({
+                          path: file.path,
+                          line: match.line,
+                          column: match.column,
+                        })
+                      }
+                    >
+                      <span className="w-8 shrink-0 text-right text-muted-foreground tabular-nums">
+                        {match.line}
+                      </span>
+                      <SearchSnippet path={file.path} match={match} />
+                    </button>
+                  ))}
+                </section>
+              ))}
+            </div>
           </div>
           {(merged.truncated ||
             result?.truncated ||
