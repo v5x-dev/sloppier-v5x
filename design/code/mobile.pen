@@ -1,5 +1,19 @@
 {
   "version": "2.21",
-  "children": [],
+  "children": [
+    {
+      "type": "frame",
+      "id": "Qw1Ws",
+      "x": 0,
+      "y": 0,
+      "name": "Sign In",
+      "clip": true,
+      "width": 393,
+      "height": 852,
+      "fill": "#FFFFFF",
+      "cornerRadius": 62,
+      "layout": "none"
+    }
+  ],
   "fileToken": "be32389f-b777-43c2-8d2f-76b365827e4c"
 }

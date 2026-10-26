@@ -28,9 +28,10 @@ Set these deployment environment variables through the Convex dashboard:
 
 - `SMOL_CLOUD_TOKEN`: a server-only Smolmachines API key with machine lifecycle and exec permissions.
 - `SMOL_BUILD_IMAGE`: the published AMD64 OCI image reference.
+- `SMOL_BUILD_CHECKPOINT`: optional startup checkpoint of `SMOL_BUILD_IMAGE`, printed by `SMOL_CLOUD_TOKEN=... infra/build/checkpoint-image.py IMAGE`. Recreate it whenever the image changes.
 - `PIERRE_ORG` and `PIERRE_PRIVATE_KEY`: the existing Code Storage credentials.
 
-Deploy the backend with `bun run --cwd packages/backend deploy`. The Smolmachines tenant API key stays server-side; browsers receive only a scoped connect token. Machines have 2 vCPUs, 2 GiB RAM, one private published port, 8080, and a 120-second idle stop fallback. While viewers remain, direct browser heartbeats track presence on the build service. The backend samples viewer counts for lifecycle cleanup and keeps occupied machines alive. Source builds run as the image's unprivileged `builder` user. Network egress is open so the cloud can pull the image.
+Deploy the backend with `bun run --cwd packages/backend deploy`. The Smolmachines tenant API key stays server-side; browsers receive only a scoped connect token. Machines have 2 vCPUs, 2 GiB RAM, one private published port, 8080, and a 120-second idle stop fallback. With `SMOL_BUILD_CHECKPOINT`, each program entry restores a machine whose `v5x-server` is already running, and the backend writes the program's template to `/home/builder/workspace/template`. This takes about 1.3 seconds from entry until the machine is reachable, compared with about 15 seconds for an image boot. The checkpoint's source machine is deleted after capture, so no machines stay running. Restored machines have no idle stop fallback, because restore requests cannot set one. Backend reconciliation is what deletes them. While viewers remain, direct browser heartbeats track presence on the build service. The backend samples viewer counts for lifecycle cleanup and keeps occupied machines alive. Source builds run as the image's unprivileged `builder` user. Network egress is open so the cloud can pull the image.
 
 Convex authorizes the initial connection and mints a 15-minute Smolmachines connect token restricted to this machine, port 8080, and no descendants. The browser renews it one minute before expiry. The tenant API key never leaves Convex. The machine has no public ingress.
 
@@ -45,8 +46,10 @@ Cloud API contracts were checked against [Smolmachines API reference](https://sm
 The `fabulous-hornet-670` development deployment has a dedicated Smolmachines API key for machine create/read/exec/delete and this pinned image:
 
 ```text
-registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:5c6d1d2c1cd6545c0d6118025719194c1694316ca988b2896a6e5631facf92cb
+registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:9592fd8d55c2a9fd27a1c39cd4c6bcec54cae41f814968053bcf9c9b843275c2
 ```
+
+Its startup checkpoint is `ckpt-07de92dae97d43d99f3418183fe577e0`.
 
 The image is also tagged `20261026-slim` and includes clangd for autocomplete. It keeps only the `thumb/v7-a+simd/softfp` ARM multilib, the one every V5 template selects for the Cortex-A9, which cuts the unpacked image from 3.6 GB to 0.96 GB. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
 
