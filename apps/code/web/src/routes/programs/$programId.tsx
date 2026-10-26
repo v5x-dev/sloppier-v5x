@@ -1,3 +1,4 @@
+import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import {
   DndContext,
@@ -97,12 +98,14 @@ import { LiveFileEditor, type LivePerson } from "@/components/live-file-editor"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
 import { AuthGate } from "@/components/auth-gate"
 import { errorMessage } from "@/lib/errors"
-import { ProgramConnection } from "@/components/program-connection"
+import {
+  ProgramConnection,
+  useProgramConnection,
+} from "@/components/program-connection"
 import { ProgramBuild } from "@/components/program-build"
 import { ProgramUpload } from "@/components/program-upload"
 import { useProgramBinaries } from "@/hooks/use-program-binaries"
 import { prepareUploadBuild, waitForSourceSync } from "@/lib/build-program"
-import { useProgramConnection } from "@/components/program-connection"
 
 export const Route = createFileRoute("/programs/$programId")({
   component: () => (
@@ -245,6 +248,9 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
+  const [diagnosticTarget, setDiagnosticTarget] = useState<
+    (DiagnosticTarget & { path: string }) | null
+  >(null)
   const [activePath, setActivePath] = useState<string | null>(null)
   const [loaded, setLoaded] = useState<Partial<Record<string, LoadedFile>>>({})
   const [readError, setReadError] = useState<Partial<Record<string, string>>>(
@@ -733,6 +739,11 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                     <FileEditor
                       projectId={program._id}
                       path={path}
+                      diagnosticTarget={
+                        diagnosticTarget?.path === path
+                          ? diagnosticTarget
+                          : undefined
+                      }
                       active={path === activePath}
                       onPeopleChange={(people) =>
                         setFilePeople((current) =>
@@ -811,6 +822,17 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
               <ProgramBuild
                 dirty={dirtyPaths.length > 0}
                 prepareSource={prepareSource}
+                paths={paths ?? []}
+                currentSha={program.repositoryHeadSha}
+                onDiagnostic={(path, diagnostic) => {
+                  setDiagnosticTarget((current) => ({
+                    path,
+                    line: diagnostic.line,
+                    column: diagnostic.column,
+                    request: (current?.request ?? 0) + 1,
+                  }))
+                  openFile(path)
+                }}
               />
             }
             name={program.name}
@@ -922,6 +944,7 @@ function SortableFileTab({
 }
 
 function FileEditor({
+  diagnosticTarget,
   projectId,
   path,
   loaded,
@@ -934,6 +957,7 @@ function FileEditor({
   projectId: Id<"projects">
   path: string
   loaded: LoadedFile
+  diagnosticTarget?: DiagnosticTarget
   active: boolean
   onSyncChange: (synced: boolean) => void
   onPeopleChange: (people: LivePerson[]) => void
@@ -975,6 +999,7 @@ function FileEditor({
           projectId={projectId}
           path={path}
           active={active}
+          diagnosticTarget={diagnosticTarget}
           onChange={onChange}
           onSyncChange={onSyncChange}
           onPeopleChange={onPeopleChange}

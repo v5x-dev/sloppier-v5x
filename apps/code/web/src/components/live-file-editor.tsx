@@ -1,3 +1,4 @@
+import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/lib/auth"
@@ -48,6 +49,7 @@ type Props = {
   projectId: Id<"projects">
   path: string
   active: boolean
+  diagnosticTarget?: DiagnosticTarget
   onChange: (text: string) => void
   onPeopleChange: (people: LivePerson[]) => void
   onSyncChange: (synced: boolean) => void
@@ -57,6 +59,7 @@ export function LiveFileEditor({
   projectId,
   path,
   active,
+  diagnosticTarget,
   onChange,
   onSyncChange,
   onPeopleChange,
@@ -508,6 +511,7 @@ export function LiveFileEditor({
           <PierreFile
             key={binding.shared.clientID}
             binding={binding}
+            diagnosticTarget={active ? diagnosticTarget : undefined}
             path={path}
             projectId={projectId}
           />
@@ -518,14 +522,32 @@ export function LiveFileEditor({
 }
 
 function PierreFile({
+  diagnosticTarget,
   binding,
   path,
   projectId,
 }: {
   binding: PierreCollaboration
+  diagnosticTarget?: DiagnosticTarget
   path: string
   projectId: Id<"projects">
 }) {
+  const appliedTarget = useRef<number | undefined>(undefined)
+  const targetRef = useRef(diagnosticTarget)
+  targetRef.current = diagnosticTarget
+  useEffect(() => {
+    if (
+      diagnosticTarget &&
+      binding.editor &&
+      appliedTarget.current !== diagnosticTarget.request
+    ) {
+      appliedTarget.current = diagnosticTarget.request
+      binding.editor.focus({
+        lineNumber: diagnosticTarget.line,
+        character: Math.max(0, (diagnosticTarget.column ?? 1) - 1),
+      })
+    }
+  }, [binding, diagnosticTarget])
   const file = useRef({
     name: path,
     contents: binding.document.getText(),
@@ -539,7 +561,17 @@ function PierreFile({
         options={editorThemeOptions}
         editorOptions={{
           initialState: { type: "file", document: binding.document },
-          onAttach: (editor) => binding.attach(editor),
+          onAttach: (editor) => {
+            binding.attach(editor)
+            const target = targetRef.current
+            if (target && appliedTarget.current !== target.request) {
+              appliedTarget.current = target.request
+              editor.focus({
+                lineNumber: target.line,
+                character: Math.max(0, (target.column ?? 1) - 1),
+              })
+            }
+          },
           renderCaret: (caret) => {
             const marker = document.createElement("span")
             marker.setAttribute("aria-label", `${caret.metadata.name}'s cursor`)
