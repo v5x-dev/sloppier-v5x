@@ -1,0 +1,315 @@
+import { createPortal } from "react-dom"
+import { useEffect, useMemo, useState } from "react"
+import { useAction } from "convex/react"
+import { api } from "@workspace/backend/api"
+import type { Id } from "@workspace/backend/dataModel"
+import { Button } from "@workspace/ui/components/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
+import { PathIcon, XIcon } from "@phosphor-icons/react"
+import { parseAutonPaths, type AutonTemplate } from "@/lib/auton-paths"
+import { errorMessage } from "@/lib/errors"
+
+const fields = ["H2H", "Skills"].map((setup) => ({
+  label: `Override · ${setup}`,
+  image: `https://field-rendering.jerryio.com/renders/V5RC-Override-${setup}-TopDown-TileColor66_71@0.1+500px.png`,
+}))
+const extent = 3690 / 25.4
+const project = (x: number, y: number) =>
+  `${50 + (x / extent) * 100},${50 - (y / extent) * 100}`
+const templateNames: Record<AutonTemplate, { label: string; hint: string }> = {
+  "ez-template": {
+    label: "EZ-Template",
+    hint: "Add pid_drive_set or pid_odom_set calls inside a void function.",
+  },
+  jar: {
+    label: "JAR-Template",
+    hint: "Add drive_distance or drive_to_point calls inside a void function.",
+  },
+}
+
+export function ProgramPathPreview({
+  projectId,
+  revision,
+  template,
+  paths,
+  getDrafts,
+  subscribeDrafts,
+}: {
+  projectId: Id<"projects">
+  revision?: string
+  template: AutonTemplate
+  paths: string[] | null
+  getDrafts: () => ReadonlyMap<string, string>
+  subscribeDrafts: (listener: () => void) => () => void
+}) {
+  const readFile = useAction(api.codeStorage.readFile)
+  const [open, setOpen] = useState(false)
+  const [files, setFiles] = useState<Map<string, string> | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [version, setVersion] = useState(0)
+  const [retry, setRetry] = useState(0)
+  const [selected, setSelected] = useState("")
+  const [field, setField] = useState("0")
+  const [trackWidth, setTrackWidth] = useState(12)
+  const [imageError, setImageError] = useState(false)
+  useEffect(
+    () => subscribeDrafts(() => setVersion((value) => value + 1)),
+    [subscribeDrafts]
+  )
+  useEffect(() => {
+    if (!open || !paths) return
+    const controller = new AbortController()
+    setFiles(null)
+    setError(null)
+    void (async () => {
+      const source = new Map<string, string>()
+      // Exclude vendored libraries, but include user headers and nested source folders.
+      const candidates = paths.filter(
+        (path) =>
+          /\.(cpp|cc|cxx|h|hpp)$/.test(path) &&
+          !/(^|\/)(?:EZ-Template|JAR-Template|pros|node_modules|\.git)\//i.test(
+            path
+          )
+      )
+      for (const path of candidates) {
+        const { bytes, contentRange } = await readFile({
+          projectId,
+          path,
+          ref: revision,
+          length: 512 * 1024,
+        })
+        if (controller.signal.aborted) return
+        const total = Number(contentRange?.split("/").at(-1))
+        if (total > bytes.byteLength)
+          throw new Error(`${path} is too large to preview completely.`)
+        source.set(
+          path,
+          new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+        )
+      }
+      if (!controller.signal.aborted) setFiles(source)
+    })().catch((reason) => {
+      if (!controller.signal.aborted) setError(errorMessage(reason))
+    })
+    return () => {
+      controller.abort()
+    }
+  }, [open, paths, projectId, revision, readFile, retry])
+  const routes = useMemo(() => {
+    const source = new Map(files)
+    for (const [path, text] of getDrafts())
+      if (paths?.includes(path)) source.set(path, text)
+    return parseAutonPaths(source, template, trackWidth)
+  }, [files, getDrafts, paths, template, version, trackWidth])
+  const route = routes.find((item) => item.id === selected) ?? routes.at(0)
+  const segments: string[][] = []
+  for (const point of route?.points ?? []) {
+    if (point.start || !segments.length) segments.push([])
+    segments.at(-1)!.push(project(point.x, point.y))
+  }
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Preview autonomous paths"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <PathIcon />
+      </Button>
+      {open &&
+        createPortal(
+          <section
+            aria-label="Autonomous path preview"
+            className="fixed right-4 bottom-14 z-30 flex max-h-[calc(100svh-5rem)] w-80 max-w-[calc(100vw-2rem)] resize flex-col gap-2 overflow-auto rounded-xl border bg-background p-3 shadow-xl"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Auton paths</span>
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                aria-label="Close path preview"
+                onClick={() => setOpen(false)}
+              >
+                <XIcon />
+              </Button>
+            </div>
+            <label className="flex flex-col gap-1 text-xs">
+              Field
+              <Select
+                value={field}
+                items={fields.map((item, index) => ({
+                  value: String(index),
+                  label: item.label,
+                }))}
+                onValueChange={(value) => {
+                  if (value === null) return
+                  setField(value)
+                  setImageError(false)
+                }}
+              >
+                <SelectTrigger aria-label="Field" className="w-full min-w-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {fields.map((item, index) => (
+                    <SelectItem key={item.label} value={String(index)}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label className="flex items-center justify-between gap-2 text-xs">
+              Track width (in)
+              <input
+                aria-label="Track width in inches"
+                type="number"
+                min="1"
+                max="36"
+                step="0.25"
+                value={trackWidth}
+                className="h-8 w-20 rounded border bg-background px-2"
+                onChange={(event) => {
+                  const value = event.target.valueAsNumber
+                  if (Number.isFinite(value) && value >= 1 && value <= 36)
+                    setTrackWidth(value)
+                }}
+              />
+            </label>
+            {error ? (
+              <div className="text-xs text-destructive">
+                {error}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRetry(retry + 1)}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : !files ? (
+              <p className="text-xs text-muted-foreground" role="status">
+                Reading project source…
+              </p>
+            ) : !route ? (
+              <p className="text-xs text-muted-foreground">
+                No {templateNames[template].label} motion routines found.{" "}
+                {templateNames[template].hint}
+              </p>
+            ) : (
+              <>
+                <label className="flex flex-col gap-1 text-xs">
+                  Auton route
+                  <Select
+                    value={route.id}
+                    items={routes.map((item) => ({
+                      value: item.id,
+                      label: item.name,
+                    }))}
+                    onValueChange={(value) => {
+                      if (value !== null) setSelected(value)
+                    }}
+                  >
+                    <SelectTrigger
+                      aria-label="Auton route"
+                      className="w-full min-w-0"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {routes.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <div className="relative aspect-square shrink-0 overflow-hidden rounded border bg-muted">
+                  <img
+                    src={fields[Number(field)].image}
+                    alt={fields[Number(field)].label}
+                    className="absolute inset-0 size-full"
+                    onError={() => setImageError(true)}
+                  />
+                  <svg
+                    viewBox="0 0 100 100"
+                    className="absolute inset-0 size-full"
+                    role="img"
+                    aria-label={`Path for ${route.name}. Field center is 0, 0; positive Y points up.`}
+                  >
+                    {segments.map((segment, index) => (
+                      <polyline
+                        key={index}
+                        points={segment.join(" ")}
+                        fill="none"
+                        stroke="var(--primary)"
+                        strokeWidth="1"
+                        strokeLinejoin="round"
+                      />
+                    ))}
+                    {route.points.map(
+                      (point, index) =>
+                        !point.interpolated && (
+                          <g
+                            key={index}
+                            transform={`translate(${project(point.x, point.y).replace(",", " ")})`}
+                          >
+                            <circle
+                              r={point.start ? 1.8 : 0.9}
+                              fill={
+                                point.start
+                                  ? "var(--chart-3)"
+                                  : "var(--primary)"
+                              }
+                              stroke="var(--background)"
+                              strokeWidth="0.3"
+                            >
+                              <title>{`${index}: (${point.x.toFixed(1)}, ${point.y.toFixed(1)}) ${point.heading.toFixed(0)}°`}</title>
+                            </circle>
+                            <path
+                              d="M 0 0 L 0 -3"
+                              stroke="var(--foreground)"
+                              strokeWidth="0.5"
+                              transform={`rotate(${point.heading})`}
+                            />
+                          </g>
+                        )
+                    )}
+                  </svg>
+                </div>
+                {imageError && (
+                  <p className="text-xs text-destructive">
+                    Field image failed to load. Choose another field or reopen
+                    the preview.
+                  </p>
+                )}
+                {route.warnings.map((warning) => (
+                  <p key={warning} className="text-xs text-muted-foreground">
+                    {warning}
+                  </p>
+                ))}
+              </>
+            )}
+            <a
+              href="https://field-rendering.jerryio.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[10px] text-muted-foreground underline"
+            >
+              Field renders by JerryIO · CC BY 4.0
+            </a>
+          </section>,
+          document.body
+        )}
+    </>
+  )
+}

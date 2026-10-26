@@ -61,3 +61,29 @@ Notes:
 - In the Network panel, `connect/8080/language/*` requests show the direct machine traffic.
 
 To test the server without a browser, run the image locally (`docker run -p 18080:8080 -e V5X_TEMPLATE=pros <image>`). Then call `/upload`, `/language/open`, `/language/send`, and `/language/poll` with plain JSON; no token is needed locally.
+
+## Definitions and hover documentation
+
+Hover over a C/C++ symbol for half a second to read clangd's type information
+and documentation. C++ signatures use the editor theme’s syntax highlighting,
+with prose and source paths in separate sections. Temporary build-session path
+prefixes are hidden. Markdown code fences and inline emphasis are rendered
+without accepting server HTML. Existing plaintext language sessions still work.
+Move into the popup to scroll longer documentation; Escape dismisses it.
+
+Press F12 at a symbol, or Ctrl-click it on Windows/Linux and Cmd-click it on
+macOS, to go to its definition. Repository files open at the returned line and
+column. Toolchain headers open in a read-only dialog with the definition line
+highlighted. When clangd returns several locations, the first location is used.
+Pending requests are canceled on navigation or another request, and responses
+for an older document version are ignored.
+
+Toolchain definitions use the direct, session-scoped `POST /language/read`
+endpoint. It accepts only local file URIs resolving inside that language
+session or the installed SDK/compiler header directories. Reads reject binary,
+non-UTF-8, and files larger than 512 KiB. Symlinks are resolved before checking
+the allowed directories. Rebuild and publish the build-machine image with the
+updated `v5x-server`, then update `SMOL_BUILD_IMAGE`, to enable this endpoint on
+hosted machines. Repository navigation and hover use the existing LSP routes.
+
+Check the reader with `python3 infra/build/test-language-read.py`.

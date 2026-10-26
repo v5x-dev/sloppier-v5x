@@ -78,6 +78,7 @@ export default defineSchema({
   }).index("by_import_sequence", ["importId", "sequence"]),
 
   projects: defineTable({
+    archivedAt: v.optional(v.number()),
     importId: v.optional(v.id("programImports")),
     workspaceId: v.id("workspaces"),
     name: v.string(),

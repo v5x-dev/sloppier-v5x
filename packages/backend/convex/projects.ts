@@ -54,6 +54,27 @@ export const listByWorkspace = query({
   },
 })
 
+export const rename = mutation({
+  args: { projectId: v.id("projects"), name: v.string() },
+  handler: async (ctx, { projectId, name }) => {
+    await requireProjectMembership(ctx, projectId)
+    name = name.trim()
+    if (!name || name.length > 80)
+      throw new ConvexError("Program name must contain 1–80 characters.")
+    await ctx.db.patch(projectId, { name })
+  },
+})
+
+export const setArchived = mutation({
+  args: { projectId: v.id("projects"), archived: v.boolean() },
+  handler: async (ctx, { projectId, archived }) => {
+    await requireProjectMembership(ctx, projectId)
+    await ctx.db.patch(projectId, {
+      archivedAt: archived ? Date.now() : undefined,
+    })
+  },
+})
+
 export const get = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, { projectId }) => {

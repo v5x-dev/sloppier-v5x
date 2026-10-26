@@ -12,7 +12,7 @@ import time
 import uuid
 import zipfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 ROOT = pathlib.Path('/home/builder/workspace')
 SOURCE = ROOT / 'source'
@@ -197,6 +197,30 @@ def language_request(path, data):
         return {'root': str(session.root)}
     with LANGUAGE_LOCK: session = LANGUAGE.get(key)
     if not session or not session.alive(): return {'closed': True}
+    if path == '/language/read':
+        uri = urlparse(data['uri'])
+        if uri.scheme != 'file' or uri.netloc or uri.query or uri.fragment:
+            raise ValueError('Invalid definition URI.')
+        target = pathlib.Path(unquote(uri.path)).resolve()
+        allowed = [session.root.resolve(), pathlib.Path('/opt/vex/sdk'), pathlib.Path('/opt/v5x/deps'),
+                   pathlib.Path('/usr/lib/arm-none-eabi/include'), pathlib.Path('/usr/lib/gcc/arm-none-eabi'),
+                   pathlib.Path('/usr/include/newlib')]
+        allowed.extend(pathlib.Path('/usr/lib').glob('llvm-*/lib/clang'))
+        if not any(target.is_relative_to(root) for root in allowed):
+            raise ValueError('Definition is outside the source and toolchain directories.')
+        try:
+            with target.open('rb') as source:
+                contents = source.read(512 * 1024 + 1)
+        except OSError as error:
+            raise ValueError('Definition file is unavailable.') from error
+        if len(contents) > 512 * 1024 or b'\0' in contents:
+            raise ValueError('Definition is not a supported text file.')
+        session.seen = time.time()
+        try:
+            text = contents.decode('utf-8')
+        except UnicodeDecodeError as error:
+            raise ValueError('Definition is not UTF-8 text.') from error
+        return {'path': str(target), 'contents': text}
     if path == '/language/send':
         messages = data['messages']
         if not isinstance(messages, list): raise ValueError('Invalid messages.')

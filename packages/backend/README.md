@@ -86,3 +86,16 @@ Set these in each Convex deployment's environment settings:
 The web and mobile apps also need the Convex deployment URL and the public
 WorkOS Client ID/redirect URI in their own app configuration. Never expose
 `WORKOS_API_KEY` or `RESEND_API_KEY` through Vite environment variables.
+
+## Renaming and archiving programs
+
+The dashboard program actions menu offers Rename and Archive program. Switch
+between Active and Archived above the list, and use Restore program to bring an
+archived program back. Workspace members can perform these actions. Names are
+trimmed and must contain 1–80 characters.
+
+`projects.rename({ projectId, name })` updates the display name without renaming
+the repository. `projects.setArchived({ projectId, archived })` sets or clears
+`archivedAt`. Archiving changes dashboard organization; existing program links,
+files, history, and workspace access continue to work. The workspace list query
+returns both active and archived programs so clients can provide both views.

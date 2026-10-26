@@ -15,6 +15,7 @@ import { errorMessage } from "@/lib/errors"
 type Connection = { baseUrl: string; token: string; expiresAt: string }
 type Status = { logs: string; building: boolean; artifactId: string | null }
 type Channel = {
+  machineStatus: string | null
   status: Status | null
   ready: boolean
   error: string | null
@@ -138,7 +139,9 @@ export function ProgramConnection({
           ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+          : AbortSignal.timeout(30_000),
       })
       if (!response.ok)
         throw new Error(`Build machine request failed (${response.status}).`)
@@ -173,7 +176,13 @@ export function ProgramConnection({
   }, [connection, request])
   return (
     <Context
-      value={{ status, ready: Boolean(connection && status), error, request }}
+      value={{
+        machineStatus: machine?.status ?? null,
+        status,
+        ready: Boolean(connection && status),
+        error,
+        request,
+      }}
     >
       {children}
     </Context>

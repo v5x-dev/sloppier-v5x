@@ -1,3 +1,4 @@
+import { useEditorNavigation } from "./editor-navigation"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { useEffect, useRef, useState } from "react"
@@ -557,6 +558,7 @@ function PierreFile({
     }
   }, [binding, diagnosticTarget])
   const completion = useEditorCompletion(binding, path)
+  const navigation = useEditorNavigation(binding, path, completion.wrapper)
   const file = useRef({
     name: path,
     contents: binding.document.getText(),
@@ -604,6 +606,7 @@ function PierreFile({
         />
       </EditProvider>
       {completion.popup}
+      {navigation}
     </div>
   )
 }

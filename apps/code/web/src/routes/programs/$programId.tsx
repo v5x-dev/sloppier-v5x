@@ -1,3 +1,5 @@
+import { MachineStatus } from "@/components/machine-status"
+import { ProgramPathPreview } from "@/components/program-path-preview"
 import { ActionTooltip } from "@/components/action-tooltip"
 import { ProgramSearch } from "@/components/program-search"
 import { ProgramHistory } from "@/components/program-history"
@@ -726,7 +728,20 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   }
 
   return (
-    <LanguageSession prepareSource={prepareSource}>
+    <LanguageSession
+      prepareSource={prepareSource}
+      onDefinition={(path, line, column) => {
+        if (!paths?.includes(path)) return false
+        setDiagnosticTarget((current) => ({
+          path,
+          line,
+          column,
+          request: (current?.request ?? 0) + 1,
+        }))
+        openFile(path)
+        return true
+      }}
+    >
       <SidebarProvider
         className="h-svh min-h-0"
         style={
@@ -783,13 +798,16 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
               />
             )}
           </SidebarContent>
-          <SidebarFooter className="items-start p-3">
-            <AvatarGroup aria-label="People in this file">
+          <SidebarFooter className="h-9 flex-row items-center px-3 py-0">
+            <AvatarGroup
+              aria-label="People in this file"
+              className="*:data-[slot=avatar]:ring-0.5"
+            >
               {(activePath ? (filePeople[activePath] ?? []) : []).map(
                 (person) => (
                   <Avatar
                     key={person.id}
-                    size="sm"
+                    className="size-5"
                     title={person.name}
                     aria-label={person.name}
                   >
@@ -797,6 +815,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                       <AvatarImage src={person.imageUrl} alt={person.name} />
                     )}
                     <AvatarFallback
+                      className="text-[0.5rem] leading-none"
                       style={{
                         backgroundColor: `${person.color}33`,
                         color: person.color,
@@ -814,6 +833,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                 )
               )}
             </AvatarGroup>
+            <MachineStatus />
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-h-0 min-w-0 pt-2">
@@ -981,6 +1001,17 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                       : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}. Ctrl/Cmd+S commits with an automatic message.`}
                   </TooltipContent>
                 </Tooltip>
+                {(program.template === "ez-template" ||
+                  program.template === "jar") && (
+                  <ProgramPathPreview
+                    projectId={program._id}
+                    revision={program.repositoryHeadSha}
+                    template={program.template}
+                    paths={paths}
+                    getDrafts={getSearchDrafts}
+                    subscribeDrafts={subscribeSearchDrafts}
+                  />
+                )}
                 <ProgramSearch
                   projectId={program._id}
                   revision={program.repositoryHeadSha}
@@ -1222,7 +1253,7 @@ function ActionsBar({
     <TooltipProvider>
       <div
         className={cn(
-          "relative z-20 mr-2 mb-2 flex h-9 shrink-0 items-center gap-1 bg-sidebar px-2 text-sidebar-foreground shadow-[0_0_0_1px_var(--sidebar-border)]",
+          "relative z-20 mr-2 mb-2 flex h-9 shrink-0 items-center gap-0.5 bg-sidebar px-2 text-sidebar-foreground shadow-[0_0_0_1px_var(--sidebar-border)]",
           joined
             ? cn(
                 "-ml-4 rounded-r-lg pl-4 [clip-path:inset(calc(var(--radius-lg)*-1)_-1px_-1px_0)]",

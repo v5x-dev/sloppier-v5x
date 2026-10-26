@@ -1,3 +1,4 @@
+import type { HoverContents } from "./hover-content"
 import type * as Y from "yjs"
 import {
   uploadSource,
@@ -163,6 +164,8 @@ export class LanguageClient {
           general: { positionEncodings: ["utf-16"] },
           textDocument: {
             synchronization: { dynamicRegistration: false },
+            hover: { contentFormat: ["markdown", "plaintext"] },
+            definition: { linkSupport: true },
             completion: {
               contextSupport: true,
               completionItem: {
@@ -276,6 +279,77 @@ export class LanguageClient {
       { textDocument: { uri: this.uri(path) }, position },
       signal
     ) as Promise<SignatureHelp | null>
+  }
+
+  hover(path: string, position: LspPosition, signal: AbortSignal) {
+    return this.call(
+      "textDocument/hover",
+      {
+        textDocument: { uri: this.uri(path) },
+        position,
+      },
+      signal
+    ) as Promise<{
+      contents: HoverContents
+    } | null>
+  }
+
+  async definition(path: string, position: LspPosition, signal: AbortSignal) {
+    const result = (await this.call(
+      "textDocument/definition",
+      {
+        textDocument: { uri: this.uri(path) },
+        position,
+      },
+      signal
+    )) as
+      | {
+          uri?: string
+          range?: LspRange
+          targetUri?: string
+          targetSelectionRange?: LspRange
+        }[]
+      | { uri: string; range: LspRange }
+      | null
+    const locations = result ? (Array.isArray(result) ? result : [result]) : []
+    return locations.flatMap((location) => {
+      const uri = "targetUri" in location ? location.targetUri : location.uri
+      const range =
+        "targetSelectionRange" in location
+          ? location.targetSelectionRange
+          : location.range
+      if (!uri || !range || !this.root) return []
+      const root = new URL(`file://${this.root}/`)
+      const target = new URL(uri)
+      if (target.protocol !== "file:" || target.host !== root.host) return []
+      return [
+        {
+          uri,
+          path: target.pathname.startsWith(root.pathname)
+            ? decodeURIComponent(target.pathname.slice(root.pathname.length))
+            : null,
+          position: range.start,
+        },
+      ]
+    })
+  }
+
+  async readDefinition(uri: string, signal: AbortSignal) {
+    const request = this.request()
+    if (!request || !this.ready)
+      throw new Error("Language server is connecting.")
+    const response = await request(
+      "/language/read",
+      { sessionId: this.sessionId, uri },
+      signal
+    )
+    const result = (await response.json()) as {
+      path: string
+      contents: string
+      closed?: boolean
+    }
+    if (result.closed) throw new Error("Language session expired. Try again.")
+    return result
   }
 
   private uri(path: string) {

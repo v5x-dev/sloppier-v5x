@@ -1,4 +1,5 @@
 import {
+  DotsThreeIcon,
   BuildingsIcon,
   CodeIcon,
   EnvelopeSimpleIcon,
@@ -280,6 +281,7 @@ function AppHeader({
 function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const programs = useQuery(api.projects.listByWorkspace, { workspaceId })
   const templates = useQuery(api.projects.listTemplates)
+  const [archived, setArchived] = useState(false)
 
   if (programs === undefined) {
     return <ProgramListSkeleton />
@@ -309,21 +311,42 @@ function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 
   return (
     <ItemGroup className="gap-2">
+      <div className="flex gap-2 pb-2">
+        <Button
+          variant={!archived ? "secondary" : "ghost"}
+          onClick={() => setArchived(false)}
+        >
+          Active
+        </Button>
+        <Button
+          variant={archived ? "secondary" : "ghost"}
+          onClick={() => setArchived(true)}
+        >
+          Archived
+        </Button>
+      </div>
+      {!programs.some(
+        (program) => Boolean(program.archivedAt) === archived
+      ) && (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          No {archived ? "archived" : "active"} programs.
+        </p>
+      )}
       {[...programs]
+        .filter((program) => Boolean(program.archivedAt) === archived)
         .sort((left, right) => right.createdAt - left.createdAt)
         .map((program) => (
-          <Item
-            key={program._id}
-            variant="outline"
-            render={
-              <Link
-                to="/programs/$programId"
-                params={{ programId: program._id }}
-              />
-            }
-          >
+          <Item key={program._id} variant="outline">
             <ItemContent>
-              <ItemTitle>{program.name}</ItemTitle>
+              <ItemTitle>
+                <Link
+                  to="/programs/$programId"
+                  params={{ programId: program._id }}
+                  className="hover:underline"
+                >
+                  {program.name}
+                </Link>
+              </ItemTitle>
               <ItemDescription className="text-xs">
                 Created{" "}
                 {formatDistanceToNow(program.createdAt, { addSuffix: true })}
@@ -336,10 +359,124 @@ function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
                 className="mr-2 size-5 shrink-0 object-contain"
               />
               <RepositoryStatusBadge status={program.repositoryStatus} />
+              <ProgramActions program={program} />
             </ItemActions>
           </Item>
         ))}
     </ItemGroup>
+  )
+}
+
+function ProgramActions({ program }: { program: Doc<"projects"> }) {
+  const rename = useMutation(api.projects.rename)
+  const setArchived = useMutation(api.projects.setArchived)
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState(program.name)
+  const [pending, setPending] = useState(false)
+  async function save(action: () => Promise<unknown>) {
+    if (pending) return
+    setPending(true)
+    try {
+      await action()
+      setOpen(false)
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not update program",
+        description: errorMessage(error),
+      })
+    } finally {
+      setPending(false)
+    }
+  }
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Actions for ${program.name}`}
+              disabled={pending}
+            />
+          }
+        >
+          <DotsThreeIcon />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem
+            onClick={() => {
+              setName(program.name)
+              setOpen(true)
+            }}
+          >
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              void save(() =>
+                setArchived({
+                  projectId: program._id,
+                  archived: !program.archivedAt,
+                })
+              )
+            }
+          >
+            {program.archivedAt ? "Restore program" : "Archive program"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Dialog
+        open={open}
+        onOpenChange={(value) => {
+          if (!pending) setOpen(value)
+        }}
+      >
+        <DialogContent>
+          <form
+            className="flex flex-col gap-6"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void save(() => rename({ projectId: program._id, name }))
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Rename program</DialogTitle>
+              <DialogDescription>
+                Choose a name for this program.
+              </DialogDescription>
+            </DialogHeader>
+            <Field>
+              <FieldLabel htmlFor={`program-name-${program._id}`}>
+                Name
+              </FieldLabel>
+              <Input
+                id={`program-name-${program._id}`}
+                autoFocus
+                maxLength={80}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                disabled={pending}
+              />
+            </Field>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={pending || !name.trim()}>
+                Save
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
