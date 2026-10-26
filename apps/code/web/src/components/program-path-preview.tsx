@@ -11,6 +11,7 @@ import { useAction } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import {
   Select,
   SelectContent,
@@ -252,7 +253,7 @@ export function ProgramPathPreview({
               <div id={optionsId} className="flex flex-col gap-2">
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex min-w-0 flex-col gap-1 text-xs">
-                    Field
+                    <span className="text-muted-foreground">Field</span>
                     <Select
                       value={field}
                       items={fields.map((item, index) => ({
@@ -282,7 +283,7 @@ export function ProgramPathPreview({
                   </label>
                   {routes.length > 0 && (
                     <label className="flex min-w-0 flex-col gap-1 text-xs">
-                      Auton route
+                      <span className="text-muted-foreground">Route</span>
                       <Select
                         value={route?.id ?? ""}
                         items={routes.map((item) => ({
@@ -294,7 +295,7 @@ export function ProgramPathPreview({
                         }}
                       >
                         <SelectTrigger
-                          aria-label="Auton route"
+                          aria-label="Route"
                           className="w-full min-w-0"
                         >
                           <SelectValue />
@@ -311,15 +312,17 @@ export function ProgramPathPreview({
                   )}
                 </div>
                 <label className="flex items-center justify-between gap-2 text-xs">
-                  Track width (in)
-                  <input
+                  <span className="text-muted-foreground">
+                    Track width (in)
+                  </span>
+                  <Input
                     aria-label="Track width in inches"
                     type="number"
                     min="1"
                     max="36"
                     step="0.25"
                     value={trackWidth}
-                    className="h-8 w-20 rounded border bg-background px-2"
+                    className="w-20"
                     onChange={(event) => {
                       const value = event.target.valueAsNumber
                       if (Number.isFinite(value) && value >= 1 && value <= 36)

@@ -1,5 +1,5 @@
 import { replayLiveDocument, LiveReplayError } from "./lib/liveReplay"
-"use node"
+;("use node")
 
 import {
   literalPattern,
@@ -794,21 +794,28 @@ export const restoreHistoryFile = action({
     let replay
     try {
       replay = await replayLiveDocument(
-        (afterSequence) => ctx.runQuery(api.crdt.updatesSince, {
-          projectId, path, afterSequence,
-        }),
+        (afterSequence) =>
+          ctx.runQuery(api.crdt.updatesSince, {
+            projectId,
+            path,
+            afterSequence,
+          }),
         { used: 0, limit: 8 * 1024 * 1024 }
       )
     } catch (error) {
       if (error instanceof LiveReplayError) {
         if (error.reason === "limit")
-          throw new ConvexError("This live document is too large to restore here.")
+          throw new ConvexError(
+            "This live document is too large to restore here."
+          )
         throw new ConvexError("The live file changed. Try again.")
       }
       throw error
     }
     const { documentId } = replay
-    const update = documentId ? restoreUpdate([replay.snapshot], contents) : null
+    const update = documentId
+      ? restoreUpdate([replay.snapshot], contents)
+      : null
     if (update && update.byteLength > 512 * 1024)
       throw new ConvexError("This restore exceeds the live editing limit.")
     const result = await ctx.runAction(api.codeStorage.commitFiles, {
@@ -921,9 +928,12 @@ export const searchProject = action({
       }
       try {
         const replay = await replayLiveDocument(
-          (afterSequence) => ctx.runQuery(api.crdt.updatesSince, {
-            projectId, path: document.path, afterSequence,
-          }),
+          (afterSequence) =>
+            ctx.runQuery(api.crdt.updatesSince, {
+              projectId,
+              path: document.path,
+              afterSequence,
+            }),
           replayBudget,
           document.id
         )

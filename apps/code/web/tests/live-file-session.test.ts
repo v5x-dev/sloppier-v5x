@@ -1,0 +1,270 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { getFunctionName } from "convex/server"
+import * as Y from "yjs"
+import { createLiveFileSession } from "../src/lib/live-file-session"
+import type { Id } from "@workspace/backend/dataModel"
+
+type Options = Parameters<typeof createLiveFileSession>[0]
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes
+    reject = no
+  })
+  return { promise, resolve, reject }
+}
+function setup(hydration = Promise.resolve(), pageCount = 1) {
+  const remote = new Y.Doc()
+  remote.getText("source").insert(0, "robot")
+  const initial = Y.encodeStateAsUpdate(remote).buffer as ArrayBuffer
+  const vector = Y.encodeStateVector(remote)
+  remote.getText("source").insert(5, "!")
+  const second = Y.encodeStateAsUpdate(remote, vector).buffer as ArrayBuffer
+  const updates = [initial, second]
+    .slice(0, pageCount)
+    .map((bytes, index) => ({ sequence: index + 1, bytes }))
+  remote.destroy()
+  let documentId = "document"
+  let local: Y.Doc | undefined
+  const watches: {
+    name: string
+    args: Record<string, unknown>
+    update?: () => void
+    active: boolean
+  }[] = []
+  const append = vi.fn(
+    async (_args: { updateId: string; bytes: ArrayBuffer }) => null
+  )
+  const disconnect = vi.fn()
+  const editor = {
+    renderCarets: vi.fn(),
+    publishSelection: vi.fn(),
+    destroy: vi.fn(),
+  }
+  const callbacks = {
+    onChange: vi.fn(),
+    onPeopleChange: vi.fn(),
+    onSyncChange: vi.fn(),
+    onStatus: vi.fn(),
+    onError: vi.fn(),
+    onReplaced: vi.fn(),
+    isFocused: () => true,
+    mount: vi.fn((doc: Y.Doc) => {
+      local = doc
+      return editor
+    }),
+  }
+  const cache = { whenSynced: hydration, destroy: vi.fn(async () => {}) }
+  const client = {
+    action: vi.fn(async () => "document"),
+    mutation: vi.fn(
+      async (
+        reference: Parameters<typeof getFunctionName>[0],
+        args: Record<string, unknown>
+      ) => {
+        const name = getFunctionName(reference)
+        if (name === "crdt:appendUpdate")
+          return append(args as { updateId: string; bytes: ArrayBuffer })
+        if (name === "presence:heartbeatFile") return { sessionToken: "token" }
+        if (name === "presence:disconnect") disconnect(args)
+        return null
+      }
+    ),
+    watchQuery: vi.fn(
+      (
+        reference: Parameters<typeof getFunctionName>[0],
+        args: Record<string, unknown>
+      ) => {
+        const watch = {
+          name: getFunctionName(reference),
+          args,
+          active: true,
+        } as (typeof watches)[number]
+        watches.push(watch)
+        return {
+          localQueryResult: () =>
+            watch.name === "crdt:updatesSince"
+              ? {
+                  documentId,
+                  updates: updates.slice(
+                    Number(args.afterSequence),
+                    Number(args.afterSequence) + 1
+                  ),
+                  hasMore: Number(args.afterSequence) + 1 < pageCount,
+                  lastSequence: pageCount,
+                }
+              : [],
+          onUpdate: (update: () => void) => {
+            watch.update = update
+            return () => {
+              watch.active = false
+            }
+          },
+        }
+      }
+    ),
+  }
+  const session = createLiveFileSession({
+    client: client as unknown as Options["client"],
+    projectId: "program" as Id<"projects">,
+    path: "src/main.cpp",
+    user: { id: "alice", email: "alice@example.com" },
+    callbacks,
+    createCache: () => cache,
+  })
+  return {
+    session,
+    client,
+    callbacks,
+    cache,
+    append,
+    editor,
+    watches,
+    disconnect,
+    text: () => local!.getText("source"),
+    replace: () => {
+      documentId = "replacement"
+      for (const watch of [...watches])
+        if (watch.active && watch.name === "crdt:updatesSince") watch.update?.()
+    },
+  }
+}
+
+beforeEach(() => vi.useFakeTimers())
+afterEach(() => vi.useRealTimers())
+
+describe("live file session", () => {
+  it("replays every page before mounting and advances the subscription cursor", async () => {
+    const s = setup(Promise.resolve(), 2)
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.text().toString()).toBe("robot!")
+      expect(s.callbacks.mount).toHaveBeenCalledOnce()
+      expect(
+        s.watches
+          .filter((watch) => watch.name === "crdt:updatesSince")
+          .map((watch) => watch.args.afterSequence)
+      ).toEqual([0, 1, 2])
+    } finally {
+      s.session.dispose()
+    }
+  })
+
+  it("waits for local recovery and replay before attaching the editor", async () => {
+    const hydration = deferred<void>()
+    const s = setup(hydration.promise)
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.callbacks.mount).not.toHaveBeenCalled()
+      expect(s.session.hasPendingChanges()).toBe(true)
+      hydration.resolve()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.callbacks.mount).toHaveBeenCalledOnce()
+      expect(s.text().toString()).toBe("robot")
+      expect(s.session.hasPendingChanges()).toBe(false)
+      expect(
+        s.watches
+          .filter((watch) => watch.active && watch.name === "crdt:updatesSince")
+          .map((watch) => watch.args.afterSequence)
+      ).toEqual([1])
+    } finally {
+      s.session.dispose()
+    }
+  })
+  it("closing during hydration prevents subscriptions, presence and editor attachment", async () => {
+    const hydration = deferred<void>()
+    const s = setup(hydration.promise)
+    await vi.advanceTimersByTimeAsync(0)
+    s.session.dispose()
+    hydration.resolve()
+    await vi.advanceTimersByTimeAsync(20_000)
+    expect(s.callbacks.mount).not.toHaveBeenCalled()
+    expect(s.client.watchQuery).not.toHaveBeenCalled()
+    expect(s.client.mutation).not.toHaveBeenCalled()
+    expect(s.cache.destroy).toHaveBeenCalledOnce()
+  })
+  it("retries identical bytes after a lost response and sends later typing separately", async () => {
+    const s = setup()
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      s.append.mockRejectedValueOnce(new Error("response lost"))
+      s.text().insert(5, " first")
+      await vi.advanceTimersByTimeAsync(250)
+      expect(s.append).toHaveBeenCalledOnce()
+      expect(s.session.hasPendingChanges()).toBe(true)
+      const first = s.append.mock.calls[0][0]
+      s.text().insert(s.text().length, " later")
+      s.session.retry()
+      await vi.advanceTimersByTimeAsync(0)
+      const retry = s.append.mock.calls[1][0]
+      expect(retry.updateId).toBe(first.updateId)
+      expect(new Uint8Array(retry.bytes)).toEqual(new Uint8Array(first.bytes))
+      expect(s.session.hasPendingChanges()).toBe(true)
+      await vi.advanceTimersByTimeAsync(250)
+      expect(s.append).toHaveBeenCalledTimes(3)
+      expect(s.append.mock.calls[2][0].updateId).not.toBe(first.updateId)
+      expect(s.session.hasPendingChanges()).toBe(false)
+    } finally {
+      s.session.dispose()
+    }
+  })
+  it("document replacement stops writes and reports unsynchronized state", async () => {
+    const s = setup()
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      s.replace()
+      expect(s.session.hasPendingChanges()).toBe(true)
+      s.session.retry()
+      s.text().insert(0, "pending")
+      await vi.advanceTimersByTimeAsync(250)
+      expect(s.callbacks.onReplaced).toHaveBeenCalledOnce()
+      expect(s.callbacks.onSyncChange).toHaveBeenCalledWith(false)
+      expect(s.callbacks.onError).toHaveBeenCalledWith(
+        expect.stringContaining("deleted or replaced")
+      )
+      expect(s.append).not.toHaveBeenCalled()
+    } finally {
+      s.session.dispose()
+    }
+  })
+  it("a write acknowledged after replacement cannot clear the replacement warning", async () => {
+    const s = setup()
+    const sent = deferred<null>()
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      s.append.mockReturnValueOnce(sent.promise)
+      s.text().insert(0, "edit")
+      await vi.advanceTimersByTimeAsync(250)
+      s.replace()
+      s.callbacks.onError.mockClear()
+      sent.resolve(null)
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.callbacks.onError).not.toHaveBeenCalled()
+      expect(s.session.hasPendingChanges()).toBe(true)
+    } finally {
+      s.session.dispose()
+    }
+  })
+  it("a write completing after disposal cannot restart watches or notify rendering", async () => {
+    const s = setup()
+    const sent = deferred<null>()
+    await vi.advanceTimersByTimeAsync(0)
+    s.append.mockReturnValueOnce(sent.promise)
+    s.text().insert(0, "edit")
+    await vi.advanceTimersByTimeAsync(250)
+    expect(s.append).toHaveBeenCalledOnce()
+    s.session.dispose()
+    const watches = s.client.watchQuery.mock.calls.length
+    s.callbacks.onError.mockClear()
+    s.callbacks.onStatus.mockClear()
+    sent.resolve(null)
+    await vi.advanceTimersByTimeAsync(20_000)
+    expect(s.client.watchQuery).toHaveBeenCalledTimes(watches)
+    expect(s.callbacks.onStatus).not.toHaveBeenCalled()
+    expect(s.callbacks.onError).not.toHaveBeenCalled()
+    expect(s.watches.every((watch) => !watch.active)).toBe(true)
+    expect(s.editor.destroy).toHaveBeenCalledOnce()
+    expect(s.disconnect).toHaveBeenCalledOnce()
+  })
+})

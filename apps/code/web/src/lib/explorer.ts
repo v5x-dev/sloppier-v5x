@@ -1,3 +1,11 @@
+export type ExplorerUpdate = {
+  changes: RepositoryChange[]
+  moves?: { from: string; to: string }[]
+  removed?: string[]
+  requireAbsentPaths?: string[]
+  message: string
+}
+
 export type ExplorerEntry = { path: string; kind: "file" | "directory" }
 export type RepositoryChange =
   | { operation: "put"; path: string; contents: string | ArrayBuffer }

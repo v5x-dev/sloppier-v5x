@@ -44,13 +44,8 @@ import {
   type RepositoryChange,
 } from "@/lib/explorer"
 
-export type ExplorerUpdate = {
-  changes: RepositoryChange[]
-  moves?: { from: string; to: string }[]
-  removed?: string[]
-  requireAbsentPaths?: string[]
-  message: string
-}
+export type { ExplorerUpdate } from "@/lib/explorer"
+import type { ExplorerUpdate } from "@/lib/explorer"
 
 type Props = {
   binaries: ReturnType<typeof useProgramBinaries>

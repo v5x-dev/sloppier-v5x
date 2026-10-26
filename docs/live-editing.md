@@ -46,3 +46,11 @@ Search combines committed files with collaborative documents and local editor dr
 Search scope can be narrowed to source and header files, excluding bundled toolchain and library directories. The path field intersects that scope: `src/` searches a directory recursively, `*.cpp` matches filenames anywhere, and `src/**/*.cpp` matches nested paths. Both saved results and live drafts are filtered before applying the match limit.
 
 Use Up/Down in the search field or result list to move the selected match into view, then Enter to open it. Arrow navigation from the search field keeps focus there so typing can continue. Changing the query or filters selects the first available result.
+
+## Ownership and verification
+
+`WorkbenchSource` owns workbench source identity and reconciliation. Commit captures the submitted text, so edits made during the write remain dirty. Explorer moves remap drafts, committed text, tabs, loaded editor identities, scroll positions, synchronization flags, and people together. Rendering subscribes to its snapshot; search and path previews subscribe separately to draft changes so typing in an already-dirty file does not rerender the whole workbench. Its tests use controlled repository writes to exercise moves, rejected writes, concurrent typing, restore warnings, and stale reads.
+
+`createLiveFileSession` owns replay, local cache recovery, acknowledgements, backup status, presence, and disposal. The editor supplies a Pierre adapter after recovery and replay complete, and retains rendering, language registration, and browser navigation warnings. Session tests control subscriptions, cache hydration, and acknowledgements to verify lifecycle ordering without mounting the editor. Disposed sessions ignore late acknowledgements; replaced sessions keep their warning and stop writing.
+
+History restoration and project search share `replayLiveDocument`. It checks document identity across pages, accounts for bytes even when replay fails, and rejects stalled pagination. Restore retains its 8 MiB limit and rejects failed replay. Search retains a shared 16 MiB budget, skips unreadable live documents, and suppresses their committed matches.

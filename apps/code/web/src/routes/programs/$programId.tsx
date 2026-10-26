@@ -21,7 +21,6 @@ import {
 } from "@dnd-kit/modifiers"
 import {
   SortableContext,
-  arrayMove,
   horizontalListSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
@@ -94,12 +93,10 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react"
-import {
-  RepositoryExplorer,
-  type ExplorerUpdate,
-} from "@/components/repository-explorer"
-import { containsPath } from "@/lib/explorer"
+import { RepositoryExplorer } from "@/components/repository-explorer"
+import { WorkbenchSource, type LoadedFile } from "@/lib/workbench-source"
 import {
   Avatar,
   AvatarFallback,
@@ -129,8 +126,6 @@ export const Route = createFileRoute("/programs/$programId")({
 })
 
 // Reserved for live-editing CRDT blobs; not user source.
-const RESERVED_PREFIX = ".v5x/"
-const MAX_READ_BYTES = 512 * 1024
 
 const treeStyle = {
   "--trees-bg-override": "var(--sidebar)",
@@ -286,12 +281,6 @@ function ProvisioningState({ program }: { program: Doc<"projects"> }) {
   )
 }
 
-type LoadedFile = {
-  contents: string
-  truncated: boolean
-  editorKey?: string
-}
-
 function Workbench({ program }: { program: Doc<"projects"> }) {
   const binaries = useProgramBinaries()
   const { request: buildRequest } = useProgramConnection()
@@ -301,9 +290,42 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   const commitFiles = useAction(api.codeStorage.commitFiles)
   const restoreHistoryFile = useAction(api.codeStorage.restoreHistoryFile)
 
-  const [paths, setPaths] = useState<string[] | null>(null)
-  const [listError, setListError] = useState<string | null>(null)
-  const [openPaths, setOpenPaths] = useState<string[]>([])
+  const [source] = useState(
+    () =>
+      new WorkbenchSource(program._id, {
+        buildManifest,
+        listFiles,
+        readFile,
+        commitFiles,
+        restoreHistoryFile,
+      })
+  )
+  const {
+    paths,
+    listError,
+    openPaths,
+    activePath,
+    loaded,
+    readError,
+    dirtyPaths,
+    filePeople,
+  } = useSyncExternalStore(
+    source.subscribe,
+    source.getSnapshot,
+    source.getSnapshot
+  )
+  const {
+    prepareSource,
+    loadPaths,
+    openFile,
+    readBytes,
+    commit,
+    restoreFile,
+    applyExplorerUpdate,
+    getDrafts: getSearchDrafts,
+    subscribeDrafts: subscribeSearchDrafts,
+  } = source
+  const allSynced = source.isSynced()
   const tabSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -317,7 +339,6 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   const onFormatChange = useCallback<FormatChange>((path, action) => {
     setFormatActions((current) => ({ ...current, [path]: action }))
   }, [])
-  const [activePath, setActivePath] = useState<string | null>(null)
   const formatFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
     if (
       !(event.ctrlKey || event.metaKey) ||
@@ -336,166 +357,11 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
     window.addEventListener("keydown", keydown, true)
     return () => window.removeEventListener("keydown", keydown, true)
   }, [])
-  const [loaded, setLoaded] = useState<Partial<Record<string, LoadedFile>>>({})
-  const [readError, setReadError] = useState<Partial<Record<string, string>>>(
-    {}
-  )
-  // Last committed text per path, and the editor's live text per path.
-  const committed = useRef(new Map<string, string>())
-  const drafts = useRef(new Map<string, string>())
-  const draftListeners = useRef(new Set<() => void>())
-  const getSearchDrafts = useCallback(() => drafts.current, [])
-  const subscribeSearchDrafts = useCallback((listener: () => void) => {
-    draftListeners.current.add(listener)
-    return () => {
-      draftListeners.current.delete(listener)
-    }
-  }, [])
-  const scrollPositions = useRef(new Map<string, number>())
-  const [dirtyPaths, setDirtyPaths] = useState<string[]>([])
   const [commitOpen, setCommitOpen] = useState(false)
-  const [filePeople, setFilePeople] = useState<Record<string, LivePerson[]>>({})
-  const [liveSync, setLiveSync] = useState<Record<string, boolean>>({})
-  const allSynced = Object.values(liveSync).every(Boolean)
-  const syncedRef = useRef(allSynced)
-  syncedRef.current = allSynced
-  const operationBusy = useRef(false)
   const savePending = useRef(false)
-  const initialOpen = useRef(false)
-
-  async function prepareSource() {
-    const { sha, paths } = await buildManifest({ projectId: program._id })
-    const files: Record<string, Uint8Array> = {}
-    let total = 0
-    for (const path of paths) {
-      const bytes = new Uint8Array(await readBytes(path, true, sha))
-      total += bytes.length
-      if (total > 96 * 1024 * 1024)
-        throw new Error("Source snapshot exceeds 96 MiB.")
-      files[path] = bytes
-    }
-    return { sha, files }
-  }
-
-  const loadPaths = useCallback(async () => {
-    setListError(null)
-    try {
-      const all: string[] = []
-      let cursor: string | undefined
-      do {
-        const page = await listFiles({ projectId: program._id, cursor })
-        all.push(...page.paths)
-        cursor = page.hasMore ? page.nextCursor : undefined
-      } while (cursor)
-      setPaths(all.filter((path) => !path.startsWith(RESERVED_PREFIX)).sort())
-    } catch (error) {
-      setListError(errorMessage(error))
-    }
-  }, [listFiles, program._id])
-
   useEffect(() => {
     void loadPaths()
   }, [loadPaths])
-
-  const openFile = useCallback((path: string) => {
-    setOpenPaths((current) =>
-      current.includes(path) ? current : [...current, path]
-    )
-    setActivePath(path)
-  }, [])
-
-  useEffect(() => {
-    if (!paths || initialOpen.current) return
-    initialOpen.current = true
-    const entry = pickEntryFile(paths)
-    if (entry) openFile(entry)
-  }, [paths, openFile])
-
-  useEffect(() => {
-    const requestedPath = activePath
-    if (!requestedPath || loaded[requestedPath] || readError[requestedPath])
-      return
-    let cancelled = false
-    readFile({
-      projectId: program._id,
-      path: requestedPath,
-      length: MAX_READ_BYTES,
-    })
-      .then(({ bytes, contentRange }) => {
-        if (cancelled) return
-        const contents = new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-        if (contents.includes("\0"))
-          throw new Error(
-            "This is a binary file. Use Download to open it locally."
-          )
-        const total = Number(contentRange?.split("/").at(1))
-        committed.current.set(requestedPath, contents)
-        setLoaded((current) => ({
-          ...current,
-          [requestedPath]: {
-            contents,
-            editorKey: `${program._id}:${crypto.randomUUID()}`,
-            truncated: Number.isFinite(total) && total > bytes.byteLength,
-          },
-        }))
-      })
-      .catch((error) => {
-        if (cancelled) return
-        setReadError((current) => ({
-          ...current,
-          [requestedPath]: errorMessage(error),
-        }))
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [activePath, loaded, program._id, readError, readFile])
-
-  const syncDirty = useCallback(() => {
-    for (const listener of draftListeners.current) listener()
-    const next = [...drafts.current]
-      .filter(([path, text]) => committed.current.get(path) !== text)
-      .map(([path]) => path)
-      .sort()
-    setDirtyPaths((current) =>
-      current.join("\n") === next.join("\n") ? current : next
-    )
-  }, [])
-
-  async function commit(message?: string) {
-    if (!syncedRef.current)
-      throw new Error(
-        "Wait for live changes to finish syncing before committing."
-      )
-    const changes = [...drafts.current]
-      .filter(([path, text]) => committed.current.get(path) !== text)
-      .map(([path, text]) => ({
-        operation: "put" as const,
-        path,
-        contents: text,
-      }))
-    if (!changes.length) return
-    if (operationBusy.current)
-      throw new Error("Wait for the current file operation to finish.")
-    operationBusy.current = true
-    try {
-      const changedPaths = changes.map(({ path }) => path).sort()
-      const generatedMessage =
-        changedPaths.length === 1
-          ? `Update ${changedPaths[0]}`
-          : `Update ${changedPaths.length} files: ${changedPaths.join(", ")}`
-      await commitFiles({
-        projectId: program._id,
-        message: message ?? generatedMessage.slice(0, 200),
-        changes,
-      })
-      for (const change of changes)
-        committed.current.set(change.path, change.contents)
-      syncDirty()
-    } finally {
-      operationBusy.current = false
-    }
-  }
 
   const saveFromKeyboard = useEffectEvent(
     (event: KeyboardEvent, signal: AbortSignal) => {
@@ -510,16 +376,11 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
       event.preventDefault()
       event.stopPropagation()
       if (event.repeat || savePending.current) return
-      if (
-        ![...drafts.current].some(
-          ([path, text]) => committed.current.get(path) !== text
-        )
-      )
-        return
+      if (source.getSnapshot().dirtyPaths.length === 0) return
       savePending.current = true
       void (async () => {
         try {
-          await waitForSourceSync(() => syncedRef.current, signal)
+          await waitForSourceSync(source.isSynced, signal)
           signal.throwIfAborted()
           await commit()
           if (!signal.aborted)
@@ -549,207 +410,15 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
     }
   }, [])
 
-  async function restoreFile(sha: string, path: string) {
-    if (operationBusy.current || dirtyPaths.length || !syncedRef.current)
-      throw new Error("Commit and sync current changes before restoring.")
-    operationBusy.current = true
-    try {
-      const result = await restoreHistoryFile({
-        projectId: program._id,
-        sha,
-        path,
-      })
-      committed.current.set(path, result.contents)
-      syncDirty()
-      setLoaded((current) => ({
-        ...current,
-        [path]: {
-          ...current[path],
-          contents: result.contents,
-          truncated: false,
-        },
-      }))
-      setReadError((current) => ({ ...current, [path]: undefined }))
-      await loadPaths()
-      openFile(path)
-      return result.warning
-    } finally {
-      operationBusy.current = false
-    }
-  }
-
-  async function readBytes(
-    path: string,
-    saved = false,
-    ref?: string
-  ): Promise<ArrayBuffer> {
-    const draft = !saved && !ref ? drafts.current.get(path) : undefined
-    if (draft !== undefined) return new TextEncoder().encode(draft).buffer
-    const chunks: Uint8Array[] = []
-    let offset = 0
-    let hasMore = true
-    while (hasMore) {
-      const { bytes, contentRange } = await readFile({
-        projectId: program._id,
-        path,
-        offset,
-        ref,
-        length: MAX_READ_BYTES,
-      })
-      chunks.push(new Uint8Array(bytes))
-      offset += bytes.byteLength
-      const total = Number(contentRange?.split("/").at(-1))
-      if (
-        (Number.isFinite(total) && offset >= total) ||
-        bytes.byteLength < MAX_READ_BYTES ||
-        !contentRange
-      )
-        hasMore = false
-    }
-    const bytes = new Uint8Array(offset)
-    let position = 0
-    for (const chunk of chunks) {
-      bytes.set(chunk, position)
-      position += chunk.byteLength
-    }
-    return bytes.buffer
-  }
-
-  async function applyExplorerUpdate(update: ExplorerUpdate) {
-    if (!syncedRef.current)
-      throw new Error(
-        "Wait for live changes to finish syncing before changing files."
-      )
-    if (operationBusy.current)
-      throw new Error("Wait for the current file operation to finish.")
-    if (!update.changes.length)
-      throw new Error("No files to change. Refresh the Explorer.")
-    if (update.changes.length > 100)
-      throw new Error(
-        "A repository operation can change at most 100 files. Select fewer items."
-      )
-    const size = update.changes.reduce(
-      (total, change) =>
-        total +
-        (change.operation === "put"
-          ? typeof change.contents === "string"
-            ? new TextEncoder().encode(change.contents).byteLength
-            : change.contents.byteLength
-          : 0),
-      0
-    )
-    if (size > MAX_READ_BYTES)
-      throw new Error(
-        "A repository operation can write at most 512 KiB. Select fewer or smaller files."
-      )
-    operationBusy.current = true
-    try {
-      await commitFiles({
-        projectId: program._id,
-        message: update.message,
-        changes: update.changes,
-        requireAbsentPaths: update.requireAbsentPaths,
-        moves: update.changes.flatMap((change) => {
-          if (change.operation !== "delete") return []
-          const move = update.moves?.find(({ from }) =>
-            containsPath(from, change.path)
-          )
-          return move
-            ? [
-                {
-                  from: change.path,
-                  to: `${move.to}${change.path.slice(move.from.length)}`,
-                },
-              ]
-            : []
-        }),
-      })
-      const removed = new Set(update.removed ?? [])
-      const remap = (path: string) => {
-        const move = update.moves?.find(({ from }) => containsPath(from, path))
-        return move ? `${move.to}${path.slice(move.from.length)}` : path
-      }
-      // Keep drafts at their new path, and discard only deleted files.
-      const remapMap = <T,>(map: Map<string, T>) => {
-        const entries = [...map]
-        map.clear()
-        for (const [path, value] of entries)
-          if (!removed.has(path)) map.set(remap(path), value)
-      }
-      remapMap(drafts.current)
-      remapMap(committed.current)
-      remapMap(scrollPositions.current)
-      setLoaded((current) =>
-        Object.fromEntries(
-          Object.entries(current)
-            .filter(([path]) => !removed.has(path))
-            .map(([path, value]) => [
-              remap(path),
-              value && {
-                ...value,
-                contents: drafts.current.get(remap(path)) ?? value.contents,
-              },
-            ])
-        )
-      )
-      setLiveSync((current) =>
-        Object.fromEntries(
-          Object.entries(current)
-            .filter(([path]) => !removed.has(path))
-            .map(([path, value]) => [remap(path), value])
-        )
-      )
-      setReadError((current) =>
-        Object.fromEntries(
-          Object.entries(current)
-            .filter(([path]) => !removed.has(path))
-            .map(([path, value]) => [remap(path), value])
-        )
-      )
-      setOpenPaths((current) =>
-        current.filter((path) => !removed.has(path)).map(remap)
-      )
-      setActivePath((current) =>
-        current && !removed.has(current)
-          ? remap(current)
-          : (openPaths
-              .filter((path) => !removed.has(path))
-              .map(remap)
-              .at(-1) ?? null)
-      )
-      setPaths((current) => {
-        const next = new Set(current ?? [])
-        for (const change of update.changes) {
-          if (change.operation === "delete") next.delete(change.path)
-          else next.add(change.path)
-        }
-        return [...next].sort()
-      })
-      syncDirty()
-    } finally {
-      operationBusy.current = false
-    }
-  }
-
-  function selectTab(path: string) {
-    openFile(path)
-  }
-
   function closeTab(path: string) {
-    if (liveSync[path] === false) {
+    try {
+      source.closeTab(path)
+    } catch (error) {
       toast.add({
         type: "error",
         title: "This file is still syncing",
-        description: "Keep it open until its live changes are saved.",
+        description: errorMessage(error),
       })
-      return
-    }
-    const index = openPaths.indexOf(path)
-    const remaining = openPaths.filter((openPath) => openPath !== path)
-    setOpenPaths(remaining)
-    if (activePath === path) {
-      const next = remaining.at(index) ?? remaining.at(-1) ?? null
-      setActivePath(next)
     }
   }
 
@@ -867,7 +536,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             <Tabs
               value={activePath}
               onValueChange={(value) => {
-                if (typeof value === "string") selectTab(value)
+                if (typeof value === "string") openFile(value)
               }}
               className="min-h-0 min-w-0 flex-1 gap-0"
             >
@@ -882,13 +551,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                     ]}
                     onDragEnd={({ active, over }) => {
                       if (!over || active.id === over.id) return
-                      setOpenPaths((current) => {
-                        const from = current.indexOf(String(active.id))
-                        const to = current.indexOf(String(over.id))
-                        return from < 0 || to < 0
-                          ? current
-                          : arrayMove(current, from, to)
-                      })
+                      source.reorderTabs(String(active.id), String(over.id))
                     }}
                   >
                     <SortableContext
@@ -923,7 +586,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                     className="relative no-scrollbar min-h-0 overflow-auto"
                     onScroll={(event) => {
                       if (path === activePath) {
-                        scrollPositions.current.set(
+                        source.scrollPositions.set(
                           path,
                           event.currentTarget.scrollTop
                         )
@@ -952,26 +615,14 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                         }
                         active={path === activePath}
                         onPeopleChange={(people) =>
-                          setFilePeople((current) =>
-                            JSON.stringify(current[path]) ===
-                            JSON.stringify(people)
-                              ? current
-                              : { ...current, [path]: people }
-                          )
+                          source.setPeople(path, people)
                         }
                         onSyncChange={(synced) =>
-                          setLiveSync((current) =>
-                            current[path] === synced
-                              ? current
-                              : { ...current, [path]: synced }
-                          )
+                          source.setSynced(path, synced)
                         }
                         loaded={loaded[path]}
-                        scrollPositions={scrollPositions.current}
-                        onChange={(text) => {
-                          drafts.current.set(path, text)
-                          syncDirty()
-                        }}
+                        scrollPositions={source.scrollPositions}
+                        onChange={(text) => source.setDraft(path, text)}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -1093,7 +744,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
               prepareProgram={(signal, onStage) =>
                 prepareUploadBuild({
                   commitChanges: async (signal) => {
-                    await waitForSourceSync(() => syncedRef.current, signal)
+                    await waitForSourceSync(source.isSynced, signal)
                     await commit("Save changes before upload")
                   },
                   prepareSource,
@@ -1328,14 +979,6 @@ function ActionsBar({
 }
 
 // Open on the program's entry point rather than whatever sorts first.
-function pickEntryFile(paths: string[]) {
-  return (
-    paths.find((path) => /(^|\/)main\.(cpp|cc|c)$/.test(path)) ??
-    paths.find((path) => path.endsWith(".cpp")) ??
-    paths.at(0)
-  )
-}
-
 function CommitDialog({
   open,
   onOpenChange,

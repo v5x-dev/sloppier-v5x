@@ -25,8 +25,8 @@ const check = browser(
 )
 if (!check.includes("PASS:")) throw new Error(check)
 console.log(check)
-browser("wait", '[role="combobox"][aria-label="Auton route"]')
-browser("click", '[role="combobox"][aria-label="Auton route"]')
+browser("wait", '[role="combobox"][aria-label="Route"]')
+browser("click", '[role="combobox"][aria-label="Route"]')
 browser(
   "find",
   "role",
