@@ -24,8 +24,16 @@ jobs:
           bun-version: 1.4.4
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Deploy Cloudflare Worker
-        run: bun run deploy
+      - name: Build and deploy Cloudflare Worker
+        run: |
+          : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
+          : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"
+          : "${VITE_WORKOS_REDIRECT_URI:?Missing VITE_WORKOS_REDIRECT_URI}"
+          bun run build
+          bunx wrangler deploy --keep-vars \
+            --var "VITE_CONVEX_URL:${VITE_CONVEX_URL}" \
+            --var "VITE_WORKOS_CLIENT_ID:${VITE_WORKOS_CLIENT_ID}" \
+            --var "VITE_WORKOS_REDIRECT_URI:${VITE_WORKOS_REDIRECT_URI}"
         working-directory: apps/code/web
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
