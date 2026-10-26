@@ -16,5 +16,9 @@ export const editorThemeOptions = {
   theme: { dark: themeName, light: themeName },
   themeType: "dark" as const,
   disableFileHeader: true,
-  unsafeCSS: `pre { --diffs-bg: var(--background); --diffs-dark-bg: var(--background); --diffs-light-bg: var(--background); }`,
+  unsafeCSS: `
+    pre { --diffs-bg: var(--background); --diffs-dark-bg: var(--background); --diffs-light-bg: var(--background); }
+    [data-code] { scrollbar-width: none; }
+    [data-code]::-webkit-scrollbar { display: none; }
+  `,
 }

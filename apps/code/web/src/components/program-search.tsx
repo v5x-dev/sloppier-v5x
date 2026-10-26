@@ -377,19 +377,19 @@ export function ProgramSearch({
                 className="min-w-36 flex-1 font-mono text-xs"
               />
             </div>
-            <p
-              className="text-xs text-muted-foreground"
-              role="status"
-              aria-live="polite"
-            >
-              {!query
-                ? "Literal text search · Ctrl/Cmd + Shift + F"
-                : loading
+            {query && (
+              <p
+                className="text-xs text-muted-foreground"
+                role="status"
+                aria-live="polite"
+              >
+                {loading
                   ? "Searching…"
                   : error
                     ? "Search could not finish"
                     : `${count} ${count === 1 ? "match" : "matches"} in ${merged.files.length} ${merged.files.length === 1 ? "file" : "files"}`}
-            </p>
+              </p>
+            )}
           </div>
           <p id={`${resultsId}-help`} className="sr-only">
             Use the up and down arrow keys to select a match. Press Enter to

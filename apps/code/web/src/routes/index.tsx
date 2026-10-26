@@ -95,14 +95,9 @@ function ProgramsPage() {
         ) : (
           <>
             <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <h1 className="font-heading text-2xl font-semibold">
-                  Programs
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Robot code shared with everyone in this workspace.
-                </p>
-              </div>
+              <h1 className="font-heading text-2xl font-semibold">
+                Your programs
+              </h1>
               <div className="flex items-center gap-2">
                 {available.length > 1 && (
                   <Select

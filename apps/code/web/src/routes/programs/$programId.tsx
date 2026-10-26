@@ -773,7 +773,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             className="min-h-0 min-w-0 flex-1 gap-0"
           >
             {openPaths.length > 0 && (
-              <div className="shrink-0 overflow-x-auto border-b">
+              <div className="shrink-0 overflow-x-auto overflow-y-hidden">
                 <DndContext
                   sensors={tabSensors}
                   collisionDetection={closestCenter}
@@ -794,9 +794,8 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                     strategy={horizontalListSortingStrategy}
                   >
                     <SortableTabsList
-                      variant="line"
                       aria-label="Open files"
-                      className="h-8! justify-start gap-0 p-0"
+                      className="h-8! justify-start"
                     >
                       {openPaths.map((path) => (
                         <SortableFileTab
@@ -819,7 +818,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                   key={loaded[path]?.editorKey ?? path}
                   value={path}
                   keepMounted
-                  className="min-h-0 overflow-auto"
+                  className="min-h-0 overflow-auto no-scrollbar"
                   onScroll={(event) => {
                     if (path === activePath) {
                       scrollPositions.current.set(
@@ -1025,7 +1024,7 @@ function SortableFileTab({
       ref={setNodeRef}
       className={cn(
         "group/tab relative flex shrink-0 items-center",
-        isDragging && "z-10 bg-background"
+        isDragging && "z-10 rounded-md bg-background"
       )}
       style={{ transform: CSS.Transform.toString(transform), transition }}
     >
@@ -1040,7 +1039,7 @@ function SortableFileTab({
         aria-roledescription="sortable tab"
         value={path}
         title={path}
-        className="h-8 flex-none touch-pan-y rounded-none px-3 pr-8 text-xs after:bottom-0"
+        className="flex-none touch-pan-y px-3 pr-8"
         onAuxClick={(event) => {
           if (event.button === 1) {
             event.preventDefault()
