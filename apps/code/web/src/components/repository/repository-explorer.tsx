@@ -40,12 +40,12 @@ import {
   parentPath,
   rootEntries,
   validateNewPath,
+  type ExplorerUpdate,
   type ExplorerEntry,
   type RepositoryChange,
 } from "@/lib/explorer"
 
 export type { ExplorerUpdate } from "@/lib/explorer"
-import type { ExplorerUpdate } from "@/lib/explorer"
 
 type Props = {
   binaries: ReturnType<typeof useProgramBinaries>

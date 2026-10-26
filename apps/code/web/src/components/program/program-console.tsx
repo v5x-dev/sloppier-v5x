@@ -1,4 +1,4 @@
-import { ActionTooltip } from "./action-tooltip"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { useEffect, useRef, useState } from "react"
 import {
   TerminalIcon,

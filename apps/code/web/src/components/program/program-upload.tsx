@@ -1,4 +1,4 @@
-import { ActionTooltip } from "./action-tooltip"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import {
   useCallback,
   useEffect,
@@ -28,7 +28,11 @@ import {
 } from "@workspace/serial"
 import { Button } from "@workspace/ui/components/button"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@workspace/ui/components/input-otp"
 import {
   NativeSelect,
   NativeSelectOption,
@@ -378,19 +382,22 @@ export function ProgramUpload({
             >
               <Field>
                 <FieldLabel htmlFor={`${id}-pin`}>Brain PIN</FieldLabel>
-                <Input
+                <InputOTP
                   id={`${id}-pin`}
                   inputMode="numeric"
                   autoComplete="off"
                   maxLength={4}
-                  pattern="[0-9]{4}"
-                  placeholder="0000"
+                  pattern="^[0-9]*$"
                   value={pin}
                   disabled={busy}
-                  onChange={(event) =>
-                    setPin(event.target.value.replace(/\D/g, ""))
-                  }
-                />
+                  onChange={setPin}
+                >
+                  <InputOTPGroup>
+                    {[0, 1, 2, 3].map((index) => (
+                      <InputOTPSlot key={index} index={index} />
+                    ))}
+                  </InputOTPGroup>
+                </InputOTP>
               </Field>
               <Button
                 type="submit"

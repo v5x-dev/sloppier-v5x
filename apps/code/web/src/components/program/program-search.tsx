@@ -1,4 +1,4 @@
-import { ActionTooltip } from "./action-tooltip"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { useAction, useQuery } from "convex/react"
 import { MagnifyingGlassIcon, FileCodeIcon, XIcon } from "@phosphor-icons/react"

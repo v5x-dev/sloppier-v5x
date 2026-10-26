@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router"
 
 import appCss from "@workspace/ui/globals.css?url"
-import { AppProviders } from "@/components/app-providers"
+import { AppProviders } from "@/components/app/app-providers"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -39,7 +39,7 @@ export const Route = createRootRoute({
     ],
   }),
   notFoundComponent: () => (
-    <main className="container mx-auto p-4 pt-16">
+    <main className="container mx-auto p-4 pt-16 text-center">
       <h1>404</h1>
       <p>The requested page could not be found.</p>
     </main>

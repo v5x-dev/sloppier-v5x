@@ -18,7 +18,7 @@ function setup() {
       hasMore: false,
     })),
     readFile: vi.fn(async () => ({
-      bytes: new TextEncoder().encode("original").buffer as ArrayBuffer,
+      bytes: new TextEncoder().encode("original").buffer,
       contentRange: null,
       contentType: "text/plain",
     })),

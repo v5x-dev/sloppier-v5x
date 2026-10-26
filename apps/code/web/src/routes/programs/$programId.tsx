@@ -1,9 +1,9 @@
-import type { FormatChange } from "@/components/editor-formatting"
-import { MachineStatus } from "@/components/machine-status"
-import { ProgramPathPreview } from "@/components/program-path-preview"
-import { ActionTooltip } from "@/components/action-tooltip"
-import { ProgramSearch } from "@/components/program-search"
-import { ProgramHistory } from "@/components/program-history"
+import type { FormatChange } from "@/components/editor/editor-formatting"
+import { MachineStatus } from "@/components/program/machine-status"
+import { ProgramPathPreview } from "@/components/program/program-path-preview"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
+import { ProgramSearch } from "@/components/program/program-search"
+import { ProgramHistory } from "@/components/program/program-history"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import {
@@ -95,7 +95,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react"
-import { RepositoryExplorer } from "@/components/repository-explorer"
+import { RepositoryExplorer } from "@/components/repository/repository-explorer"
 import { WorkbenchSource, type LoadedFile } from "@/lib/workbench-source"
 import {
   Avatar,
@@ -103,17 +103,17 @@ import {
   AvatarGroup,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
-import { LiveFileEditor, type LivePerson } from "@/components/live-file-editor"
-import { LanguageSession } from "@/components/language-session"
+import { LiveFileEditor, type LivePerson } from "@/components/editor/live-file-editor"
+import { LanguageSession } from "@/components/editor/language-session"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
-import { AuthGate } from "@/components/auth-gate"
+import { AuthGate } from "@/components/app/auth-gate"
 import { errorMessage } from "@/lib/errors"
 import {
   ProgramConnection,
   useProgramConnection,
-} from "@/components/program-connection"
-import { ProgramBuild } from "@/components/program-build"
-import { ProgramUpload } from "@/components/program-upload"
+} from "@/components/program/program-connection"
+import { ProgramBuild } from "@/components/program/program-build"
+import { ProgramUpload } from "@/components/program/program-upload"
 import { useProgramBinaries } from "@/hooks/use-program-binaries"
 import { prepareUploadBuild, waitForSourceSync } from "@/lib/build-program"
 
@@ -651,7 +651,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
             activePath={activePath}
             leftAction={
               <>
-                <ActionTooltip label="Format document (Ctrl/Cmd+P)">
+                <ActionTooltip label="Format document">
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -689,7 +689,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                   <TooltipContent>
                     {dirtyPaths.length === 0
                       ? "No changes"
-                      : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}. Ctrl/Cmd+S commits with an automatic message.`}
+                      : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
                   </TooltipContent>
                 </Tooltip>
                 {(program.template === "ez-template" ||
@@ -743,8 +743,8 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
               dirty={dirtyPaths.length > 0}
               prepareProgram={(signal, onStage) =>
                 prepareUploadBuild({
-                  commitChanges: async (signal) => {
-                    await waitForSourceSync(source.isSynced, signal)
+                  commitChanges: async (commitSignal) => {
+                    await waitForSourceSync(source.isSynced, commitSignal)
                     await commit("Save changes before upload")
                   },
                   prepareSource,

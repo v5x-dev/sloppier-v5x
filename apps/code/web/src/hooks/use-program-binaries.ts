@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useProgramConnection } from "@/components/program-connection"
+import { useProgramConnection } from "@/components/program/program-connection"
 import { readBuildBinaries } from "@/lib/build-binaries"
 import { errorMessage } from "@/lib/errors"
 

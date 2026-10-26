@@ -1,4 +1,4 @@
-import { ActionTooltip } from "./action-tooltip"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { format, formatDistanceToNow } from "date-fns"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAction } from "convex/react"

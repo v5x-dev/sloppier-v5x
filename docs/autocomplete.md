@@ -4,11 +4,11 @@ C and C++ editors get clangd completion and signature help. clangd runs on the p
 
 ## How it works
 
-- **Session.** `LanguageSession` (`apps/code/web/src/components/language-session.tsx`) owns one `LanguageClient` per tab. When the build machine is ready, it uploads the latest committed snapshot with the build upload chunks and calls `POST /language/open`. Each tab gets its own clangd, so collaborators' unsaved buffers never collide.
+- **Session.** `LanguageSession` (`apps/code/web/src/components/editor/language-session.tsx`) owns one `LanguageClient` per tab. When the build machine is ready, it uploads the latest committed snapshot with the build upload chunks and calls `POST /language/open`. Each tab gets its own clangd, so collaborators' unsaved buffers never collide.
 - **Workspace.** `v5x-server` extracts the snapshot to `/home/builder/language/<session>`, separate from the build directory. It then runs the template's real `v5x-build` with `V5X_RECORD` set. In that mode `v5x-cxx` records each compile command instead of compiling, which yields a `compile_commands.json` with exactly the build's flags, defines, SDK paths, and managed dependencies. clangd runs `nice`d with `-j=1`, no background index, and `--query-driver` for the ARM toolchain. Up to three sessions run per machine, and a session is stopped 60 seconds after its last poll.
 - **Transport.** `POST /language/send` carries batched JSON-RPC messages to clangd, in order. `POST /language/poll` long-polls for clangd's messages, held for 20 seconds, which is under the browser's 30-second request timeout. Neither route holds the build lock. When the server answers `{"closed": true}` (machine replaced or session expired), the client re-uploads and reopens.
 - **Live buffers.** `LiveFileEditor` registers each open C/C++ file's Yjs text. Local and remote Yjs deltas become incremental `didChange` notifications with UTF-16 positions, so completion sees uncommitted edits. Files not open in this tab come from the last commit.
-- **Editor UI.** `useEditorCompletion` (`components/editor-completion.tsx`) follows VS Code's defaults:
+- **Editor UI.** `useEditorCompletion` (`components/editor/editor-completion.tsx`) follows VS Code's defaults:
   - Identifier characters open quick suggestions after 50 ms, except in comments and strings.
   - clangd's trigger characters (`.`, `->`, `::`, `#include` `"`/`<`/`/`) request immediately.
   - Ctrl+Space invokes completion anywhere, and Ctrl+Shift+Space opens signature help.

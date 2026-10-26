@@ -1,5 +1,5 @@
 import { useProgramConnection } from "./program-connection"
-import { ActionTooltip } from "./action-tooltip"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 export function MachineStatus() {

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { AuthGate } from "@/components/auth-gate"
-import { WorkspaceInvitations } from "@/components/workspace-team"
+import { AuthGate } from "@/components/app/auth-gate"
+import { WorkspaceInvitations } from "@/components/workspace/workspace-team"
 
 export const Route = createFileRoute("/invites/$invitationId")({
   component: InvitationPage,

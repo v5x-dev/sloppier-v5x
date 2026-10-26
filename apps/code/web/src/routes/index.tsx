@@ -1,4 +1,5 @@
 import {
+  ArchiveBoxIcon,
   DotsThreeIcon,
   BuildingsIcon,
   CodeIcon,
@@ -73,10 +74,10 @@ import {
   NewWorkspace,
   WorkspaceTeam,
   WorkspaceInvitations,
-} from "@/components/workspace-team"
-import { ImportFolder } from "@/components/import-folder"
-import { AuthGate } from "@/components/auth-gate"
-import { RepositoryStatusBadge } from "@/components/repository-status-badge"
+} from "@/components/workspace/workspace-team"
+import { ImportFolder } from "@/components/repository/import-folder"
+import { AuthGate } from "@/components/app/auth-gate"
+import { RepositoryStatusBadge } from "@/components/repository/repository-status-badge"
 import { errorMessage } from "@/lib/errors"
 
 export const Route = createFileRoute("/")({
@@ -104,6 +105,7 @@ function ProgramsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(
     search.workspace ?? null
   )
+  const [archived, setArchived] = useState(false)
 
   const available = (workspaces ?? []).flatMap(({ workspace }) =>
     workspace ? [workspace] : []
@@ -133,11 +135,23 @@ function ProgramsPage() {
                 Your programs
               </h1>
               <div className="flex items-center gap-2">
+                <Button
+                  variant={archived ? "secondary" : "outline"}
+                  size="icon"
+                  aria-label="Toggle archived programs"
+                  aria-pressed={archived}
+                  title={
+                    archived ? "Show active programs" : "Show archived programs"
+                  }
+                  onClick={() => setArchived((current) => !current)}
+                >
+                  <ArchiveBoxIcon />
+                </Button>
                 <ImportFolder key={workspace._id} workspaceId={workspace._id} />
                 <NewProgramDialog workspaceId={workspace._id} />
               </div>
             </div>
-            <ProgramList workspaceId={workspace._id} />
+            <ProgramList workspaceId={workspace._id} archived={archived} />
           </>
         )}
       </main>
@@ -278,10 +292,15 @@ function AppHeader({
   )
 }
 
-function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
+function ProgramList({
+  workspaceId,
+  archived,
+}: {
+  workspaceId: Id<"workspaces">
+  archived: boolean
+}) {
   const programs = useQuery(api.projects.listByWorkspace, { workspaceId })
   const templates = useQuery(api.projects.listTemplates)
-  const [archived, setArchived] = useState(false)
 
   if (programs === undefined) {
     return <ProgramListSkeleton />
@@ -311,20 +330,6 @@ function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 
   return (
     <ItemGroup className="gap-2">
-      <div className="flex gap-2 pb-2">
-        <Button
-          variant={!archived ? "secondary" : "ghost"}
-          onClick={() => setArchived(false)}
-        >
-          Active
-        </Button>
-        <Button
-          variant={archived ? "secondary" : "ghost"}
-          onClick={() => setArchived(true)}
-        >
-          Archived
-        </Button>
-      </div>
       {!programs.some(
         (program) => Boolean(program.archivedAt) === archived
       ) && (

@@ -5,9 +5,9 @@ import { containsPath, type ExplorerUpdate } from "./explorer"
 import { errorMessage } from "./errors"
 import type { LivePerson } from "./live-file-session"
 
-type Action<Name extends keyof typeof api.codeStorage> = (
-  args: FunctionArgs<(typeof api.codeStorage)[Name]>
-) => Promise<FunctionReturnType<(typeof api.codeStorage)[Name]>>
+type Action<TName extends keyof typeof api.codeStorage> = (
+  args: FunctionArgs<(typeof api.codeStorage)[TName]>
+) => Promise<FunctionReturnType<(typeof api.codeStorage)[TName]>>
 type Actions = {
   [
     Name in
@@ -380,7 +380,7 @@ export class WorkbenchSource {
     if (draft !== undefined) return new TextEncoder().encode(draft).buffer
     const chunks: Uint8Array[] = []
     let offset = 0
-    while (true) {
+    for (;;) {
       const { bytes, contentRange } = await this.actions.readFile({
         projectId: this.projectId,
         path,

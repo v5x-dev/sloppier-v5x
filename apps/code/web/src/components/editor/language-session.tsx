@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import type { BuildSource } from "@/lib/build-program"
 import { LanguageClient } from "@/lib/language-client"
-import { useProgramConnection } from "./program-connection"
+import { useProgramConnection } from "@/components/program/program-connection"
 
 export const DefinitionContext = createContext<
   ((path: string, line: number, column: number) => boolean) | null

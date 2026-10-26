@@ -13,10 +13,11 @@ import { EditProvider, File } from "@pierre/diffs/react"
 import { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { source } from "@/lib/live-document"
 import { createLiveFileSession } from "@/lib/live-file-session"
-export type { LivePerson } from "@/lib/live-file-session"
 import type { LivePerson } from "@/lib/live-file-session"
 import { useEditorCompletion } from "./editor-completion"
 import { useLanguageClient } from "./language-session"
+
+export type { LivePerson } from "@/lib/live-file-session"
 
 const createEditor: EditorFactory<undefined, { name: string }> = (
   type,

@@ -31,9 +31,9 @@ export type LivePerson = {
 }
 
 type LiveEditor = {
-  renderCarets(): void
-  publishSelection(active: boolean): void
-  destroy(): void
+  renderCarets: () => void
+  publishSelection: (active: boolean) => void
+  destroy: () => void
 }
 
 type SessionOptions = {
@@ -48,19 +48,19 @@ type SessionOptions = {
     profilePictureUrl?: string | null
   }
   callbacks: {
-    onChange(text: string): void
-    onSyncChange(synced: boolean): void
-    onPeopleChange(people: LivePerson[]): void
-    onStatus(status: string): void
-    onError(error: string | null): void
-    onReplaced(): void
-    isFocused(): boolean
-    mount(doc: Y.Doc, awareness: Awareness): LiveEditor
+    onChange: (text: string) => void
+    onSyncChange: (synced: boolean) => void
+    onPeopleChange: (people: LivePerson[]) => void
+    onStatus: (status: string) => void
+    onError: (error: string | null) => void
+    onReplaced: () => void
+    isFocused: () => boolean
+    mount: (doc: Y.Doc, awareness: Awareness) => LiveEditor
   }
   createCache?: (
     name: string,
     doc: Y.Doc
-  ) => { whenSynced: Promise<unknown>; destroy(): Promise<unknown> }
+  ) => { whenSynced: Promise<unknown>; destroy: () => Promise<unknown> }
 }
 
 /** Owns one document's replay, local recovery, synchronization and presence. */
@@ -114,6 +114,7 @@ export function createLiveFileSession({
   let sequence = 0
   let documentId: Id<"crdtDocuments"> | undefined
   let replaced = false
+  const isStopped = () => disposed || replaced
   let caughtUp = false
   let sending = false
   let inFlight: { updateId: string; bytes: ArrayBuffer } | undefined
@@ -193,7 +194,7 @@ export function createLiveFileSession({
         ...sent,
         documentId,
       })
-      if (isDisposed()) return
+      if (isStopped()) return
       Y.applyUpdate(server, new Uint8Array(sent.bytes), REMOTE)
       storagePending.add(sent.updateId)
       inFlight = undefined
