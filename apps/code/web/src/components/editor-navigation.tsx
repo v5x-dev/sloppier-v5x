@@ -1,7 +1,16 @@
 import { HoverDocumentation } from "./hover-documentation"
 import type { HoverContents } from "@/lib/hover-content"
-import { useContext, useEffect, useRef, useState, type RefObject } from "react"
+import {
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react"
 import { createPortal } from "react-dom"
+import { File } from "@pierre/diffs/react"
+import { editorThemeOptions } from "@/lib/editor-theme"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { positionAt, RequestCancelled } from "@/lib/language-client"
 import { DefinitionContext, useLanguageClient } from "./language-session"
@@ -15,6 +24,41 @@ import {
 } from "@workspace/ui/components/dialog"
 
 type Popup = { contents: HoverContents; left: number; top: number }
+type Definition = { path: string; contents: string; line: number }
+
+/** Read-only toolchain source in the editor theme, scrolled to its definition line. */
+function DefinitionSource({ source }: { source: Definition }) {
+  const revealed = useRef(false)
+  const { line } = source
+  const file = useMemo(
+    () => ({
+      name: source.path,
+      contents: source.contents.replace(/\r\n?/g, "\n"),
+    }),
+    [source.path, source.contents]
+  )
+  const options = useMemo(
+    () => ({
+      ...editorThemeOptions,
+      disableFileHeader: true,
+      overflow: "wrap" as const,
+      // Pierre highlights asynchronously; reveal once this line's row exists.
+      onPostRender: (node: HTMLElement) => {
+        if (revealed.current) return
+        const row = node.shadowRoot?.querySelector(`[data-line="${line}"]`)
+        if (!row) return
+        revealed.current = true
+        row.scrollIntoView({ block: "center" })
+      },
+    }),
+    [line]
+  )
+  return (
+    <div className="min-h-0 overflow-auto rounded-lg">
+      <File file={file} options={options} />
+    </div>
+  )
+}
 
 /** Maps a pointer into the highlighted text, including Pierre's shadow root. */
 export function pointerOffset(
@@ -254,23 +298,7 @@ export function useEditorNavigation(
           <DialogHeader>
             <DialogTitle className="break-all">{source?.path}</DialogTitle>
           </DialogHeader>
-          <pre className="min-h-0 overflow-auto text-xs">
-            {source?.contents.split("\n").map((line, index) => (
-              <div
-                key={index}
-                ref={
-                  index + 1 === source.line
-                    ? (node) => node?.scrollIntoView({ block: "center" })
-                    : undefined
-                }
-              >
-                <span className="mr-4 inline-block w-10 text-right text-muted-foreground select-none">
-                  {index + 1}
-                </span>
-                {line || " "}
-              </div>
-            ))}
-          </pre>
+          {source && <DefinitionSource source={source} />}
         </DialogContent>
       </Dialog>
       {popup &&

@@ -1,5 +1,12 @@
 import { createPortal } from "react-dom"
-import { useEffect, useMemo, useState } from "react"
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react"
 import { useAction } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
@@ -11,7 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { PathIcon, XIcon } from "@phosphor-icons/react"
+import {
+  CaretDownIcon,
+  CaretUpIcon,
+  PathIcon,
+  XIcon,
+} from "@phosphor-icons/react"
+import { cn } from "@workspace/ui/lib/utils"
 import { parseAutonPaths, type AutonTemplate } from "@/lib/auton-paths"
 import { errorMessage } from "@/lib/errors"
 
@@ -32,6 +45,9 @@ const templateNames: Record<AutonTemplate, { label: string; hint: string }> = {
     hint: "Add drive_distance or drive_to_point calls inside a void function.",
   },
 }
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), Math.max(min, max))
 
 export function ProgramPathPreview({
   projectId,
@@ -58,6 +74,72 @@ export function ProgramPathPreview({
   const [field, setField] = useState("0")
   const [trackWidth, setTrackWidth] = useState(12)
   const [imageError, setImageError] = useState(false)
+  const [optionsOpen, setOptionsOpen] = useState(true)
+  const optionsId = useId()
+  const panel = useRef<HTMLElement>(null)
+  // Null keeps the default bottom-right anchor until the panel is first dragged.
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(
+    null
+  )
+  const dragStart = useRef<{
+    pointerX: number
+    pointerY: number
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null>(null)
+  useEffect(() => {
+    const keepOnScreen = () => {
+      const rect = panel.current?.getBoundingClientRect()
+      if (!rect) return
+      setPosition(
+        (current) =>
+          current && {
+            x: clamp(current.x, 0, window.innerWidth - rect.width),
+            y: clamp(current.y, 0, window.innerHeight - rect.height),
+          }
+      )
+    }
+    window.addEventListener("resize", keepOnScreen)
+    return () => window.removeEventListener("resize", keepOnScreen)
+  }, [])
+  function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    // Let the header's buttons receive their own clicks.
+    if ((event.target as HTMLElement).closest("button")) return
+    const rect = panel.current?.getBoundingClientRect()
+    if (!rect) return
+    dragStart.current = {
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height,
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+  function moveDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    const start = dragStart.current
+    if (!start) return
+    setPosition({
+      x: clamp(
+        start.x + event.clientX - start.pointerX,
+        0,
+        window.innerWidth - start.width
+      ),
+      y: clamp(
+        start.y + event.clientY - start.pointerY,
+        0,
+        window.innerHeight - start.height
+      ),
+    })
+  }
+  function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    dragStart.current = null
+    if (event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId)
+  }
   useEffect(
     () => subscribeDrafts(() => setVersion((value) => value + 1)),
     [subscribeDrafts]
@@ -127,63 +209,126 @@ export function ProgramPathPreview({
       {open &&
         createPortal(
           <section
+            ref={panel}
             aria-label="Autonomous path preview"
-            className="fixed right-4 bottom-14 z-30 flex max-h-[calc(100svh-5rem)] w-80 max-w-[calc(100vw-2rem)] resize flex-col gap-2 overflow-auto rounded-xl border bg-background p-3 shadow-xl"
+            style={position ? { left: position.x, top: position.y } : undefined}
+            className={cn(
+              "fixed z-30 flex max-h-[calc(100svh-5rem)] w-80 max-w-[calc(100vw-2rem)] resize flex-col gap-2 overflow-auto rounded-xl border bg-popover p-3 text-popover-foreground shadow-xl",
+              !position && "right-4 bottom-14"
+            )}
           >
-            <div className="flex items-center justify-between">
+            <div
+              className="flex cursor-grab touch-none items-center justify-between gap-2 select-none active:cursor-grabbing"
+              onPointerDown={startDrag}
+              onPointerMove={moveDrag}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+            >
               <span className="text-sm font-medium">Auton paths</span>
-              <Button
-                size="icon-xs"
-                variant="ghost"
-                aria-label="Close path preview"
-                onClick={() => setOpen(false)}
-              >
-                <XIcon />
-              </Button>
+              <div className="flex items-center">
+                <Button
+                  size="icon-xs"
+                  variant="ghost"
+                  aria-label={
+                    optionsOpen ? "Collapse options" : "Expand options"
+                  }
+                  aria-expanded={optionsOpen}
+                  aria-controls={optionsId}
+                  onClick={() => setOptionsOpen(!optionsOpen)}
+                >
+                  {optionsOpen ? <CaretUpIcon /> : <CaretDownIcon />}
+                </Button>
+                <Button
+                  size="icon-xs"
+                  variant="ghost"
+                  aria-label="Close path preview"
+                  onClick={() => setOpen(false)}
+                >
+                  <XIcon />
+                </Button>
+              </div>
             </div>
-            <label className="flex flex-col gap-1 text-xs">
-              Field
-              <Select
-                value={field}
-                items={fields.map((item, index) => ({
-                  value: String(index),
-                  label: item.label,
-                }))}
-                onValueChange={(value) => {
-                  if (value === null) return
-                  setField(value)
-                  setImageError(false)
-                }}
-              >
-                <SelectTrigger aria-label="Field" className="w-full min-w-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {fields.map((item, index) => (
-                    <SelectItem key={item.label} value={String(index)}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label className="flex items-center justify-between gap-2 text-xs">
-              Track width (in)
-              <input
-                aria-label="Track width in inches"
-                type="number"
-                min="1"
-                max="36"
-                step="0.25"
-                value={trackWidth}
-                className="h-8 w-20 rounded border bg-background px-2"
-                onChange={(event) => {
-                  const value = event.target.valueAsNumber
-                  if (Number.isFinite(value) && value >= 1 && value <= 36)
-                    setTrackWidth(value)
-                }}
-              />
-            </label>
+            {optionsOpen && (
+              <div id={optionsId} className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex min-w-0 flex-col gap-1 text-xs">
+                    Field
+                    <Select
+                      value={field}
+                      items={fields.map((item, index) => ({
+                        value: String(index),
+                        label: item.label,
+                      }))}
+                      onValueChange={(value) => {
+                        if (value === null) return
+                        setField(value)
+                        setImageError(false)
+                      }}
+                    >
+                      <SelectTrigger
+                        aria-label="Field"
+                        className="w-full min-w-0"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fields.map((item, index) => (
+                          <SelectItem key={item.label} value={String(index)}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  {routes.length > 0 && (
+                    <label className="flex min-w-0 flex-col gap-1 text-xs">
+                      Auton route
+                      <Select
+                        value={route?.id ?? ""}
+                        items={routes.map((item) => ({
+                          value: item.id,
+                          label: item.name,
+                        }))}
+                        onValueChange={(value) => {
+                          if (value !== null) setSelected(value)
+                        }}
+                      >
+                        <SelectTrigger
+                          aria-label="Auton route"
+                          className="w-full min-w-0"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {routes.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </label>
+                  )}
+                </div>
+                <label className="flex items-center justify-between gap-2 text-xs">
+                  Track width (in)
+                  <input
+                    aria-label="Track width in inches"
+                    type="number"
+                    min="1"
+                    max="36"
+                    step="0.25"
+                    value={trackWidth}
+                    className="h-8 w-20 rounded border bg-background px-2"
+                    onChange={(event) => {
+                      const value = event.target.valueAsNumber
+                      if (Number.isFinite(value) && value >= 1 && value <= 36)
+                        setTrackWidth(value)
+                    }}
+                  />
+                </label>
+              </div>
+            )}
             {error ? (
               <div className="text-xs text-destructive">
                 {error}
@@ -206,33 +351,6 @@ export function ProgramPathPreview({
               </p>
             ) : (
               <>
-                <label className="flex flex-col gap-1 text-xs">
-                  Auton route
-                  <Select
-                    value={route.id}
-                    items={routes.map((item) => ({
-                      value: item.id,
-                      label: item.name,
-                    }))}
-                    onValueChange={(value) => {
-                      if (value !== null) setSelected(value)
-                    }}
-                  >
-                    <SelectTrigger
-                      aria-label="Auton route"
-                      className="w-full min-w-0"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {routes.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
                 <div className="relative aspect-square shrink-0 overflow-hidden rounded border bg-muted">
                   <img
                     src={fields[Number(field)].image}
