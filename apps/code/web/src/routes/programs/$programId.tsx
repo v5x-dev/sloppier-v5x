@@ -819,7 +819,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                   key={loaded[path]?.editorKey ?? path}
                   value={path}
                   keepMounted
-                  className="min-h-0 overflow-auto no-scrollbar"
+                  className="no-scrollbar min-h-0 overflow-auto"
                   onScroll={(event) => {
                     if (path === activePath) {
                       scrollPositions.current.set(
@@ -1156,7 +1156,7 @@ function ActionsBar({
   return (
     <div
       className={cn(
-        "relative z-20 mr-2 mb-2 flex h-11 shrink-0 items-center gap-2 bg-sidebar px-2 text-sidebar-foreground shadow-[0_0_0_1px_var(--sidebar-border)]",
+        "relative z-20 mr-2 mb-2 flex h-9 shrink-0 items-center gap-1 bg-sidebar px-2 text-sidebar-foreground shadow-[0_0_0_1px_var(--sidebar-border)]",
         joined
           ? cn(
               "-ml-4 rounded-r-lg pl-4 [clip-path:inset(calc(var(--radius-lg)*-1)_-1px_-1px_0)]",

@@ -16,6 +16,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AuthKitProvider
       clientId={import.meta.env.VITE_WORKOS_CLIENT_ID}
+      devMode={import.meta.env.DEV}
       redirectUri={
         import.meta.env.VITE_WORKOS_REDIRECT_URI ??
         `${window.location.origin}/callback`

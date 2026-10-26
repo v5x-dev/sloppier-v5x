@@ -235,7 +235,7 @@ function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
           >
             <ItemContent>
               <ItemTitle>{program.name}</ItemTitle>
-              <ItemDescription>
+              <ItemDescription className="text-xs">
                 Created{" "}
                 {formatDistanceToNow(program.createdAt, { addSuffix: true })}
               </ItemDescription>
