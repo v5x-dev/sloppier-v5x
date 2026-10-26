@@ -1,8 +1,3 @@
-import "./global.css"
-import {
-  Merriweather_400Regular,
-  Merriweather_600SemiBold,
-} from "@expo-google-fonts/merriweather"
 import {
   Button,
   Column,
@@ -14,9 +9,9 @@ import {
   useNativeState,
 } from "@expo/ui"
 import { glassEffect } from "@expo/ui/swift-ui/modifiers"
-import { useFonts } from "expo-font"
 import { StatusBar } from "expo-status-bar"
 import { useCallback, useState } from "react"
+import { useAuth } from "@/lib/auth"
 import {
   Image,
   Platform,
@@ -55,7 +50,7 @@ const palettes = {
     background: "#FFFFFF",
     foreground: "#0C0A09",
     mutedForeground: "#7C6D67",
-    card: "rgba(0, 0, 0, 0.04)",
+    card: "#FFFFFF",
     cardBorder: "rgba(0, 0, 0, 0.1)",
     input: "rgba(0, 0, 0, 0.04)",
     placeholder: "#95857E",
@@ -68,7 +63,7 @@ const palettes = {
     background: "#0C0A09",
     foreground: "#FBFAF9",
     mutedForeground: "#ABA09C",
-    card: "rgba(255, 255, 255, 0.08)",
+    card: "#292524",
     cardBorder: "rgba(255, 255, 255, 0.16)",
     input: "rgba(255, 255, 255, 0.1)",
     placeholder: "#FFFFFF80",
@@ -79,18 +74,8 @@ const palettes = {
   },
 } as const
 
-export default function App() {
-  const [fontsLoaded] = useFonts({
-    Merriweather: Merriweather_400Regular,
-    MerriweatherSemiBold: Merriweather_600SemiBold,
-  })
-
-  if (!fontsLoaded) return null
-
-  return <SignInScreen />
-}
-
-function SignInScreen() {
+export default function SignInScreen() {
+  const { signIn, isSigningIn, error } = useAuth()
   const systemColorScheme = useColorScheme()
   const colorScheme = systemColorScheme === "dark" ? "dark" : "light"
   const colors = palettes[colorScheme]
@@ -127,18 +112,9 @@ function SignInScreen() {
       return
     }
 
-    setFeedback({
-      message: "Email sign-in isn't configured in this mobile app yet.",
-      tone: "info",
-    })
-  }, [email])
-
-  const showUnavailableMessage = useCallback((action: string) => {
-    setFeedback({
-      message: `${action} isn't configured in this mobile app yet.`,
-      tone: "info",
-    })
-  }, [])
+    setFeedback(null)
+    void signIn({ email: address })
+  }, [email, signIn])
 
   const glassModifiers = (
     shape: "capsule" | "roundedRectangle",
@@ -147,14 +123,21 @@ function SignInScreen() {
     usesLiquidGlass
       ? [
           glassEffect({
-            glass: { variant: "regular", interactive: true },
+            glass: {
+              variant: "regular",
+              interactive: true,
+              tint: colors.card,
+            },
             shape,
             cornerRadius,
           }),
         ]
       : undefined
 
-  const glassSurfaceStyle = (backgroundColor: string, cornerRadius: number) => ({
+  const glassSurfaceStyle = (
+    backgroundColor: string,
+    cornerRadius: number
+  ) => ({
     backgroundColor,
     borderColor: colors.cardBorder,
     borderWidth: 1,
@@ -228,7 +211,7 @@ function SignInScreen() {
                         width: "82%",
                         height: 52,
                         paddingHorizontal: 16,
-                        ...glassSurfaceStyle(colors.input, 16),
+                        ...glassSurfaceStyle(colors.card, 16),
                       }}
                     >
                       <HostedImage
@@ -264,13 +247,14 @@ function SignInScreen() {
                     </Row>
 
                     <Button
+                      disabled={isSigningIn}
                       onPress={continueWithEmail}
                       modifiers={glassModifiers("roundedRectangle", 16)}
                       style={{
                         width: 52,
                         height: 52,
                         padding: 0,
-                        ...glassSurfaceStyle(colors.card, 16),
+                        ...glassSurfaceStyle(colors.primary, 16),
                       }}
                       testID="continue-with-email"
                       variant="text"
@@ -278,24 +262,24 @@ function SignInScreen() {
                       <HostedImage
                         source={require("./assets/phosphor/arrow-right.png")}
                         size={22}
-                        tintColor={colors.primary}
+                        tintColor={colors.primaryForeground}
                       />
                     </Button>
                   </Row>
 
-                  {feedback ? (
+                  {feedback || error || isSigningIn ? (
                     <Text
                       textStyle={{
                         fontFamily: "Merriweather",
                         fontSize: 12,
                         color:
-                          feedback.tone === "error"
+                          feedback?.tone === "error" || error
                             ? colors.destructive
                             : colors.mutedForeground,
                         textAlign: "center",
                       }}
                     >
-                      {feedback.message}
+                      {feedback?.message ?? error ?? "Opening secure sign-in…"}
                     </Text>
                   ) : null}
 
@@ -337,8 +321,9 @@ function SignInScreen() {
                     {providers.map((provider) => (
                       <Button
                         key={provider.id}
+                        disabled={isSigningIn}
                         onPress={() =>
-                          showUnavailableMessage(`${provider.name} sign-in`)
+                          void signIn({ provider: provider.id })
                         }
                         modifiers={glassModifiers("roundedRectangle", 16)}
                         style={{
@@ -354,6 +339,7 @@ function SignInScreen() {
                           source={provider.source}
                           size={26}
                           tintColor={colors.foreground}
+                          buttonHeight={52}
                         />
                       </Button>
                     ))}
@@ -370,27 +356,21 @@ function SignInScreen() {
                   >
                     Don't have an account?
                   </Text>
-                  <Button
-                    onPress={() => showUnavailableMessage("Sign-up")}
-                    modifiers={glassModifiers("capsule")}
-                    style={{
-                      ...glassSurfaceStyle(colors.card, 20),
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                    }}
-                    testID="sign-up"
-                    variant="text"
-                  >
-                    <Text
-                      textStyle={{
-                        fontFamily: "MerriweatherSemiBold",
+                  <RNHostView matchContents>
+                    <NativeText
+                      accessibilityRole="link"
+                      disabled={isSigningIn}
+                      onPress={() => { setFeedback(null); void signIn({ signUp: true }) }}
+                      testID="sign-up"
+                      style={{
+                        fontFamily: "Merriweather",
                         fontSize: 13,
                         color: colors.primary,
                       }}
                     >
                       Sign up
-                    </Text>
-                  </Button>
+                    </NativeText>
+                  </RNHostView>
                 </Row>
               </Column>
             </Host>
@@ -405,21 +385,29 @@ function HostedImage({
   source,
   size,
   tintColor,
+  buttonHeight,
 }: {
   source: ImageSourcePropType
   size: number
   tintColor: string
+  buttonHeight?: number
 }) {
   return (
-    <RNHostView
-      matchContents
-      style={{ width: size, height: size, alignSelf: "center" }}
-    >
-      <Image
-        source={source}
-        resizeMode="contain"
-        style={{ width: size, height: size, tintColor }}
-      />
+    <RNHostView matchContents={buttonHeight ? { vertical: true } : true}>
+      <View
+        style={{
+          width: buttonHeight ? "100%" : size,
+          height: buttonHeight ?? size,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Image
+          source={source}
+          resizeMode="contain"
+          style={{ width: size, height: size, tintColor }}
+        />
+      </View>
     </RNHostView>
   )
 }
