@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InvitesInvitationIdRouteImport } from './routes/invites/$invitationId'
 import { Route as ProgramsProgramIdRouteImport } from './routes/programs/$programId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvitesInvitationIdRoute = InvitesInvitationIdRouteImport.update({
+  id: '/invites/$invitationId',
+  path: '/invites/$invitationId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgramsProgramIdRoute = ProgramsProgramIdRouteImport.update({
   id: '/programs/$programId',
   path: '/programs/$programId',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,38 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/callback' | '/login' | '/programs/$programId'
+  fullPaths:
+    | '/'
+    | '/callback'
+    | '/login'
+    | '/invites/$invitationId'
+    | '/programs/$programId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/callback' | '/login' | '/programs/$programId'
-  id: '__root__' | '/' | '/callback' | '/login' | '/programs/$programId'
+  to:
+    | '/'
+    | '/callback'
+    | '/login'
+    | '/invites/$invitationId'
+    | '/programs/$programId'
+  id:
+    | '__root__'
+    | '/'
+    | '/callback'
+    | '/login'
+    | '/invites/$invitationId'
+    | '/programs/$programId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallbackRoute: typeof CallbackRoute
   LoginRoute: typeof LoginRoute
+  InvitesInvitationIdRoute: typeof InvitesInvitationIdRoute
   ProgramsProgramIdRoute: typeof ProgramsProgramIdRoute
 }
 
@@ -92,6 +118,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invites/$invitationId': {
+      id: '/invites/$invitationId'
+      path: '/invites/$invitationId'
+      fullPath: '/invites/$invitationId'
+      preLoaderRoute: typeof InvitesInvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/programs/$programId': {
       id: '/programs/$programId'
       path: '/programs/$programId'
@@ -106,6 +139,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallbackRoute: CallbackRoute,
   LoginRoute: LoginRoute,
+  InvitesInvitationIdRoute: InvitesInvitationIdRoute,
   ProgramsProgramIdRoute: ProgramsProgramIdRoute,
 }
 export const routeTree = rootRouteImport
