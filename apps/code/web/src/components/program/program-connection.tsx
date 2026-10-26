@@ -55,6 +55,7 @@ export function ProgramConnection({
   useEffect(() => {
     const sessionId = crypto.randomUUID()
     let disposed = false
+    const isDisposed = () => disposed
     let queue = Promise.resolve()
     const beat = () => {
       queue = queue.then(async () => {
@@ -75,7 +76,7 @@ export function ProgramConnection({
               throw new Error(`Presence request failed (${response.status}).`)
           } else await heartbeat({ programId, sessionId })
         } catch (err) {
-          if (!disposed) setError(errorMessage(err))
+          if (!isDisposed()) setError(errorMessage(err))
         }
       })
     }

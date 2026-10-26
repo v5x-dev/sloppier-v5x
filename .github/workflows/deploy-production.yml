@@ -1,6 +1,9 @@
 name: Deploy production
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -10,26 +13,62 @@ permissions:
   contents: read
 
 concurrency:
-  group: production-deploy
-  cancel-in-progress: true
+  group: production-deploy-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    env:
+      VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+      VITE_WORKOS_CLIENT_ID: ${{ vars.VITE_WORKOS_CLIENT_ID }}
+      VITE_WORKOS_REDIRECT_URI: ${{ vars.VITE_WORKOS_REDIRECT_URI }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.4
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Build and deploy Cloudflare Worker
+      - name: Lint web
+        run: bun run --cwd apps/code/web lint
+      - name: Typecheck web, backend, and serial
+        run: |
+          bun run --cwd apps/code/web typecheck
+          bun run --cwd packages/backend typecheck
+          bun run --cwd packages/serial typecheck
+      - name: Test web, backend, and serial
+        run: |
+          bun run --cwd apps/code/web test
+          bun run --cwd packages/backend test
+          bun run --cwd packages/serial test
+      - name: Build web
         run: |
           : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
           : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"
           : "${VITE_WORKOS_REDIRECT_URI:?Missing VITE_WORKOS_REDIRECT_URI}"
           bun run build
+        working-directory: apps/code/web
+      - name: Deploy Convex backend
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        working-directory: packages/backend
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          case "$CONVEX_DEPLOY_KEY" in
+            prod:*) ;;
+            *) echo "CONVEX_DEPLOY_KEY must be a production deployment key" >&2; exit 1 ;;
+          esac
+          bun run deploy --typecheck enable \
+            --cmd-url-env-var-name CONVEX_TARGET_URL \
+            --cmd 'if [ "$CONVEX_TARGET_URL" != "$VITE_CONVEX_URL" ]; then echo "Convex deploy key does not match VITE_CONVEX_URL" >&2; exit 1; fi'
+      - name: Deploy Cloudflare Worker
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
           bunx wrangler deploy --keep-vars \
             --var "VITE_CONVEX_URL:${VITE_CONVEX_URL}" \
             --var "VITE_WORKOS_CLIENT_ID:${VITE_WORKOS_CLIENT_ID}" \
@@ -38,6 +77,3 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
-          VITE_WORKOS_CLIENT_ID: ${{ vars.VITE_WORKOS_CLIENT_ID }}
-          VITE_WORKOS_REDIRECT_URI: ${{ vars.VITE_WORKOS_REDIRECT_URI }}

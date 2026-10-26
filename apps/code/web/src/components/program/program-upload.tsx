@@ -119,12 +119,12 @@ export function ProgramUpload({
 
   useEffect(() => {
     if (!consoleConnection) return
-    return consoleConnection.onDisconnect((error) => {
+    return consoleConnection.onDisconnect((disconnectError) => {
       if (!mounted.current) return
       setConsoleConnection(null)
       setConnected(null)
       setPaired(false)
-      setError(error.message)
+      setError(disconnectError.message)
       if (device.current?.connection === consoleConnection)
         device.current = null
       void consoleConnection.close().catch(() => {})

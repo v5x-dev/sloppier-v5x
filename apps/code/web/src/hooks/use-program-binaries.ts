@@ -6,7 +6,7 @@ import { errorMessage } from "@/lib/errors"
 // This map belongs to the client explorer, never to repository drafts or commits.
 export function useProgramBinaries() {
   const { status, request } = useProgramConnection()
-  const [files, setFiles] = useState<Record<string, Uint8Array>>({})
+  const [files, setFiles] = useState<Partial<Record<string, Uint8Array>>>({})
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const artifactId = status?.artifactId

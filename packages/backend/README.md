@@ -6,6 +6,34 @@ programs, repository operations, live CRDT updates, and editor presence.
 Run `bun run dev` from this package to link it to a Convex deployment and have
 Convex regenerate the local function and component references.
 
+## Production releases
+
+The [production workflow](../../.github/workflows/deploy-production.yml) runs web
+lint, web/backend/serial typechecks and tests, and a production web build on pull
+requests to `main`. Pushes to `main` and manual runs on `main` also deploy Convex
+first, then publish the built Cloudflare Worker. A failed check, build, or backend
+deployment prevents the Worker deployment. Releases run serially without
+automatically cancelling an in-progress deployment.
+
+Configure these GitHub Actions repository settings:
+
+- Secrets: `CONVEX_DEPLOY_KEY`, a production deployment key from the Convex
+  dashboard, and `CLOUDFLARE_API_TOKEN`.
+- Variables: `CLOUDFLARE_ACCOUNT_ID`, `VITE_CONVEX_URL`,
+  `VITE_WORKOS_CLIENT_ID`, and `VITE_WORKOS_REDIRECT_URI`.
+
+The workflow rejects non-production Convex keys and verifies that the key's
+deployment URL matches `VITE_CONVEX_URL` before pushing backend changes. Convex
+runtime credentials listed below, plus the build configuration in
+[Building programs](../../docs/building-programs.md), must already exist in that
+production deployment.
+
+The two deployments are sequential, not atomic. Keep backend changes compatible
+with the currently deployed web and mobile clients. If Cloudflare deployment
+fails after Convex succeeds, the new backend remains deployed; fix the failure
+and rerun the release. Require the workflow's `deploy` status check in the
+repository's `main` branch rules to prevent merging failing pull requests.
+
 ## Program and repository lifecycle
 
 The Convex table and relationship fields use `programs` and `programId`. An
