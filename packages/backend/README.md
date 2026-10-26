@@ -8,6 +8,10 @@ Convex regenerate the local function and component references.
 
 ## Program and repository lifecycle
 
+The Convex table and relationship fields use `programs` and `programId`. An
+existing deployment with `projects` records needs a data migration before this
+schema is deployed; code generation does not move stored data.
+
 Create workspaces and manage their teams from the avatar menu in the dashboard header. Admins invite
 collaborators by email, choose a member or admin role, revoke invitations, and
 remove members. Recipients accept from the avatar menu or an invitation link.
