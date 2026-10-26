@@ -680,9 +680,10 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
         {
           "--sidebar-width": "18rem",
           // The theme's border is translucent in dark mode, so it shifts shade
-          // where the sidebar and bar outlines overlap. Flatten it to one color.
+          // where the sidebar and bar outlines overlap. Use a stronger opaque
+          // color so the joined shape's edge stays visible.
           "--sidebar-border":
-            "color-mix(in oklab, var(--foreground) 10%, var(--background))",
+            "color-mix(in oklab, var(--foreground) 20%, var(--background))",
         } as React.CSSProperties
       }
     >
