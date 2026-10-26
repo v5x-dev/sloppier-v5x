@@ -428,7 +428,7 @@ function ProgramActions({ program }: { program: Doc<"projects"> }) {
               )
             }
           >
-            {program.archivedAt ? "Restore program" : "Archive program"}
+            {program.archivedAt ? "Restore program" : "Archive"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
