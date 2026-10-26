@@ -6,7 +6,7 @@ import { action } from "./_generated/server"
 import { cloud } from "./buildWorker"
 
 export const connect = action({
-  args: { projectId: v.id("projects") },
+  args: { programId: v.id("programs") },
   handler: async (
     ctx,
     args

@@ -180,7 +180,7 @@ describe("JAR-Template path previews", () => {
       "drive_to_pose is approximated with an instant heading response.",
     ])
   })
-  it("reads boomerang lead from project constants", () => {
+  it("reads boomerang lead from program constants", () => {
     const [defaultLead] = parseJar(
       "void red() { chassis.drive_to_pose(0, 24, 90); }"
     )

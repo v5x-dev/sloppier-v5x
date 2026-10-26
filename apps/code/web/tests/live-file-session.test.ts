@@ -107,7 +107,7 @@ function setup(hydration = Promise.resolve(), pageCount = 1) {
   }
   const session = createLiveFileSession({
     client: client as unknown as Options["client"],
-    projectId: "program" as Id<"projects">,
+    programId: "program" as Id<"programs">,
     path: "src/main.cpp",
     user: { id: "alice", email: "alice@example.com" },
     callbacks,

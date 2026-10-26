@@ -8,7 +8,7 @@ import {
 import { ConvexError, v } from "convex/values"
 import {
   requireIdentity,
-  requireProjectMembership,
+  requireProgramMembership,
   requireWorkspaceMembership,
 } from "./lib/auth"
 import { programTemplates } from "./lib/templateCatalog"
@@ -48,42 +48,42 @@ export const listByWorkspace = query({
     await requireWorkspaceMembership(ctx, args.workspaceId)
 
     return ctx.db
-      .query("projects")
+      .query("programs")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
       .collect()
   },
 })
 
 export const rename = mutation({
-  args: { projectId: v.id("projects"), name: v.string() },
-  handler: async (ctx, { projectId, name }) => {
-    await requireProjectMembership(ctx, projectId)
+  args: { programId: v.id("programs"), name: v.string() },
+  handler: async (ctx, { programId, name }) => {
+    await requireProgramMembership(ctx, programId)
     name = name.trim()
     if (!name || name.length > 80)
       throw new ConvexError("Program name must contain 1–80 characters.")
-    await ctx.db.patch(projectId, { name })
+    await ctx.db.patch(programId, { name })
   },
 })
 
 export const setArchived = mutation({
-  args: { projectId: v.id("projects"), archived: v.boolean() },
-  handler: async (ctx, { projectId, archived }) => {
-    await requireProjectMembership(ctx, projectId)
-    await ctx.db.patch(projectId, {
+  args: { programId: v.id("programs"), archived: v.boolean() },
+  handler: async (ctx, { programId, archived }) => {
+    await requireProgramMembership(ctx, programId)
+    await ctx.db.patch(programId, {
       archivedAt: archived ? Date.now() : undefined,
     })
   },
 })
 
 export const get = query({
-  args: { projectId: v.id("projects") },
-  handler: async (ctx, { projectId }) => {
-    await requireProjectMembership(ctx, projectId)
-    const project = await ctx.db.get(projectId)
-    if (!project) {
+  args: { programId: v.id("programs") },
+  handler: async (ctx, { programId }) => {
+    await requireProgramMembership(ctx, programId)
+    const program = await ctx.db.get(programId)
+    if (!program) {
       throw new ConvexError("Program not found.")
     }
-    return project
+    return program
   },
 })
 
@@ -99,10 +99,10 @@ export const create = mutation({
       args.name?.trim() || generateBoringName({ number: true }).dashed
 
     if (name.length > 80) {
-      throw new ConvexError("Project name must be at most 80 characters.")
+      throw new ConvexError("Program name must be at most 80 characters.")
     }
 
-    const projectId = await ctx.db.insert("projects", {
+    const programId = await ctx.db.insert("programs", {
       workspaceId: args.workspaceId,
       name,
       template: args.template,
@@ -112,87 +112,87 @@ export const create = mutation({
       createdAt: Date.now(),
     })
 
-    await ctx.db.patch(projectId, {
-      repositoryId: `programs/${projectId}`,
+    await ctx.db.patch(programId, {
+      repositoryId: `programs/${programId}`,
     })
 
-    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProject, {
-      projectId,
+    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProgram, {
+      programId,
     })
 
-    return projectId
+    return programId
   },
 })
 
 export const retryProvisioning = mutation({
-  args: { projectId: v.id("projects") },
-  handler: async (ctx, { projectId }) => {
-    await requireProjectMembership(ctx, projectId)
-    const project = await ctx.db.get(projectId)
+  args: { programId: v.id("programs") },
+  handler: async (ctx, { programId }) => {
+    await requireProgramMembership(ctx, programId)
+    const program = await ctx.db.get(programId)
 
-    if (!project) {
+    if (!program) {
       throw new ConvexError("Program not found.")
     }
-    if (project.repositoryStatus === "ready") {
-      return projectId
+    if (program.repositoryStatus === "ready") {
+      return programId
     }
 
-    await ctx.db.patch(projectId, {
+    await ctx.db.patch(programId, {
       repositoryStatus: "provisioning",
       repositoryError: undefined,
     })
-    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProject, {
-      projectId,
+    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProgram, {
+      programId,
     })
-    return projectId
+    return programId
   },
 })
 
 export const getRepositoryForMember = internalQuery({
-  args: { projectId: v.id("projects"), userId: v.string() },
-  handler: async (ctx, { projectId, userId }) => {
-    const project = await ctx.db.get(projectId)
-    if (!project) {
+  args: { programId: v.id("programs"), userId: v.string() },
+  handler: async (ctx, { programId, userId }) => {
+    const program = await ctx.db.get(programId)
+    if (!program) {
       throw new ConvexError("Program not found.")
     }
 
     const membership = await ctx.db
       .query("workspaceMembers")
       .withIndex("by_workspace_user", (q) =>
-        q.eq("workspaceId", project.workspaceId).eq("userId", userId)
+        q.eq("workspaceId", program.workspaceId).eq("userId", userId)
       )
       .unique()
 
     if (!membership) {
       throw new ConvexError("You do not have access to this program.")
     }
-    if (project.repositoryStatus !== "ready") {
+    if (program.repositoryStatus !== "ready") {
       throw new ConvexError("The program repository is not ready yet.")
     }
-    return project
+    return program
   },
 })
 
 export const getForProvisioning = internalQuery({
-  args: { projectId: v.id("projects") },
-  handler: async (ctx, { projectId }) => ctx.db.get(projectId),
+  args: { programId: v.id("programs") },
+  handler: async (ctx, { programId }) => ctx.db.get(programId),
 })
 
 export const markRepositoryReady = internalMutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     headSha: v.string(),
     files: v.array(v.string()),
     origin: v.optional(v.union(v.literal("template"), v.literal("user"))),
   },
-  handler: async (ctx, { projectId, headSha, files, origin }) => {
-    const project = await ctx.db.get(projectId)
-    if (!project) {
+  handler: async (ctx, { programId, headSha, files, origin }) => {
+    const program = await ctx.db.get(programId)
+    if (!program) {
       return
     }
 
     const now = Date.now()
-    await ctx.db.patch(projectId, {
+    await ctx.db.patch(programId, {
       repositoryStatus: "ready",
       repositoryHeadSha: headSha,
       repositoryError: undefined,
@@ -201,8 +201,8 @@ export const markRepositoryReady = internalMutation({
     for (const path of files) {
       const existing = await ctx.db
         .query("files")
-        .withIndex("by_project_path", (q) =>
-          q.eq("projectId", projectId).eq("path", path)
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", programId).eq("path", path)
         )
         .unique()
 
@@ -210,10 +210,10 @@ export const markRepositoryReady = internalMutation({
         await ctx.db.patch(existing._id, { updatedAt: now })
       } else {
         await ctx.db.insert("files", {
-          projectId,
+          programId,
           path,
           origin: origin ?? "template",
-          createdBy: project.createdBy,
+          createdBy: program.createdBy,
           createdAt: now,
           updatedAt: now,
         })
@@ -223,13 +223,13 @@ export const markRepositoryReady = internalMutation({
 })
 
 export const markRepositoryFailed = internalMutation({
-  args: { projectId: v.id("projects"), message: v.string() },
-  handler: async (ctx, { projectId, message }) => {
-    const project = await ctx.db.get(projectId)
-    if (!project || project.repositoryStatus === "ready") {
+  args: { programId: v.id("programs"), message: v.string() },
+  handler: async (ctx, { programId, message }) => {
+    const program = await ctx.db.get(programId)
+    if (!program || program.repositoryStatus === "ready") {
       return
     }
-    await ctx.db.patch(projectId, {
+    await ctx.db.patch(programId, {
       repositoryStatus: "failed",
       repositoryError: message.slice(0, 500),
     })
@@ -237,11 +237,11 @@ export const markRepositoryFailed = internalMutation({
 })
 
 export const recordRepositoryHead = internalMutation({
-  args: { projectId: v.id("projects"), headSha: v.string() },
-  handler: async (ctx, { projectId, headSha }) => {
-    const project = await ctx.db.get(projectId)
-    if (project?.repositoryStatus === "ready") {
-      await ctx.db.patch(projectId, { repositoryHeadSha: headSha })
+  args: { programId: v.id("programs"), headSha: v.string() },
+  handler: async (ctx, { programId, headSha }) => {
+    const program = await ctx.db.get(programId)
+    if (program?.repositoryStatus === "ready") {
+      await ctx.db.patch(programId, { repositoryHeadSha: headSha })
     }
   },
 })
@@ -275,7 +275,7 @@ export const beginFolderImport = mutation({
     })
     await ctx.scheduler.runAfter(
       24 * 60 * 60 * 1000,
-      internal.projects.cleanupFolderImport,
+      internal.programs.cleanupFolderImport,
       { importId }
     )
     return importId
@@ -297,7 +297,7 @@ export const appendFolderImport = mutation({
     )
     if (session.userId !== identity.subject)
       throw new ConvexError("This folder import belongs to another user.")
-    if (session.projectId || session.expiresAt <= Date.now())
+    if (session.programId || session.expiresAt <= Date.now())
       throw new ConvexError(
         "This folder import is closed. Choose the folder again."
       )
@@ -374,12 +374,12 @@ export const finishFolderImport = mutation({
     )
     if (session.userId !== identity.subject)
       throw new ConvexError("This folder import belongs to another user.")
-    if (session.projectId) return session.projectId
+    if (session.programId) return session.programId
     if (session.expiresAt <= Date.now())
       throw new ConvexError("Folder import expired. Choose the folder again.")
     if (session.paths.length !== session.expectedFiles)
       throw new ConvexError("Finish uploading all folder files first.")
-    const projectId = await ctx.db.insert("projects", {
+    const programId = await ctx.db.insert("programs", {
       workspaceId: session.workspaceId,
       name: session.name,
       template: session.template,
@@ -389,12 +389,12 @@ export const finishFolderImport = mutation({
       createdAt: Date.now(),
       importId,
     })
-    await ctx.db.patch(projectId, { repositoryId: `programs/${projectId}` })
-    await ctx.db.patch(importId, { projectId })
-    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProject, {
-      projectId,
+    await ctx.db.patch(programId, { repositoryId: `programs/${programId}` })
+    await ctx.db.patch(importId, { programId })
+    await ctx.scheduler.runAfter(0, internal.codeStorage.provisionProgram, {
+      programId,
     })
-    return projectId
+    return programId
   },
 })
 
@@ -419,23 +419,23 @@ export const cleanupFolderImport = internalMutation({
   handler: async (ctx, { importId }) => {
     const session = await ctx.db.get(importId)
     if (!session) return
-    const project = session.projectId
-      ? await ctx.db.get(session.projectId)
+    const program = session.programId
+      ? await ctx.db.get(session.programId)
       : null
     // Retain failed imports so the existing repository retry can use their files.
-    if (project && project.repositoryStatus !== "ready") return
-    if (!project && session.expiresAt > Date.now()) return
+    if (program && program.repositoryStatus !== "ready") return
+    if (!program && session.expiresAt > Date.now()) return
     const batches = await ctx.db
       .query("programImportBatches")
       .withIndex("by_import_sequence", (q) => q.eq("importId", importId))
       .take(10)
     for (const batch of batches) await ctx.db.delete(batch._id)
     if (batches.length === 10)
-      await ctx.scheduler.runAfter(0, internal.projects.cleanupFolderImport, {
+      await ctx.scheduler.runAfter(0, internal.programs.cleanupFolderImport, {
         importId,
       })
     else {
-      if (project) await ctx.db.patch(project._id, { importId: undefined })
+      if (program) await ctx.db.patch(program._id, { importId: undefined })
       await ctx.db.delete(importId)
     }
   },

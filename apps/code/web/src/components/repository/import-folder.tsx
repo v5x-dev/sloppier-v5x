@@ -32,7 +32,7 @@ import {
 } from "@/lib/folder-import"
 import { errorMessage } from "@/lib/errors"
 
-type Template = Doc<"projects">["template"]
+type Template = Doc<"programs">["template"]
 const templates = [
   { value: "vexcode", label: "VEXcode" },
   { value: "pros", label: "PROS" },
@@ -45,9 +45,9 @@ export function ImportFolder({
 }: {
   workspaceId: Id<"workspaces">
 }) {
-  const begin = useMutation(api.projects.beginFolderImport)
-  const append = useMutation(api.projects.appendFolderImport)
-  const finish = useMutation(api.projects.finishFolderImport)
+  const begin = useMutation(api.programs.beginFolderImport)
+  const append = useMutation(api.programs.appendFolderImport)
+  const finish = useMutation(api.programs.finishFolderImport)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [entries, setEntries] = useState<FolderFile[]>([])
@@ -132,17 +132,17 @@ export function ImportFolder({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Import a project folder</DialogTitle>
+            <DialogTitle>Import a program folder</DialogTitle>
             <DialogDescription>
               Choose a folder from your computer. Your source files and folder
               layout will become a new program.
             </DialogDescription>
           </DialogHeader>
           <Field>
-            <FieldLabel htmlFor="project-folder">Project folder</FieldLabel>
+            <FieldLabel htmlFor="program-folder">Program folder</FieldLabel>
             <Input
               key={open ? "open" : "closed"}
-              id="project-folder"
+              id="program-folder"
               type="file"
               multiple
               disabled={busy}
@@ -180,7 +180,7 @@ export function ImportFolder({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="import-template">Project type</FieldLabel>
+                <FieldLabel htmlFor="import-template">Program type</FieldLabel>
                 <Select
                   value={template}
                   onValueChange={(value) => {
@@ -203,7 +203,7 @@ export function ImportFolder({
                 <p className="text-xs text-muted-foreground">
                   {detected
                     ? "Detected from your folder. Change it if needed."
-                    : "Choose the project type so the correct toolchain is used."}
+                    : "Choose the program type so the correct toolchain is used."}
                 </p>
               </Field>
               <p className="text-xs text-muted-foreground">

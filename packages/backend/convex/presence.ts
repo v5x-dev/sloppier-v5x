@@ -3,7 +3,7 @@ import type { Id } from "./_generated/dataModel"
 import { mutation, query, type MutationCtx } from "./_generated/server"
 import { Presence } from "@convex-dev/presence"
 import { ConvexError, v } from "convex/values"
-import { requireProjectMembership } from "./lib/auth"
+import { requireProgramMembership } from "./lib/auth"
 
 const presence = new Presence(components.presence)
 
@@ -11,7 +11,7 @@ const caretValidator = v.object({ anchor: v.number(), focus: v.number() })
 
 export const joinFile = mutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     sessionId: v.string(),
     intervalMs: v.optional(v.number()),
@@ -21,7 +21,7 @@ export const joinFile = mutation({
 
 export const heartbeatFile = mutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     sessionId: v.string(),
     intervalMs: v.optional(v.number()),
@@ -31,20 +31,20 @@ export const heartbeatFile = mutation({
 
 export const updateCarets = mutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     sessionId: v.string(),
     carets: v.array(caretValidator),
   },
   handler: async (ctx, args) => {
-    const { identity } = await requireProjectMembership(ctx, args.projectId)
+    const { identity } = await requireProgramMembership(ctx, args.programId)
     if (args.sessionId.length < 8 || args.sessionId.length > 128) {
       throw new ConvexError("Session ID must be between 8 and 128 characters.")
     }
     const file = await ctx.db
       .query("files")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", args.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", args.path)
       )
       .unique()
     if (!file) {
@@ -54,7 +54,7 @@ export const updateCarets = mutation({
       .query("presenceSessions")
       .withIndex("by_file_user_session", (q) =>
         q
-          .eq("projectId", args.projectId)
+          .eq("programId", args.programId)
           .eq("path", file.path)
           .eq("userId", identity.subject)
           .eq("sessionId", args.sessionId)
@@ -100,17 +100,17 @@ export const updateCarets = mutation({
 
 export const listFile = query({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     roomToken: v.string(),
   },
   handler: async (ctx, args) => {
-    const { identity } = await requireProjectMembership(ctx, args.projectId)
+    const { identity } = await requireProgramMembership(ctx, args.programId)
     const session = await ctx.db
       .query("presenceSessions")
       .withIndex("by_file_user_room_token", (q) =>
         q
-          .eq("projectId", args.projectId)
+          .eq("programId", args.programId)
           .eq("path", args.path)
           .eq("userId", identity.subject)
           .eq("roomToken", args.roomToken)
@@ -143,17 +143,17 @@ export const disconnect = mutation({
 async function heartbeatFileHandler(
   ctx: MutationCtx,
   args: {
-    projectId: Id<"projects">
+    programId: Id<"programs">
     path: string
     sessionId: string
     intervalMs?: number
   }
 ) {
-  const { identity, project } = await requireProjectMembership(
+  const { identity, program } = await requireProgramMembership(
     ctx,
-    args.projectId
+    args.programId
   )
-  if (project.repositoryStatus !== "ready") {
+  if (program.repositoryStatus !== "ready") {
     throw new ConvexError("The program repository is not ready yet.")
   }
   if (args.sessionId.length < 8 || args.sessionId.length > 128) {
@@ -162,8 +162,8 @@ async function heartbeatFileHandler(
 
   const file = await ctx.db
     .query("files")
-    .withIndex("by_project_path", (q) =>
-      q.eq("projectId", args.projectId).eq("path", args.path)
+    .withIndex("by_program_path", (q) =>
+      q.eq("programId", args.programId).eq("path", args.path)
     )
     .unique()
   if (!file) {
@@ -193,7 +193,7 @@ async function heartbeatFileHandler(
     .query("presenceSessions")
     .withIndex("by_file_user_session", (q) =>
       q
-        .eq("projectId", args.projectId)
+        .eq("programId", args.programId)
         .eq("path", file.path)
         .eq("userId", identity.subject)
         .eq("sessionId", args.sessionId)
@@ -201,7 +201,7 @@ async function heartbeatFileHandler(
     .unique()
 
   const session = {
-    projectId: args.projectId,
+    programId: args.programId,
     path: file.path,
     userId: identity.subject,
     sessionId: args.sessionId,
@@ -241,20 +241,20 @@ function colorForUser(userId: string) {
 // person keep independent selections and never overwrite one another.
 export const publishAwareness = mutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     sessionId: v.string(),
     bytes: v.bytes(),
   },
   handler: async (ctx, args) => {
-    const { identity } = await requireProjectMembership(ctx, args.projectId)
+    const { identity } = await requireProgramMembership(ctx, args.programId)
     if (args.bytes.byteLength > 16_384)
       throw new ConvexError("Awareness payload is too large.")
     const session = await ctx.db
       .query("presenceSessions")
       .withIndex("by_file_user_session", (q) =>
         q
-          .eq("projectId", args.projectId)
+          .eq("programId", args.programId)
           .eq("path", args.path)
           .eq("userId", identity.subject)
           .eq("sessionId", args.sessionId)
@@ -267,14 +267,14 @@ export const publishAwareness = mutation({
 })
 
 export const listAwareness = query({
-  args: { projectId: v.id("projects"), path: v.string() },
+  args: { programId: v.id("programs"), path: v.string() },
   handler: async (ctx, args) => {
-    await requireProjectMembership(ctx, args.projectId)
+    await requireProgramMembership(ctx, args.programId)
     const sessions = await ctx.db
       .query("presenceSessions")
       .withIndex("by_file_seen", (q) =>
         q
-          .eq("projectId", args.projectId)
+          .eq("programId", args.programId)
           .eq("path", args.path)
           .gt("createdAt", Date.now() - 35_000)
       )

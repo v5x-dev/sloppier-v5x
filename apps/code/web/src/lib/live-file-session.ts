@@ -38,7 +38,7 @@ type LiveEditor = {
 
 type SessionOptions = {
   client: Pick<ConvexReactClient, "watchQuery" | "action" | "mutation">
-  projectId: Id<"projects">
+  programId: Id<"programs">
   path: string
   user: {
     id: string
@@ -66,7 +66,7 @@ type SessionOptions = {
 /** Owns one document's replay, local recovery, synchronization and presence. */
 export function createLiveFileSession({
   client,
-  projectId,
+  programId,
   path,
   user,
   callbacks,
@@ -102,7 +102,7 @@ export function createLiveFileSession({
       stop()
     }
   }
-  const args = { projectId, path }
+  const args = { programId, path }
   const presenceArgs = { ...args, sessionId }
   let cache: ReturnType<NonNullable<SessionOptions["createCache"]>> | undefined
   let disposed = false

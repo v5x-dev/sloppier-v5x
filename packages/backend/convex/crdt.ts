@@ -8,7 +8,7 @@ import {
   query,
 } from "./_generated/server"
 import { ConvexError, v } from "convex/values"
-import { requireProjectMembership } from "./lib/auth"
+import { requireProgramMembership } from "./lib/auth"
 
 const MAX_UPDATE_BYTES = 512 * 1024
 const MAX_REPLAY_BYTES = 900 * 1024
@@ -16,18 +16,18 @@ const MAX_REPLAY_UPDATES = 100
 
 export const appendUpdate = mutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     updateId: v.string(),
     documentId: v.optional(v.id("crdtDocuments")),
     bytes: v.bytes(),
   },
   handler: async (ctx, args) => {
-    const { identity, project } = await requireProjectMembership(
+    const { identity, program } = await requireProgramMembership(
       ctx,
-      args.projectId
+      args.programId
     )
-    if (project.repositoryStatus !== "ready") {
+    if (program.repositoryStatus !== "ready") {
       throw new ConvexError("The program repository is not ready yet.")
     }
     if (args.updateId.length < 8 || args.updateId.length > 128) {
@@ -42,8 +42,8 @@ export const appendUpdate = mutation({
 
     const file = await ctx.db
       .query("files")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", args.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", args.path)
       )
       .unique()
     if (!file) {
@@ -52,8 +52,8 @@ export const appendUpdate = mutation({
 
     const document = await ctx.db
       .query("crdtDocuments")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", file.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", file.path)
       )
       .unique()
     const now = Date.now()
@@ -83,10 +83,10 @@ export const appendUpdate = mutation({
       if (duplicate.storageStatus === "failed") {
         await ctx.db.patch(duplicate._id, {
           storageStatus: "pending",
-          projectId: args.projectId,
+          programId: args.programId,
           storageError: undefined,
         })
-        await enqueueBackup(ctx, args.projectId)
+        await enqueueBackup(ctx, args.programId)
       }
       return { sequence: duplicate.sequence, duplicate: true }
     }
@@ -94,7 +94,7 @@ export const appendUpdate = mutation({
     const sequence = document.lastSequence + 1
     await ctx.db.patch(document._id, { lastSequence: sequence, updatedAt: now })
     await ctx.db.insert("crdtUpdates", {
-      projectId: args.projectId,
+      programId: args.programId,
       documentId: document._id,
       sequence,
       updateId: args.updateId,
@@ -104,7 +104,7 @@ export const appendUpdate = mutation({
       createdAt: now,
     })
 
-    await enqueueBackup(ctx, args.projectId)
+    await enqueueBackup(ctx, args.programId)
 
     return { sequence, duplicate: false }
   },
@@ -112,16 +112,16 @@ export const appendUpdate = mutation({
 
 export const updatesSince = query({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     afterSequence: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireProjectMembership(ctx, args.projectId)
+    await requireProgramMembership(ctx, args.programId)
     const document = await ctx.db
       .query("crdtDocuments")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", args.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", args.path)
       )
       .unique()
 
@@ -165,16 +165,16 @@ export const updatesSince = query({
 
 export const retryPersistence = mutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     updateId: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireProjectMembership(ctx, args.projectId)
+    await requireProgramMembership(ctx, args.programId)
     const document = await ctx.db
       .query("crdtDocuments")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", args.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", args.path)
       )
       .unique()
     if (!document) {
@@ -195,11 +195,11 @@ export const retryPersistence = mutation({
     }
 
     await ctx.db.patch(update._id, {
-      projectId: args.projectId,
+      programId: args.programId,
       storageStatus: "pending",
       storageError: undefined,
     })
-    await enqueueBackup(ctx, args.projectId)
+    await enqueueBackup(ctx, args.programId)
     return { queued: true }
   },
 })
@@ -211,9 +211,9 @@ export const getUpdateForStorage = internalQuery({
     if (!update) return null
     const document = await ctx.db.get(update.documentId)
     if (!document) return null
-    const project = await ctx.db.get(document.projectId)
-    if (!project) return null
-    return { update, document, project }
+    const program = await ctx.db.get(document.programId)
+    if (!program) return null
+    return { update, document, program }
   },
 })
 
@@ -256,7 +256,7 @@ function bytesEqual(left: ArrayBuffer, right: ArrayBuffer) {
 // winner's Yjs identifiers, so the original source is inserted exactly once.
 export const initializeDocument = internalMutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     bytes: v.optional(v.bytes()),
     contents: v.optional(v.string()),
@@ -265,8 +265,8 @@ export const initializeDocument = internalMutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("crdtDocuments")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", args.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", args.path)
       )
       .unique()
     if (existing) return existing._id
@@ -286,21 +286,21 @@ export const initializeDocument = internalMutation({
     }
     const file = await ctx.db
       .query("files")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", args.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", args.path)
       )
       .unique()
     if (!file) throw new ConvexError("File not found.")
     const now = Date.now()
     const documentId = await ctx.db.insert("crdtDocuments", {
-      projectId: args.projectId,
+      programId: args.programId,
       path: args.path,
       lastSequence: 1,
       createdAt: now,
       updatedAt: now,
     })
     await ctx.db.insert("crdtUpdates", {
-      projectId: args.projectId,
+      programId: args.programId,
       documentId,
       sequence: 1,
       updateId: "initial-source",
@@ -309,19 +309,19 @@ export const initializeDocument = internalMutation({
       storageStatus: "pending",
       createdAt: now,
     })
-    await enqueueBackup(ctx, args.projectId)
+    await enqueueBackup(ctx, args.programId)
     return documentId
   },
 })
 
 export const documentExists = internalQuery({
-  args: { projectId: v.id("projects"), path: v.string() },
+  args: { programId: v.id("programs"), path: v.string() },
   handler: async (ctx, args) =>
     (
       await ctx.db
         .query("crdtDocuments")
-        .withIndex("by_project_path", (q) =>
-          q.eq("projectId", args.projectId).eq("path", args.path)
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", args.programId).eq("path", args.path)
         )
         .unique()
     )?._id ?? null,
@@ -329,18 +329,18 @@ export const documentExists = internalQuery({
 
 export const storageStatus = query({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     updateIds: v.array(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireProjectMembership(ctx, args.projectId)
+    await requireProgramMembership(ctx, args.programId)
     if (args.updateIds.length > 100)
       throw new ConvexError("Too many update IDs.")
     const document = await ctx.db
       .query("crdtDocuments")
-      .withIndex("by_project_path", (q) =>
-        q.eq("projectId", args.projectId).eq("path", args.path)
+      .withIndex("by_program_path", (q) =>
+        q.eq("programId", args.programId).eq("path", args.path)
       )
       .unique()
     if (!document) return []

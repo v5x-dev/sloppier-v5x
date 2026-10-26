@@ -22,11 +22,11 @@ import type * as lib_folderImport from "../lib/folderImport.js";
 import type * as lib_history from "../lib/history.js";
 import type * as lib_liveReplay from "../lib/liveReplay.js";
 import type * as lib_paths from "../lib/paths.js";
-import type * as lib_projectSearch from "../lib/projectSearch.js";
+import type * as lib_programSearch from "../lib/programSearch.js";
 import type * as lib_templateCatalog from "../lib/templateCatalog.js";
 import type * as lib_templates from "../lib/templates.js";
 import type * as presence from "../presence.js";
-import type * as projects from "../projects.js";
+import type * as programs from "../programs.js";
 import type * as search from "../search.js";
 import type * as workspaces from "../workspaces.js";
 
@@ -51,11 +51,11 @@ declare const fullApi: ApiFromModules<{
   "lib/history": typeof lib_history;
   "lib/liveReplay": typeof lib_liveReplay;
   "lib/paths": typeof lib_paths;
-  "lib/projectSearch": typeof lib_projectSearch;
+  "lib/programSearch": typeof lib_programSearch;
   "lib/templateCatalog": typeof lib_templateCatalog;
   "lib/templates": typeof lib_templates;
   presence: typeof presence;
-  projects: typeof projects;
+  programs: typeof programs;
   search: typeof search;
   workspaces: typeof workspaces;
 }>;

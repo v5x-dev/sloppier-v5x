@@ -38,9 +38,9 @@ export function startDemoSession({ names, programName, template, port = 3001 }) 
   for (const account of accounts.slice(1)) {
     run("workspaces:addMember", { workspaceId, userId: account.id })
   }
-  const projectId = run("projects:create", { workspaceId, name: programName, template })
+  const programId = run("programs:create", { workspaceId, name: programName, template })
   console.log(`Demo credentials directory: ${dir}`)
-  const urls = accounts.map((account) => `http://127.0.0.1:${port}/programs/${projectId}?demoUser=${account.id}`)
+  const urls = accounts.map((account) => `http://127.0.0.1:${port}/programs/${programId}?demoUser=${account.id}`)
   accounts.forEach((account, i) => console.log(`${account.name}: ${urls[i]}`))
   const child = spawn("bunx", ["vite", "dev", "--port", String(port), "--host", "127.0.0.1"], {
     cwd: resolve(root, "apps/code/web"),
@@ -56,5 +56,5 @@ export function startDemoSession({ names, programName, template, port = 3001 }) 
   }
   process.on("SIGINT", cleanup)
   process.on("SIGTERM", cleanup)
-  return { accounts, projectId, urls }
+  return { accounts, programId, urls }
 }

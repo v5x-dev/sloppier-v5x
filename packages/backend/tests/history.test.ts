@@ -47,13 +47,13 @@ describe("history restore", () => {
     vi.useFakeTimers()
     try {
       const t = convexTest(schema, modules)
-      const projectId = await t.run(async (ctx) => {
+      const programId = await t.run(async (ctx) => {
         const workspaceId = await ctx.db.insert("workspaces", {
           name: "Team",
           ownerId: "alice",
           createdAt: 1,
         })
-        return ctx.db.insert("projects", {
+        return ctx.db.insert("programs", {
           workspaceId,
           name: "Robot",
           template: "pros",
@@ -65,24 +65,24 @@ describe("history restore", () => {
       })
       const outsider = t.withIdentity({ subject: "mallory" })
       await expect(
-        outsider.action(api.codeStorage.history, { projectId })
+        outsider.action(api.codeStorage.history, { programId })
       ).rejects.toThrow("You do not have access to this program.")
       await expect(
         outsider.action(api.codeStorage.historyFiles, {
-          projectId,
+          programId,
           sha: "a".repeat(40),
         })
       ).rejects.toThrow("You do not have access to this program.")
       await expect(
         outsider.action(api.codeStorage.historyDiff, {
-          projectId,
+          programId,
           sha: "a".repeat(40),
           path: "src/main.cpp",
         })
       ).rejects.toThrow("You do not have access to this program.")
       await expect(
         outsider.action(api.codeStorage.restoreHistoryFile, {
-          projectId,
+          programId,
           sha: "a".repeat(40),
           path: "src/main.cpp",
         })

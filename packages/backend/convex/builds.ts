@@ -6,28 +6,28 @@ import {
   internalMutation,
   internalQuery,
 } from "./_generated/server"
-import { requireProjectMembership } from "./lib/auth"
+import { requireProgramMembership } from "./lib/auth"
 
-const projectArgs = { projectId: v.id("projects") }
+const programArgs = { programId: v.id("programs") }
 export const heartbeat = mutation({
   args: {
-    ...projectArgs,
+    ...programArgs,
     sessionId: v.string(),
     leave: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { identity, project } = await requireProjectMembership(
+    const { identity, program } = await requireProgramMembership(
       ctx,
-      args.projectId
+      args.programId
     )
-    if (project.repositoryStatus !== "ready")
+    if (program.repositoryStatus !== "ready")
       throw new ConvexError("Repository is not ready.")
     if (args.sessionId.length < 8 || args.sessionId.length > 128)
       throw new ConvexError("Invalid session.")
     const session = await ctx.db
       .query("programSessions")
-      .withIndex("by_project_session", (q) =>
-        q.eq("projectId", args.projectId).eq("sessionId", args.sessionId)
+      .withIndex("by_program_session", (q) =>
+        q.eq("programId", args.programId).eq("sessionId", args.sessionId)
       )
       .unique()
     if (session && session.userId !== identity.subject)
@@ -38,36 +38,36 @@ export const heartbeat = mutation({
       await ctx.db.patch(session._id, { expiresAt: Date.now() + 35_000 })
     else
       await ctx.db.insert("programSessions", {
-        projectId: args.projectId,
+        programId: args.programId,
         sessionId: args.sessionId,
         userId: identity.subject,
         expiresAt: Date.now() + 35_000,
       })
     const machine = await ctx.db
       .query("buildMachines")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
       .unique()
     if (!machine && !args.leave) {
       await ctx.db.insert("buildMachines", {
-        projectId: args.projectId,
+        programId: args.programId,
         status: "starting",
         logs: "Starting build machine…",
         building: false,
       })
       await ctx.scheduler.runAfter(0, internal.buildWorker.reconcile, {
-        projectId: args.projectId,
+        programId: args.programId,
       })
     }
   },
 })
 
 export const status = query({
-  args: projectArgs,
+  args: programArgs,
   handler: async (ctx, args) => {
-    await requireProjectMembership(ctx, args.projectId)
+    await requireProgramMembership(ctx, args.programId)
     const m = await ctx.db
       .query("buildMachines")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
       .unique()
     return m
       ? {
@@ -84,22 +84,22 @@ export const status = query({
   },
 })
 export const state = internalQuery({
-  args: projectArgs,
+  args: programArgs,
   handler: async (ctx, args) => ({
-    project: await ctx.db.get(args.projectId),
+    program: await ctx.db.get(args.programId),
     machine: await ctx.db
       .query("buildMachines")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
       .unique(),
     sessions: await ctx.db
       .query("programSessions")
-      .withIndex("by_project_session", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program_session", (q) => q.eq("programId", args.programId))
       .collect(),
   }),
 })
 export const update = internalMutation({
   args: {
-    ...projectArgs,
+    ...programArgs,
     machineId: v.optional(v.string()),
     expectedMachineId: v.optional(v.string()),
     artifactId: v.optional(v.id("_storage")),
@@ -107,10 +107,10 @@ export const update = internalMutation({
     logs: v.optional(v.string()),
     building: v.optional(v.boolean()),
   },
-  handler: async (ctx, { projectId, expectedMachineId, ...patch }) => {
+  handler: async (ctx, { programId, expectedMachineId, ...patch }) => {
     const m = await ctx.db
       .query("buildMachines")
-      .withIndex("by_project", (q) => q.eq("projectId", projectId))
+      .withIndex("by_program", (q) => q.eq("programId", programId))
       .unique()
     if (!m || (expectedMachineId && m.machineId !== expectedMachineId)) {
       if (patch.artifactId) await ctx.storage.delete(patch.artifactId)
@@ -134,16 +134,16 @@ export const expireSession = internalMutation({
   },
 })
 export const retire = internalMutation({
-  args: projectArgs,
+  args: programArgs,
   handler: async (ctx, args) => {
     const m = await ctx.db
       .query("buildMachines")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
       .unique()
     if (!m) return
     const sessions = await ctx.db
       .query("programSessions")
-      .withIndex("by_project_session", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program_session", (q) => q.eq("programId", args.programId))
       .collect()
     if (sessions.some((s) => s.expiresAt > Date.now())) {
       await ctx.db.patch(m._id, {
@@ -162,14 +162,14 @@ export const retire = internalMutation({
 // Block new builds before replacing an outdated image. Active builds finish first.
 export const refreshImage = internalMutation({
   args: {
-    ...projectArgs,
+    ...programArgs,
     machineId: v.string(),
     deleted: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const machine = await ctx.db
       .query("buildMachines")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
       .unique()
     if (!machine || machine.machineId !== args.machineId || machine.building)
       return false

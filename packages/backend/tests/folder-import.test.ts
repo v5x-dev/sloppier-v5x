@@ -55,7 +55,7 @@ async function setup(expectedFiles = 1) {
   const workspaceId = await user.mutation(api.workspaces.create, {
     name: "Team",
   })
-  const importId = await user.mutation(api.projects.beginFolderImport, {
+  const importId = await user.mutation(api.programs.beginFolderImport, {
     workspaceId,
     name: "My existing robot",
     template: "pros",
@@ -84,22 +84,22 @@ describe("folder imports", () => {
       path: "assets/robot.dat",
       contents: Uint8Array.of(0, 255, 128, 4).buffer,
     }
-    await user.mutation(api.projects.appendFolderImport, {
+    await user.mutation(api.programs.appendFolderImport, {
       importId,
       sequence: 0,
       files: [source()],
     })
-    await user.mutation(api.projects.appendFolderImport, {
+    await user.mutation(api.programs.appendFolderImport, {
       importId,
       sequence: 1,
       files: [binary],
     })
-    const projectId = await user.mutation(api.projects.finishFolderImport, {
+    const programId = await user.mutation(api.programs.finishFolderImport, {
       importId,
     })
     expect(
-      await user.mutation(api.projects.finishFolderImport, { importId })
-    ).toBe(projectId)
+      await user.mutation(api.programs.finishFolderImport, { importId })
+    ).toBe(programId)
     await t.finishAllScheduledFunctions(vi.runAllTimers)
     expect([...repository.files.keys()]).toEqual([
       "src/main.cpp",
@@ -111,7 +111,7 @@ describe("folder imports", () => {
     expect([...repository.files.get("assets/robot.dat")!]).toEqual([
       0, 255, 128, 4,
     ])
-    expect(await user.query(api.projects.get, { projectId })).toMatchObject({
+    expect(await user.query(api.programs.get, { programId })).toMatchObject({
       name: "My existing robot",
       repositoryStatus: "ready",
       repositoryHeadSha: "commit-2",
@@ -123,30 +123,30 @@ describe("folder imports", () => {
     const files = await t.run((ctx) => ctx.db.query("files").collect())
     expect(files.every((file) => file.origin === "user")).toBe(true)
     expect(
-      await user.query(api.projects.listByWorkspace, { workspaceId })
+      await user.query(api.programs.listByWorkspace, { workspaceId })
     ).toHaveLength(1)
   })
 
   it("retains original source on provisioning failure and retries without starter files", async () => {
     const { t, user, importId } = await setup()
-    await user.mutation(api.projects.appendFolderImport, {
+    await user.mutation(api.programs.appendFolderImport, {
       importId,
       sequence: 0,
       files: [source()],
     })
     repository.fail = true
-    const projectId = await user.mutation(api.projects.finishFolderImport, {
+    const programId = await user.mutation(api.programs.finishFolderImport, {
       importId,
     })
     await t.finishAllScheduledFunctions(vi.runAllTimers)
-    expect(await user.query(api.projects.get, { projectId })).toMatchObject({
+    expect(await user.query(api.programs.get, { programId })).toMatchObject({
       repositoryStatus: "failed",
     })
     expect(await t.run((ctx) => ctx.db.get(importId))).not.toBeNull()
     repository.fail = false
-    await user.mutation(api.projects.retryProvisioning, { projectId })
+    await user.mutation(api.programs.retryProvisioning, { programId })
     await t.finishAllScheduledFunctions(vi.runAllTimers)
-    expect(await user.query(api.projects.get, { projectId })).toMatchObject({
+    expect(await user.query(api.programs.get, { programId })).toMatchObject({
       repositoryStatus: "ready",
     })
     expect([...repository.files.keys()]).toEqual(["src/main.cpp"])
@@ -154,16 +154,16 @@ describe("folder imports", () => {
 
   it("keeps unfinished uploads off the dashboard and expires their data", async () => {
     const { t, user, workspaceId, importId } = await setup(2)
-    await user.mutation(api.projects.appendFolderImport, {
+    await user.mutation(api.programs.appendFolderImport, {
       importId,
       sequence: 0,
       files: [source()],
     })
     await expect(
-      user.mutation(api.projects.finishFolderImport, { importId })
+      user.mutation(api.programs.finishFolderImport, { importId })
     ).rejects.toThrow("all folder files")
     expect(
-      await user.query(api.projects.listByWorkspace, { workspaceId })
+      await user.query(api.programs.listByWorkspace, { workspaceId })
     ).toEqual([])
     await t.finishAllScheduledFunctions(vi.runAllTimers)
     expect(await t.run((ctx) => ctx.db.get(importId))).toBeNull()
@@ -175,23 +175,23 @@ describe("folder imports", () => {
   it("allows exact batch retries but rejects changed bytes, ordering, and conflicting paths", async () => {
     const { t, user, importId } = await setup(3)
     const batch = { importId, sequence: 0, files: [source("src", "one")] }
-    await user.mutation(api.projects.appendFolderImport, batch)
-    await user.mutation(api.projects.appendFolderImport, batch)
+    await user.mutation(api.programs.appendFolderImport, batch)
+    await user.mutation(api.programs.appendFolderImport, batch)
     await expect(
-      user.mutation(api.projects.appendFolderImport, {
+      user.mutation(api.programs.appendFolderImport, {
         ...batch,
         files: [source("src", "two")],
       })
     ).rejects.toThrow("same files")
     await expect(
-      user.mutation(api.projects.appendFolderImport, {
+      user.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 2,
         files: [source()],
       })
     ).rejects.toThrow("in order")
     await expect(
-      user.mutation(api.projects.appendFolderImport, {
+      user.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 1,
         files: [source("src-other"), source()],
@@ -209,17 +209,17 @@ describe("folder imports", () => {
       userId: "bob",
     })
     await expect(
-      teammate.mutation(api.projects.appendFolderImport, {
+      teammate.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 0,
         files: [source()],
       })
     ).rejects.toThrow("another user")
     await expect(
-      teammate.mutation(api.projects.finishFolderImport, { importId })
+      teammate.mutation(api.programs.finishFolderImport, { importId })
     ).rejects.toThrow("another user")
     await expect(
-      t.mutation(api.projects.beginFolderImport, {
+      t.mutation(api.programs.beginFolderImport, {
         workspaceId,
         name: "Bad",
         template: "pros",
@@ -228,7 +228,7 @@ describe("folder imports", () => {
     ).rejects.toThrow("Authentication required")
     const outsider = t.withIdentity({ subject: "outsider" })
     await expect(
-      outsider.mutation(api.projects.appendFolderImport, {
+      outsider.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 0,
         files: [source()],
@@ -240,7 +240,7 @@ describe("folder imports", () => {
   it("enforces file counts, byte limits, and server-side exclusions", async () => {
     const { t, user, workspaceId, importId } = await setup()
     await expect(
-      user.mutation(api.projects.beginFolderImport, {
+      user.mutation(api.programs.beginFolderImport, {
         workspaceId,
         name: "Empty",
         template: "pros",
@@ -256,7 +256,7 @@ describe("folder imports", () => {
       "EZ-Template@3.2.2.zip",
     ]) {
       await expect(
-        user.mutation(api.projects.appendFolderImport, {
+        user.mutation(api.programs.appendFolderImport, {
           importId,
           sequence: 0,
           files: [source(path)],
@@ -264,14 +264,14 @@ describe("folder imports", () => {
       ).rejects.toThrow("excluded")
     }
     await expect(
-      user.mutation(api.projects.appendFolderImport, {
+      user.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 0,
         files: [source("../escape.cpp")],
       })
     ).rejects.toThrow("normalized relative")
     await expect(
-      user.mutation(api.projects.appendFolderImport, {
+      user.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 0,
         files: [
@@ -283,7 +283,7 @@ describe("folder imports", () => {
       })
     ).rejects.toThrow("384 KiB")
     await expect(
-      user.mutation(api.projects.appendFolderImport, {
+      user.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 0,
         files: [source("a.cpp"), source("b.cpp")],
@@ -293,7 +293,7 @@ describe("folder imports", () => {
       ctx.db.patch(importId, { totalBytes: IMPORT_MAX_BYTES })
     )
     await expect(
-      user.mutation(api.projects.appendFolderImport, {
+      user.mutation(api.programs.appendFolderImport, {
         importId,
         sequence: 0,
         files: [source()],
@@ -304,13 +304,13 @@ describe("folder imports", () => {
 
   it("does not delete a live upload during an early cleanup call", async () => {
     const { t, importId } = await setup()
-    await t.mutation(internal.projects.cleanupFolderImport, { importId })
+    await t.mutation(internal.programs.cleanupFolderImport, { importId })
     expect(await t.run((ctx) => ctx.db.get(importId))).not.toBeNull()
     await t.finishAllScheduledFunctions(vi.runAllTimers)
   })
 })
 
-it("detects supported project types and validates path collisions and local exclusions", () => {
+it("detects supported program types and validates path collisions and local exclusions", () => {
   expect(
     detectImportTemplate(["project.pros", "include/EZ-Template/api.hpp"])
   ).toBe("ez-template")

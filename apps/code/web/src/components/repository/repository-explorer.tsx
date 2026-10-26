@@ -52,7 +52,7 @@ type Props = {
   paths: string[]
   dirtyPaths: string[]
   activePath: string | null
-  projectId: string
+  programId: string
   style: React.CSSProperties
   readBytes: (path: string, saved?: boolean) => Promise<ArrayBuffer>
   apply: (update: ExplorerUpdate) => Promise<void>
@@ -513,7 +513,7 @@ export function RepositoryExplorer(props: Props) {
               copyText(
                 entries
                   .map(
-                    (item) => `v5x://${props.projectId}/${barePath(item.path)}`
+                    (item) => `v5x://${props.programId}/${barePath(item.path)}`
                   )
                   .join("\n")
               )

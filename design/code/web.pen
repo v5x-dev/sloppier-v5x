@@ -437,7 +437,7 @@
           "id": "qp5qX",
           "name": "Programs description",
           "fill": "#ABA09C",
-          "content": "Browse programs, create a project, and manage the program list · 7 screens",
+          "content": "Browse programs, create a program, and manage the program list · 7 screens",
           "fontFamily": "Merriweather",
           "fontSize": 16,
           "fontWeight": "normal"
@@ -3658,7 +3658,7 @@
           "id": "gVova",
           "x": 491,
           "y": 183,
-          "name": "Import a project folder",
+          "name": "Import a program folder",
           "width": 384,
           "fill": "$popover",
           "cornerRadius": "$radius-xl",
@@ -3693,11 +3693,11 @@
                     {
                       "type": "text",
                       "id": "Y7BF0b",
-                      "name": "Import a project folder",
+                      "name": "Import a program folder",
                       "fill": "$popover-foreground",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Import a project folder",
+                      "content": "Import a program folder",
                       "lineHeight": 1,
                       "fontFamily": "Merriweather",
                       "fontSize": 16,
@@ -3721,7 +3721,7 @@
                 {
                   "type": "frame",
                   "id": "UxhnN",
-                  "name": "Project folder",
+                  "name": "Program folder",
                   "width": "fill_container",
                   "layout": "vertical",
                   "gap": 6,
@@ -3729,11 +3729,11 @@
                     {
                       "type": "text",
                       "id": "T5N6i",
-                      "name": "Project folder",
+                      "name": "Program folder",
                       "fill": "$foreground",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Project folder",
+                      "content": "Program folder",
                       "lineHeight": 1.5,
                       "fontFamily": "Merriweather",
                       "fontSize": 13,
@@ -3742,7 +3742,7 @@
                     {
                       "type": "frame",
                       "id": "ythQ0",
-                      "name": "Project folder input",
+                      "name": "Program folder input",
                       "width": "fill_container",
                       "height": 32,
                       "fill": "$input-background",
@@ -3833,7 +3833,7 @@
                 {
                   "type": "frame",
                   "id": "k6cok",
-                  "name": "Project type",
+                  "name": "Program type",
                   "width": "fill_container",
                   "layout": "vertical",
                   "gap": 6,
@@ -3841,11 +3841,11 @@
                     {
                       "type": "text",
                       "id": "QYzlY",
-                      "name": "Project type",
+                      "name": "Program type",
                       "fill": "$foreground",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Project type",
+                      "content": "Program type",
                       "lineHeight": 1.5,
                       "fontFamily": "Merriweather",
                       "fontSize": 13,
@@ -3854,7 +3854,7 @@
                     {
                       "type": "frame",
                       "id": "F2ZKU",
-                      "name": "Project type input",
+                      "name": "Program type input",
                       "width": "fill_container",
                       "height": 32,
                       "fill": "$input-background",
@@ -10989,7 +10989,7 @@
             {
               "type": "frame",
               "id": "d3KLTD",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -11004,7 +11004,7 @@
                 {
                   "type": "icon",
                   "id": "bijqP",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -11043,7 +11043,7 @@
             {
               "type": "frame",
               "id": "h8NlO",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -11058,7 +11058,7 @@
                 {
                   "type": "icon",
                   "id": "Jypgc",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -14363,7 +14363,7 @@
             {
               "type": "frame",
               "id": "tXODj",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -14378,7 +14378,7 @@
                 {
                   "type": "icon",
                   "id": "YLGE8",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -14417,7 +14417,7 @@
             {
               "type": "frame",
               "id": "ER9d7",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -14432,7 +14432,7 @@
                 {
                   "type": "icon",
                   "id": "q0TNXa",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -18004,7 +18004,7 @@
             {
               "type": "frame",
               "id": "ZLnof",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -18019,7 +18019,7 @@
                 {
                   "type": "icon",
                   "id": "A2Sgg",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -18058,7 +18058,7 @@
             {
               "type": "frame",
               "id": "F5vlB",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -18073,7 +18073,7 @@
                 {
                   "type": "icon",
                   "id": "FEE8U",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -21492,7 +21492,7 @@
             {
               "type": "frame",
               "id": "vunQk",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -21507,7 +21507,7 @@
                 {
                   "type": "icon",
                   "id": "K7k9A9",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -21546,7 +21546,7 @@
             {
               "type": "frame",
               "id": "yuouX",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -21561,7 +21561,7 @@
                 {
                   "type": "icon",
                   "id": "oXFLk",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -24955,7 +24955,7 @@
             {
               "type": "frame",
               "id": "NIjs9",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -24970,7 +24970,7 @@
                 {
                   "type": "icon",
                   "id": "bIxZo",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -25009,7 +25009,7 @@
             {
               "type": "frame",
               "id": "jUlgf",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -25024,7 +25024,7 @@
                 {
                   "type": "icon",
                   "id": "aFdy2",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -28471,7 +28471,7 @@
             {
               "type": "frame",
               "id": "h5yS3",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -28486,7 +28486,7 @@
                 {
                   "type": "icon",
                   "id": "kMtRF",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -28525,7 +28525,7 @@
             {
               "type": "frame",
               "id": "JbMZA",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -28540,7 +28540,7 @@
                 {
                   "type": "icon",
                   "id": "IKEYA",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -32099,7 +32099,7 @@
             {
               "type": "frame",
               "id": "L6NMW",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -32114,7 +32114,7 @@
                 {
                   "type": "icon",
                   "id": "CvMIm",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -32153,7 +32153,7 @@
             {
               "type": "frame",
               "id": "UsbJt",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -32168,7 +32168,7 @@
                 {
                   "type": "icon",
                   "id": "RSSfw",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -35727,7 +35727,7 @@
             {
               "type": "frame",
               "id": "KRRv7",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -35742,7 +35742,7 @@
                 {
                   "type": "icon",
                   "id": "NREbo",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -35781,7 +35781,7 @@
             {
               "type": "frame",
               "id": "Z0msg",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -35796,7 +35796,7 @@
                 {
                   "type": "icon",
                   "id": "SpK66",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -39355,7 +39355,7 @@
             {
               "type": "frame",
               "id": "T8o7oN",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -39370,7 +39370,7 @@
                 {
                   "type": "icon",
                   "id": "QACD6",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -39409,7 +39409,7 @@
             {
               "type": "frame",
               "id": "MfiRe",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -39424,7 +39424,7 @@
                 {
                   "type": "icon",
                   "id": "fTEwG",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -42983,7 +42983,7 @@
             {
               "type": "frame",
               "id": "LzYLH",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -42998,7 +42998,7 @@
                 {
                   "type": "icon",
                   "id": "B0wC7L",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -43037,7 +43037,7 @@
             {
               "type": "frame",
               "id": "vWw74",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -43052,7 +43052,7 @@
                 {
                   "type": "icon",
                   "id": "coPCS",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -46667,7 +46667,7 @@
             {
               "type": "frame",
               "id": "sOC7z",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -46682,7 +46682,7 @@
                 {
                   "type": "icon",
                   "id": "LUyAO",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -46721,7 +46721,7 @@
             {
               "type": "frame",
               "id": "LUq5X",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -46736,7 +46736,7 @@
                 {
                   "type": "icon",
                   "id": "L3vDP",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -50226,7 +50226,7 @@
             {
               "type": "frame",
               "id": "jokRg",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -50241,7 +50241,7 @@
                 {
                   "type": "icon",
                   "id": "Bqwyj",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -50280,7 +50280,7 @@
             {
               "type": "frame",
               "id": "i4NSn",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -50295,7 +50295,7 @@
                 {
                   "type": "icon",
                   "id": "o6i89",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -53910,7 +53910,7 @@
             {
               "type": "frame",
               "id": "y2KAF",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -53925,7 +53925,7 @@
                 {
                   "type": "icon",
                   "id": "X2xBP",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -53964,7 +53964,7 @@
             {
               "type": "frame",
               "id": "z2HsSR",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -53979,7 +53979,7 @@
                 {
                   "type": "icon",
                   "id": "fWZS3",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -57479,7 +57479,7 @@
             {
               "type": "frame",
               "id": "s3KzUD",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -57494,7 +57494,7 @@
                 {
                   "type": "icon",
                   "id": "QR1pr",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -57533,7 +57533,7 @@
             {
               "type": "frame",
               "id": "E8tBP",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -57548,7 +57548,7 @@
                 {
                   "type": "icon",
                   "id": "JfybP",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -57627,11 +57627,11 @@
             {
               "type": "text",
               "id": "j81Ao",
-              "name": "Compiling src/main.cpp\nLinking project\nCreating cold.package.bin\nBuild",
+              "name": "Compiling src/main.cpp\nLinking program\nCreating cold.package.bin\nBuild",
               "fill": "$muted-foreground",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "Compiling src/main.cpp\nLinking project\nCreating cold.package.bin\nBuild completed successfully.",
+              "content": "Compiling src/main.cpp\nLinking program\nCreating cold.package.bin\nBuild completed successfully.",
               "lineHeight": 1.5,
               "fontFamily": "Merriweather",
               "fontSize": 13,
@@ -57714,7 +57714,7 @@
       "id": "Vx3IN",
       "x": 0,
       "y": 12220,
-      "name": "Editor / Connect brain",
+      "name": "Editor / Connect Brain",
       "theme": {
         "mode": "dark"
       },
@@ -61001,7 +61001,7 @@
             {
               "type": "frame",
               "id": "JXd1O",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -61016,7 +61016,7 @@
                 {
                   "type": "icon",
                   "id": "PVCUU",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -61055,7 +61055,7 @@
             {
               "type": "frame",
               "id": "UGIfV",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -61070,7 +61070,7 @@
                 {
                   "type": "icon",
                   "id": "DlDlk",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -61086,7 +61086,7 @@
           "id": "czftB",
           "x": 1030,
           "y": 610,
-          "name": "Connect V5 brain",
+          "name": "Connect V5 Brain",
           "width": 288,
           "fill": "$popover",
           "cornerRadius": "$radius-lg",
@@ -61122,11 +61122,11 @@
             {
               "type": "text",
               "id": "Qc1F6",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "fill": "$popover-foreground",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "Connect V5 brain",
+              "content": "Connect V5 Brain",
               "lineHeight": 1.4285714285714286,
               "fontFamily": "Merriweather",
               "fontSize": 14,
@@ -61206,11 +61206,11 @@
             {
               "type": "text",
               "id": "GPVLB",
-              "name": "For USB, select the brain’s system port.",
+              "name": "For USB, select the Brain’s system port.",
               "fill": "$muted-foreground",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "For USB, select the brain’s system port.",
+              "content": "For USB, select the Brain’s system port.",
               "lineHeight": 1.5,
               "fontFamily": "Merriweather",
               "fontSize": 12,
@@ -64512,7 +64512,7 @@
             {
               "type": "frame",
               "id": "PAHpl",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -64527,7 +64527,7 @@
                 {
                   "type": "icon",
                   "id": "N0zOPA",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -64566,7 +64566,7 @@
             {
               "type": "frame",
               "id": "CnUcv",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -64581,7 +64581,7 @@
                 {
                   "type": "icon",
                   "id": "Qzum6",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -64597,7 +64597,7 @@
           "id": "v0vz71",
           "x": 1030,
           "y": 494,
-          "name": "Connect V5 brain",
+          "name": "Connect V5 Brain",
           "width": 288,
           "fill": "$popover",
           "cornerRadius": "$radius-lg",
@@ -64633,11 +64633,11 @@
             {
               "type": "text",
               "id": "JZ1KM",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "fill": "$popover-foreground",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "Connect V5 brain",
+              "content": "Connect V5 Brain",
               "lineHeight": 1.4285714285714286,
               "fontFamily": "Merriweather",
               "fontSize": 14,
@@ -68070,7 +68070,7 @@
             {
               "type": "frame",
               "id": "d1rZji",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -68085,7 +68085,7 @@
                 {
                   "type": "icon",
                   "id": "Mv7zv",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -68124,7 +68124,7 @@
             {
               "type": "frame",
               "id": "XL5U9",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -68139,7 +68139,7 @@
                 {
                   "type": "icon",
                   "id": "c77ohk",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -68155,7 +68155,7 @@
           "id": "EVnI4",
           "x": 1030,
           "y": 422,
-          "name": "Upload to V5 brain",
+          "name": "Upload to V5 Brain",
           "width": 288,
           "fill": "$popover",
           "cornerRadius": "$radius-lg",
@@ -68199,11 +68199,11 @@
                 {
                   "type": "text",
                   "id": "e9PIu8",
-                  "name": "Upload to V5 brain",
+                  "name": "Upload to V5 Brain",
                   "fill": "$popover-foreground",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "Upload to V5 brain",
+                  "content": "Upload to V5 Brain",
                   "lineHeight": 1.4285714285714286,
                   "fontFamily": "Merriweather",
                   "fontSize": 14,
@@ -71646,7 +71646,7 @@
             {
               "type": "frame",
               "id": "pDKKd",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -71661,7 +71661,7 @@
                 {
                   "type": "icon",
                   "id": "FWZvg",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -71700,7 +71700,7 @@
             {
               "type": "frame",
               "id": "BJmiB",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -71715,7 +71715,7 @@
                 {
                   "type": "icon",
                   "id": "wkxyU",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",
@@ -75187,7 +75187,7 @@
             {
               "type": "frame",
               "id": "FQlUJ",
-              "name": "Connect V5 brain",
+              "name": "Connect V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -75202,7 +75202,7 @@
                 {
                   "type": "icon",
                   "id": "NR9Ia",
-                  "name": "Connect V5 brain icon",
+                  "name": "Connect V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "plug",
@@ -75241,7 +75241,7 @@
             {
               "type": "frame",
               "id": "L5d9fD",
-              "name": "Upload to V5 brain",
+              "name": "Upload to V5 Brain",
               "width": 28,
               "height": 28,
               "fill": "#00000000",
@@ -75256,7 +75256,7 @@
                 {
                   "type": "icon",
                   "id": "VkejB",
-                  "name": "Upload to V5 brain icon",
+                  "name": "Upload to V5 Brain icon",
                   "width": 16,
                   "height": 16,
                   "icon": "download-simple",

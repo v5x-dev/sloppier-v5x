@@ -174,7 +174,7 @@ function makeProsProjectManifest(contents: Uint8Array, programName: string) {
     }
   }
   const state = manifest["py/state"]
-  state.project_name = toProjectSlug(programName)
+  state.project_name = toProgramSlug(programName)
 
   const kernel = state.templates.kernel
   if (kernel) {
@@ -193,7 +193,7 @@ function makeEzProjectManifest(contents: Uint8Array, programName: string) {
     }
   }
   const state = manifest["py/state"]
-  state.project_name = toProjectSlug(programName)
+  state.project_name = toProgramSlug(programName)
   for (const template of Object.values(state.templates)) {
     if (template.location) {
       template.location =
@@ -222,7 +222,7 @@ async function fetchRawFile(url: string) {
   return new Uint8Array(await response.arrayBuffer())
 }
 
-function toProjectSlug(name: string) {
+function toProgramSlug(name: string) {
   return (
     name
       .toLowerCase()

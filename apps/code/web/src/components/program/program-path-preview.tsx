@@ -1,4 +1,5 @@
 import { createPortal } from "react-dom"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import {
   useEffect,
   useId,
@@ -51,14 +52,14 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), Math.max(min, max))
 
 export function ProgramPathPreview({
-  projectId,
+  programId,
   revision,
   template,
   paths,
   getDrafts,
   subscribeDrafts,
 }: {
-  projectId: Id<"projects">
+  programId: Id<"programs">
   revision?: string
   template: AutonTemplate
   paths: string[] | null
@@ -162,7 +163,7 @@ export function ProgramPathPreview({
       )
       for (const path of candidates) {
         const { bytes, contentRange } = await readFile({
-          projectId,
+          programId,
           path,
           ref: revision,
           length: 512 * 1024,
@@ -183,7 +184,7 @@ export function ProgramPathPreview({
     return () => {
       controller.abort()
     }
-  }, [open, paths, projectId, revision, readFile, retry])
+  }, [open, paths, programId, revision, readFile, retry])
   const routes = useMemo(() => {
     const source = new Map(files)
     for (const [path, text] of getDrafts())
@@ -198,15 +199,17 @@ export function ProgramPathPreview({
   }
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Preview autonomous paths"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        <PathIcon />
-      </Button>
+      <ActionTooltip label="Preview autonomous paths">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Preview autonomous paths"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          <PathIcon />
+        </Button>
+      </ActionTooltip>
       {open &&
         createPortal(
           <section
@@ -345,7 +348,7 @@ export function ProgramPathPreview({
               </div>
             ) : !files ? (
               <p className="text-xs text-muted-foreground" role="status">
-                Reading project source…
+                Reading program source…
               </p>
             ) : !route ? (
               <p className="text-xs text-muted-foreground">

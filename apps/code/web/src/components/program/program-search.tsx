@@ -106,13 +106,13 @@ function SearchSnippet({
 
 type Results = { files: SearchFile[]; truncated: boolean; skipped: number }
 export function ProgramSearch({
-  projectId,
+  programId,
   revision,
   getDrafts,
   subscribeDrafts,
   onSelect,
 }: {
-  projectId: Id<"projects">
+  programId: Id<"programs">
   revision?: string
   getDrafts: () => ReadonlyMap<string, string>
   subscribeDrafts: (listener: () => void) => () => void
@@ -140,10 +140,10 @@ export function ProgramSearch({
     line: number
     column: number
   } | null>(null)
-  const search = useAction(api.codeStorage.searchProject)
+  const search = useAction(api.codeStorage.searchProgram)
   const documents = useQuery(
     api.search.liveDocuments,
-    open ? { projectId } : "skip"
+    open ? { programId } : "skip"
   )
   const liveRevision = JSON.stringify(documents)
   useEffect(() => {
@@ -173,7 +173,7 @@ export function ProgramSearch({
     setLoading(open && Boolean(query))
     if (!open || !query) return
     const timer = window.setTimeout(() => {
-      void search({ projectId, query, matchCase, sourceOnly, pathFilter })
+      void search({ programId, query, matchCase, sourceOnly, pathFilter })
         .then((value) => {
           if (!cancelled) setResult(value)
         })
@@ -190,7 +190,7 @@ export function ProgramSearch({
     }
   }, [
     open,
-    projectId,
+    programId,
     query,
     matchCase,
     sourceOnly,
@@ -403,7 +403,7 @@ export function ProgramSearch({
           >
             {!query && (
               <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-                Enter text to find it anywhere in this project.
+                Enter text to find it anywhere in this program.
               </p>
             )}
             {error && (

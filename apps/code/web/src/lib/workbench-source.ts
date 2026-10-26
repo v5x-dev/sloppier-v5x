@@ -59,7 +59,7 @@ export class WorkbenchSource {
   readonly scrollPositions = new Map<string, number>()
 
   constructor(
-    private projectId: Id<"projects">,
+    private programId: Id<"programs">,
     private actions: Actions
   ) {}
 
@@ -120,7 +120,7 @@ export class WorkbenchSource {
       let cursor: string | undefined
       do {
         const page = await this.actions.listFiles({
-          projectId: this.projectId,
+          programId: this.programId,
           cursor,
         })
         all.push(...page.paths)
@@ -158,7 +158,7 @@ export class WorkbenchSource {
     this.reads.set(path, request)
     try {
       const { bytes, contentRange } = await this.actions.readFile({
-        projectId: this.projectId,
+        programId: this.programId,
         path,
         length: MAX_READ_BYTES,
       })
@@ -175,7 +175,7 @@ export class WorkbenchSource {
           ...this.state.loaded,
           [path]: {
             contents,
-            editorKey: `${this.projectId}:${crypto.randomUUID()}`,
+            editorKey: `${this.programId}:${crypto.randomUUID()}`,
             truncated: Number.isFinite(total) && total > bytes.byteLength,
           },
         },
@@ -232,7 +232,7 @@ export class WorkbenchSource {
           ? `Update ${paths[0]}`
           : `Update ${paths.length} files: ${paths.join(", ")}`
       await this.actions.commitFiles({
-        projectId: this.projectId,
+        programId: this.programId,
         message: message ?? generated.slice(0, 200),
         changes,
       })
@@ -248,7 +248,7 @@ export class WorkbenchSource {
       throw new Error("Commit and sync current changes before restoring.")
     return this.exclusive(async () => {
       const result = await this.actions.restoreHistoryFile({
-        projectId: this.projectId,
+        programId: this.programId,
         sha,
         path,
       })
@@ -298,7 +298,7 @@ export class WorkbenchSource {
       )
     await this.exclusive(async () => {
       await this.actions.commitFiles({
-        projectId: this.projectId,
+        programId: this.programId,
         message: update.message,
         changes: update.changes,
         requireAbsentPaths: update.requireAbsentPaths,
@@ -382,7 +382,7 @@ export class WorkbenchSource {
     let offset = 0
     for (;;) {
       const { bytes, contentRange } = await this.actions.readFile({
-        projectId: this.projectId,
+        programId: this.programId,
         path,
         offset,
         ref,
@@ -409,7 +409,7 @@ export class WorkbenchSource {
 
   prepareSource = async () => {
     const { sha, paths } = await this.actions.buildManifest({
-      projectId: this.projectId,
+      programId: this.programId,
     })
     const files: Record<string, Uint8Array> = {}
     let total = 0

@@ -13,16 +13,16 @@ collaborators by email, choose a member or admin role, revoke invitations, and
 remove members. Recipients accept from the avatar menu or an invitation link.
 See [workspace invitations](../../docs/workspaces.md) for setup and behavior.
 Create a program with
-`projects.create({ workspaceId, template })`. The backend generates a dashed
+`programs.create({ workspaceId, template })`. The backend generates a dashed
 name with `boring-name-generator`; callers can pass `name` to choose one
 explicitly. Supported template IDs are `vexcode`, `jar`, `pros`, and
-`ez-template`. The project record is created immediately with
+`ez-template`. The program record is created immediately with
 `repositoryStatus: "provisioning"`. A Convex action then
-creates a Code Storage repository named `programs/<projectId>`, writes the
+creates a Code Storage repository named `programs/<programId>`, writes the
 template files to its `main` branch, and changes the status to `ready`. If the
-import fails, the project is marked `failed`; members can call
-`projects.retryProvisioning`.
-Call `projects.listTemplates` to get the template IDs and display labels.
+import fails, the program is marked `failed`; members can call
+`programs.retryProvisioning`.
+Call `programs.listTemplates` to get the template IDs and display labels.
 
 The JAR starter is pinned to a JAR-Template commit. PROS and EZ-Template use
 the pinned EZ-Template 3.2.2 example archive. Program repositories contain the
@@ -33,8 +33,8 @@ program Git repositories. The template research and first-party sources are in
 
 ## Folder imports
 
-The dashboard's **Import folder** action imports a local project folder into a
-new repository. Source is staged in authenticated batches before the project is
+The dashboard's **Import folder** action imports a local program folder into a
+new repository. Source is staged in authenticated batches before the program is
 created. Repository setup preserves the uploaded files instead of seeding a
 template, and failed setup can be retried from the original staged contents.
 See [folder import](../../docs/folder-import.md) for exclusions, limits, and cleanup.
@@ -94,8 +94,8 @@ between Active and Archived above the list, and use Restore program to bring an
 archived program back. Workspace members can perform these actions. Names are
 trimmed and must contain 1–80 characters.
 
-`projects.rename({ projectId, name })` updates the display name without renaming
-the repository. `projects.setArchived({ projectId, archived })` sets or clears
+`programs.rename({ programId, name })` updates the display name without renaming
+the repository. `programs.setArchived({ programId, archived })` sets or clears
 `archivedAt`. Archiving changes dashboard organization; existing program links,
 files, history, and workspace access continue to work. The workspace list query
 returns both active and archived programs so clients can provide both views.

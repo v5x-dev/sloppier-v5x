@@ -13,8 +13,8 @@ async function setup() {
   const workspaceId = await owner.mutation(api.workspaces.create, {
     name: "Team",
   })
-  const projectId = await t.run((ctx) =>
-    ctx.db.insert("projects", {
+  const programId = await t.run((ctx) =>
+    ctx.db.insert("programs", {
       workspaceId,
       name: "Robot",
       template: "pros",
@@ -24,73 +24,73 @@ async function setup() {
       createdAt: Date.now(),
     })
   )
-  return { t, owner, outsider, workspaceId, projectId }
+  return { t, owner, outsider, workspaceId, programId }
 }
 
 describe("program management", () => {
   it("renames without changing the repository and preserves access through archive and restore", async () => {
-    const { owner, workspaceId, projectId } = await setup()
-    await owner.mutation(api.projects.rename, {
-      projectId,
+    const { owner, workspaceId, programId } = await setup()
+    await owner.mutation(api.programs.rename, {
+      programId,
       name: "  Competition robot  ",
     })
-    await owner.mutation(api.projects.setArchived, {
-      projectId,
+    await owner.mutation(api.programs.setArchived, {
+      programId,
       archived: true,
     })
-    const archived = await owner.query(api.projects.get, { projectId })
+    const archived = await owner.query(api.programs.get, { programId })
     expect(archived.name).toBe("Competition robot")
     expect(archived.repositoryId).toBe("programs/test")
     expect(archived.archivedAt).toEqual(expect.any(Number))
     expect(
-      await owner.query(api.projects.listByWorkspace, { workspaceId })
+      await owner.query(api.programs.listByWorkspace, { workspaceId })
     ).toHaveLength(1)
-    await owner.mutation(api.projects.setArchived, {
-      projectId,
+    await owner.mutation(api.programs.setArchived, {
+      programId,
       archived: false,
     })
     expect(
-      (await owner.query(api.projects.get, { projectId })).archivedAt
+      (await owner.query(api.programs.get, { programId })).archivedAt
     ).toBeUndefined()
   })
 
   it("allows ordinary workspace members to rename, archive, and restore", async () => {
-    const { t, owner, workspaceId, projectId } = await setup()
+    const { t, owner, workspaceId, programId } = await setup()
     await owner.mutation(api.workspaces.addMember, {
       workspaceId,
       userId: "member",
     })
     const member = t.withIdentity({ subject: "member" })
-    await member.mutation(api.projects.rename, {
-      projectId,
+    await member.mutation(api.programs.rename, {
+      programId,
       name: "Team robot",
     })
-    await member.mutation(api.projects.setArchived, {
-      projectId,
+    await member.mutation(api.programs.setArchived, {
+      programId,
       archived: true,
     })
-    await member.mutation(api.projects.setArchived, {
-      projectId,
+    await member.mutation(api.programs.setArchived, {
+      programId,
       archived: false,
     })
-    const program = await owner.query(api.projects.get, { projectId })
+    const program = await owner.query(api.programs.get, { programId })
     expect(program.name).toBe("Team robot")
     expect(program.archivedAt).toBeUndefined()
   })
 
   it("rejects invalid names and prevents outsiders from changing programs", async () => {
-    const { owner, outsider, projectId } = await setup()
+    const { owner, outsider, programId } = await setup()
     for (const name of ["  ", "x".repeat(81)])
       await expect(
-        owner.mutation(api.projects.rename, { projectId, name })
+        owner.mutation(api.programs.rename, { programId, name })
       ).rejects.toThrow("1–80")
     await expect(
-      outsider.mutation(api.projects.rename, { projectId, name: "Stolen" })
+      outsider.mutation(api.programs.rename, { programId, name: "Stolen" })
     ).rejects.toThrow("access")
     await expect(
-      outsider.mutation(api.projects.setArchived, { projectId, archived: true })
+      outsider.mutation(api.programs.setArchived, { programId, archived: true })
     ).rejects.toThrow("access")
-    expect((await owner.query(api.projects.get, { projectId })).name).toBe(
+    expect((await owner.query(api.programs.get, { programId })).name).toBe(
       "Robot"
     )
   })

@@ -59,6 +59,7 @@ import {
 } from "@workspace/ui/components/empty"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
+import { Separator } from "@workspace/ui/components/separator"
 import {
   Sidebar,
   SidebarContent,
@@ -144,9 +145,9 @@ const treeStyle = {
 } as React.CSSProperties
 
 function ProgramPage() {
-  const { programId } = Route.useParams()
-  const projectId = programId as Id<"projects">
-  const program = useQuery(api.projects.get, { projectId })
+  const { programId: rawProgramId } = Route.useParams()
+  const programId = rawProgramId as Id<"programs">
+  const program = useQuery(api.programs.get, { programId })
 
   if (program === undefined) {
     return <ProgramBootShape />
@@ -154,7 +155,7 @@ function ProgramPage() {
 
   if (program.repositoryStatus === "ready") {
     return (
-      <ProgramConnection key={program._id} projectId={program._id}>
+      <ProgramConnection key={program._id} programId={program._id}>
         <Workbench program={program} />
       </ProgramConnection>
     )
@@ -167,8 +168,8 @@ function ProgramPage() {
   )
 }
 
-// Convex has no project result during SSR. Render the empty workbench frame so
-// the page has its final shape before the project query hydrates.
+// Convex has no program result during SSR. Render the empty workbench frame so
+// the page has its final shape before the program query hydrates.
 function ProgramBootShape() {
   return (
     <SidebarProvider
@@ -217,8 +218,8 @@ function ProgramBootShape() {
   )
 }
 
-function ProvisioningState({ program }: { program: Doc<"projects"> }) {
-  const retry = useMutation(api.projects.retryProvisioning)
+function ProvisioningState({ program }: { program: Doc<"programs"> }) {
+  const retry = useMutation(api.programs.retryProvisioning)
 
   if (program.repositoryStatus === "failed") {
     return (
@@ -236,7 +237,7 @@ function ProvisioningState({ program }: { program: Doc<"projects"> }) {
         <EmptyContent>
           <Button
             onClick={() =>
-              retry({ projectId: program._id }).catch((error) =>
+              retry({ programId: program._id }).catch((error) =>
                 toast.add({
                   type: "error",
                   title: "Could not retry setup",
@@ -281,7 +282,7 @@ function ProvisioningState({ program }: { program: Doc<"projects"> }) {
   )
 }
 
-function Workbench({ program }: { program: Doc<"projects"> }) {
+function Workbench({ program }: { program: Doc<"programs"> }) {
   const binaries = useProgramBinaries()
   const { request: buildRequest } = useProgramConnection()
   const buildManifest = useAction(api.codeStorage.buildManifest)
@@ -485,7 +486,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                 paths={paths}
                 dirtyPaths={dirtyPaths}
                 activePath={activePath}
-                projectId={program._id}
+                programId={program._id}
                 style={treeStyle}
                 readBytes={readBytes}
                 apply={applyExplorerUpdate}
@@ -605,7 +606,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                       </Empty>
                     ) : loaded[path] ? (
                       <FileEditor
-                        projectId={program._id}
+                        programId={program._id}
                         onFormatChange={onFormatChange}
                         path={path}
                         diagnosticTarget={
@@ -665,7 +666,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                   </Button>
                 </ActionTooltip>
                 <ProgramHistory
-                  projectId={program._id}
+                  programId={program._id}
                   revision={program.repositoryHeadSha}
                   canRestore={dirtyPaths.length === 0 && allSynced}
                   onRestore={restoreFile}
@@ -692,19 +693,8 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                       : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
                   </TooltipContent>
                 </Tooltip>
-                {(program.template === "ez-template" ||
-                  program.template === "jar") && (
-                  <ProgramPathPreview
-                    projectId={program._id}
-                    revision={program.repositoryHeadSha}
-                    template={program.template}
-                    paths={paths}
-                    getDrafts={getSearchDrafts}
-                    subscribeDrafts={subscribeSearchDrafts}
-                  />
-                )}
                 <ProgramSearch
-                  projectId={program._id}
+                  programId={program._id}
                   revision={program.repositoryHeadSha}
                   getDrafts={getSearchDrafts}
                   subscribeDrafts={subscribeSearchDrafts}
@@ -754,6 +744,23 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                 })
               }
             />
+            {(program.template === "ez-template" ||
+              program.template === "jar") && (
+              <>
+                <Separator
+                  orientation="vertical"
+                  className="mx-1 h-5 self-center bg-sidebar-border"
+                />
+                <ProgramPathPreview
+                  programId={program._id}
+                  revision={program.repositoryHeadSha}
+                  template={program.template}
+                  paths={paths}
+                  getDrafts={getSearchDrafts}
+                  subscribeDrafts={subscribeSearchDrafts}
+                />
+              </>
+            )}
           </ActionsBar>
         </SidebarInset>
         <CommitDialog
@@ -860,7 +867,7 @@ function SortableFileTab({
 function FileEditor({
   onFormatChange,
   diagnosticTarget,
-  projectId,
+  programId,
   path,
   loaded,
   active,
@@ -869,7 +876,7 @@ function FileEditor({
   scrollPositions,
   onChange,
 }: {
-  projectId: Id<"projects">
+  programId: Id<"programs">
   path: string
   loaded: LoadedFile
   onFormatChange: FormatChange
@@ -890,9 +897,9 @@ function FileEditor({
     () => ({
       name: path,
       contents: loaded.contents,
-      cacheKey: `${projectId}:${path}`,
+      cacheKey: `${programId}:${path}`,
     }),
-    [loaded.contents, path, projectId]
+    [loaded.contents, path, programId]
   )
 
   const tooLarge =
@@ -913,7 +920,7 @@ function FileEditor({
       ) : (
         <LiveFileEditor
           onFormatChange={onFormatChange}
-          projectId={projectId}
+          programId={programId}
           path={path}
           active={active}
           diagnosticTarget={diagnosticTarget}

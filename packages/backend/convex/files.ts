@@ -1,7 +1,7 @@
 import { internal } from "./_generated/api"
 import { internalMutation, query } from "./_generated/server"
 import { v } from "convex/values"
-import { requireProjectMembership } from "./lib/auth"
+import { requireProgramMembership } from "./lib/auth"
 import { validateRepositoryPath } from "./lib/paths"
 
 const fileChangeValidator = v.union(
@@ -9,26 +9,26 @@ const fileChangeValidator = v.union(
   v.object({ operation: v.literal("delete"), path: v.string() })
 )
 
-export const listByProject = query({
-  args: { projectId: v.id("projects") },
+export const listByProgram = query({
+  args: { programId: v.id("programs") },
   handler: async (ctx, args) => {
-    await requireProjectMembership(ctx, args.projectId)
+    await requireProgramMembership(ctx, args.programId)
 
     return ctx.db
       .query("files")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
       .collect()
   },
 })
 
 export const applyRepositoryChanges = internalMutation({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     actorId: v.string(),
     changes: v.array(fileChangeValidator),
     moves: v.optional(v.array(v.object({ from: v.string(), to: v.string() }))),
   },
-  handler: async (ctx, { projectId, actorId, changes, moves }) => {
+  handler: async (ctx, { programId, actorId, changes, moves }) => {
     const now = Date.now()
 
     // Keep the live document identity and its pending edits when a file moves.
@@ -38,14 +38,14 @@ export const applyRepositoryChanges = internalMutation({
       validateRepositoryPath(move.to)
       const live = await ctx.db
         .query("crdtDocuments")
-        .withIndex("by_project_path", (q) =>
-          q.eq("projectId", projectId).eq("path", move.from)
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", programId).eq("path", move.from)
         )
         .unique()
       const target = await ctx.db
         .query("crdtDocuments")
-        .withIndex("by_project_path", (q) =>
-          q.eq("projectId", projectId).eq("path", move.to)
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", programId).eq("path", move.to)
         )
         .unique()
       // Destination repository paths are checked for collisions before commit.
@@ -64,8 +64,8 @@ export const applyRepositoryChanges = internalMutation({
 
       const existing = await ctx.db
         .query("files")
-        .withIndex("by_project_path", (q) =>
-          q.eq("projectId", projectId).eq("path", change.path)
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", programId).eq("path", change.path)
         )
         .unique()
 
@@ -74,8 +74,8 @@ export const applyRepositoryChanges = internalMutation({
           await ctx.db.delete(existing._id)
           const live = await ctx.db
             .query("crdtDocuments")
-            .withIndex("by_project_path", (q) =>
-              q.eq("projectId", projectId).eq("path", change.path)
+            .withIndex("by_program_path", (q) =>
+              q.eq("programId", programId).eq("path", change.path)
             )
             .unique()
           if (live) {
@@ -95,7 +95,7 @@ export const applyRepositoryChanges = internalMutation({
         })
       } else {
         await ctx.db.insert("files", {
-          projectId,
+          programId,
           path: change.path,
           origin: "user",
           createdBy: actorId,

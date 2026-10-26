@@ -53,7 +53,7 @@ export function excludedImportPath(
         "compile_flags.txt",
       ].includes(filename)
     )
-      return "Editor, CI, or local project metadata"
+      return "Editor, CI, or local program metadata"
     // Keep licensing notices, including ones distributed with custom libraries.
     if (/^(license|copying|notice)(\.|$)/i.test(filename)) return null
     if (

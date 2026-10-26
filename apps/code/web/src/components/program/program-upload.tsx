@@ -167,7 +167,7 @@ export function ProgramUpload({
   }
   function connect(kind: "USB" | "Bluetooth") {
     void operation(async () => {
-      setMessage("Choose your V5 brain…")
+      setMessage("Choose your V5 Brain…")
       // Invoke the chooser immediately so browser user activation is preserved.
       let selected: Device
       if (kind === "USB") selected = { connection: await requestSerial() }
@@ -190,8 +190,8 @@ export function ProgramUpload({
         if (authenticated) setConsoleConnection(selected.connection)
         setMessage(
           authenticated
-            ? "V5 brain connected"
-            : "Enter the PIN shown on your brain."
+            ? "V5 Brain connected"
+            : "Enter the PIN shown on your Brain."
         )
       } catch (err) {
         await disconnect()
@@ -202,7 +202,7 @@ export function ProgramUpload({
   async function verifyBrain(connection: Connection) {
     const info = await connection.request(systemVersion())
     if (![0x10, 0x11, 0x14].includes(info.productType))
-      throw new Error("Select a V5 brain or V5 controller.")
+      throw new Error("Select a V5 Brain or V5 controller.")
   }
   function pair() {
     void operation(async () => {
@@ -215,7 +215,7 @@ export function ProgramUpload({
       setPaired(true)
       setConsoleConnection(selected.connection)
       setPin("")
-      setMessage("V5 brain connected")
+      setMessage("V5 Brain connected")
     })
   }
   function upload(fromKeyboard = false) {
@@ -271,10 +271,10 @@ export function ProgramUpload({
     }, fromKeyboard)
   }
   const uploadLabel = !connected
-    ? "Connect a V5 brain to upload"
+    ? "Connect a V5 Brain to upload"
     : !paired
-      ? "Pair your V5 brain to upload"
-      : "Upload to V5 brain"
+      ? "Pair your V5 Brain to upload"
+      : "Upload to V5 Brain"
   const uploadFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
     if (
       !(event.ctrlKey || event.metaKey) ||
@@ -301,13 +301,13 @@ export function ProgramUpload({
   return (
     <>
       <Popover open={connectOpen} onOpenChange={setConnectOpen}>
-        <ActionTooltip label={"Connect V5 brain"}>
+        <ActionTooltip label={"Connect V5 Brain"}>
           <PopoverTrigger
             render={
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Connect V5 brain"
+                aria-label="Connect V5 Brain"
               />
             }
           >
@@ -321,7 +321,7 @@ export function ProgramUpload({
           className="w-80 max-w-[calc(100vw-2rem)] gap-4 p-4"
         >
           <PopoverHeader>
-            <PopoverTitle>Connect V5 brain</PopoverTitle>
+            <PopoverTitle>Connect V5 Brain</PopoverTitle>
           </PopoverHeader>
           <div className="flex flex-col gap-2">
             <span className="text-xs font-medium text-muted-foreground">
@@ -367,8 +367,8 @@ export function ProgramUpload({
             {!connected && (
               <p className="text-xs leading-relaxed text-muted-foreground">
                 {!support.serial && !support.bluetooth
-                  ? "Use Chrome or Edge on a supported device to connect your brain."
-                  : "For USB, select the brain’s system port."}
+                  ? "Use Chrome or Edge on a supported device to connect your Brain."
+                  : "For USB, select the Brain’s system port."}
               </p>
             )}
           </div>
@@ -430,7 +430,7 @@ export function ProgramUpload({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Upload to V5 brain"
+                aria-label="Upload to V5 Brain"
               />
             }
           >
@@ -446,7 +446,7 @@ export function ProgramUpload({
           <PopoverHeader>
             <div className="mb-1 flex items-center gap-2">
               <CpuIcon className="size-4 text-muted-foreground" />
-              <PopoverTitle>Upload to V5 brain</PopoverTitle>
+              <PopoverTitle>Upload to V5 Brain</PopoverTitle>
             </div>
             <PopoverDescription>
               Commit, build, and send your program to the robot.
@@ -455,7 +455,7 @@ export function ProgramUpload({
           <p className="text-xs text-muted-foreground">
             {paired
               ? `${connected} connected`
-              : "Connect your V5 brain using the Connect button."}
+              : "Connect your V5 Brain using the Connect button."}
           </p>
           <Field>
             <FieldLabel htmlFor={`${id}-slot`}>Program slot</FieldLabel>

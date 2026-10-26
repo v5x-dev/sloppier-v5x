@@ -106,7 +106,7 @@ export function ProgramConsole({
     try {
       if (!(await io(fn)))
         setError(
-          "The brain is busy or disconnected. Try again when it is ready."
+          "The Brain is busy or disconnected. Try again when it is ready."
         )
     } catch (err) {
       setError(errorMessage(err))
@@ -121,7 +121,7 @@ export function ProgramConsole({
         label={
           connection
             ? "Robot console"
-            : "Connect a V5 brain to open the console"
+            : "Connect a V5 Brain to open the console"
         }
       >
         <Button
@@ -149,7 +149,7 @@ export function ProgramConsole({
             <SheetDescription>
               {connection
                 ? `${connection.type === "bluetooth" ? "Bluetooth" : "USB"} connected`
-                : "No V5 brain connected"}
+                : "No V5 Brain connected"}
               {busy && " · Device busy"}
             </SheetDescription>
           </SheetHeader>
@@ -326,7 +326,7 @@ export function ProgramConsole({
               <div className="min-h-0 flex-1 overflow-auto px-4">
                 {events === null ? (
                   <p className="text-xs text-muted-foreground">
-                    Refresh to read the brain’s recorded event log.
+                    Refresh to read the Brain’s recorded event log.
                   </p>
                 ) : events.length === 0 ? (
                   <p className="text-xs text-muted-foreground">

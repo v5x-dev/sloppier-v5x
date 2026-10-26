@@ -29,9 +29,9 @@ export async function cloud<T>(
     ? (undefined as T)
     : ((await response.json()) as T)
 }
-const projectArgs = { projectId: v.id("projects") }
+const programArgs = { programId: v.id("programs") }
 export const reconcile = internalAction({
-  args: projectArgs,
+  args: programArgs,
   handler: async (ctx, args) => {
     const state = await ctx.runQuery(internal.builds.state, args)
     if (!state.machine) return
@@ -83,15 +83,15 @@ export const reconcile = internalAction({
             "Set SMOL_BUILD_IMAGE to the V5 build toolchain image."
           )
         const machine = await cloud<{ id: string }>("/machines", {
-          name: `v5x-${args.projectId}`,
+          name: `v5x-${args.programId}`,
           source: { type: "image", reference: image, arch: "amd64" },
           resources: { cpus: 2, memoryMb: 2048 },
           network: { mode: "open" },
           autoStopSeconds: 120,
           ports: [{ port: 8080 }],
           public: false,
-          env: { V5X_TEMPLATE: state.project!.template },
-          labels: { project: args.projectId },
+          env: { V5X_TEMPLATE: state.program!.template },
+          labels: { program: args.programId },
         })
         machineId = machine.id
         await ctx.runMutation(internal.builds.update, {

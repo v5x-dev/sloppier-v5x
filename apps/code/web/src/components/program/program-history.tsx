@@ -34,12 +34,12 @@ type ChangedFile = FunctionReturnType<
 >[number]
 
 export function ProgramHistory({
-  projectId,
+  programId,
   revision,
   canRestore,
   onRestore,
 }: {
-  projectId: Id<"projects">
+  programId: Id<"programs">
   revision?: string
   canRestore: boolean
   onRestore: (sha: string, path: string) => Promise<string | null>
@@ -69,7 +69,7 @@ export function ProgramHistory({
     const request = ++generation.current
     setLoading(true)
     setError(null)
-    void history({ projectId })
+    void history({ programId })
       .then((next) => {
         if (request === generation.current) setPage(next)
       })
@@ -82,7 +82,7 @@ export function ProgramHistory({
     return () => {
       generation.current++
     }
-  }, [open, projectId, revision, refresh, history])
+  }, [open, programId, revision, refresh, history])
   useEffect(() => {
     if (!open || !commit) return
     let cancelled = false
@@ -90,7 +90,7 @@ export function ProgramHistory({
     setFile(null)
     setDiff(null)
     setDetailError(null)
-    void historyFiles({ projectId, sha: commit.sha })
+    void historyFiles({ programId, sha: commit.sha })
       .then((next) => {
         if (!cancelled) {
           setFiles(next)
@@ -103,7 +103,7 @@ export function ProgramHistory({
     return () => {
       cancelled = true
     }
-  }, [open, commit, projectId, historyFiles, refresh])
+  }, [open, commit, programId, historyFiles, refresh])
   useEffect(() => {
     setConfirm(false)
     setResult(null)
@@ -111,7 +111,7 @@ export function ProgramHistory({
     let cancelled = false
     setDiff(null)
     setDetailError(null)
-    void historyDiff({ projectId, sha: commit.sha, path: file.path })
+    void historyDiff({ programId, sha: commit.sha, path: file.path })
       .then((next) => {
         if (!cancelled) setDiff(next)
       })
@@ -121,7 +121,7 @@ export function ProgramHistory({
     return () => {
       cancelled = true
     }
-  }, [open, commit, file, projectId, historyDiff, refresh])
+  }, [open, commit, file, programId, historyDiff, refresh])
   const parsed = useMemo(() => {
     if (!diff?.raw) return []
     try {
@@ -136,7 +136,7 @@ export function ProgramHistory({
     setLoading(true)
     setError(null)
     try {
-      const next = await history({ projectId, cursor: page.nextCursor })
+      const next = await history({ programId, cursor: page.nextCursor })
       if (generation.current === request)
         setPage((current) => ({
           ...next,

@@ -90,7 +90,7 @@ export const Route = createFileRoute("/")({
   ),
 })
 
-type Template = Doc<"projects">["template"]
+type Template = Doc<"programs">["template"]
 
 const templateIcons: Record<Template, string> = {
   vexcode: "/template-icons/vexcode.png",
@@ -299,8 +299,8 @@ function ProgramList({
   workspaceId: Id<"workspaces">
   archived: boolean
 }) {
-  const programs = useQuery(api.projects.listByWorkspace, { workspaceId })
-  const templates = useQuery(api.projects.listTemplates)
+  const programs = useQuery(api.programs.listByWorkspace, { workspaceId })
+  const templates = useQuery(api.programs.listTemplates)
 
   if (programs === undefined) {
     return <ProgramListSkeleton />
@@ -372,9 +372,9 @@ function ProgramList({
   )
 }
 
-function ProgramActions({ program }: { program: Doc<"projects"> }) {
-  const rename = useMutation(api.projects.rename)
-  const setArchived = useMutation(api.projects.setArchived)
+function ProgramActions({ program }: { program: Doc<"programs"> }) {
+  const rename = useMutation(api.programs.rename)
+  const setArchived = useMutation(api.programs.setArchived)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(program.name)
   const [pending, setPending] = useState(false)
@@ -422,7 +422,7 @@ function ProgramActions({ program }: { program: Doc<"projects"> }) {
             onClick={() =>
               void save(() =>
                 setArchived({
-                  projectId: program._id,
+                  programId: program._id,
                   archived: !program.archivedAt,
                 })
               )
@@ -443,7 +443,7 @@ function ProgramActions({ program }: { program: Doc<"projects"> }) {
             className="flex flex-col gap-6"
             onSubmit={(event) => {
               event.preventDefault()
-              void save(() => rename({ projectId: program._id, name }))
+              void save(() => rename({ programId: program._id, name }))
             }}
           >
             <DialogHeader>
@@ -486,9 +486,9 @@ function ProgramActions({ program }: { program: Doc<"projects"> }) {
 }
 
 function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
-  const templates = useQuery(api.projects.listTemplates)
-  const createProgram = useMutation(api.projects.create)
-  const generateName = useMutation(api.projects.generateName)
+  const templates = useQuery(api.programs.listTemplates)
+  const createProgram = useMutation(api.programs.create)
+  const generateName = useMutation(api.programs.generateName)
   const navigate = Route.useNavigate()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")

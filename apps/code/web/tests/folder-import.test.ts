@@ -23,7 +23,7 @@ function file(path: string, contents: string | Uint8Array = "// source") {
 }
 
 describe("local folder import", () => {
-  it("strips only the selected root folder and detects the project before filtering dependencies", () => {
+  it("strips only the selected root folder and detects the program before filtering dependencies", () => {
     const folder = selectedFolder([
       file("Robot/project.pros"),
       file("Robot/include/EZ-Template/api.hpp"),
@@ -124,10 +124,10 @@ describe("local folder import", () => {
 
   it("rejects ordinary files, mixed roots, empty source folders, traversal, and oversized files", () => {
     expect(() => selectedFolder([new File([""], "file.cpp")])).toThrow(
-      "single project folder"
+      "single program folder"
     )
     expect(() => selectedFolder([file("A/a.cpp"), file("B/b.cpp")])).toThrow(
-      "single project folder"
+      "single program folder"
     )
     expect(() =>
       planFolder(selectedFolder([file("Robot/.git/config")]).entries, "pros")

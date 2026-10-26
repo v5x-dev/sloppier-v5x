@@ -3,7 +3,7 @@ import {
   overlaySearch,
   searchText,
   SEARCH_LIMIT,
-} from "../convex/lib/projectSearch"
+} from "../convex/lib/programSearch"
 it("searches literals with case and exact Unicode/CRLF columns", () => {
   expect(searchText("A.* a.* axx", "a.*").map((m) => m.column)).toEqual([1, 5])
   expect(searchText("A.* a.*", "a.*", true).map((m) => m.column)).toEqual([5])
@@ -66,7 +66,7 @@ it("combines repository chunks belonging to the same file", () => {
   expect(result.files[0].matches).toHaveLength(3)
 })
 it("filters directories, basenames and globs without treating regex characters as syntax", async () => {
-  const { matchesSearchPath } = await import("../convex/lib/projectSearch")
+  const { matchesSearchPath } = await import("../convex/lib/programSearch")
   expect(matchesSearchPath("src/main.cpp", { pathFilter: "src/" })).toBe(true)
   expect(matchesSearchPath("src-old/main.cpp", { pathFilter: "src/" })).toBe(
     false

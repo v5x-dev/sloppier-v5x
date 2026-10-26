@@ -9,12 +9,12 @@ export const batch = internalQuery({
   handler: async (ctx, args) => {
     const job = await ctx.db.get(args.jobId)
     if (!job || job.generation !== args.generation) return null
-    const project = await ctx.db.get(job.projectId)
-    if (!project || project.repositoryStatus !== "ready") return null
+    const program = await ctx.db.get(job.programId)
+    if (!program || program.repositoryStatus !== "ready") return null
     const candidates = await ctx.db
       .query("crdtUpdates")
-      .withIndex("by_project_storage", (q) =>
-        q.eq("projectId", job.projectId).eq("storageStatus", "pending")
+      .withIndex("by_program_storage", (q) =>
+        q.eq("programId", job.programId).eq("storageStatus", "pending")
       )
       .take(50)
     const updates = []
@@ -24,7 +24,7 @@ export const batch = internalQuery({
       updates.push(update)
       bytes += update.bytes.byteLength
     }
-    return { project, updates }
+    return { program, updates }
   },
 })
 
@@ -67,8 +67,8 @@ export const complete = internalMutation({
     }
     const next = await ctx.db
       .query("crdtUpdates")
-      .withIndex("by_project_storage", (q) =>
-        q.eq("projectId", job.projectId).eq("storageStatus", "pending")
+      .withIndex("by_program_storage", (q) =>
+        q.eq("programId", job.programId).eq("storageStatus", "pending")
       )
       .first()
     if (!next) {
@@ -85,8 +85,8 @@ export const recover = internalMutation({
   handler: async (ctx, args) => {
     const job = await ctx.db.get(args.jobId)
     if (!job || job.generation !== args.generation) return
-    const project = await ctx.db.get(job.projectId)
-    if (!project || project.repositoryStatus !== "ready") {
+    const program = await ctx.db.get(job.programId)
+    if (!program || program.repositoryStatus !== "ready") {
       await ctx.db.delete(job._id)
       return
     }
@@ -104,10 +104,10 @@ export const enqueueUpdate = internalMutation({
     const document = await ctx.db.get(update.documentId)
     if (!document) return
     await ctx.db.patch(update._id, {
-      projectId: document.projectId,
+      programId: document.programId,
       storageStatus: "pending",
       storageError: undefined,
     })
-    await enqueueBackup(ctx, document.projectId)
+    await enqueueBackup(ctx, document.programId)
   },
 })

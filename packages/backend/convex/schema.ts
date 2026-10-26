@@ -3,19 +3,19 @@ import { v } from "convex/values"
 
 export default defineSchema({
   programSessions: defineTable({
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     sessionId: v.string(),
     userId: v.string(),
     expiresAt: v.number(),
-  }).index("by_project_session", ["projectId", "sessionId"]),
+  }).index("by_program_session", ["programId", "sessionId"]),
   buildMachines: defineTable({
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     machineId: v.optional(v.string()),
     status: v.string(),
     logs: v.string(),
     building: v.boolean(),
     artifactId: v.optional(v.id("_storage")),
-  }).index("by_project", ["projectId"]),
+  }).index("by_program", ["programId"]),
   workspaces: defineTable({
     name: v.string(),
     ownerId: v.string(),
@@ -69,7 +69,7 @@ export default defineSchema({
     totalBytes: v.number(),
     batches: v.number(),
     expiresAt: v.number(),
-    projectId: v.optional(v.id("projects")),
+    programId: v.optional(v.id("programs")),
   }),
   programImportBatches: defineTable({
     importId: v.id("programImports"),
@@ -77,7 +77,7 @@ export default defineSchema({
     files: v.array(v.object({ path: v.string(), contents: v.bytes() })),
   }).index("by_import_sequence", ["importId", "sequence"]),
 
-  projects: defineTable({
+  programs: defineTable({
     archivedAt: v.optional(v.number()),
     importId: v.optional(v.id("programImports")),
     workspaceId: v.id("workspaces"),
@@ -101,26 +101,26 @@ export default defineSchema({
   }).index("by_workspace", ["workspaceId"]),
 
   files: defineTable({
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     origin: v.union(v.literal("template"), v.literal("user")),
     createdBy: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_project", ["projectId"])
-    .index("by_project_path", ["projectId", "path"]),
+    .index("by_program", ["programId"])
+    .index("by_program_path", ["programId", "path"]),
 
   crdtDocuments: defineTable({
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     lastSequence: v.number(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_project_path", ["projectId", "path"]),
+  }).index("by_program_path", ["programId", "path"]),
 
   crdtUpdates: defineTable({
-    projectId: v.optional(v.id("projects")),
+    programId: v.optional(v.id("programs")),
     documentId: v.id("crdtDocuments"),
     sequence: v.number(),
     updateId: v.string(),
@@ -137,16 +137,16 @@ export default defineSchema({
   })
     .index("by_document_sequence", ["documentId", "sequence"])
     .index("by_document_update", ["documentId", "updateId"])
-    .index("by_project_storage", ["projectId", "storageStatus"]),
+    .index("by_program_storage", ["programId", "storageStatus"]),
 
   crdtBackupJobs: defineTable({
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     generation: v.number(),
     attempts: v.number(),
-  }).index("by_project", ["projectId"]),
+  }).index("by_program", ["programId"]),
 
   presenceSessions: defineTable({
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     userId: v.string(),
     sessionId: v.string(),
@@ -155,13 +155,13 @@ export default defineSchema({
     awareness: v.optional(v.bytes()),
     createdAt: v.number(),
   })
-    .index("by_file_user_session", ["projectId", "path", "userId", "sessionId"])
+    .index("by_file_user_session", ["programId", "path", "userId", "sessionId"])
     .index("by_file_user_room_token", [
-      "projectId",
+      "programId",
       "path",
       "userId",
       "roomToken",
     ])
     .index("by_session_token", ["sessionToken"])
-    .index("by_file_seen", ["projectId", "path", "createdAt"]),
+    .index("by_file_seen", ["programId", "path", "createdAt"]),
 })

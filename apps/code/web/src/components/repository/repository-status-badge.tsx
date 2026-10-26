@@ -5,7 +5,7 @@ import { Spinner } from "@workspace/ui/components/spinner"
 export function RepositoryStatusBadge({
   status,
 }: {
-  status: Doc<"projects">["repositoryStatus"]
+  status: Doc<"programs">["repositoryStatus"]
 }) {
   if (status === "ready") return null
   if (status === "failed") {

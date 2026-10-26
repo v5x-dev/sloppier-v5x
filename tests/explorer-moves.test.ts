@@ -3,7 +3,7 @@ import { applyRepositoryChanges } from "../packages/backend/convex/files"
 
 type Row = {
   _id: string
-  projectId: string
+  programId: string
   path: string
   [key: string]: unknown
 }
@@ -80,11 +80,11 @@ const apply = (
 describe("Explorer moves and live documents", () => {
   test("a rename preserves the live document ID and all unsaved updates", async () => {
     const { ctx, tables, scheduled } = repositoryContext({
-      files: [{ _id: "file", projectId: "project", path: "src/main.cpp" }],
+      files: [{ _id: "file", programId: "program", path: "src/main.cpp" }],
       crdtDocuments: [
         {
           _id: "live",
-          projectId: "project",
+          programId: "program",
           path: "src/main.cpp",
           lastSequence: 7,
         },
@@ -92,7 +92,7 @@ describe("Explorer moves and live documents", () => {
       crdtUpdates: [
         {
           _id: "update",
-          projectId: "project",
+          programId: "program",
           path: "",
           documentId: "live",
           bytes: "unsaved edits",
@@ -100,7 +100,7 @@ describe("Explorer moves and live documents", () => {
       ],
     })
     await apply(ctx, {
-      projectId: "project",
+      programId: "program",
       actorId: "user",
       changes: [
         { operation: "put", path: "lib/main.cpp" },
@@ -124,11 +124,11 @@ describe("Explorer moves and live documents", () => {
 
   test("deleting a file removes its live document and schedules update cleanup", async () => {
     const { ctx, tables, scheduled } = repositoryContext({
-      files: [{ _id: "file", projectId: "project", path: "main.cpp" }],
-      crdtDocuments: [{ _id: "live", projectId: "project", path: "main.cpp" }],
+      files: [{ _id: "file", programId: "program", path: "main.cpp" }],
+      crdtDocuments: [{ _id: "live", programId: "program", path: "main.cpp" }],
     })
     await apply(ctx, {
-      projectId: "project",
+      programId: "program",
       actorId: "user",
       changes: [{ operation: "delete", path: "main.cpp" }],
     })

@@ -8,7 +8,7 @@ import { api, internal } from "../convex/_generated/api"
 const modules = import.meta.glob("../convex/**/*.ts")
 async function setup() {
   const t = convexTest(schema, modules)
-  const projectId = await t.run(async (ctx) => {
+  const programId = await t.run(async (ctx) => {
     const workspaceId = await ctx.db.insert("workspaces", {
       name: "Team",
       ownerId: "alice",
@@ -21,7 +21,7 @@ async function setup() {
         role: "member",
         joinedAt: 1,
       })
-    const projectId = await ctx.db.insert("projects", {
+    const programId = await ctx.db.insert("programs", {
       workspaceId,
       name: "Robot",
       template: "pros",
@@ -31,19 +31,19 @@ async function setup() {
       createdAt: 1,
     })
     await ctx.db.insert("files", {
-      projectId,
+      programId,
       path: "main.cpp",
       origin: "template",
       createdBy: "alice",
       createdAt: 1,
       updatedAt: 1,
     })
-    return projectId
+    return programId
   })
   const seed = new Y.Doc()
   seed.getText("source").insert(0, "int main() {}\n")
   const bytes = Y.encodeStateAsUpdate(seed).buffer as ArrayBuffer
-  const args = { projectId, path: "main.cpp" }
+  const args = { programId, path: "main.cpp" }
   return {
     t,
     args,
@@ -117,7 +117,7 @@ describe("live document backend", () => {
       })
     ).rejects.toThrow("Invalid Yjs")
     await t.mutation(internal.files.applyRepositoryChanges, {
-      projectId: args.projectId,
+      programId: args.programId,
       actorId: "alice",
       changes: [
         { operation: "delete", path: args.path },

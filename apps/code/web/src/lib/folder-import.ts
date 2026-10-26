@@ -9,7 +9,7 @@ import {
 } from "@workspace/backend/imports"
 import type { Doc } from "@workspace/backend/dataModel"
 
-type Template = Doc<"projects">["template"]
+type Template = Doc<"programs">["template"]
 export type FolderFile = { path: string; file: File }
 
 export function selectedFolder(files: File[]) {
@@ -18,7 +18,7 @@ export function selectedFolder(files: File[]) {
     !root ||
     files.some((file) => !file.webkitRelativePath.startsWith(`${root}/`))
   )
-    throw new Error("Choose a single project folder.")
+    throw new Error("Choose a single program folder.")
   const entries = files.map((file) => ({
     path: file.webkitRelativePath.slice(root.length + 1),
     file,

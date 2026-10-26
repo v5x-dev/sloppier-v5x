@@ -33,16 +33,16 @@ export async function requireWorkspaceMembership(
   return { identity, membership }
 }
 
-export async function requireProjectMembership(
+export async function requireProgramMembership(
   ctx: DbCtx,
-  projectId: Id<"projects">
+  programId: Id<"programs">
 ) {
-  const project = await ctx.db.get(projectId)
+  const program = await ctx.db.get(programId)
 
-  if (!project) {
-    throw new ConvexError("Project not found.")
+  if (!program) {
+    throw new ConvexError("Program not found.")
   }
 
-  const access = await requireWorkspaceMembership(ctx, project.workspaceId)
-  return { ...access, project }
+  const access = await requireWorkspaceMembership(ctx, program.workspaceId)
+  return { ...access, program }
 }

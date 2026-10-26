@@ -4,15 +4,15 @@ import type { MutationCtx } from "../_generated/server"
 
 export async function enqueueBackup(
   ctx: MutationCtx,
-  projectId: Id<"projects">
+  programId: Id<"programs">
 ) {
   const existing = await ctx.db
     .query("crdtBackupJobs")
-    .withIndex("by_project", (q) => q.eq("projectId", projectId))
+    .withIndex("by_program", (q) => q.eq("programId", programId))
     .unique()
   if (existing) return
   const jobId = await ctx.db.insert("crdtBackupJobs", {
-    projectId,
+    programId,
     generation: 0,
     attempts: 0,
   })
@@ -27,7 +27,7 @@ export async function scheduleBackup(
 ) {
   await ctx.scheduler.runAfter(
     delay,
-    internal.codeStorage.persistProjectUpdates,
+    internal.codeStorage.persistProgramUpdates,
     { jobId, generation }
   )
   // Recover a worker lost to an action timeout or process interruption.

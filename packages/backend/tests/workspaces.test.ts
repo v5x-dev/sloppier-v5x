@@ -264,7 +264,7 @@ describe("workspace invitations and access", () => {
     await owner.mutation(api.workspaces.removeMember, { memberId })
     expect(await member.query(api.workspaces.listMine)).toEqual([])
     await expect(
-      member.query(api.projects.listByWorkspace, { workspaceId })
+      member.query(api.programs.listByWorkspace, { workspaceId })
     ).rejects.toThrow("do not have access")
     expect(await t.run((ctx) => ctx.db.get(memberId))).toBeNull()
   })

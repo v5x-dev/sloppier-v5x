@@ -33,7 +33,7 @@ function setup() {
       paths: ["src/main.cpp"],
     })),
   }
-  const source = new WorkbenchSource("program" as Id<"projects">, actions)
+  const source = new WorkbenchSource("program" as Id<"programs">, actions)
   return { source, actions }
 }
 async function opened() {
@@ -75,7 +75,7 @@ describe("workbench source", () => {
     await commit
     expect(actions.commitFiles.mock.calls[0]).toEqual([
       {
-        projectId: "program",
+        programId: "program",
         message: "Update src/main.cpp",
         changes: [
           { operation: "put", path: "src/main.cpp", contents: "captured" },
@@ -208,7 +208,7 @@ describe("workbench source", () => {
     expect(snapshot.sha).toBe("pinned")
     expect(actions.readFile.mock.calls.at(-1)).toEqual([
       {
-        projectId: "program",
+        programId: "program",
         path: "src/main.cpp",
         offset: 0,
         ref: "pinned",

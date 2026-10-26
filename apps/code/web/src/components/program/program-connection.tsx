@@ -32,16 +32,16 @@ export function useProgramConnection() {
   return channel
 }
 export function ProgramConnection({
-  projectId,
+  programId,
   children,
 }: {
-  projectId: Id<"projects">
+  programId: Id<"programs">
   children: ReactNode
 }) {
   const connect = useAction(api.buildConnection.connect)
   const heartbeat = useMutation(api.builds.heartbeat)
   // Convex carries lifecycle state only. Build output never enters this query.
-  const machine = useQuery(api.builds.status, { projectId })
+  const machine = useQuery(api.builds.status, { programId })
   const [connection, setConnection] = useState<Connection | null>(null)
   const connectionRef = useRef<Connection | null>(null)
   connectionRef.current = connection
@@ -68,7 +68,7 @@ export function ProgramConnection({
             })
             if (!response.ok)
               throw new Error(`Presence request failed (${response.status}).`)
-          } else await heartbeat({ projectId, sessionId })
+          } else await heartbeat({ programId, sessionId })
         } catch (err) {
           if (!disposed) setError(errorMessage(err))
         }
@@ -93,11 +93,11 @@ export function ProgramConnection({
               keepalive: true,
               signal: AbortSignal.timeout(10_000),
             }).catch(() => {})
-          await heartbeat({ projectId, sessionId, leave: true })
+          await heartbeat({ programId, sessionId, leave: true })
         })
         .catch(() => {})
     }
-  }, [heartbeat, projectId])
+  }, [heartbeat, programId])
   useEffect(() => {
     if (machine?.status !== "ready") {
       setConnection(null)
@@ -108,7 +108,7 @@ export function ProgramConnection({
     let timer: ReturnType<typeof setTimeout>
     const handshake = async () => {
       try {
-        const result = await connect({ projectId })
+        const result = await connect({ programId })
         if (disposed) return
         setConnection(result)
         setError(null)
@@ -128,7 +128,7 @@ export function ProgramConnection({
       disposed = true
       clearTimeout(timer)
     }
-  }, [connect, projectId, machine?.machineId, machine?.status])
+  }, [connect, programId, machine?.machineId, machine?.status])
   const request = useCallback(
     async (path: string, body?: unknown, signal?: AbortSignal) => {
       if (!connection) throw new Error("Build machine is connecting.")

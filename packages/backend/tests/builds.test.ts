@@ -10,7 +10,7 @@ const modules = import.meta.glob("../convex/**/*.ts")
 
 async function setup() {
   const t = convexTest(schema, modules)
-  const projectId = await t.run(async (ctx) => {
+  const programId = await t.run(async (ctx) => {
     const workspaceId = await ctx.db.insert("workspaces", {
       name: "Team",
       ownerId: "alice",
@@ -23,7 +23,7 @@ async function setup() {
         role: "member",
         joinedAt: 1,
       })
-    return await ctx.db.insert("projects", {
+    return await ctx.db.insert("programs", {
       workspaceId,
       name: "Robot",
       template: "pros",
@@ -35,108 +35,108 @@ async function setup() {
   })
   return {
     t,
-    projectId,
+    programId,
     alice: t.withIdentity({ subject: "alice" }),
     bob: t.withIdentity({ subject: "bob" }),
   }
 }
 
 test("program sessions share one machine and one user leaving keeps other tabs alive", async () => {
-  const { t, projectId, alice, bob } = await setup()
+  const { t, programId, alice, bob } = await setup()
   await alice.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "alice-tab-one",
   })
   await alice.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "alice-tab-two",
   })
   await bob.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "bob-tab-one",
   })
   expect(
     await t.run((ctx) => ctx.db.query("buildMachines").collect())
   ).toHaveLength(1)
   await alice.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "alice-tab-one",
     leave: true,
   })
-  await t.mutation(internal.builds.retire, { projectId })
-  const state = await t.query(internal.builds.state, { projectId })
+  await t.mutation(internal.builds.retire, { programId })
+  const state = await t.query(internal.builds.state, { programId })
   expect(state.sessions).toHaveLength(2)
   expect(state.machine).not.toBeNull()
 })
 
 test("expired sessions are removed and machine records retire after the last viewer", async () => {
-  const { t, projectId, alice } = await setup()
+  const { t, programId, alice } = await setup()
   await alice.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "alice-tab-one",
   })
-  const { sessions } = await t.query(internal.builds.state, { projectId })
+  const { sessions } = await t.query(internal.builds.state, { programId })
   await t.mutation(internal.builds.expireSession, { id: sessions[0]!._id })
   expect(
-    (await t.query(internal.builds.state, { projectId })).sessions
+    (await t.query(internal.builds.state, { programId })).sessions
   ).toHaveLength(1)
   await t.run((ctx) => ctx.db.patch(sessions[0]!._id, { expiresAt: 0 }))
   await t.mutation(internal.builds.expireSession, { id: sessions[0]!._id })
-  await t.mutation(internal.builds.retire, { projectId })
+  await t.mutation(internal.builds.retire, { programId })
   expect(
-    (await t.query(internal.builds.state, { projectId })).machine
+    (await t.query(internal.builds.state, { programId })).machine
   ).toBeNull()
 })
 
 test("membership, session ownership and stale machine updates are enforced", async () => {
-  const { t, projectId, alice, bob } = await setup()
+  const { t, programId, alice, bob } = await setup()
   await expect(
-    t.mutation(api.builds.heartbeat, { projectId, sessionId: "anonymous-tab" })
+    t.mutation(api.builds.heartbeat, { programId, sessionId: "anonymous-tab" })
   ).rejects.toThrow("Authentication")
   await expect(
     t
       .withIdentity({ subject: "outsider" })
-      .query(api.builds.status, { projectId })
+      .query(api.builds.status, { programId })
   ).rejects.toThrow("access")
   await alice.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "alice-tab-one",
   })
   await expect(
     bob.mutation(api.builds.heartbeat, {
-      projectId,
+      programId,
       sessionId: "alice-tab-one",
       leave: true,
     })
   ).rejects.toThrow("owner")
   await t.mutation(internal.builds.update, {
-    projectId,
+    programId,
     machineId: "machine-one",
     status: "ready",
   })
   await t.mutation(internal.builds.update, {
-    projectId,
+    programId,
     building: true,
     logs: "Building directly on the machine.",
   })
   await t.mutation(internal.builds.update, {
-    projectId,
+    programId,
     machineId: "machine-two",
   })
   await t.mutation(internal.builds.update, {
-    projectId,
+    programId,
     expectedMachineId: "machine-one",
     logs: "stale build",
     building: false,
   })
-  expect(await alice.query(api.builds.status, { projectId })).toMatchObject({
+  expect(await alice.query(api.builds.status, { programId })).toMatchObject({
     building: true,
     logs: "Building directly on the machine.",
   })
 })
 
 test("cloud lifecycle creates once, keeps occupied machines alive and deletes after last leave", async () => {
-  const { t, projectId, alice, bob } = await setup()
+  const { t, programId, alice, bob } = await setup()
   const requests: {
     path: string
     method: string
@@ -163,20 +163,20 @@ test("cloud lifecycle creates once, keeps occupied machines alive and deletes af
   )
   try {
     await alice.mutation(api.builds.heartbeat, {
-      projectId,
+      programId,
       sessionId: "alice-tab-one",
     })
     await bob.mutation(api.builds.heartbeat, {
-      projectId,
+      programId,
       sessionId: "bob-tab-one",
     })
-    await t.action(internal.buildWorker.reconcile, { projectId })
+    await t.action(internal.buildWorker.reconcile, { programId })
     await alice.mutation(api.builds.heartbeat, {
-      projectId,
+      programId,
       sessionId: "alice-tab-one",
       leave: true,
     })
-    await t.action(internal.buildWorker.reconcile, { projectId })
+    await t.action(internal.buildWorker.reconcile, { programId })
     expect(
       requests.filter((r) => r.path === "/v1/machines" && r.method === "POST")
     ).toHaveLength(1)
@@ -186,17 +186,17 @@ test("cloud lifecycle creates once, keeps occupied machines alive and deletes af
       resources: { cpus: 2, memoryMb: 2048 },
     })
     await bob.mutation(api.builds.heartbeat, {
-      projectId,
+      programId,
       sessionId: "bob-tab-one",
       leave: true,
     })
-    await t.action(internal.buildWorker.reconcile, { projectId })
+    await t.action(internal.buildWorker.reconcile, { programId })
     expect(requests.at(-1)).toMatchObject({
       path: "/v1/machines/cloud-machine",
       method: "DELETE",
     })
     expect(
-      (await t.query(internal.builds.state, { projectId })).machine
+      (await t.query(internal.builds.state, { programId })).machine
     ).toBeNull()
   } finally {
     vi.unstubAllGlobals()
@@ -205,42 +205,42 @@ test("cloud lifecycle creates once, keeps occupied machines alive and deletes af
 })
 
 test("image updates wait for active builds and prevent new builds during replacement", async () => {
-  const { t, projectId, alice } = await setup()
+  const { t, programId, alice } = await setup()
   await alice.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "alice-tab-one",
   })
   await t.mutation(internal.builds.update, {
-    projectId,
+    programId,
     machineId: "old-image",
     status: "ready",
     building: true,
   })
   expect(
     await t.mutation(internal.builds.refreshImage, {
-      projectId,
+      programId,
       machineId: "old-image",
     })
   ).toBe(false)
-  await t.mutation(internal.builds.update, { projectId, building: false })
+  await t.mutation(internal.builds.update, { programId, building: false })
   expect(
     await t.mutation(internal.builds.refreshImage, {
-      projectId,
+      programId,
       machineId: "old-image",
     })
   ).toBe(true)
   await t.mutation(internal.builds.refreshImage, {
-    projectId,
+    programId,
     machineId: "old-image",
     deleted: true,
   })
   expect(
-    (await t.query(internal.builds.state, { projectId })).machine?.machineId
+    (await t.query(internal.builds.state, { programId })).machine?.machineId
   ).toBeUndefined()
 })
 
 test("direct handshake checks membership and mints only a short-lived single-port token", async () => {
-  const { t, projectId, alice } = await setup()
+  const { t, programId, alice } = await setup()
   const fetchMock = vi.fn(async () =>
     Response.json({ token: "scoped-token", expiresAt: "2026-10-25T12:00:00Z" })
   )
@@ -250,23 +250,23 @@ test("direct handshake checks membership and mints only a short-lived single-por
     await expect(
       t
         .withIdentity({ subject: "outsider" })
-        .action(api.buildConnection.connect, { projectId })
+        .action(api.buildConnection.connect, { programId })
     ).rejects.toThrow("access")
     await expect(
-      alice.action(api.buildConnection.connect, { projectId })
+      alice.action(api.buildConnection.connect, { programId })
     ).rejects.toThrow("not ready")
     expect(fetchMock).not.toHaveBeenCalled()
     await alice.mutation(api.builds.heartbeat, {
-      projectId,
+      programId,
       sessionId: "alice-direct-tab",
     })
     await t.mutation(internal.builds.update, {
-      projectId,
+      programId,
       machineId: "direct-machine",
       status: "ready",
     })
     const result = await alice.action(api.buildConnection.connect, {
-      projectId,
+      programId,
     })
     expect(result).toMatchObject({
       token: "scoped-token",
@@ -291,17 +291,17 @@ test("direct handshake checks membership and mints only a short-lived single-por
 })
 
 test("direct viewer heartbeats keep the machine alive after Convex join sessions expire", async () => {
-  const { t, projectId, alice } = await setup()
+  const { t, programId, alice } = await setup()
   await alice.mutation(api.builds.heartbeat, {
-    projectId,
+    programId,
     sessionId: "direct-viewer-tab",
   })
   await t.mutation(internal.builds.update, {
-    projectId,
+    programId,
     machineId: "direct-machine",
     status: "ready",
   })
-  const state = await t.query(internal.builds.state, { projectId })
+  const state = await t.query(internal.builds.state, { programId })
   await t.run((ctx) => ctx.db.delete(state.sessions[0]!._id))
   let viewers = 1
   const calls: string[] = []
@@ -322,16 +322,16 @@ test("direct viewer heartbeats keep the machine alive after Convex join sessions
     })
   )
   try {
-    await t.action(internal.buildWorker.reconcile, { projectId })
+    await t.action(internal.buildWorker.reconcile, { programId })
     expect(calls).not.toContain("DELETE")
     expect(
-      (await t.query(internal.builds.state, { projectId })).machine
+      (await t.query(internal.builds.state, { programId })).machine
     ).not.toBeNull()
     viewers = 0
-    await t.action(internal.buildWorker.reconcile, { projectId })
+    await t.action(internal.buildWorker.reconcile, { programId })
     expect(calls).toContain("DELETE")
     expect(
-      (await t.query(internal.builds.state, { projectId })).machine
+      (await t.query(internal.builds.state, { programId })).machine
     ).toBeNull()
   } finally {
     vi.unstubAllGlobals()

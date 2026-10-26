@@ -10,7 +10,7 @@ import {
   searchText,
   SEARCH_LIMIT,
   type SearchFile,
-} from "./lib/projectSearch"
+} from "./lib/programSearch"
 import { api, internal } from "./_generated/api"
 import { restoreUpdate, visibleHistoryPath } from "./lib/history"
 import { action, internalAction, type ActionCtx } from "./_generated/server"
@@ -41,21 +41,21 @@ const fileChangeValidator = v.union(
 
 // Pin one committed source snapshot for direct browser-to-machine builds.
 export const buildManifest = action({
-  args: { projectId: v.id("projects") },
+  args: { programId: v.id("programs") },
   handler: async (
     ctx,
-    { projectId }
+    { programId }
   ): Promise<{ sha: string; paths: string[] }> => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+    const program = await requireAuthorizedProgram(ctx, programId)
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     // Live-edit backups also commit to main, but only under .v5x/. Pin the
     // recorded source head so builds, stale-diagnostic checks, and upload
     // reuse all compare the same SHA that users' commits record.
     const sha =
-      project.repositoryHeadSha ??
+      program.repositoryHeadSha ??
       (await repo.listCommits({ branch: "main", limit: 1 })).commits[0]?.sha
     if (!sha) throw new Error("Repository has no committed source.")
     const paths: string[] = []
@@ -66,7 +66,7 @@ export const buildManifest = action({
         ...page.paths.filter(
           (path) =>
             !path.startsWith(".v5x/") &&
-            !isBuildDependency(project.template, path)
+            !isBuildDependency(program.template, path)
         )
       )
       if (paths.length > 3000)
@@ -81,13 +81,13 @@ export const buildManifest = action({
 
 export const listFiles = action({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     cursor: v.optional(v.string()),
   },
-  handler: async (ctx, { projectId, cursor }) => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+  handler: async (ctx, { programId, cursor }) => {
+    const program = await requireAuthorizedProgram(ctx, programId)
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const result = await repo.listFiles({
@@ -105,14 +105,14 @@ export const listFiles = action({
 
 export const fileHistory = action({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     cursor: v.optional(v.string()),
   },
-  handler: async (ctx, { projectId, path, cursor }) => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+  handler: async (ctx, { programId, path, cursor }) => {
+    const program = await requireAuthorizedProgram(ctx, programId)
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const result = await repo.listCommits({
@@ -136,14 +136,14 @@ export const fileHistory = action({
 
 export const readFile = action({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     path: v.string(),
     ref: v.optional(v.string()),
     offset: v.optional(v.number()),
     length: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const project = await requireAuthorizedProject(ctx, args.projectId)
+    const program = await requireAuthorizedProgram(ctx, args.programId)
     const path = validateReadPath(args.path)
     if (args.ref && !/^[a-f0-9]{40,64}$/i.test(args.ref))
       throw new ConvexError("Invalid commit reference.")
@@ -161,7 +161,7 @@ export const readFile = action({
     }
 
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const response = await repo.getFileStream({
@@ -194,7 +194,7 @@ export const readFile = action({
 
 export const commitFiles = action({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     message: v.string(),
     changes: v.array(fileChangeValidator),
     requireAbsentPaths: v.optional(v.array(v.string())),
@@ -205,11 +205,11 @@ export const commitFiles = action({
     if (!identity) {
       throw new ConvexError("Authentication required.")
     }
-    const project = await ctx.runQuery(
-      internal.projects.getRepositoryForMember,
-      { projectId: args.projectId, userId: identity.subject }
+    const program = await ctx.runQuery(
+      internal.programs.getRepositoryForMember,
+      { programId: args.programId, userId: identity.subject }
     )
-    if (!project) {
+    if (!program) {
       throw new ConvexError("Program not found.")
     }
 
@@ -231,7 +231,7 @@ export const commitFiles = action({
       const path = validateRepositoryPath(change.path)
       if (
         change.operation === "put" &&
-        (isFirmwarePath(path) || isBuildDependency(project.template, path))
+        (isFirmwarePath(path) || isBuildDependency(program.template, path))
       ) {
         throw new ConvexError(
           `${path} is firmware or a managed build dependency and cannot be committed.`
@@ -281,7 +281,7 @@ export const commitFiles = action({
       moveTargets.add(move.to)
     }
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const result = await commitChanges(
@@ -312,13 +312,13 @@ export const commitFiles = action({
     )
 
     await ctx.runMutation(internal.files.applyRepositoryChanges, {
-      projectId: args.projectId,
+      programId: args.programId,
       actorId: identity.subject,
       changes: changes.map(({ operation, path }) => ({ operation, path })),
       moves,
     })
-    await ctx.runMutation(internal.projects.recordRepositoryHead, {
-      projectId: args.projectId,
+    await ctx.runMutation(internal.programs.recordRepositoryHead, {
+      programId: args.programId,
       headSha: result.commitSha,
     })
 
@@ -326,35 +326,35 @@ export const commitFiles = action({
   },
 })
 
-export const provisionProject = internalAction({
-  args: { projectId: v.id("projects") },
-  handler: async (ctx, { projectId }) => {
-    const project = await ctx.runQuery(internal.projects.getForProvisioning, {
-      projectId,
+export const provisionProgram = internalAction({
+  args: { programId: v.id("programs") },
+  handler: async (ctx, { programId }) => {
+    const program = await ctx.runQuery(internal.programs.getForProvisioning, {
+      programId,
     })
-    if (!project || project.repositoryStatus === "ready") return
+    if (!program || program.repositoryStatus === "ready") return
 
     try {
-      if (project.importId) {
+      if (program.importId) {
         const source = await ctx.runQuery(
-          internal.projects.folderImportSource,
-          { importId: project.importId }
+          internal.programs.folderImportSource,
+          { importId: program.importId }
         )
         if (
           !source ||
-          source.projectId !== projectId ||
+          source.programId !== programId ||
           source.paths.length !== source.expectedFiles
         )
           throw new Error("Folder import source is incomplete.")
         const repo = await getOrCreateRepository(
           storage(),
-          project.repositoryId
+          program.repositoryId
         )
         let headSha = ""
         for (let sequence = 0; sequence < source.batches; sequence++) {
           const batch = await ctx.runQuery(
-            internal.projects.folderImportBatch,
-            { importId: project.importId, sequence }
+            internal.programs.folderImportBatch,
+            { importId: program.importId, sequence }
           )
           if (!batch) throw new Error("Folder import batch is missing.")
           const result = await commitChanges(
@@ -364,31 +364,31 @@ export const provisionProject = internalAction({
               path: file.path,
               contents: new Uint8Array(file.contents),
             })),
-            `Import ${project.name} folder`,
+            `Import ${program.name} folder`,
             commitAuthor("V5X Import", "imports@v5x.local")
           )
           headSha = result.commitSha
         }
-        await ctx.runMutation(internal.projects.markRepositoryReady, {
-          projectId,
+        await ctx.runMutation(internal.programs.markRepositoryReady, {
+          programId,
           headSha,
           files: source.paths,
           origin: "user",
         })
-        await ctx.scheduler.runAfter(0, internal.projects.cleanupFolderImport, {
-          importId: project.importId,
+        await ctx.scheduler.runAfter(0, internal.programs.cleanupFolderImport, {
+          importId: program.importId,
         })
         return
       }
       const files = (
-        await loadTemplateFiles(project.template, project.name)
+        await loadTemplateFiles(program.template, program.name)
       ).filter(
         (file) =>
           !isFirmwarePath(file.path) &&
-          !isBuildDependency(project.template, file.path)
+          !isBuildDependency(program.template, file.path)
       )
       const store = storage()
-      const repo = await getOrCreateRepository(store, project.repositoryId)
+      const repo = await getOrCreateRepository(store, program.repositoryId)
 
       const branches = await repo.listBranches({ limit: 100 })
       const main = branches.branches.find((branch) => branch.name === "main")
@@ -405,20 +405,20 @@ export const provisionProject = internalAction({
             path: file.path,
             contents: file.contents,
           })),
-          `Create ${project.template} program`,
+          `Create ${program.template} program`,
           commitAuthor("V5X Templates", "templates@v5x.local")
         )
         headSha = result.commitSha
       }
 
-      await ctx.runMutation(internal.projects.markRepositoryReady, {
-        projectId,
+      await ctx.runMutation(internal.programs.markRepositoryReady, {
+        programId,
         headSha: headSha ?? "",
         files: files.map((file) => file.path),
       })
     } catch (error) {
-      await ctx.runMutation(internal.projects.markRepositoryFailed, {
-        projectId,
+      await ctx.runMutation(internal.programs.markRepositoryFailed, {
+        programId,
         message: publicErrorMessage(error),
       })
     }
@@ -433,7 +433,7 @@ export const persistCrdtUpdate = internalAction({
   },
 })
 
-export const persistProjectUpdates = internalAction({
+export const persistProgramUpdates = internalAction({
   args: { jobId: v.id("crdtBackupJobs"), generation: v.number() },
   handler: async (ctx, args) => {
     const batch = await ctx.runQuery(internal.backups.batch, args)
@@ -445,7 +445,7 @@ export const persistProjectUpdates = internalAction({
         return
       }
       const repo = storage().repo({
-        id: batch.project.repositoryId,
+        id: batch.program.repositoryId,
         defaultBranch: "main",
       })
       const result = await commitChanges(
@@ -473,16 +473,16 @@ export const persistProjectUpdates = internalAction({
   },
 })
 
-async function requireAuthorizedProject(
+async function requireAuthorizedProgram(
   ctx: ActionCtx,
-  projectId: Id<"projects">
+  programId: Id<"programs">
 ) {
   const identity = await ctx.auth.getUserIdentity()
   if (!identity) {
     throw new ConvexError("Authentication required.")
   }
-  return ctx.runQuery(internal.projects.getRepositoryForMember, {
-    projectId,
+  return ctx.runQuery(internal.programs.getRepositoryForMember, {
+    programId,
     userId: identity.subject,
   })
 }
@@ -617,17 +617,17 @@ function publicErrorMessage(error: unknown) {
 }
 
 export const openLiveFile = action({
-  args: { projectId: v.id("projects"), path: v.string() },
+  args: { programId: v.id("programs"), path: v.string() },
   handler: async (ctx, args): Promise<Id<"crdtDocuments">> => {
-    const project = await requireAuthorizedProject(ctx, args.projectId)
+    const program = await requireAuthorizedProgram(ctx, args.programId)
     const path = validateRepositoryPath(args.path)
     const existing = await ctx.runQuery(internal.crdt.documentExists, {
-      projectId: args.projectId,
+      programId: args.programId,
       path,
     })
     if (existing) return existing
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const response = await repo.getFileStream({
@@ -652,7 +652,7 @@ export const openLiveFile = action({
       throw new ConvexError("Binary files cannot be edited as text.")
     const identity = await ctx.auth.getUserIdentity()
     return ctx.runMutation(internal.crdt.initializeDocument, {
-      projectId: args.projectId,
+      programId: args.programId,
       path,
       actorId: identity!.subject,
       contents,
@@ -667,11 +667,11 @@ function validateHistorySha(sha: string) {
 }
 
 export const history = action({
-  args: { projectId: v.id("projects"), cursor: v.optional(v.string()) },
-  handler: async (ctx, { projectId, cursor }) => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+  args: { programId: v.id("programs"), cursor: v.optional(v.string()) },
+  handler: async (ctx, { programId, cursor }) => {
+    const program = await requireAuthorizedProgram(ctx, programId)
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const page = await repo.listCommits({ branch: "main", cursor, limit: 30 })
@@ -711,11 +711,11 @@ export const history = action({
 })
 
 export const historyFiles = action({
-  args: { projectId: v.id("projects"), sha: v.string() },
-  handler: async (ctx, { projectId, sha }) => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+  args: { programId: v.id("programs"), sha: v.string() },
+  handler: async (ctx, { programId, sha }) => {
+    const program = await requireAuthorizedProgram(ctx, programId)
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const diff = await repo.getCommitDiff({ sha: validateHistorySha(sha) })
@@ -726,11 +726,11 @@ export const historyFiles = action({
 })
 
 export const historyDiff = action({
-  args: { projectId: v.id("projects"), sha: v.string(), path: v.string() },
-  handler: async (ctx, { projectId, sha, path }) => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+  args: { programId: v.id("programs"), sha: v.string(), path: v.string() },
+  handler: async (ctx, { programId, sha, path }) => {
+    const program = await requireAuthorizedProgram(ctx, programId)
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const diff = await repo.getCommitDiff({
@@ -748,20 +748,20 @@ export const historyDiff = action({
 })
 
 export const restoreHistoryFile = action({
-  args: { projectId: v.id("projects"), sha: v.string(), path: v.string() },
+  args: { programId: v.id("programs"), sha: v.string(), path: v.string() },
   handler: async (
     ctx,
-    { projectId, sha, path }
+    { programId, sha, path }
   ): Promise<{
     commitSha: string
     contents: string
     warning: string | null
   }> => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+    const program = await requireAuthorizedProgram(ctx, programId)
     validateHistorySha(sha)
     validateRepositoryPath(path)
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const response = await repo.getFileStream({
@@ -796,7 +796,7 @@ export const restoreHistoryFile = action({
       replay = await replayLiveDocument(
         (afterSequence) =>
           ctx.runQuery(api.crdt.updatesSince, {
-            projectId,
+            programId,
             path,
             afterSequence,
           }),
@@ -819,7 +819,7 @@ export const restoreHistoryFile = action({
     if (update && update.byteLength > 512 * 1024)
       throw new ConvexError("This restore exceeds the live editing limit.")
     const result = await ctx.runAction(api.codeStorage.commitFiles, {
-      projectId,
+      programId,
       message: `Restore ${path} from ${sha.slice(0, 8)}`.slice(0, 200),
       changes: [{ operation: "put", path, contents }],
     })
@@ -827,7 +827,7 @@ export const restoreHistoryFile = action({
     if (documentId && update) {
       try {
         await ctx.runMutation(api.crdt.appendUpdate, {
-          projectId,
+          programId,
           path,
           documentId,
           updateId: `restore-${result.commitSha}`,
@@ -842,9 +842,9 @@ export const restoreHistoryFile = action({
   },
 })
 
-export const searchProject = action({
+export const searchProgram = action({
   args: {
-    projectId: v.id("projects"),
+    programId: v.id("programs"),
     query: v.string(),
     matchCase: v.boolean(),
     sourceOnly: v.optional(v.boolean()),
@@ -852,9 +852,9 @@ export const searchProject = action({
   },
   handler: async (
     ctx,
-    { projectId, query, matchCase, sourceOnly, pathFilter }
+    { programId, query, matchCase, sourceOnly, pathFilter }
   ): Promise<{ files: SearchFile[]; truncated: boolean; skipped: number }> => {
-    const project = await requireAuthorizedProject(ctx, projectId)
+    const program = await requireAuthorizedProgram(ctx, programId)
     if (!query || query.length > 200 || /[\r\n]/.test(query))
       throw new ConvexError(
         "Search requires a single line of up to 200 characters."
@@ -865,7 +865,7 @@ export const searchProject = action({
       )
     const filters = { sourceOnly, pathFilter }
     const repo = storage().repo({
-      id: project.repositoryId,
+      id: program.repositoryId,
       defaultBranch: "main",
     })
     const files: SearchFile[] = []
@@ -913,7 +913,7 @@ export const searchProject = action({
       if (!committed.nextCursor || committed.nextCursor === cursor) break
       cursor = committed.nextCursor
     }
-    const docs = await ctx.runQuery(api.search.liveDocuments, { projectId })
+    const docs = await ctx.runQuery(api.search.liveDocuments, { programId })
     const drafts = new Map<string, string>()
     let skipped = 0
     const replayBudget = { used: 0, limit: 16 * 1024 * 1024 }
@@ -930,7 +930,7 @@ export const searchProject = action({
         const replay = await replayLiveDocument(
           (afterSequence) =>
             ctx.runQuery(api.crdt.updatesSince, {
-              projectId,
+              programId,
               path: document.path,
               afterSequence,
             }),

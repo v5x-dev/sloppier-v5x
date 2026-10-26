@@ -26,7 +26,7 @@ const createEditor: EditorFactory<undefined, { name: string }> = (
 ) => new Editor(type, options, key)
 
 type Props = {
-  projectId: Id<"projects">
+  programId: Id<"programs">
   path: string
   active: boolean
   onFormatChange: FormatChange
@@ -37,7 +37,7 @@ type Props = {
 }
 
 export function LiveFileEditor({
-  projectId,
+  programId,
   path,
   active,
   diagnosticTarget,
@@ -70,7 +70,7 @@ export function LiveFileEditor({
     if (!user || !host.current) return
     const session = createLiveFileSession({
       client,
-      projectId,
+      programId,
       path,
       user,
       callbacks: {
@@ -126,7 +126,7 @@ export function LiveFileEditor({
       session.dispose()
       sessionRef.current = null
     }
-  }, [client, path, projectId, user?.id])
+  }, [client, path, programId, user?.id])
 
   useEffect(() => {
     sessionRef.current?.setActive(active)
@@ -163,7 +163,7 @@ export function LiveFileEditor({
             onFormatChange={onFormatChange}
             diagnosticTarget={active ? diagnosticTarget : undefined}
             path={path}
-            projectId={projectId}
+            programId={programId}
           />
         )}
       </div>
@@ -176,13 +176,13 @@ function PierreFile({
   onFormatChange,
   binding,
   path,
-  projectId,
+  programId,
 }: {
   binding: PierreCollaboration
   onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   path: string
-  projectId: Id<"projects">
+  programId: Id<"programs">
 }) {
   const appliedTarget = useRef<number | undefined>(undefined)
   const targetRef = useRef(diagnosticTarget)
@@ -206,7 +206,7 @@ function PierreFile({
   const file = useRef({
     name: path,
     contents: binding.document.getText(),
-    cacheKey: `${projectId}:${path}:${binding.shared.clientID}`,
+    cacheKey: `${programId}:${path}:${binding.shared.clientID}`,
   }).current
   return (
     <div ref={completion.wrapper} className="contents">
