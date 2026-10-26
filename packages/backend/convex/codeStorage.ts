@@ -1,5 +1,16 @@
 "use node"
 
+import * as Y from "yjs"
+import {
+  literalPattern,
+  matchesSearchPath,
+  searchPathGlob,
+  SEARCH_SOURCE_EXCLUDES,
+  overlaySearch,
+  searchText,
+  SEARCH_LIMIT,
+  type SearchFile,
+} from "./lib/projectSearch"
 import { api, internal } from "./_generated/api"
 import { restoreUpdate, visibleHistoryPath } from "./lib/history"
 import { action, internalAction, type ActionCtx } from "./_generated/server"
@@ -762,5 +773,125 @@ export const restoreHistoryFile = action({
       }
     }
     return { commitSha: result.commitSha, contents, warning }
+  },
+})
+
+export const searchProject = action({
+  args: {
+    projectId: v.id("projects"),
+    query: v.string(),
+    matchCase: v.boolean(),
+    sourceOnly: v.optional(v.boolean()),
+    pathFilter: v.optional(v.string()),
+  },
+  handler: async (
+    ctx,
+    { projectId, query, matchCase, sourceOnly, pathFilter }
+  ): Promise<{ files: SearchFile[]; truncated: boolean; skipped: number }> => {
+    const project = await requireAuthorizedProject(ctx, projectId)
+    if (!query || query.length > 200 || /[\r\n]/.test(query))
+      throw new ConvexError(
+        "Search requires a single line of up to 200 characters."
+      )
+    if (pathFilter && (pathFilter.length > 200 || /[\r\n\0]/.test(pathFilter)))
+      throw new ConvexError(
+        "Path filters must be a single line of up to 200 characters."
+      )
+    const filters = { sourceOnly, pathFilter }
+    const repo = storage().repo({
+      id: project.repositoryId,
+      defaultBranch: "main",
+    })
+    const files: SearchFile[] = []
+    let cursor: string | undefined
+    let hasMore = false
+    for (let page = 0; page < 20; page++) {
+      const committed = await repo.grep({
+        ref: "main",
+        query: { pattern: literalPattern(query), caseSensitive: matchCase },
+        fileFilters: {
+          excludeGlobs: [
+            ".v5x/**",
+            ...(sourceOnly ? SEARCH_SOURCE_EXCLUDES : []),
+          ],
+          ...(pathFilter?.trim()
+            ? { includeGlobs: [searchPathGlob(pathFilter)] }
+            : {}),
+        },
+        context: { before: 0, after: 0 },
+        limits: {
+          maxLines: SEARCH_LIMIT + 1,
+          maxMatchesPerFile: SEARCH_LIMIT + 1,
+        },
+        pagination: { limit: SEARCH_LIMIT + 1, cursor },
+      })
+      files.push(
+        ...committed.matches
+          .filter((file) => matchesSearchPath(file.path, filters))
+          .map((file) => ({
+            path: file.path,
+            matches: file.lines.flatMap((line) =>
+              searchText(line.text, query, matchCase, SEARCH_LIMIT + 1).map(
+                (match) => ({ ...match, line: line.lineNumber })
+              )
+            ),
+          }))
+      )
+      hasMore = committed.hasMore
+      if (
+        !hasMore ||
+        files.reduce((count, file) => count + file.matches.length, 0) >
+          SEARCH_LIMIT
+      )
+        break
+      if (!committed.nextCursor || committed.nextCursor === cursor) break
+      cursor = committed.nextCursor
+    }
+    const docs = await ctx.runQuery(api.search.liveDocuments, { projectId })
+    const drafts = new Map<string, string>()
+    let skipped = 0
+    let replayBytes = 0
+    for (const [index, document] of docs
+      .filter((document) => matchesSearchPath(document.path, filters))
+      .entries()) {
+      // Never show a committed match as current when its live text could not be read.
+      drafts.set(document.path, "")
+      if (index >= 100 || replayBytes >= 16 * 1024 * 1024) {
+        skipped++
+        continue
+      }
+      const doc = new Y.Doc()
+      try {
+        let afterSequence = 0
+        while (true) {
+          const page = await ctx.runQuery(api.crdt.updatesSince, {
+            projectId,
+            path: document.path,
+            afterSequence,
+          })
+          if (page.documentId !== document.id)
+            throw new Error("Live document changed")
+          for (const update of page.updates) {
+            replayBytes += update.bytes.byteLength
+            if (replayBytes > 16 * 1024 * 1024)
+              throw new Error("Live search limit")
+            Y.applyUpdate(doc, new Uint8Array(update.bytes))
+            afterSequence = update.sequence
+          }
+          if (!page.hasMore) break
+        }
+        drafts.set(document.path, doc.getText("source").toString())
+      } catch {
+        skipped++
+      } finally {
+        doc.destroy()
+      }
+    }
+    const result = overlaySearch(files, drafts, query, matchCase, filters)
+    return {
+      ...result,
+      truncated: result.truncated || hasMore,
+      skipped,
+    }
   },
 })

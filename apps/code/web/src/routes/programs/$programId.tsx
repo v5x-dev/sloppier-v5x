@@ -1,3 +1,4 @@
+import { ProgramSearch } from "@/components/program-search"
 import { ProgramHistory } from "@/components/program-history"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
@@ -261,6 +262,14 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   // Last committed text per path, and the editor's live text per path.
   const committed = useRef(new Map<string, string>())
   const drafts = useRef(new Map<string, string>())
+  const draftListeners = useRef(new Set<() => void>())
+  const getSearchDrafts = useCallback(() => drafts.current, [])
+  const subscribeSearchDrafts = useCallback((listener: () => void) => {
+    draftListeners.current.add(listener)
+    return () => {
+      draftListeners.current.delete(listener)
+    }
+  }, [])
   const scrollPositions = useRef(new Map<string, number>())
   const [dirtyPaths, setDirtyPaths] = useState<string[]>([])
   const [commitOpen, setCommitOpen] = useState(false)
@@ -361,6 +370,7 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
   }, [activePath, loaded, program._id, readError, readFile])
 
   const syncDirty = useCallback(() => {
+    for (const listener of draftListeners.current) listener()
     const next = [...drafts.current]
       .filter(([path, text]) => committed.current.get(path) !== text)
       .map(([path]) => path)
@@ -824,28 +834,45 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
         <ActionsBar
           activePath={activePath}
           leftAction={
-            <Tooltip>
-              <TooltipTrigger render={<span className="inline-flex" />}>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={
-                    dirtyPaths.length === 0
-                      ? "No changes"
-                      : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
-                  }
-                  disabled={dirtyPaths.length === 0 || !allSynced}
-                  onClick={() => setCommitOpen(true)}
-                >
-                  <GitCommitIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {dirtyPaths.length === 0
-                  ? "No changes"
-                  : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
-              </TooltipContent>
-            </Tooltip>
+            <>
+              <ProgramSearch
+                projectId={program._id}
+                revision={program.repositoryHeadSha}
+                getDrafts={getSearchDrafts}
+                subscribeDrafts={subscribeSearchDrafts}
+                onSelect={(path, line, column) => {
+                  setDiagnosticTarget((current) => ({
+                    path,
+                    line,
+                    column,
+                    request: (current?.request ?? 0) + 1,
+                  }))
+                  openFile(path)
+                }}
+              />
+              <Tooltip>
+                <TooltipTrigger render={<span className="inline-flex" />}>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={
+                      dirtyPaths.length === 0
+                        ? "No changes"
+                        : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
+                    }
+                    disabled={dirtyPaths.length === 0 || !allSynced}
+                    onClick={() => setCommitOpen(true)}
+                  >
+                    <GitCommitIcon />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {dirtyPaths.length === 0
+                    ? "No changes"
+                    : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
+                </TooltipContent>
+              </Tooltip>
+            </>
           }
         >
           <ProgramHistory

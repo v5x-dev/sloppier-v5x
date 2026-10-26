@@ -36,3 +36,11 @@ The actions bar's history button opens a popover with source commits, authors, t
 Restore file copies that file's contents from the selected commit into a new commit on `main`. It supports UTF-8 text up to 256 KiB, including files deleted from the current tree. To recover a file deleted in a historical commit, select an earlier commit where it exists. The popover requires local edits to be committed and synced, then shows the path and revision before restoration.
 
 Open collaborative documents receive the restore as a normal Yjs replacement. Edits made concurrently after the restore snapshot remain mergeable. If saving succeeds but the live update fails, the popover reports that the commit exists and the program must be reopened. Restoring never rewinds the branch or removes earlier commits.
+
+## Project search
+
+The leftmost actions-bar button opens the search sheet on the right. Ctrl/Cmd + Shift + F opens it from the keyboard. Search matches literal text, with an optional case-sensitive toggle, and groups highlighted results by file. Select a match to open its file at the matching line and column.
+
+Search combines committed files with collaborative documents and local editor drafts. It excludes reserved `.v5x/` files and displays up to 300 matches. Collaborative replay is bounded to 100 documents and 16 MiB per search; the sheet reports skipped files and truncated results. Search does not require a robot connection.
+
+Search scope can be narrowed to source and header files, excluding bundled toolchain and library directories. The path field intersects that scope: `src/` searches a directory recursively, `*.cpp` matches filenames anywhere, and `src/**/*.cpp` matches nested paths. Both saved results and live drafts are filtered before applying the match limit.
