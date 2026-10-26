@@ -14,7 +14,7 @@ test("Highlights loads the Zed Birds of Paradise syntax palette", async () => {
     const result = highlighter.codeToTokens('void initialize() { if (true) return; }\n// comment', { lang: "cpp", theme })
     const colors = result.tokens.flat().map((token) => token.color)
     expect(colors.map((color) => color?.toLowerCase())).toContain("#ef5d32")
-    expect(colors.map((color) => color?.toLowerCase())).toContain("#6b4e32")
+    expect(colors.map((color) => color?.toLowerCase())).toContain("#a49a88bf")
   } finally {
     await disposeHighlighter()
   }

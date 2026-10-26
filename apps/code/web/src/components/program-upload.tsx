@@ -11,6 +11,7 @@ import {
   BluetoothIcon,
   CheckCircleIcon,
   CpuIcon,
+  DownloadSimpleIcon,
   PlugIcon,
 } from "@phosphor-icons/react"
 import {
@@ -387,7 +388,7 @@ export function ProgramUpload({
             />
           }
         >
-          <ArrowUpIcon />
+          <DownloadSimpleIcon />
         </PopoverTrigger>
         <PopoverContent
           side="top"

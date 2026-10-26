@@ -898,20 +898,11 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
           activePath={activePath}
           leftAction={
             <>
-              <ProgramSearch
+              <ProgramHistory
                 projectId={program._id}
                 revision={program.repositoryHeadSha}
-                getDrafts={getSearchDrafts}
-                subscribeDrafts={subscribeSearchDrafts}
-                onSelect={(path, line, column) => {
-                  setDiagnosticTarget((current) => ({
-                    path,
-                    line,
-                    column,
-                    request: (current?.request ?? 0) + 1,
-                  }))
-                  openFile(path)
-                }}
+                canRestore={dirtyPaths.length === 0 && allSynced}
+                onRestore={restoreFile}
               />
               <Tooltip>
                 <TooltipTrigger render={<span className="inline-flex" />}>
@@ -935,15 +926,24 @@ function Workbench({ program }: { program: Doc<"projects"> }) {
                     : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}. Ctrl/Cmd+S commits with an automatic message.`}
                 </TooltipContent>
               </Tooltip>
+              <ProgramSearch
+                projectId={program._id}
+                revision={program.repositoryHeadSha}
+                getDrafts={getSearchDrafts}
+                subscribeDrafts={subscribeSearchDrafts}
+                onSelect={(path, line, column) => {
+                  setDiagnosticTarget((current) => ({
+                    path,
+                    line,
+                    column,
+                    request: (current?.request ?? 0) + 1,
+                  }))
+                  openFile(path)
+                }}
+              />
             </>
           }
         >
-          <ProgramHistory
-            projectId={program._id}
-            revision={program.repositoryHeadSha}
-            canRestore={dirtyPaths.length === 0 && allSynced}
-            onRestore={restoreFile}
-          />
           <ProgramUpload
             buildAction={
               <ProgramBuild

@@ -203,11 +203,11 @@
             "color": "#6C99BB"
           },
           "comment": {
-            "color": "#6B4E32",
+            "color": "#a49a88bf",
             "font_style": "italic"
           },
           "comment.doc": {
-            "color": "#6B4E32",
+            "color": "#a49a88bf",
             "font_style": "italic"
           },
           "constant": {

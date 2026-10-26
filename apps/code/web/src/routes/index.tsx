@@ -8,7 +8,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -45,7 +44,6 @@ import {
   ItemContent,
   ItemDescription,
   ItemGroup,
-  ItemMedia,
   ItemTitle,
 } from "@workspace/ui/components/item"
 import {
@@ -74,6 +72,13 @@ export const Route = createFileRoute("/")({
 })
 
 type Template = Doc<"projects">["template"]
+
+const templateIcons: Record<Template, string> = {
+  vexcode: "/template-icons/vexcode.png",
+  jar: "/template-icons/jar.svg",
+  pros: "/template-icons/pros.png",
+  "ez-template": "/template-icons/ez.png",
+}
 
 function ProgramsPage() {
   const workspaces = useQuery(api.workspaces.listMine)
@@ -228,9 +233,6 @@ function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
               />
             }
           >
-            <ItemMedia variant="icon">
-              <CodeIcon />
-            </ItemMedia>
             <ItemContent>
               <ItemTitle>{program.name}</ItemTitle>
               <ItemDescription>
@@ -239,7 +241,11 @@ function ProgramList({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
               </ItemDescription>
             </ItemContent>
             <ItemActions>
-              <Badge variant="outline">{templateLabel(program.template)}</Badge>
+              <img
+                src={templateIcons[program.template]}
+                alt={templateLabel(program.template)}
+                className="mr-2 size-5 shrink-0 object-contain"
+              />
               <RepositoryStatusBadge status={program.repositoryStatus} />
             </ItemActions>
           </Item>
