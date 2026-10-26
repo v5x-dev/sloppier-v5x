@@ -19,7 +19,11 @@ SOURCE = ROOT / 'source'
 LOCK = threading.RLock()
 STATE = {'logs': 'Build machine is ready.', 'building': False, 'startedAt': None, 'artifactId': None}
 ARTIFACT = None
-TEMPLATE = os.environ['V5X_TEMPLATE']
+
+def template():
+    # Machines restored from the shared startup checkpoint receive their template as a file.
+    path = ROOT / 'template'
+    return path.read_text().strip() if path.exists() else os.environ['V5X_TEMPLATE']
 UPLOADS = {}
 VIEWERS = {}
 
@@ -55,7 +59,7 @@ def compile_source(snapshot, commit):
     global ARTIFACT
     try:
         extract(snapshot, SOURCE)
-        process = subprocess.Popen(['/usr/local/bin/v5x-build', TEMPLATE], cwd=SOURCE,
+        process = subprocess.Popen(['/usr/local/bin/v5x-build', template()], cwd=SOURCE,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
         def timeout():
             import signal
@@ -108,7 +112,7 @@ class LanguageSession:
         commands.unlink(missing_ok=True)
         # Run the template's real make rules with v5x-cxx recording each compile,
         # so completion sees the same flags, defines, and SDK as builds.
-        subprocess.run(['nice', '-n', '10', '/usr/local/bin/v5x-build', TEMPLATE], cwd=self.root,
+        subprocess.run(['nice', '-n', '10', '/usr/local/bin/v5x-build', template()], cwd=self.root,
                        env={**os.environ, 'V5X_RECORD': str(commands)}, stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL, timeout=90, check=False)
         entries = {}

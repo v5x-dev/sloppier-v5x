@@ -76,6 +76,42 @@ export const reconcile = internalAction({
           return
         }
       }
+      const checkpoint = process.env.SMOL_BUILD_CHECKPOINT
+      if (!machineId && checkpoint) {
+        // Restoring a booted machine takes ~1 s instead of a ~15 s image boot.
+        const machine = await cloud<{ id: string }>(
+          `/checkpoints/${encodeURIComponent(checkpoint)}/restore`,
+          { name: `v5x-${args.programId}`, network: { mode: "open" } }
+        )
+        machineId = machine.id
+        await ctx.runMutation(internal.builds.update, {
+          ...args,
+          machineId,
+          status: "starting",
+          logs: "Waiting for build machine…",
+        })
+        // Exec starts the restored machine; the server reads its template from this file.
+        const health = await cloud<{ stdout?: string; exitCode?: number }>(
+          `/machines/${encodeURIComponent(machineId)}/exec?output=text`,
+          {
+            command: [
+              "python3",
+              "-c",
+              "import sys,urllib.request; open('/home/builder/workspace/template','w').write(sys.argv[1]); print(urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=5).read().decode())",
+              state.program!.template,
+            ],
+            timeoutSeconds: 10,
+          }
+        )
+        if (health.exitCode !== 0)
+          throw new Error("Build machine failed to start.")
+        await ctx.runMutation(internal.builds.update, {
+          ...args,
+          status: "ready",
+          logs: "Build machine is ready. Commit changes, then select Build.",
+        })
+        return
+      }
       if (!machineId) {
         const image = process.env.SMOL_BUILD_IMAGE
         if (!image)
