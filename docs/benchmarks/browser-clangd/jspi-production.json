@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-10-26T21:36:56.939Z",
+  "environment": "one CPU quota, 2 GiB process-group limit, Vite production worker, automatic runtime selection",
+  "template": "pros",
+  "processGroupPeakBytes": 793104384,
+  "results": [
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 1354.4399999976158,
+      "heapBytes": 167051264,
+      "totalMs": 20198.334999978542,
+      "firstCompletionMs": 10408.085000038147,
+      "timeToFirstCompletionMs": 11799.064999997616,
+      "editP50Ms": 105,
+      "editP95Ms": 1296.835000038147,
+      "completionCount": 12,
+      "mainThreadLongTasks": [
+        71,
+        72,
+        80,
+        79,
+        55
+      ],
+      "heartbeatP95Ms": 91.98000001907349,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    },
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 991.9950000047684,
+      "heapBytes": 139198464,
+      "totalMs": 5408.189999997616,
+      "firstCompletionMs": 2195.8700000047684,
+      "timeToFirstCompletionMs": 3202.810000002384,
+      "editP50Ms": 88.93500000238419,
+      "editP95Ms": 104.82499998807907,
+      "completionCount": 12,
+      "mainThreadLongTasks": [
+        64
+      ],
+      "heartbeatP95Ms": 16.0900000333786,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    }
+  ]
+}

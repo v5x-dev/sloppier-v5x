@@ -8,7 +8,13 @@ const build = process.argv[2]
 if (!build) throw new Error("Pass the build-jspi/bin directory")
 const directory = new URL("./runtime/", import.meta.url)
 await mkdir(directory, { recursive: true })
-const js = await readFile(resolve(build, "clangd.js"))
+const originalJs = await readFile(resolve(build, "clangd.js"), "utf8")
+const pool = "var pthreadPoolSize=8"
+if (!originalJs.includes(pool))
+  throw new Error("Native pthread pool layout changed")
+const js = Buffer.from(
+  originalJs.replace(pool, 'var pthreadPoolSize=Module["v5xThreadPoolSize"]||8')
+)
 const wasm = await readFile(resolve(build, "clangd.wasm"))
 if (!WebAssembly.validate(wasm)) throw new Error("Invalid clangd Wasm module")
 const compressed = gzipSync(wasm, { level: 9 })

@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-10-26T21:32:53.572Z",
+  "environment": "one CPU quota, 2 GiB process-group limit, four-worker pool",
+  "template": "pros",
+  "processGroupPeakBytes": 756019200,
+  "results": [
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 1252.2049999833107,
+      "heapBytes": 139198464,
+      "totalMs": 19216.22999995947,
+      "firstCompletionMs": 12899.459999978542,
+      "timeToFirstCompletionMs": 14191.224999964237,
+      "editP50Ms": 184.63499999046326,
+      "editP95Ms": 297.40499997138977,
+      "completionCount": 12,
+      "mainThreadLongTasks": [
+        87
+      ],
+      "heartbeatP95Ms": 91.30499994754791,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    },
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 813.3949999809265,
+      "heapBytes": 139198464,
+      "totalMs": 4976.175000011921,
+      "firstCompletionMs": 2254.1650000214577,
+      "timeToFirstCompletionMs": 3079.8799999952316,
+      "editP50Ms": 75.2950000166893,
+      "editP95Ms": 103.625,
+      "completionCount": 12,
+      "mainThreadLongTasks": [],
+      "heartbeatP95Ms": 16.069999992847443,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    }
+  ]
+}

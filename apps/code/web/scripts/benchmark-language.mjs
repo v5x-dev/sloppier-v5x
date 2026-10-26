@@ -3,7 +3,7 @@
  */
 import { createRequire } from "node:module"
 import { resolve } from "node:path"
-import { writeFile } from "node:fs/promises"
+import { readFile, writeFile } from "node:fs/promises"
 
 const require = createRequire(import.meta.url)
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright")
@@ -212,6 +212,7 @@ try {
         const first = performance.now()
         await completion(position)
         const firstCompletionMs = performance.now() - first
+        const timeToFirstCompletionMs = performance.now() - began
         const timings = []
         let labels = []
         for (let i = 0; i < 30; i++) {
@@ -290,6 +291,7 @@ try {
           type: undefined,
           totalMs: performance.now() - began,
           firstCompletionMs,
+          timeToFirstCompletionMs,
           editP50Ms: percentile(timings, 0.5),
           editP95Ms: percentile(timings, 0.95),
           heapBytes: metrics?.heapBytes,
@@ -318,10 +320,25 @@ try {
     )
   )
     throw new Error("Unexpected language service network request")
+  // Opt in only inside a dedicated cgroup: a desktop session's peak includes
+  // unrelated applications. This includes Chromium processes and this harness.
+  let processGroupPeakBytes
+  if (process.env.BENCHMARK_CGROUP === "1") {
+    const membership = await readFile("/proc/self/cgroup", "utf8")
+    const path = membership
+      .split("\n")
+      .find((line) => line.startsWith("0::"))
+      ?.slice(3)
+    if (!path) throw new Error("A cgroup v2 process group is required")
+    processGroupPeakBytes = Number(
+      await readFile(resolve("/sys/fs/cgroup", "." + path, "memory.peak"), "utf8")
+    )
+  }
   const report = {
     timestamp: new Date().toISOString(),
     environment: process.env.BENCHMARK_ENVIRONMENT || "unconstrained desktop",
     template: process.env.LANGUAGE_TEMPLATE || "pros",
+    processGroupPeakBytes,
     results,
   }
   console.log(JSON.stringify(report, null, 2))

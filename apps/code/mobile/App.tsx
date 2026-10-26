@@ -1,14 +1,22 @@
-import './global.css';
-import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
+import "./global.css"
+import { Merriweather_400Regular } from "@expo-google-fonts/merriweather"
+import { Button, Host, Text } from "@expo/ui"
+import { useFonts } from "expo-font"
+import { buttonStyle } from "@expo/ui/swift-ui/modifiers"
 
 export default function App() {
+  const [fontsLoaded] = useFonts({ Merriweather: Merriweather_400Regular })
+
+  if (!fontsLoaded) return null
+
   return (
-    <View className="flex-1 items-center justify-center bg-background">
-      <Text className="text-foreground">
-        Open up App.tsx to start working on your app!
-      </Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+    <Host matchContents>
+      <Button
+        modifiers={[buttonStyle("glass")]}
+        onPress={() => alert("Pressed!")}
+      >
+        <Text style={{ fontFamily: "Merriweather" }}>Press me</Text>
+      </Button>
+    </Host>
+  )
 }

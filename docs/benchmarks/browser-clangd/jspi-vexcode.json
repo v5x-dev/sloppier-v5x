@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-10-26T21:34:44.799Z",
+  "environment": "one CPU quota, 2 GiB process-group limit",
+  "template": "vexcode",
+  "processGroupPeakBytes": 825049088,
+  "results": [
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 1356.1299999952316,
+      "heapBytes": 96665600,
+      "totalMs": 14912.229999959469,
+      "firstCompletionMs": 5234.889999985695,
+      "timeToFirstCompletionMs": 6607.069999992847,
+      "editP50Ms": 200.35499995946884,
+      "editP95Ms": 403.83999997377396,
+      "completionCount": 30,
+      "mainThreadLongTasks": [
+        80,
+        94,
+        91
+      ],
+      "heartbeatP95Ms": 99.93999999761581,
+      "definitionPath": "/opt/vex/sdk/vexv5/include/vex_motor.h"
+    },
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 1636.449999988079,
+      "heapBytes": 96665600,
+      "totalMs": 4118.444999992847,
+      "firstCompletionMs": 460.3899999856949,
+      "timeToFirstCompletionMs": 2110.060000002384,
+      "editP50Ms": 87.13499999046326,
+      "editP95Ms": 106.40000003576279,
+      "completionCount": 30,
+      "mainThreadLongTasks": [
+        87
+      ],
+      "heartbeatP95Ms": 43.644999980926514,
+      "definitionPath": "/opt/vex/sdk/vexv5/include/vex_motor.h"
+    }
+  ]
+}

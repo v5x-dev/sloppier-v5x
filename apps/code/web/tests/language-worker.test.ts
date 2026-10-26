@@ -85,10 +85,15 @@ describe("browser language transport", () => {
     const receive = vi.fn(),
       failed = vi.fn()
     const transport = new WorkerLanguageTransport("pros")
-    const starting = transport.start(source, receive, failed)
+    const starting = transport.start(Promise.resolve(source), receive, failed)
     const worker = TestWorker.instances[0]
+    expect(worker.postMessage).toHaveBeenCalledWith({
+      type: "start",
+      template: "pros",
+    })
+    await Promise.resolve()
     expect(worker.postMessage).toHaveBeenCalledWith(
-      { type: "start", template: "pros", files: source.files },
+      { type: "source", files: source.files },
       [source.files["src/main.cpp"].buffer]
     )
     worker.emit({ type: "ready", root: "/workspace" })
@@ -118,7 +123,7 @@ describe("browser language transport", () => {
     vi.stubGlobal("Worker", TestWorker)
     const failed = vi.fn()
     const transport = new WorkerLanguageTransport("pros")
-    const starting = transport.start(source, vi.fn(), failed)
+    const starting = transport.start(Promise.resolve(source), vi.fn(), failed)
     const worker = TestWorker.instances[0]
     worker.emit({ type: "ready", root: "/workspace" })
     await starting
@@ -131,6 +136,29 @@ describe("browser language transport", () => {
     await rejection
     expect(failed).toHaveBeenCalledWith(new Error("out of memory"))
     expect(worker.terminate).toHaveBeenCalledOnce()
+  })
+  it("starts the runtime before source arrives and discards a stopped session's late source", async () => {
+    vi.stubGlobal("Worker", TestWorker)
+    let finish!: (value: typeof source) => void
+    const snapshot = new Promise<typeof source>((resolve) => {
+      finish = resolve
+    })
+    const transport = new WorkerLanguageTransport("pros")
+    const first = transport.start(snapshot, vi.fn(), vi.fn())
+    const rejection = expect(first).rejects.toThrow("stopped")
+    expect(TestWorker.instances[0].postMessage).toHaveBeenCalledWith({
+      type: "start",
+      template: "pros",
+    })
+    const second = transport.start(Promise.resolve(source), vi.fn(), vi.fn())
+    TestWorker.instances[1].emit({ type: "ready", root: "/workspace" })
+    await second
+    finish(source)
+    await rejection
+    await Promise.resolve()
+    expect(TestWorker.instances[0].postMessage).toHaveBeenCalledTimes(1)
+    expect(TestWorker.instances[1].terminate).not.toHaveBeenCalled()
+    transport.stop()
   })
 })
 
@@ -175,27 +203,5 @@ describe("local language session", () => {
     await expect(completion).rejects.toBeInstanceOf(RequestCancelled)
     client.stop()
     doc.destroy()
-  })
-  it("does not let a stale source read replace a newer worker", async () => {
-    let finish!: (value: typeof source) => void
-    const first = new Promise<typeof source>((resolve) => {
-      finish = resolve
-    })
-    const transport: LanguageTransport = {
-      start: vi.fn(async () => {
-        throw new Error("test stops at transport")
-      }),
-      send: vi.fn(),
-      read: vi.fn(),
-      stop: vi.fn(),
-    }
-    const prepare = vi.fn().mockReturnValueOnce(first).mockResolvedValue(source)
-    const client = new LanguageClient(transport, prepare)
-    const stale = client.start()
-    await client.start()
-    finish(source)
-    await stale
-    expect(transport.start).toHaveBeenCalledOnce()
-    client.stop()
   })
 })

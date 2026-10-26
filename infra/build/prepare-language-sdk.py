@@ -38,7 +38,8 @@ with zipfile.ZipFile(io.BytesIO(archive)) as source:
     save('newlib', {name: source.read(name) for name in source.namelist() if name.startswith('usr/include/newlib/')})
     for template in ['pros', 'ez-template', 'vexcode']:
         pros = template in ['pros', 'ez-template']
-        flags = ['-xc++', '-resource-dir=/usr', '--target=arm-none-eabi', '-mcpu=cortex-a9', '-mfpu=neon-fp16', '-mfloat-abi=softfp', '-std=gnu++20' if pros else '-std=gnu++17', '-I/workspace/include']
+        target = ['--target=arm-none-eabi', '-mcpu=cortex-a9', '-mfpu=neon-fp16'] if pros else ['--target=thumbv7-none-eabi', '-march=armv7-a', '-mfpu=neon']
+        flags = ['-xc++', '-resource-dir=/usr', *target, '-mfloat-abi=softfp', '-std=gnu++20' if pros else '-std=gnu++17', '-I/workspace/include']
         files = {}
         if pros:
             base = 'usr/include/newlib/c++/13.2.1'

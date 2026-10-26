@@ -53,6 +53,25 @@ browser can decompress and compile it as a stream. The generator checks the
 Cloudflare 25 MiB per-file limit. Source arrays transfer to the worker, and the
 memory filesystem takes ownership of SDK/source buffers without another copy.
 
+Modern Chromium uses the bundled JSPI runtime when native WebAssembly suspension
+is available. Older browsers use the pinned Asyncify runtime. Both run in a worker
+and use the same SDKs. The JSPI build omits clang-tidy checks and the unrelated
+WASI sysroot; compiler builtin headers remain embedded.
+
+To rebuild the native-suspension runtime locally:
+
+```sh
+V5X_LANGUAGE_BUILD_JOBS=6 infra/language/build-clangd.sh
+node infra/language/package-runtime.mjs \
+  "$HOME/.cache/v5x-clangd-build/llvm-project/build-jspi/bin"
+bun run --cwd apps/code/web prepare-language
+```
+
+The build pins LLVM 21.1.0 and Emscripten 4.0.22. Packaged binaries and their
+integrity/provenance manifest live in `infra/language/runtime`; normal application
+builds verify and copy them without rebuilding LLVM. LLVM's license is in
+`infra/language/LLVM-LICENSE.txt`, alongside the upstream wrapper's license.
+
 SDK archives are checked in under `infra/language/sdk` so CI and browser sessions
 need no running build machine. PROS and EZ share one newlib download. VEXcode and
 JAR share one VEX SDK download. To regenerate from an installed toolchain image:
@@ -71,6 +90,9 @@ development. Cloudflare static-asset headers are in `public/_headers`.
 
 ## Benchmarking
 
+Recorded results and methodology are in
+[`benchmarks/browser-clangd/README.md`](benchmarks/browser-clangd/README.md).
+
 The benchmark starts a local static asset server and real headless Chromium. It
 needs no account, Convex credentials, build machine, or editor UI automation.
 
@@ -88,7 +110,10 @@ bundle to verify Vite output instead of the benchmark's Bun bundle.
 
 The harness measures worker startup, first completion, median and 95th-percentile
 completion after incremental edits, Wasm heap size, main-thread long tasks, and
-main-thread heartbeat delays. It also checks ARM SDK completion, hover, definition
+main-thread heartbeat delays. `timeToFirstCompletionMs` includes worker startup
+and initialization; `firstCompletionMs` measures the first completion request.
+`BENCHMARK_CGROUP=1` records the dedicated cgroup's peak memory, including all
+Chromium processes and the harness. It also checks ARM SDK completion, hover, definition
 reads, formatting, Unicode framing, and missing-header diagnostics.
 
 Chrome page CPU throttling does **not** throttle dedicated workers. Constrain the
@@ -96,11 +121,16 @@ whole browser process group instead. For example, on a systemd Linux host:
 
 ```sh
 systemd-run --user --scope -p CPUQuota=100% -p MemoryMax=2G \
-  env BENCHMARK_ENVIRONMENT="one CPU quota, 2 GiB process-group limit" \
+  env BENCHMARK_CGROUP=1 \
+  BENCHMARK_ENVIRONMENT="one CPU quota, 2 GiB process-group limit" \
   bun scripts/benchmark-language.mjs
 ```
 
 These limits are a reproducible proxy, not measurements from Chromebook hardware.
+The target device is a typical school Chromebook with 4 GB RAM. The 2 GiB
+process-group limit reserves room for ChromeOS and other tabs, but it does not
+emulate a particular Chromebook CPU.
+
 Heap measurements exclude JavaScript, compiler code, browser processes, and GPU
 memory. Network timing uses localhost, so it does not represent a school network.
 

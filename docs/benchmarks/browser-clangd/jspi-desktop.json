@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-10-26T21:29:47.695Z",
+  "environment": "unconstrained desktop",
+  "template": "pros",
+  "results": [
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 503.5450000166893,
+      "heapBytes": 139198464,
+      "totalMs": 4949.709999978542,
+      "firstCompletionMs": 2797.7300000190735,
+      "timeToFirstCompletionMs": 3318.1200000047684,
+      "editP50Ms": 28.225000023841858,
+      "editP95Ms": 146.21999996900558,
+      "completionCount": 12,
+      "mainThreadLongTasks": [],
+      "heartbeatP95Ms": 16.125,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    },
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 459.19999998807907,
+      "heapBytes": 139198464,
+      "totalMs": 2816.2150000333786,
+      "firstCompletionMs": 1449.875,
+      "timeToFirstCompletionMs": 1921.7950000166893,
+      "editP50Ms": 19.069999992847443,
+      "editP95Ms": 25.834999978542328,
+      "completionCount": 12,
+      "mainThreadLongTasks": [],
+      "heartbeatP95Ms": 16.069999992847443,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    }
+  ]
+}

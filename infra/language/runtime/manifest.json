@@ -1,0 +1,12 @@
+{
+  "llvm": "21.1.0",
+  "llvmCommit": "3623fe661ae35c6c80ac221f14d85be76aa870f1",
+  "emscripten": "4.0.22",
+  "kind": "jspi",
+  "initialMemory": 67108864,
+  "jsSha256": "9d59c9a5bb5730f3fccd95c26c6710ff41caaabd3a9f45b8b77b47a25a6dcd45",
+  "compressedSha256": "8bade4487a452ba9b5e95092f89ae4b6bfc12af366432e41b3d8dbe90741852c",
+  "sha256": "f0b90888fa949ed1fa369ced665f58aad3ba73897b5884624c633e410e20799a",
+  "bytes": 41633516,
+  "compressedBytes": 11245578
+}
