@@ -106,3 +106,48 @@ export const applyRepositoryChanges = internalMutation({
     }
   },
 })
+
+// A restored tree starts new live documents, preventing old local Yjs caches
+// and delayed updates from merging post-commit text back into restored files.
+export const applyCommitRestore = internalMutation({
+  args: {
+    programId: v.id("programs"),
+    actorId: v.string(),
+    headSha: v.string(),
+    paths: v.array(v.string()),
+  },
+  handler: async (ctx, { programId, actorId, headSha, paths }) => {
+    const now = Date.now()
+    const documents = await ctx.db
+      .query("crdtDocuments")
+      .withIndex("by_program_path", (q) => q.eq("programId", programId))
+      .collect()
+    for (const document of documents) {
+      await ctx.db.delete(document._id)
+      await ctx.scheduler.runAfter(0, internal.crdt.deleteOrphanUpdates, {
+        documentId: document._id,
+      })
+    }
+    const files = await ctx.db
+      .query("files")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .collect()
+    const wanted = new Set(paths)
+    for (const file of files) {
+      if (!wanted.delete(file.path)) await ctx.db.delete(file._id)
+      else await ctx.db.patch(file._id, { updatedAt: now })
+    }
+    for (const path of wanted) {
+      validateRepositoryPath(path)
+      await ctx.db.insert("files", {
+        programId,
+        path,
+        origin: "user",
+        createdBy: actorId,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+    await ctx.db.patch(programId, { repositoryHeadSha: headSha })
+  },
+})

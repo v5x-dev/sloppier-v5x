@@ -33,9 +33,9 @@ The frontend honors `VITE_CODE_DEMO_ACCOUNTS` only in Vite development mode. Nev
 
 The actions bar's history button opens a popover with source commits, authors, timestamps, and paginated results. Select a commit to inspect changed files and unified Pierre diffs. Reserved `.v5x/` backup-only commits are omitted based on their changed paths. Large or binary diffs display a preview-unavailable message.
 
-Restore file copies that file's contents from the selected commit into a new commit on `main`. It supports UTF-8 text up to 256 KiB, including files deleted from the current tree. To recover a file deleted in a historical commit, select an earlier commit where it exists. The popover requires local edits to be committed and synced, then shows the path and revision before restoration.
+Restore commit restores the complete program file tree at the selected commit in a new commit on `main`. It replaces modified files, removes files added later, and recovers deleted files, including binary and large files. Selecting a file in the diff viewer only changes the preview; restoration always applies to the entire program. The popover requires local edits to be committed and synced, then confirms the revision and scope before restoration. Earlier history remains available.
 
-Open collaborative documents receive the restore as a normal Yjs replacement. Edits made concurrently after the restore snapshot remain mergeable. If saving succeeds but the live update fails, the popover reports that the commit exists and the program must be reopened. Restoring never rewinds the branch or removes earlier commits.
+The restore uses Code Storage's native commit restoration with an expected branch head. A branch conflict fails instead of silently overwriting a newer source commit. File metadata and the source head are reconciled in one Convex mutation. All previous live document identities are invalidated, so delayed updates and local Yjs caches cannot bring newer text back over the restored source. The initiating workbench reloads its files and closes tabs for removed files. Other collaborators must reopen the program before editing.
 
 ## Program search
 
@@ -53,4 +53,4 @@ Use Up/Down in the search field or result list to move the selected match into v
 
 `createLiveFileSession` owns replay, local cache recovery, acknowledgements, backup status, presence, and disposal. The editor supplies a Pierre adapter after recovery and replay complete, and retains rendering, language registration, and browser navigation warnings. Session tests control subscriptions, cache hydration, and acknowledgements to verify lifecycle ordering without mounting the editor. Disposed sessions ignore late acknowledgements; replaced sessions keep their warning and stop writing.
 
-History restoration and program search share `replayLiveDocument`. It checks document identity across pages, accounts for bytes even when replay fails, and rejects stalled pagination. Restore retains its 8 MiB limit and rejects failed replay. Search retains a shared 16 MiB budget, skips unreadable live documents, and suppresses their committed matches.
+Legacy single-file restoration and program search share `replayLiveDocument`. It checks document identity across pages, accounts for bytes even when replay fails, and rejects stalled pagination. Restore retains its 8 MiB limit and rejects failed replay. Search retains a shared 16 MiB budget, skips unreadable live documents, and suppresses their committed matches.

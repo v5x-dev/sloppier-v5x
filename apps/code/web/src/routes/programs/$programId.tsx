@@ -293,6 +293,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
   const readFile = useAction(api.codeStorage.readFile)
   const commitFiles = useAction(api.codeStorage.commitFiles)
   const restoreHistoryFile = useAction(api.codeStorage.restoreHistoryFile)
+  const restoreHistoryCommit = useAction(api.codeStorage.restoreHistoryCommit)
 
   const [source] = useState(
     () =>
@@ -302,6 +303,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
         readFile,
         commitFiles,
         restoreHistoryFile,
+        restoreHistoryCommit,
       })
   )
   const {
@@ -324,7 +326,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
     openFile,
     readBytes,
     commit,
-    restoreFile,
+    restoreCommit,
     applyExplorerUpdate,
   } = source
   const allSynced = source.isSynced()
@@ -672,7 +674,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                   programId={program._id}
                   revision={program.repositoryHeadSha}
                   canRestore={dirtyPaths.length === 0 && allSynced}
-                  onRestore={restoreFile}
+                  onRestore={restoreCommit}
                 />
                 <Tooltip>
                   <TooltipTrigger render={<span className="inline-flex" />}>

@@ -42,7 +42,7 @@ export function ProgramHistory({
   programId: Id<"programs">
   revision?: string
   canRestore: boolean
-  onRestore: (sha: string, path: string) => Promise<string | null>
+  onRestore: (sha: string) => Promise<string | null>
 }) {
   const history = useAction(api.codeStorage.history)
   const historyFiles = useAction(api.codeStorage.historyFiles)
@@ -170,13 +170,13 @@ export function ProgramHistory({
     }
   }
   async function restore() {
-    if (!commit || !file || !canRestore || restoreBusy.current) return
+    if (!commit || !canRestore || restoreBusy.current) return
     restoreBusy.current = true
     setRestoring(true)
     setDetailError(null)
     try {
-      const warning = await onRestore(commit.sha, file.path)
-      setResult(warning ?? "File restored in a new commit.")
+      const warning = await onRestore(commit.sha)
+      setResult(warning ?? "Program restored in a new commit.")
       setConfirm(false)
     } catch (err) {
       setDetailError(errorMessage(err))
@@ -427,10 +427,12 @@ export function ProgramHistory({
               {confirm ? (
                 <div className="space-y-3">
                   <p className="text-xs leading-relaxed">
-                    Restore <span className="font-mono">{file?.path}</span> to{" "}
+                    Restore all program files to commit{" "}
                     <span className="font-mono">{commit.sha.slice(0, 8)}</span>?
-                    This replaces the file’s current text for collaborators and
-                    creates a new commit.
+                    This replaces all program files, removes files added since
+                    this commit, and restores deleted files. It creates a new
+                    commit. Collaborators must reopen the program before
+                    editing.
                   </p>
                   <div className="flex justify-end gap-2">
                     <Button
@@ -447,7 +449,7 @@ export function ProgramHistory({
                       onClick={() => void restore()}
                     >
                       {restoring && <Spinner />}
-                      {restoring ? "Restoring…" : "Restore file"}
+                      {restoring ? "Restoring…" : "Restore commit"}
                     </Button>
                   </div>
                 </div>
@@ -456,23 +458,16 @@ export function ProgramHistory({
                   <p className="text-xs text-muted-foreground">
                     {!canRestore
                       ? "Commit and sync current edits before restoring."
-                      : file?.state === "deleted"
-                        ? "This file was deleted in this commit. Choose an earlier version to recover it."
-                        : "Restore a file without rewriting history."}
+                      : "Restore all program files without rewriting history."}
                   </p>
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={
-                      !file ||
-                      file.state === "deleted" ||
-                      !canRestore ||
-                      restoring
-                    }
+                    disabled={!canRestore || restoring}
                     onClick={() => setConfirm(true)}
                   >
                     <ClockCounterClockwiseIcon />
-                    Restore file
+                    Restore commit
                   </Button>
                 </div>
               )}

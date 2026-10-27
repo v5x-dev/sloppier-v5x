@@ -16,6 +16,7 @@ type Actions = {
       | "readFile"
       | "commitFiles"
       | "restoreHistoryFile"
+      | "restoreHistoryCommit"
       | "buildManifest"
   ]: Action<Name>
 }
@@ -286,6 +287,44 @@ export class WorkbenchSource {
       for (const change of changes)
         this.committed.set(change.path, change.contents)
       this.sourceChanged()
+    })
+  }
+
+  restoreCommit = async (sha: string) => {
+    if (this.operationBusy || this.state.dirtyPaths.length || !this.isSynced())
+      throw new Error("Commit and sync current changes before restoring.")
+    return this.exclusive(async () => {
+      await this.actions.restoreHistoryCommit({
+        programId: this.programId,
+        sha,
+      })
+      // Dispose every old editor identity and discard pending reads and baselines.
+      this.reads.clear()
+      this.committed.clear()
+      this.drafts.clear()
+      this.scrollPositions.clear()
+      this.sourceChanged({
+        loaded: {},
+        readError: {},
+        liveSync: {},
+        filePeople: {},
+      })
+      await this.loadPaths()
+      if (this.state.listError)
+        throw new Error(
+          "Commit restored. Reload the program to load its files."
+        )
+      const openPaths = this.state.openPaths.filter((path) =>
+        this.state.paths?.includes(path)
+      )
+      this.update({
+        openPaths,
+        activePath: openPaths.includes(this.state.activePath ?? "")
+          ? this.state.activePath
+          : (openPaths[0] ?? null),
+      })
+      await Promise.all(openPaths.map((path) => this.loadFile(path)))
+      return null
     })
   }
 

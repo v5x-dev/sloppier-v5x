@@ -516,12 +516,12 @@ async function getOrCreateRepository(
   }
 }
 
-async function listAllPaths(repo: Repo) {
+async function listAllPaths(repo: Repo, ref = "main") {
   const paths = new Set<string>()
   let cursor: string | undefined
 
   do {
-    const page = await repo.listFiles({ ref: "main", cursor, limit: 500 })
+    const page = await repo.listFiles({ ref, cursor, limit: 500 })
     for (const path of page.paths) paths.add(path)
     cursor = page.nextCursor
     if (!page.hasMore) break
@@ -745,6 +745,43 @@ export const historyDiff = action({
         message: "This file is binary or too large to preview.",
       }
     return { raw: file.raw, message: null }
+  },
+})
+
+// Restore the complete Git tree, rather than reconstructing a commit from its diff.
+export const restoreHistoryCommit = action({
+  args: { programId: v.id("programs"), sha: v.string() },
+  handler: async (ctx, { programId, sha }): Promise<{ commitSha: string }> => {
+    const program = await requireAuthorizedProgram(ctx, programId)
+    validateHistorySha(sha)
+    const identity = (await ctx.auth.getUserIdentity())!
+    const repo = storage().repo({
+      id: program.repositoryId,
+      defaultBranch: "main",
+    })
+    const branches = await repo.listBranches({ limit: 100 })
+    const headSha = branches.branches.find(
+      (branch) => branch.name === "main"
+    )?.headSha
+    if (!headSha) throw new ConvexError("The program branch was not found.")
+    const paths = await listAllPaths(repo, sha)
+    const result = await repo.restoreCommit({
+      targetBranch: "main",
+      targetCommitSha: sha,
+      expectedHeadSha: headSha,
+      commitMessage: `Restore program to ${sha.slice(0, 8)}`,
+      author: commitAuthor(
+        identity.name ?? "V5X User",
+        identity.email ?? "user@v5x.local"
+      ),
+    })
+    await ctx.runMutation(internal.files.applyCommitRestore, {
+      programId,
+      actorId: identity.subject,
+      headSha: result.commitSha,
+      paths: [...paths].filter(visibleHistoryPath),
+    })
+    return { commitSha: result.commitSha }
   },
 })
 

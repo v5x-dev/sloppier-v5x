@@ -23,6 +23,7 @@ function setup() {
       contentType: "text/plain",
     })),
     commitFiles: vi.fn(async () => ({ commitSha: "commit" })),
+    restoreHistoryCommit: vi.fn(async () => ({ commitSha: "restored" })),
     restoreHistoryFile: vi.fn(async () => ({
       commitSha: "restore",
       contents: "restored",
@@ -178,6 +179,8 @@ describe("workbench source", () => {
     source.setSynced("src/main.cpp", false)
     expect(() => source.closeTab("src/main.cpp")).toThrow("Keep it open")
     await expect(source.commit()).rejects.toThrow("syncing")
+    await expect(source.restoreCommit("sha")).rejects.toThrow("Commit and sync")
+    expect(actions.restoreHistoryCommit).not.toHaveBeenCalled()
     await expect(source.restoreFile("sha", "src/main.cpp")).rejects.toThrow(
       "Commit and sync"
     )
@@ -207,6 +210,34 @@ describe("workbench source", () => {
     await Promise.resolve()
     expect(source.getSnapshot().loaded["src/main.cpp"]).toBeUndefined()
     expect(source.getSnapshot().openPaths).toEqual([])
+  })
+  it("restores a commit and reloads all files, removing stale tabs and drafts", async () => {
+    const { source, actions } = await opened()
+    source.openFile("include/robot.h")
+    await Promise.resolve()
+    actions.restoreHistoryCommit = vi.fn(async () => ({
+      commitSha: "restored",
+    }))
+    actions.listFiles.mockResolvedValue({
+      paths: ["src/main.cpp", "restored.h"],
+      hasMore: false,
+    })
+    actions.readFile.mockResolvedValue({
+      bytes: new TextEncoder().encode("historical").buffer,
+      contentRange: null,
+      contentType: "text/plain",
+    })
+    await source.restoreCommit("a".repeat(40))
+    expect(actions.restoreHistoryCommit).toHaveBeenCalledWith({
+      programId: "program",
+      sha: "a".repeat(40),
+    })
+    expect(source.getSnapshot().openPaths).toEqual(["src/main.cpp"])
+    expect(source.getSnapshot().loaded["src/main.cpp"]?.contents).toBe(
+      "historical"
+    )
+    expect(source.getSnapshot().loaded["include/robot.h"]).toBeUndefined()
+    expect(source.getDrafts().size).toBe(0)
   })
   it("restores clean files and forwards partial-success warnings", async () => {
     const { source, actions } = await opened()
