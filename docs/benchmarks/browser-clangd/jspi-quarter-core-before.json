@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-10-27T03:03:12.346Z",
+  "environment": "quarter CPU quota, 2 GiB process-group limit; original automatic diagnostics, no concurrent build",
+  "template": "pros",
+  "processGroupPeakBytes": 752431104,
+  "results": [
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 5196.699999988079,
+      "heapBytes": 167051264,
+      "totalMs": 76294.35500001907,
+      "firstCompletionMs": 49389.90999996662,
+      "timeToFirstCompletionMs": 54694.79000002146,
+      "editP50Ms": 406.19999998807907,
+      "editP95Ms": 1801.8499999642372,
+      "firstCompletionCount": 80,
+      "completionCount": 12,
+      "mainThreadLongTasks": [],
+      "heartbeatP95Ms": 99.95999997854233,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    },
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 4407.245000004768,
+      "heapBytes": 167051264,
+      "totalMs": 77904.54000002146,
+      "firstCompletionMs": 53303.094999969006,
+      "timeToFirstCompletionMs": 57900.13499999046,
+      "editP50Ms": 299.38499999046326,
+      "editP95Ms": 1400.164999961853,
+      "firstCompletionCount": 80,
+      "completionCount": 12,
+      "mainThreadLongTasks": [
+        100,
+        500,
+        80,
+        84,
+        94,
+        88,
+        76,
+        72,
+        85,
+        88,
+        97,
+        100,
+        72,
+        88
+      ],
+      "heartbeatP95Ms": 99.99500000476837,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    }
+  ],
+  "runtimeArtifact": {
+    "llvm": "21.1.0",
+    "llvmCommit": "3623fe661ae35c6c80ac221f14d85be76aa870f1",
+    "emscripten": "4.0.22",
+    "kind": "jspi",
+    "initialMemory": 67108864,
+    "jsSha256": "9d59c9a5bb5730f3fccd95c26c6710ff41caaabd3a9f45b8b77b47a25a6dcd45",
+    "compressedSha256": "8bade4487a452ba9b5e95092f89ae4b6bfc12af366432e41b3d8dbe90741852c",
+    "sha256": "f0b90888fa949ed1fa369ced665f58aad3ba73897b5884624c633e410e20799a",
+    "bytes": 41633516,
+    "compressedBytes": 11245578,
+    "js": "clangd-jspi-9d59c9a5bb5730f3.js",
+    "wasm": "clangd-8bade4487a452ba9.wasm"
+  },
+  "diagnosticsOnEdit": "automatic",
+  "threads": 8,
+  "multifile": false,
+  "workerSha256": "d30c0b310e858d374626c74db99cd799b2d6bd762918b5f64f5a96743909f81f"
+}

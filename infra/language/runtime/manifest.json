@@ -2,11 +2,14 @@
   "llvm": "21.1.0",
   "llvmCommit": "3623fe661ae35c6c80ac221f14d85be76aa870f1",
   "emscripten": "4.0.22",
+  "lto": "thin",
+  "ltoImportInstructionLimit": 5,
+  "clangTidyStaticAnalyzer": false,
   "kind": "jspi",
   "initialMemory": 67108864,
-  "jsSha256": "9d59c9a5bb5730f3fccd95c26c6710ff41caaabd3a9f45b8b77b47a25a6dcd45",
-  "compressedSha256": "8bade4487a452ba9b5e95092f89ae4b6bfc12af366432e41b3d8dbe90741852c",
-  "sha256": "f0b90888fa949ed1fa369ced665f58aad3ba73897b5884624c633e410e20799a",
-  "bytes": 41633516,
-  "compressedBytes": 11245578
+  "jsSha256": "9e2f601e692c1799793f9a9d81b7f679d6b91cbf36d364e37822779e5d21be27",
+  "compressedSha256": "55477bd435fafc8b027389ff4235c9eba4b8cc32eded12d0218bb7ce0d43fbf5",
+  "sha256": "d0f742bae0f632e868f6695721a2f84ac8160ce937a8d466a32e1f3e909b38f5",
+  "bytes": 42059652,
+  "compressedBytes": 11305679
 }

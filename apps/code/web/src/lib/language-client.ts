@@ -231,6 +231,9 @@ export class LanguageClient {
           this.notify("textDocument/didChange", {
             textDocument: { uri: this.uri(path), version: document.version },
             contentChanges: changes,
+            // This client displays completions and navigation, not diagnostics.
+            // Skip unsolicited AST rebuilds while the user is typing.
+            wantDiagnostics: false,
           })
       },
     }

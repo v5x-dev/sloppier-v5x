@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-10-27T02:59:16.561Z",
+  "environment": "one CPU quota, 2 GiB process-group limit; tuned runtime and client",
+  "template": "pros",
+  "processGroupPeakBytes": 855224320,
+  "results": [
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 1407.3949999809265,
+      "heapBytes": 139198464,
+      "totalMs": 18994.610000014305,
+      "firstCompletionMs": 12982.144999980927,
+      "timeToFirstCompletionMs": 14480.834999978542,
+      "editP50Ms": 109.21999996900558,
+      "editP95Ms": 300.2350000143051,
+      "firstCompletionCount": 80,
+      "completionCount": 12,
+      "mainThreadLongTasks": [
+        91
+      ],
+      "heartbeatP95Ms": 91.41500002145767,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    },
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 829.4950000047684,
+      "heapBytes": 139198464,
+      "totalMs": 4624.100000023842,
+      "firstCompletionMs": 2448.9200000166893,
+      "timeToFirstCompletionMs": 3291.610000014305,
+      "editP50Ms": 22.360000014305115,
+      "editP95Ms": 85.75999999046326,
+      "firstCompletionCount": 80,
+      "completionCount": 12,
+      "mainThreadLongTasks": [],
+      "heartbeatP95Ms": 16.070000052452087,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    }
+  ],
+  "runtimeArtifact": {
+    "llvm": "21.1.0",
+    "llvmCommit": "3623fe661ae35c6c80ac221f14d85be76aa870f1",
+    "emscripten": "4.0.22",
+    "lto": "thin",
+    "ltoImportInstructionLimit": 5,
+    "clangTidyStaticAnalyzer": false,
+    "kind": "jspi",
+    "initialMemory": 67108864,
+    "jsSha256": "9e2f601e692c1799793f9a9d81b7f679d6b91cbf36d364e37822779e5d21be27",
+    "compressedSha256": "55477bd435fafc8b027389ff4235c9eba4b8cc32eded12d0218bb7ce0d43fbf5",
+    "sha256": "d0f742bae0f632e868f6695721a2f84ac8160ce937a8d466a32e1f3e909b38f5",
+    "bytes": 42059652,
+    "compressedBytes": 11305679,
+    "js": "clangd-jspi-9e2f601e692c1799.js",
+    "wasm": "clangd-55477bd435fafc8b.wasm"
+  },
+  "diagnosticsOnEdit": "disabled",
+  "threads": 8,
+  "multifile": false
+}

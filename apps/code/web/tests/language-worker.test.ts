@@ -199,6 +199,10 @@ describe("local language session", () => {
     expect(methods.indexOf("textDocument/didChange")).toBeLessThan(
       methods.indexOf("textDocument/completion")
     )
+    expect(
+      messages.find((message) => message.method === "textDocument/didChange")
+        ?.params
+    ).toMatchObject({ wantDiagnostics: false })
     controller.abort()
     await expect(completion).rejects.toBeInstanceOf(RequestCancelled)
     client.stop()

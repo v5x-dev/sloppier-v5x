@@ -1,6 +1,7 @@
 /** Real Chromium benchmark, including edits, SDK navigation, and UI responsiveness.
  * Run with Bun. PLAYWRIGHT_MODULE can locate an existing global installation.
  */
+import { createHash } from "node:crypto"
 import { createRequire } from "node:module"
 import { resolve } from "node:path"
 import { readFile, writeFile } from "node:fs/promises"
@@ -14,6 +15,10 @@ const bundle = await Bun.build({
   minify: true,
 })
 if (!bundle.success) throw new Error(String(bundle.logs))
+const assets = process.env.LANGUAGE_ASSET_DIR || resolve(web, "public/language")
+const workerBundle = process.env.WORKER_BUNDLE
+  ? Bun.file(process.env.WORKER_BUNDLE)
+  : bundle.outputs[0]
 const requests = []
 const server = Bun.serve({
   port: 0,
@@ -30,15 +35,14 @@ const server = Bun.serve({
         { headers: { ...headers, "Content-Type": "text/html" } }
       )
     if (url.pathname === "/worker.js")
-      return new Response(
-        process.env.WORKER_BUNDLE
-          ? Bun.file(process.env.WORKER_BUNDLE)
-          : bundle.outputs[0],
-        { headers: { ...headers, "Content-Type": "text/javascript" } }
-      )
+      return new Response(workerBundle, {
+        headers: { ...headers, "Content-Type": "text/javascript" },
+      })
     if (!url.pathname.startsWith("/language/") || url.pathname.includes(".."))
       return new Response(null, { status: 404 })
-    const file = Bun.file(resolve(web, "public", url.pathname.slice(1)))
+    const file = Bun.file(
+      resolve(assets, url.pathname.slice("/language/".length))
+    )
     if (!(await file.exists())) return new Response(null, { status: 404 })
     return new Response(file, {
       headers: {
@@ -129,12 +133,13 @@ try {
             })
           else if (m.id !== undefined) pending.get(m.id)?.(m)
         }
-        const request = (send) => {
+        const request = (send, description = "definition read") => {
           const id = next++
           return new Promise((resolve, reject) => {
             const timeout = setTimeout(
-              () => reject(new Error("Language request timed out")),
-              60000
+              () =>
+                reject(new Error(`Language request timed out: ${description}`)),
+              120000
             )
             pending.set(id, (m) => {
               clearTimeout(timeout)
@@ -147,11 +152,13 @@ try {
           })
         }
         const call = (method, params) =>
-          request((id) =>
-            worker.postMessage({
-              type: "messages",
-              messages: [{ jsonrpc: "2.0", id, method, params }],
-            })
+          request(
+            (id) =>
+              worker.postMessage({
+                type: "messages",
+                messages: [{ jsonrpc: "2.0", id, method, params }],
+              }),
+            method
           )
         const notify = (method, params) =>
           worker.postMessage({
@@ -209,8 +216,18 @@ try {
             position: at,
             context: { triggerKind: 1 },
           })
+        const completionLabels = (response) =>
+          (Array.isArray(response) ? response : (response?.items ?? [])).map(
+            (item) => item.label
+          )
+        const hasMotorMembers = (labels) =>
+          labels.some((label) => /move|spin/.test(label))
         const first = performance.now()
-        await completion(position)
+        const initialLabels = completionLabels(await completion(position))
+        if (!hasMotorMembers(initialLabels))
+          throw new Error(
+            `First completion has no SDK motor members: ${initialLabels.slice(0, 15)}`
+          )
         const firstCompletionMs = performance.now() - first
         const timeToFirstCompletionMs = performance.now() - began
         const timings = []
@@ -219,6 +236,7 @@ try {
           const start = performance.now()
           notify("textDocument/didChange", {
             textDocument: { uri, version: ++version },
+            wantDiagnostics: options.diagnostics ? undefined : false,
             contentChanges: [
               {
                 range: { start: position, end: position },
@@ -229,15 +247,14 @@ try {
           const end = { ...position, character: position.character + 1 }
           const response = await completion(end)
           timings.push(performance.now() - start)
-          labels = (
-            Array.isArray(response) ? response : (response?.items ?? [])
-          ).map((item) => item.label)
+          labels = completionLabels(response)
           notify("textDocument/didChange", {
             textDocument: { uri, version: ++version },
+            wantDiagnostics: options.diagnostics ? undefined : false,
             contentChanges: [{ range: { start: position, end }, text: "" }],
           })
         }
-        if (!labels.some((label) => /move|spin/.test(label)))
+        if (!hasMotorMembers(labels))
           throw new Error(
             `SDK completion failed: ${labels.slice(0, 15)}; diagnostics: ${JSON.stringify(diagnostics)}`
           )
@@ -281,6 +298,42 @@ try {
           throw new Error(
             `SDK diagnostics failed: ${JSON.stringify(headerErrors)}`
           )
+        if (options.multifile) {
+          // Exercise dynamic pthread growth when several documents are open.
+          const extraCode =
+            "struct Extra { int member; }; void probe() { Extra value; value. }\n"
+          const extraUris = [0, 1, 2, 3].map(
+            (index) => `file:///workspace/src/extra-${index}.cpp`
+          )
+          for (const extraUri of extraUris)
+            notify("textDocument/didOpen", {
+              textDocument: {
+                uri: extraUri,
+                languageId: "cpp",
+                version: 1,
+                text: extraCode,
+              },
+            })
+          await Promise.all(
+            extraUris.map(async (extraUri) => {
+              const response = await call("textDocument/completion", {
+                textDocument: { uri: extraUri },
+                position: {
+                  line: 0,
+                  character: extraCode.indexOf("value.") + 6,
+                },
+              })
+              if (
+                !completionLabels(response).some((label) =>
+                  /member/.test(label)
+                )
+              )
+                throw new Error("Multi-file completion failed")
+            })
+          )
+          for (const extraUri of extraUris)
+            notify("textDocument/didClose", { textDocument: { uri: extraUri } })
+        }
         worker.postMessage({ type: "metrics" })
         await new Promise((resolve) => setTimeout(resolve, 100))
         worker.terminate()
@@ -295,6 +348,7 @@ try {
           editP50Ms: percentile(timings, 0.5),
           editP95Ms: percentile(timings, 0.95),
           heapBytes: metrics?.heapBytes,
+          firstCompletionCount: initialLabels.length,
           completionCount: labels.length,
           mainThreadLongTasks: longTasks,
           heartbeatP95Ms: percentile(heartbeat, 0.95),
@@ -311,6 +365,8 @@ try {
       threads: Number(process.env.LANGUAGE_THREADS || 8),
       template: process.env.LANGUAGE_TEMPLATE || "pros",
       runs: Number(process.env.BENCHMARK_RUNS || 2),
+      diagnostics: process.env.BENCHMARK_DIAGNOSTICS === "1",
+      multifile: process.env.BENCHMARK_MULTIFILE === "1",
     }
   )
   if (
@@ -331,14 +387,28 @@ try {
       ?.slice(3)
     if (!path) throw new Error("A cgroup v2 process group is required")
     processGroupPeakBytes = Number(
-      await readFile(resolve("/sys/fs/cgroup", "." + path, "memory.peak"), "utf8")
+      await readFile(
+        resolve("/sys/fs/cgroup", "." + path, "memory.peak"),
+        "utf8"
+      )
     )
   }
+  const runtimeManifest = JSON.parse(
+    await readFile(resolve(assets, "runtime.json"), "utf8")
+  )
   const report = {
     timestamp: new Date().toISOString(),
     environment: process.env.BENCHMARK_ENVIRONMENT || "unconstrained desktop",
     template: process.env.LANGUAGE_TEMPLATE || "pros",
     processGroupPeakBytes,
+    runtimeArtifact: runtimeManifest[results[0]?.runtime],
+    workerSha256: createHash("sha256")
+      .update(new Uint8Array(await workerBundle.arrayBuffer()))
+      .digest("hex"),
+    threads: Number(process.env.LANGUAGE_THREADS || 8),
+    diagnosticsOnEdit:
+      process.env.BENCHMARK_DIAGNOSTICS === "1" ? "automatic" : "disabled",
+    multifile: process.env.BENCHMARK_MULTIFILE === "1",
     results,
   }
   console.log(JSON.stringify(report, null, 2))

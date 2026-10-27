@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-10-27T02:59:26.901Z",
+  "environment": "one CPU quota, 2 GiB process-group limit; original automatic diagnostics",
+  "template": "pros",
+  "processGroupPeakBytes": 851992576,
+  "results": [
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 1444.699999988079,
+      "heapBytes": 167051264,
+      "totalMs": 20096.195000052452,
+      "firstCompletionMs": 13602.97000002861,
+      "timeToFirstCompletionMs": 15097.090000033379,
+      "editP50Ms": 190.25499999523163,
+      "editP95Ms": 294.1550000309944,
+      "firstCompletionCount": 80,
+      "completionCount": 12,
+      "mainThreadLongTasks": [],
+      "heartbeatP95Ms": 95.32499998807907,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    },
+    {
+      "root": "/workspace",
+      "runtime": "jspi",
+      "startupMs": 943.535000026226,
+      "heapBytes": 167051264,
+      "totalMs": 5796.564999997616,
+      "firstCompletionMs": 2459.3450000286102,
+      "timeToFirstCompletionMs": 3413.8349999785423,
+      "editP50Ms": 82.56499999761581,
+      "editP95Ms": 99.4549999833107,
+      "firstCompletionCount": 80,
+      "completionCount": 12,
+      "mainThreadLongTasks": [],
+      "heartbeatP95Ms": 16.060000002384186,
+      "definitionPath": "/workspace/include/pros/motors.hpp"
+    }
+  ],
+  "runtimeArtifact": {
+    "llvm": "21.1.0",
+    "llvmCommit": "3623fe661ae35c6c80ac221f14d85be76aa870f1",
+    "emscripten": "4.0.22",
+    "kind": "jspi",
+    "initialMemory": 67108864,
+    "jsSha256": "9d59c9a5bb5730f3fccd95c26c6710ff41caaabd3a9f45b8b77b47a25a6dcd45",
+    "compressedSha256": "8bade4487a452ba9b5e95092f89ae4b6bfc12af366432e41b3d8dbe90741852c",
+    "sha256": "f0b90888fa949ed1fa369ced665f58aad3ba73897b5884624c633e410e20799a",
+    "bytes": 41633516,
+    "compressedBytes": 11245578,
+    "js": "clangd-jspi-9d59c9a5bb5730f3.js",
+    "wasm": "clangd-8bade4487a452ba9.wasm"
+  },
+  "diagnosticsOnEdit": "automatic",
+  "threads": 8,
+  "multifile": false,
+  "workerSha256": "d30c0b310e858d374626c74db99cd799b2d6bd762918b5f64f5a96743909f81f"
+}

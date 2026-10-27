@@ -6,7 +6,49 @@ on Linux. A dedicated systemd cgroup limited the harness and every Chromium
 process to one CPU quota and 2 GiB RAM. These results are a conservative proxy;
 they are not measurements from Chromebook hardware.
 
-## Results
+## Follow-up optimization
+
+The tuned build uses ThinLTO with an import instruction limit of five and omits
+clang-tidy's static analyzer dependency. The worker also disables the separate
+whole-standard-library index, overlaps runtime instantiation with SDK loading,
+and skips diagnostics after edits because the client does not display them.
+Included headers still supply symbols, and hover/navigation build an AST on
+request. C++20 and all SDK headers are unchanged.
+
+A quarter-core cgroup limits the entire browser and harness to 25% of one CPU.
+This is a fourfold reduction in CPU budget relative to the one-core proxy, not
+Chrome's page-only throttle or a measurement on a specific slower processor.
+The table uses fresh profiles, localhost downloads, and a 2 GiB memory limit.
+
+| Quarter-core PROS | Worker ready | First semantic completion | Edit median | Edit p95 |
+| --- | ---: | ---: | ---: | ---: |
+| Before, cold | 5.20 s | 54.70 s | 406 ms | 1,802 ms |
+| After, cold | 5.00 s | 52.60 s | 304 ms | 1,300 ms |
+| Before, warm | 4.41 s | 57.90 s | 299 ms | 1,400 ms |
+| After, warm | 4.21 s | 53.19 s | 296 ms | 1,102 ms |
+
+Quarter-core peak process-group memory was 718 MiB before and 723 MiB after.
+Editing p95 fell by 28% cold and 21% warm. The initial header parse remains the
+main delay; these changes do not make first completion instantaneous.
+On the one-core proxy, warm edit median fell from 83 to 22 ms and p95 from 99 to
+86 ms. First semantic completion was 15.10/3.41 s cold/warm before and
+14.48/3.29 s after. These are individual comparative runs, not confidence
+intervals. Earlier trials under concurrent compiler load and forced diagnostics
+are excluded from these comparisons.
+
+See `jspi-quarter-core-before.json`, `jspi-quarter-core-after.json`,
+`jspi-one-core-before.json`, and `jspi-one-core-after.json` for measurements and
+runtime hashes. For both before/after measurements, completion is forced to use
+the semantic parser; the original runtime's text-only startup fallback cannot
+count as a successful first completion. The before runs retain the original
+client's automatic diagnostics, while after runs disable edit diagnostics.
+
+The production Vite worker and all four templates passed completion, hover,
+definition reads, formatting, and four additional simultaneously open documents.
+The Asyncify fallback passed the same multi-file check. See
+`jspi-tuned-production.json` for the production validation run.
+
+## Earlier runtime comparison
 
 Each run starts a fresh browser profile, then opens two sequential workers.
 "Cold" is the first worker in that profile. "Warm" is the second worker, sharing
@@ -48,17 +90,18 @@ the same runtime path. See `jspi-production.json`.
 ## Selected runtime
 
 Modern Chromium automatically selects LLVM 21.1.0 built with Emscripten 4.0.22
-and native WebAssembly suspension, JSPI. The runtime downloads as 11,245,578
+and native WebAssembly suspension, JSPI. The runtime downloads as 11,305,679
 bytes of gzip, compared with about 25.2 MB for the Asyncify fallback. The build
-omits clang-tidy checks and the unrelated WASI sysroot, embeds compiler builtin
+uses ThinLTO with an import instruction limit of five, omits clang-tidy checks,
+its static analyzer dependency, and the unrelated WASI sysroot, embeds compiler builtin
 headers, starts with 64 MiB of linear memory, and caps it at 1 GiB. Template
 headers download separately and cache by content hash. PROS linear memory after
 the workload was about 159 MiB; EZ-Template was 191 MiB. This is only part of
 browser memory use.
 
 clangd uses one parsing job, memory PCH storage, no background index, and no
-clang-tidy. Its reported core count is capped at two. The pthread pool is bounded
-at eight. A four-worker experiment used 721 MiB peak but did not consistently
+clang-tidy. Its reported core count is capped at two. The runtime preloads eight pthread workers and can allocate more for additional
+open documents. A four-worker experiment used 721 MiB peak but did not consistently
 improve latency: 14.19 s cold first completion and 104 ms warm edit p95. Eight
 remains the default.
 
@@ -89,7 +132,11 @@ systemd-run --user --scope -p CPUQuota=100% -p MemoryMax=2G \
 Install Playwright or set `PLAYWRIGHT_MODULE` to its installation path.
 `CHROMIUM_PATH` defaults to `/usr/bin/chromium`. Use `LANGUAGE_RUNTIME=asyncify`
 for the fallback, `LANGUAGE_TEMPLATE=ez-template|vexcode|jar` for other SDKs, and
-`LANGUAGE_THREADS=4` for the pool experiment. A fresh invocation creates a fresh
+`LANGUAGE_THREADS=4` for the pool experiment. `LANGUAGE_ASSET_DIR` selects an
+alternate prepared asset directory for runtime comparisons.
+`BENCHMARK_DIAGNOSTICS=1` restores automatic edit diagnostics, and
+`BENCHMARK_MULTIFILE=1` checks four additional open documents. Use
+`CPUQuota=25%` for the quarter-core proxy. A fresh invocation creates a fresh
 browser profile. Page-level CDP CPU throttling does not throttle workers, so it
 is not used.
 

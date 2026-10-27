@@ -31,16 +31,19 @@ cmake --build build-native --target llvm-tblgen clang-tblgen -j"$build_jobs"
 # Compiler builtin headers are the only embedded filesystem data. ARM libc and
 # C++ headers are the separate, cached SDK archives used by both runtimes.
 headers="$build_root/llvm-project/clang/lib/Headers"
+# ThinLTO lets the linker inline parser helpers across LLVM archives and remove
+# code that clangd never reaches, reducing browser compilation and parse work.
 emcmake cmake -G Ninja -S llvm -B build-jspi \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS="-pthread -Dwait4=__syscall_wait4" \
-  -DCMAKE_EXE_LINKER_FLAGS="-O3 -pthread -sENVIRONMENT=worker -sNO_INVOKE_RUN -sINITIAL_MEMORY=64MB -sALLOW_MEMORY_GROWTH -sMAXIMUM_MEMORY=1GB -sSTACK_SIZE=256kB -sEXPORTED_RUNTIME_METHODS=FS,callMain -sMODULARIZE -sEXPORT_ES6 -sWASM_BIGINT -sJSPI -sPTHREAD_POOL_SIZE=8 --js-library=$language_dir/runtime-library.js --embed-file=$headers@/usr/include" \
+  -DCMAKE_EXE_LINKER_FLAGS="-O3 -Wl,--mllvm=-import-instr-limit=5 -pthread -sENVIRONMENT=worker -sNO_INVOKE_RUN -sINITIAL_MEMORY=64MB -sALLOW_MEMORY_GROWTH -sMAXIMUM_MEMORY=1GB -sSTACK_SIZE=256kB -sEXPORTED_RUNTIME_METHODS=FS,callMain -sMODULARIZE -sEXPORT_ES6 -sWASM_BIGINT -sJSPI -sPTHREAD_POOL_SIZE=8 --js-library=$language_dir/runtime-library.js --embed-file=$headers@/usr/include" \
   -DLLVM_TARGET_ARCH=wasm32-emscripten -DLLVM_DEFAULT_TARGET_TRIPLE=arm-none-eabi \
   -DLLVM_TARGETS_TO_BUILD=ARM -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
   -DLLVM_TABLEGEN="$build_root/llvm-project/build-native/bin/llvm-tblgen" \
   -DCLANG_TABLEGEN="$build_root/llvm-project/build-native/bin/clang-tblgen" \
-  -DLLVM_BUILD_STATIC=ON -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF \
-  -DCLANGD_TIDY_CHECKS=OFF -DCLANGD_ENABLE_REMOTE=OFF -DCLANGD_BUILD_XPC=OFF \
+  -DLLVM_ENABLE_LTO=Thin -DLLVM_BUILD_STATIC=ON -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_BENCHMARKS=OFF \
+  -DCLANGD_TIDY_CHECKS=OFF -DCLANG_TIDY_ENABLE_STATIC_ANALYZER=OFF \
+  -DCLANGD_ENABLE_REMOTE=OFF -DCLANGD_BUILD_XPC=OFF \
   -DCLANG_ENABLE_OBJC_REWRITER=OFF \
   -DLLVM_ENABLE_BACKTRACES=OFF -DLLVM_ENABLE_UNWIND_TABLES=OFF \
   -DLLVM_ENABLE_CRASH_OVERRIDES=OFF -DLLVM_ENABLE_ZSTD=OFF \

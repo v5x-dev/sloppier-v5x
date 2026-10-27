@@ -119,57 +119,61 @@ async function start(data: {
   })
   const js = new URL(artifact.js, base).href
   const scriptPromise = import(/* @vite-ignore */ js)
-  const [{ default: Clangd }, wasm, sdk] = await Promise.all([
-    scriptPromise,
-    modulePromise,
-    sdkPromise,
-  ])
-  let stderr = ""
-  runtime = await Clangd({
-    thisProgram: "/usr/bin/clangd",
-    mainScriptUrlOrBlob: js,
-    INITIAL_MEMORY: data.initialMemory ?? artifact.initialMemory,
-    v5xThreadPoolSize: data.threads ?? 8,
-    instantiateWasm(
-      imports: WebAssembly.Imports,
-      receive: (
-        instance: WebAssembly.Instance,
-        module: WebAssembly.Module
-      ) => void
-    ) {
-      memory =
-        Object.values(imports)
-          .flatMap((namespace) => Object.values(namespace))
-          .find(
-            (value): value is WebAssembly.Memory =>
-              value instanceof WebAssembly.Memory
-          ) ?? null
-      if (!memory) throw new Error("clangd memory import is missing")
-      const instance = new WebAssembly.Instance(wasm, imports)
-      receive(instance, wasm)
-      return instance.exports
-    },
-    stdin,
-    stdinReady: () => {
-      return queueIndex < queue.length
-        ? Promise.resolve()
-        : new Promise<void>((resolve) => {
-            wake = resolve
-          })
-    },
-    stdout: (byte: number) => output.push(byte),
-    stderr: (byte: number) => {
-      if (!data.debug) return
-      if (byte === 10) {
-        console.log(stderr)
-        stderr = ""
-      } else stderr += String.fromCharCode(byte)
-    },
-    onAbort: (reason: unknown) =>
-      self.postMessage({ type: "error", error: String(reason) }),
-  })
+  const runtimePromise = Promise.all([scriptPromise, modulePromise]).then(
+    async ([{ default: Clangd }, wasm]) => {
+      let stderr = ""
+      return Clangd({
+        thisProgram: "/usr/bin/clangd",
+        mainScriptUrlOrBlob: js,
+        INITIAL_MEMORY: data.initialMemory ?? artifact.initialMemory,
+        v5xThreadPoolSize: data.threads ?? 8,
+        instantiateWasm(
+          imports: WebAssembly.Imports,
+          receive: (
+            instance: WebAssembly.Instance,
+            module: WebAssembly.Module
+          ) => void
+        ) {
+          memory =
+            Object.values(imports)
+              .flatMap((namespace) => Object.values(namespace))
+              .find(
+                (value): value is WebAssembly.Memory =>
+                  value instanceof WebAssembly.Memory
+              ) ?? null
+          if (!memory) throw new Error("clangd memory import is missing")
+          const instance = new WebAssembly.Instance(wasm, imports)
+          receive(instance, wasm)
+          return instance.exports
+        },
+        stdin,
+        stdinReady: () => {
+          return queueIndex < queue.length
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                wake = resolve
+              })
+        },
+        stdout: (byte: number) => output.push(byte),
+        stderr: (byte: number) => {
+          if (!data.debug) return
+          if (byte === 10) {
+            console.log(stderr)
+            stderr = ""
+          } else stderr += String.fromCharCode(byte)
+        },
+        onAbort: (reason: unknown) =>
+          self.postMessage({ type: "error", error: String(reason) }),
+      })
+    }
+  )
+  const [loadedRuntime, sdk] = await Promise.all([runtimePromise, sdkPromise])
+  runtime = loadedRuntime
   for (const [path, contents] of Object.entries(sdk))
     write(`/${path}`, contents)
+  // Avoid indexing the entire standard library in a second parser. Included
+  // headers still contribute symbols; program .clangd files can override this.
+  write("/.clangd", "Index:\n  StandardLibrary: false\n")
   const files = data.files ?? (await sourceReady)
   for (const [path, contents] of Object.entries(files)) {
     if (
@@ -188,6 +192,7 @@ async function start(data: {
     "--header-insertion=never",
     "--limit-results=100",
     "--log=error",
+    "--completion-parse=always",
     `--compile-commands-dir=${root}`,
   ])
   void Promise.resolve(running).catch((error) =>

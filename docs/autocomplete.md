@@ -17,10 +17,16 @@ The client batches JSON-RPC messages through `postMessage`. Local and remote Yjs
 edits become incremental `didChange` notifications with UTF-16 positions. Edits
 reach clangd before completion requests. Cancellation and stale-response handling
 follow the same rules as other editor operations. Closed files use the pinned
-snapshot; open files use their live Yjs contents.
+snapshot; open files use their live Yjs contents. The client does not display
+diagnostics, so edits use clangd's `wantDiagnostics: false` extension to avoid
+unsolicited AST rebuilds. Hover and navigation still request an AST when needed.
 
 clangd runs with one parsing job, memory-backed preambles, no background index,
 no clang-tidy, no automatic include insertion, and at most 100 completion results.
+Completion waits for the semantic parser instead of returning text-only fallback
+suggestions during startup. A root `.clangd` defaults `Index.StandardLibrary` to
+`false`, avoiding a second parse of the entire standard library. Included headers
+still provide symbols; a program's `.clangd` can override the default.
 The compiler targets ARM, using the same PROS/newlib and VEX headers as builds.
 Template defaults live in `compile_flags.txt`. Custom Makefile execution stays on
 the build machine; programs with custom analysis flags should supply `.clangd`,
@@ -56,7 +62,9 @@ memory filesystem takes ownership of SDK/source buffers without another copy.
 Modern Chromium uses the bundled JSPI runtime when native WebAssembly suspension
 is available. Older browsers use the pinned Asyncify runtime. Both run in a worker
 and use the same SDKs. The JSPI build omits clang-tidy checks and the unrelated
-WASI sysroot; compiler builtin headers remain embedded.
+WASI sysroot; compiler builtin headers remain embedded. ThinLTO uses an import
+instruction limit of five to avoid excessive code growth. The build also omits
+clang-tidy's static analyzer dependency.
 
 To rebuild the native-suspension runtime locally:
 
@@ -107,11 +115,16 @@ Install Playwright or point `PLAYWRIGHT_MODULE` at an existing installation.
 `ez-template`, `vexcode`, or `jar`; `BENCHMARK_RUNS` defaults to two worker sessions.
 `BENCHMARK_OUTPUT` saves JSON. `WORKER_BUNDLE` can point at the production worker
 bundle to verify Vite output instead of the benchmark's Bun bundle.
+`LANGUAGE_ASSET_DIR` selects a separate prepared runtime/SDK directory for
+comparisons. `BENCHMARK_MULTIFILE=1` validates four additional open documents.
 
 The harness measures worker startup, first completion, median and 95th-percentile
 completion after incremental edits, Wasm heap size, main-thread long tasks, and
 main-thread heartbeat delays. `timeToFirstCompletionMs` includes worker startup
 and initialization; `firstCompletionMs` measures the first completion request.
+The first response must contain SDK motor members. Text-only fallback results
+fail validation. `BENCHMARK_DIAGNOSTICS=1` restores diagnostics after edits for
+comparisons with the previous client.
 `BENCHMARK_CGROUP=1` records the dedicated cgroup's peak memory, including all
 Chromium processes and the harness. It also checks ARM SDK completion, hover, definition
 reads, formatting, Unicode framing, and missing-header diagnostics.
