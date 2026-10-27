@@ -236,7 +236,7 @@ describe("workbench source", () => {
         contentType: "text/plain",
       }
     })
-    const snapshot = await source.prepareLanguageSource()
+    const snapshot = await source.prepareAutocompleteSource()
     expect(Object.keys(snapshot.files).sort()).toEqual([...paths].sort())
     expect(peak).toBeGreaterThan(1)
     expect(peak).toBeLessThanOrEqual(6)

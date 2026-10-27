@@ -411,12 +411,17 @@ export class WorkbenchSource {
 
   // Independent repository reads overlap without flooding a Chromebook with
   // requests. The build snapshot still follows its existing serial path.
-  prepareLanguageSource = () => this.prepareSnapshot(6)
+  prepareAutocompleteSource = () => this.prepareSnapshot(6, true)
 
-  private async prepareSnapshot(concurrency: number) {
-    const { sha, paths } = await this.actions.buildManifest({
+  private async prepareSnapshot(concurrency: number, sourceOnly = false) {
+    const { sha, paths: manifestPaths } = await this.actions.buildManifest({
       programId: this.programId,
     })
+    const paths = sourceOnly
+      ? manifestPaths.filter((path) =>
+          /\.(c|cc|cpp|cxx|h|hh|hpp|hxx|inc)$|(^|\/)\.clang-format$/i.test(path)
+        )
+      : manifestPaths
     const files: Record<string, Uint8Array> = {}
     let total = 0
     let next = 0

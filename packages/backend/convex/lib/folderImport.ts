@@ -41,7 +41,6 @@ export function excludedImportPath(
         [".vscode", ".idea", ".github", ".pros"].includes(part)
       ) ||
       [
-        ".clangd",
         ".clang-format",
         ".clang-tidy",
         ".editorconfig",

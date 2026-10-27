@@ -65,7 +65,6 @@ describe("local folder import", () => {
         ".github/workflows/build.yml",
         ".idea/workspace.xml",
         ".pros/cache.json",
-        ".clangd",
         ".clang-format",
         "compile_commands.json",
         "compile_flags.txt",

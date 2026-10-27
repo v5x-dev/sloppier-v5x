@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run prepare-language && vite dev --port 3000",
+    "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
-    "build": "bun run prepare-language && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "deploy": "bun run build && wrangler deploy --keep-vars",
     "cf-typegen": "wrangler types",
@@ -14,8 +14,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests --config vitest.config.ts",
-    "prepare-language": "node scripts/prepare-language-runtime.mjs",
-    "benchmark-language": "bun scripts/benchmark-language.mjs"
+    "generate-autocomplete": "python3 ../../../infra/autocomplete/generate.py"
   },
   "dependencies": {
     "@convex-dev/workos": "^0.0.3",
@@ -32,6 +31,7 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-start": "latest",
     "@vscode/codicons": "0.0.45",
+    "@wasm-fmt/clang-format": "^23.1.1",
     "@workos-inc/authkit-react": "^0.16.3",
     "@workspace/backend": "workspace:*",
     "@workspace/serial": "workspace:*",

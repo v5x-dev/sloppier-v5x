@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react"
 import { CodeIcon, HammerIcon } from "@phosphor-icons/react"
-import { useLanguageClient } from "@/components/editor/language-session"
+import { useLanguageService } from "@/components/editor/language-session"
 import { useProgramConnection } from "./program-connection"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { cn } from "@workspace/ui/lib/utils"
@@ -9,13 +9,13 @@ const subscribeToNothing = () => () => {}
 const stoppedStatus = () => "stopped" as const
 
 export function MachineStatus() {
-  const client = useLanguageClient()
+  const client = useLanguageService()
   const languageStatus = useSyncExternalStore(
     client?.onStatusChange ?? subscribeToNothing,
     client?.getStatus ?? stoppedStatus,
     stoppedStatus
   )
-  const languageLabel = `clangd worker: ${languageStatus}${client?.error ? `. ${client.error}` : ""}`
+  const languageLabel = `Autocomplete: ${languageStatus}${client?.error ? `. ${client.error}` : ""}`
   const { machineStatus, ready, status, error } = useProgramConnection()
   const failed = Boolean(error) || machineStatus === "error"
   const building = ready && status?.building

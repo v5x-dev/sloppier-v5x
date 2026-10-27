@@ -15,7 +15,7 @@ import { source } from "@/lib/live-document"
 import { createLiveFileSession } from "@/lib/live-file-session"
 import type { LivePerson } from "@/lib/live-file-session"
 import { useEditorCompletion } from "./editor-completion"
-import { useLanguageClient } from "./language-session"
+import { useLanguageService } from "./language-session"
 
 export type { LivePerson } from "@/lib/live-file-session"
 
@@ -49,7 +49,7 @@ export function LiveFileEditor({
   const client = useConvex()
   const connection = useConvexConnectionState()
   const { user } = useAuth()
-  const language = useLanguageClient()
+  const language = useLanguageService()
   const languageRef = useRef(language)
   languageRef.current = language
   const host = useRef<HTMLDivElement>(null)

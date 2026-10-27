@@ -7,7 +7,7 @@ export type HoverBlock = {
   language?: string
 }
 
-/** Keep clangd's code blocks and prose separate without rendering server HTML. */
+/** Keep documentation code blocks and prose separate without rendering server HTML. */
 export function hoverContent(contents: HoverContents) {
   const blocks: HoverBlock[] = []
   let source: string | undefined
@@ -42,9 +42,7 @@ export function hoverContent(contents: HoverContents) {
         const provided = line.match(/^provided by\s+(.+?)\s*$/i)
         if (provided) {
           flush()
-          source = provided[1]
-            .replace(/^["`]|["`]$/g, "")
-            .replace(/^.*\/home\/builder\/language\/[^/]+\//, "")
+          source = provided[1].replace(/^["`]|["`]$/g, "")
           continue
         }
         const heading = line.match(/^#{1,6}\s+(.+)/)
@@ -62,7 +60,7 @@ export function hoverContent(contents: HoverContents) {
     }
     flush()
   }
-  // Older clangd sessions return plaintext. Their namespace/signature block
+  // Plaintext documentation is also supported. A namespace/signature block
   // still deserves the same C++ highlighting as a fenced markdown block.
   for (const block of blocks) {
     if (

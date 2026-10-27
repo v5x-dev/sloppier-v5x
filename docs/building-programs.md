@@ -51,7 +51,7 @@ registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppi
 
 Its startup checkpoint is `ckpt-07de92dae97d43d99f3418183fe577e0`.
 
-The previous image is also tagged `20261026-slim`. Rebuild the image to remove its older machine-side clangd service. It keeps only the `thumb/v7-a+simd/softfp` ARM multilib, the one every V5 template selects for the Cortex-A9, which cuts the unpacked image from 3.6 GB to 0.96 GB. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
+The previous image is also tagged `20261026-slim`. It keeps only the `thumb/v7-a+simd/softfp` ARM multilib, the one every V5 template selects for the Cortex-A9, which cuts the unpacked image from 3.6 GB to 0.96 GB. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
 
 Cloud verification compiled all four templates from editable-only snapshots. Direct-connection verification built EZ-Template, received logs before completion, downloaded both package binaries without Convex storage, and rejected the scoped token on other cloud API routes. A browser build also populated the client-only binary folder. Local PCH reuse and header invalidation checks pass for all four templates.
 

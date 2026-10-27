@@ -13,27 +13,26 @@ import {
   type Match,
 } from "@/lib/completion"
 import {
-  CompletionTrigger,
   RequestCancelled,
   type CompletionItem,
   type SignatureHelp,
-} from "@/lib/language-client"
+} from "@/lib/language-service"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
-import { useLanguageClient } from "./language-session"
+import { useLanguageService } from "./language-session"
 
 type Menu = {
   items: CompletionItem[]
   matches: Match[]
   selected: number
   wordStart: number
-  /** The word clangd filtered for; incomplete lists re-query when it changes. */
+  /** The word used for this query; incomplete lists re-query when it changes. */
   queried: string
   incomplete: boolean
 }
 type Anchor = { left: number; top: number; bottom: number }
 
 // VS Code's completion item icons (codicons) and default dark theme colors,
-// indexed by LSP CompletionItemKind.
+// indexed by completion kind.
 const PURPLE = "#b180d7"
 const BLUE = "#75beff"
 const ORANGE = "#ee9d28"
@@ -80,14 +79,14 @@ const documentation = (value?: string | { value: string }) =>
 
 /**
  * VS Code-style completion for a collaborative Pierre editor: quick
- * suggestions while typing, clangd's trigger characters, Ctrl+Space,
+ * suggestions while typing, member and argument triggers, Ctrl+Space,
  * client-side refiltering, and signature help.
  */
 export function useEditorCompletion(
   binding: PierreCollaboration,
   path: string
 ) {
-  const client = useLanguageClient()
+  const client = useLanguageService()
   const wrapper = useRef<HTMLDivElement>(null)
   const [shownMenu, setMenuState] = useState<Menu | null>(null)
   const [signature, setSignatureState] = useState<SignatureHelp | null>(null)
@@ -168,12 +167,12 @@ export function useEditorCompletion(
     setMenu({ ...menu, matches, selected: Math.max(0, selected) })
     if (menu.incomplete && word !== menu.queried) {
       clearTimeout(state.timer)
-      state.timer = setTimeout(() => complete(CompletionTrigger.Incomplete), 50)
+      state.timer = setTimeout(() => complete(), 50)
     }
     requestAnimationFrame(measure)
   }
 
-  const complete = (triggerKind: number, triggerCharacter?: string) => {
+  const complete = () => {
     if (!client?.isReady) return
     const offset = caret()
     if (offset === null) return close()
@@ -185,12 +184,7 @@ export function useEditorCompletion(
     const lineStart = text.lastIndexOf("\n", wordStart - 1) + 1
     const prefix = text.slice(lineStart, wordStart)
     client
-      .completion(
-        path,
-        binding.document.positionAt(offset),
-        { triggerKind, triggerCharacter },
-        controller.signal
-      )
+      .completion(path, binding.document.positionAt(offset), controller.signal)
       .then((list) => {
         if (controller.signal.aborted) return
         // Discard results whose word moved; refiltering covers typing inside it.
@@ -262,6 +256,7 @@ export function useEditorCompletion(
             document.offsetAt(extra.range.start))
     close()
     state.accepting = true
+    binding.undo.stopCapturing()
     try {
       // One applyEdits call is one Yjs transaction, so one undo step.
       editor.applyEdits([
@@ -275,6 +270,7 @@ export function useEditorCompletion(
         ...additional,
       ])
     } finally {
+      binding.undo.stopCapturing()
       state.accepting = false
     }
     editor.setSelections([
@@ -285,6 +281,7 @@ export function useEditorCompletion(
       },
     ])
     if (text.includes("(")) signatureHelp()
+    if (item.retrigger) complete()
   }
 
   const onLocalChange = (
@@ -302,22 +299,17 @@ export function useEditorCompletion(
       const text = binding.document.getText()
       if (state.menu) {
         if (!typed || [...typed].every(isWordChar)) refilter()
-        else if (char && client.triggerCharacters.has(char))
-          complete(CompletionTrigger.TriggerCharacter, char)
+        else if (char && client.triggerCharacters.has(char)) complete()
         else close()
       } else if (char && typed.length <= 2) {
-        if (client.triggerCharacters.has(char))
-          complete(CompletionTrigger.TriggerCharacter, char)
+        if (client.triggerCharacters.has(char)) complete()
         else if (
           isWordChar(char) &&
           !/\d/.test(text[wordStartAt(text, offset)] ?? "") &&
           !inCommentOrString(text, offset)
         ) {
           clearTimeout(state.timer)
-          state.timer = setTimeout(
-            () => complete(CompletionTrigger.Invoked),
-            50
-          )
+          state.timer = setTimeout(() => complete(), 50)
         }
       }
       if (char && client.signatureTriggerCharacters.has(char)) signatureHelp()
@@ -337,7 +329,7 @@ export function useEditorCompletion(
       if (event.code === "Space" && event.ctrlKey && !event.altKey) {
         consume()
         if (event.shiftKey) signatureHelp()
-        else complete(CompletionTrigger.Invoked)
+        else complete()
         return
       }
       const menu = state.menu

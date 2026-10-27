@@ -16,6 +16,6 @@ export default [
     },
   },
   {
-    ignores: ["eslint.config.js", ".prettierrc", "public/language/**", ".cache/**"],
+    ignores: ["eslint.config.js", ".prettierrc", ".cache/**"],
   },
 ]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Export only headers for browser clangd from the build image, without starting a server.
+"""Export only headers for autocomplete metadata generation from the build image, without starting a server.
 
-Usage: python3 infra/build/prepare-language-sdk.py [toolchain-image]
+Usage: python3 infra/build/export-autocomplete-sdk.py [toolchain-image]
 """
 import io
 import pathlib
@@ -10,7 +10,7 @@ import sys
 import zipfile
 
 image = sys.argv[1] if len(sys.argv) > 1 else 'sloppier-v5x-build:definitions-local'
-out = pathlib.Path(__file__).resolve().parents[2] / 'infra/language/sdk'
+out = pathlib.Path(__file__).resolve().parents[2] / 'infra/autocomplete/sdk'
 out.mkdir(parents=True, exist_ok=True)
 # Runs at asset preparation time. No browser session ever contacts a machine.
 export = r'''

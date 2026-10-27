@@ -31,14 +31,6 @@ class BuildOnlyServer(unittest.TestCase):
         body = json.dumps(data).encode() if data is not None else None
         return urllib.request.urlopen(urllib.request.Request(self.base + path, data=body))
 
-    def test_language_routes_are_not_available(self):
-        for path in ['open', 'send', 'poll', 'read']:
-            with self.subTest(path=path), self.assertRaises(urllib.error.HTTPError) as error:
-                self.request('/language/' + path, {'sessionId': 'browser-worker'})
-            self.assertEqual(error.exception.code, 404)
-            error.exception.close()
-        self.assertEqual(server['UPLOADS'], {})
-
     def test_build_health_and_source_upload_still_work(self):
         with self.request('/health') as response:
             self.assertIn('building', json.load(response))

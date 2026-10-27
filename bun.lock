@@ -72,6 +72,7 @@
         "@tanstack/react-router-devtools": "latest",
         "@tanstack/react-start": "latest",
         "@vscode/codicons": "0.0.45",
+        "@wasm-fmt/clang-format": "^23.1.1",
         "@workos-inc/authkit-react": "^0.16.3",
         "@workspace/backend": "workspace:*",
         "@workspace/serial": "workspace:*",
@@ -1246,6 +1247,8 @@
     "@vitest/spy": ["@vitest/spy@5.0.5", "", {}, "sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw=="],
 
     "@vscode/codicons": ["@vscode/codicons@0.0.45", "", {}, "sha512-1KAZ7XCMagp5Gdrlr4bbbcAqgcIL623iO1wW6rfcSVGAVUQvR0WP7bQx1SbJ11gmV3fdQTSEFIJQ/5C+HuVasw=="],
+
+    "@wasm-fmt/clang-format": ["@wasm-fmt/clang-format@23.1.1", "", { "bin": { "clang-format": "clang-format-cli.cjs", "git-clang-format": "git-clang-format", "clang-format-diff": "clang-format-diff.py" } }, "sha512-SPA6H8DI/MOJAr0CfpbFBoqI5sfrimu3SlovuAAy36mq9vs9TOkS48lpUsNaPLeZzeQVEGe+pfbJHXKxiroP/g=="],
 
     "@workos-inc/authkit-js": ["@workos-inc/authkit-js@0.20.4", "", {}, "sha512-hr6umahJXM8bQ+cxC0Li9MIgBlzZCQwWGxINWC1j51Bj/l/6rl0VNnyuTkeHZsKpwk0i0goE128ooAGJ6Y/3OQ=="],
 

@@ -12,8 +12,8 @@ import { createPortal } from "react-dom"
 import { File } from "@pierre/diffs/react"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
-import { positionAt, RequestCancelled } from "@/lib/language-client"
-import { DefinitionContext, useLanguageClient } from "./language-session"
+import { positionAt, RequestCancelled } from "@/lib/language-service"
+import { DefinitionContext, useLanguageService } from "./language-session"
 import { toast } from "@workspace/ui/components/toast"
 
 import {
@@ -117,7 +117,7 @@ export function useEditorNavigation(
   path: string,
   wrapper: RefObject<HTMLDivElement | null>
 ) {
-  const client = useLanguageClient()
+  const client = useLanguageService()
   const navigate = useContext(DefinitionContext)
   const navigateRef = useRef(navigate)
   navigateRef.current = navigate
@@ -146,7 +146,7 @@ export function useEditorNavigation(
     const go = async (offset: number) => {
       dismiss()
       if (!client.isReady) {
-        toast.add({ type: "info", title: "Language server is connecting" })
+        toast.add({ type: "info", title: "Autocomplete is loading" })
         return
       }
       definition?.abort()

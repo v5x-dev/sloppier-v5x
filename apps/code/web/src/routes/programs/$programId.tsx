@@ -104,7 +104,10 @@ import {
   AvatarGroup,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
-import { LiveFileEditor, type LivePerson } from "@/components/editor/live-file-editor"
+import {
+  LiveFileEditor,
+  type LivePerson,
+} from "@/components/editor/live-file-editor"
 import { LanguageSession } from "@/components/editor/language-session"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
 import { AuthGate } from "@/components/app/auth-gate"
@@ -425,8 +428,9 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
 
   return (
     <LanguageSession
+      key={`${program._id}:${program.template}`}
       template={program.template}
-      prepareSource={source.prepareLanguageSource}
+      source={source}
       onDefinition={(path, line, column) => {
         if (!paths?.includes(path)) return false
         setDiagnosticTarget((current) => ({

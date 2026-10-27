@@ -1,9 +1,9 @@
 import { useEffect } from "react"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
-import { RequestCancelled } from "@/lib/language-client"
+import { RequestCancelled } from "@/lib/language-service"
 import { errorMessage } from "@/lib/errors"
 import { toast } from "@workspace/ui/components/toast"
-import { useLanguageClient } from "./language-session"
+import { useLanguageService } from "./language-session"
 
 export type FormatChange = (path: string, action: (() => void) | null) => void
 
@@ -12,7 +12,7 @@ export function useEditorFormatting(
   path: string,
   onFormatChange: FormatChange
 ) {
-  const client = useLanguageClient()
+  const client = useLanguageService()
   useEffect(() => {
     if (!client) return
     let disposed = false

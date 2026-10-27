@@ -1,4 +1,4 @@
-import type { CompletionItem } from "./language-client"
+import type { CompletionItem } from "./language-service"
 
 // Editor-independent completion rules, following VS Code's defaults.
 
@@ -30,8 +30,7 @@ export function inCommentOrString(text: string, offset: number) {
 export type Match = { item: CompletionItem; positions: number[]; score: number }
 
 export function itemLabel(item: CompletionItem) {
-  // clangd prefixes labels with a space or bullet to flag header insertion.
-  return item.label.replace(/^[\s•]+/, "")
+  return item.label
 }
 
 /** Fuzzy match: in-order characters, first one at a word boundary. */
@@ -82,7 +81,7 @@ export function filterItems(items: CompletionItem[], word: string) {
 }
 
 /**
- * Expand an LSP snippet to text plus the first tab stop's range. Later tab
+ * Expand a completion snippet to text plus the first tab stop's range. Later tab
  * stops keep their placeholder text.
  */
 export function expandSnippet(snippet: string) {
