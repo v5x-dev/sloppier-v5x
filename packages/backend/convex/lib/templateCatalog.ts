@@ -17,7 +17,8 @@ export const programTemplates = [
   {
     id: "ez-template",
     label: "EZ",
-    description: "A V5 program with PROS, EZ-Template, and example subsystems.",
+    description:
+      "A V5 program with PROS 4.2.2, EZ-Template, and example subsystems.",
   },
 ] as const
 

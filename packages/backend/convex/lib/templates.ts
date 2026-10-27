@@ -9,6 +9,8 @@ export type TemplateFile = {
 const JAR_REVISION = "0e8c9ce388fe9fd6bb40ea05c36d9eb71ea2df88"
 const EZ_TEMPLATE_REVISION = "2733127f518bcf57558c45390bd9eb59a961ef19"
 const EZ_TEMPLATE_ARCHIVE = `https://raw.githubusercontent.com/EZ-Robotics/EZ-Template/${EZ_TEMPLATE_REVISION}/EZ-Template-Example-Project.zip`
+export const EZ_PROS_VERSION = "4.2.2"
+export const OKAPI_REVISION = "da36a83b74491d2b593d46283ec3ab4ad29f8d8c"
 
 const jarFiles = [
   "JAR-Template.v5code",
@@ -111,6 +113,67 @@ async function loadEzTemplateFiles(
   programName: string
 ): Promise<TemplateFile[]> {
   const archiveFiles = await fetchExampleProjectArchive()
+  // Kernel and LVGL must share the hard-float ABI introduced in PROS 4.2.
+  const [kernel, lvgl, okapi] = await Promise.all([
+    fetchZip(
+      `https://pros.cs.purdue.edu/v5/_static/releases/kernel@${EZ_PROS_VERSION}.zip`
+    ),
+    fetchZip(
+      "https://pros.cs.purdue.edu/v5/_static/releases/liblvgl@8.3.9.zip"
+    ),
+    fetchZip(
+      `https://codeload.github.com/purduesigbots/OkapiLib/zip/${OKAPI_REVISION}`
+    ),
+  ])
+  for (const path of Object.keys(archiveFiles)) {
+    if (path.startsWith("include/pros/") || path.startsWith("include/liblvgl/"))
+      delete archiveFiles[path]
+  }
+  for (const archive of [kernel, lvgl]) {
+    const template = JSON.parse(
+      new TextDecoder().decode(archive["template.pros"]!)
+    )["py/state"]
+    for (const path of template.system_files as string[]) {
+      if (!archive[path]) throw new Error(`SDK archive is missing ${path}`)
+      archiveFiles[path] = archive[path]!
+    }
+  }
+  for (const [path, contents] of Object.entries(okapi)) {
+    const relative = path.split("/").slice(1).join("/")
+    if (relative.startsWith("include/okapi/")) archiveFiles[relative] = contents
+  }
+  // The image's GCC 13 supports C23/C++23 under these option spellings.
+  archiveFiles["common.mk"] = new TextEncoder().encode(
+    new TextDecoder()
+      .decode(archiveFiles["common.mk"]!)
+      .replace("C_STANDARD?=gnu23", "C_STANDARD?=gnu2x")
+      .replace("CXX_STANDARD?=gnu++26", "CXX_STANDARD?=gnu++23")
+  )
+  const manifest = JSON.parse(
+    new TextDecoder().decode(archiveFiles["project.pros"]!)
+  )
+  for (const [name, version] of [
+    ["kernel", EZ_PROS_VERSION],
+    ["liblvgl", "8.3.9"],
+    ["okapilib", "5.1.0"],
+  ]) {
+    const template = manifest["py/state"].templates[name!]
+    template.version = version
+    template.location = `${name}@${version}`
+    const archive =
+      name === "kernel" ? kernel : name === "liblvgl" ? lvgl : undefined
+    if (archive) {
+      const upstream = JSON.parse(
+        new TextDecoder().decode(archive["template.pros"]!)
+      )["py/state"]
+      template.system_files = upstream.system_files
+      template.supported_kernels = upstream.supported_kernels
+    }
+    if (name === "okapilib") template.supported_kernels = ">=4.2.0"
+  }
+  archiveFiles["project.pros"] = new TextEncoder().encode(
+    JSON.stringify(manifest)
+  )
   const files: TemplateFile[] = []
 
   for (const [path, contents] of Object.entries(archiveFiles)) {
@@ -228,5 +291,20 @@ function toProgramSlug(name: string) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || "vex-program"
+  )
+}
+
+export async function fetchZip(
+  url: string
+): Promise<Record<string, Uint8Array>> {
+  const response = await fetch(url)
+  if (!response.ok)
+    throw new Error(
+      `Could not download SDK archive (${response.status}): ${url}`
+    )
+  return Object.fromEntries(
+    Object.entries(
+      unzipSync(new Uint8Array(await response.arrayBuffer()))
+    ).filter(([path]) => !path.endsWith("/"))
   )
 }

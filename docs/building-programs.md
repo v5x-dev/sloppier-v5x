@@ -18,6 +18,8 @@ docker push YOUR_REGISTRY/v5x-build:VERSION
 
 The image installs Clang, GNU Arm Embedded, Python, and Make. Editor autocomplete runs in a browser worker; see [Autocomplete](autocomplete.md). SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode programs use the supplied Makefile. The cloud must be able to pull the image.
 
+EZ-Template uses PROS 4.2.2, LVGL 8.3.9, and the pinned Okapi 5.1.0 sources. The upstream EZ-Template 3.2.2 example ships PROS 4.1.1 and soft-float libraries. Template preparation replaces the kernel and LVGL; the Docker build recompiles EZ-Template and Okapi for the new kernel's hard-float ABI. Both ARM multilib variants remain installed because the standalone PROS starter still uses 4.1.1 and VEXcode uses soft-float. Updating an existing EZ program requires replacing the configured build image, since its managed SDK comes from the image rather than its repository. Refresh autocomplete archives and metadata from that same image.
+
 Build uploads omit the managed paths listed in `packages/backend/convex/lib/buildDependencies.ts`. The image links those paths from its read-only dependency tree into each build directory. `src/`, `include/main.h`, robot-specific headers such as `autons.hpp` and `subsystems.hpp`, `Makefile`, and `project.pros` remain repository-owned. Existing repositories may still have older committed copies; builds ignore those and use the image versions.
 
 C++ compilation uses a precompiled `vex.h` or `main.h`. The wrapper hashes compiler options and program header contents, serializes creation with a file lock, and reuses the result across builds on the same machine. Header changes invalidate it. Machine deletion clears the cache.
@@ -40,6 +42,16 @@ After the handshake, source uploads, build commands, viewer heartbeats, logs, an
 The machine runs `v5x-server`, an unprivileged Python service. It serializes builds, tracks expiring viewer sessions, retains the last 200,000 log characters, and provides log status updates every 500 ms. A build times out after 240 seconds. Source snapshots are limited to 96 MiB and 3,000 files. The machine retains only the last successful binary ZIP, up to 32 MiB compressed and 64 MiB uncompressed. Partial compiler output and the last successful binaries survive failed builds. Machine deletion clears logs, outputs, and PCH caches. No build logs or artifacts are stored in Convex.
 
 Cloud API contracts were checked against [Smolmachines API reference](https://smolmachines.com/docs/cloud/api-reference) and its [generated OpenAPI schema](https://smolmachines.com/openapi.json).
+
+## Configured production deployment
+
+Production (`different-fly-767`) uses the PROS 4.2.2 EZ-Template image, published as `20261027-pros-4.2.2`:
+
+```text
+registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:52ee5a5c7b0ab96782004eda7feb75fd0095cd3cbf45c34996f3d987459fdd99
+```
+
+The upgrade was verified by compiling all four starters and the committed source of `pleasant-solana-991` (`k97ewazd1z52dne1k833b0s3gs8h3sqd`), including its `pros::AIVision` declaration. Existing program source files were preserved.
 
 ## Configured development deployment
 

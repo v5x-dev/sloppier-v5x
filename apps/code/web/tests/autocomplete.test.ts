@@ -28,6 +28,12 @@ function setup(
 }
 
 describe("local SDK completion", () => {
+  it("completes AI Vision from the EZ-Template PROS 4.2 SDK", () => {
+    expect(setup("void run() { pros::| }", ez).labels()).toContain("AIVision")
+    expect(
+      setup("pros::AIVision sensor{1}; void run() { sensor.| }", ez).labels()
+    ).toContain("get_all_objects")
+  })
   it("completes VEX members, overloads and descriptions from actual metadata", () => {
     const { items } = setup(
       "#include <vex.h>\nusing namespace vex;\nmotor left(PORT1);\nvoid run() { left.| }"
