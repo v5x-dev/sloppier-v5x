@@ -454,7 +454,7 @@ function ProgramList({
             className="flex flex-col gap-2"
           >
             <h2
-              className={`font-heading text-lg leading-5 ${index === 0 ? "text-foreground" : "text-muted-foreground"}`}
+              className={`font-heading text-sm leading-5 ${index === 0 ? "text-foreground" : "text-muted-foreground"}`}
             >
               {label}
             </h2>
