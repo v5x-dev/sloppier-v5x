@@ -15,6 +15,8 @@ COPY vendor/deps /opt/v5x/deps
 COPY vendor/library-sources /tmp/library-sources
 COPY rebuild-libraries.py /tmp/rebuild-libraries.py
 RUN python3 /tmp/rebuild-libraries.py && rm -rf /tmp/library-sources /tmp/rebuild-libraries.py
+# Debug sections only slow the cold link (okapilib.a drops from 30 MB to 3 MB); the firmware never uses them.
+RUN find /opt/v5x/deps -name '*.a' -exec arm-none-eabi-strip --strip-debug {} +
 COPY v5x-build v5x-cxx v5x-server /usr/local/bin/
 COPY vexcode.mk /opt/v5x/vexcode.mk
 RUN chmod +x /usr/local/bin/v5x-build /usr/local/bin/v5x-cxx /usr/local/bin/v5x-server

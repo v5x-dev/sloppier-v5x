@@ -10,6 +10,12 @@ import sys
 template = sys.argv[1]
 if template not in ('pros', 'ez-template', 'vexcode', 'jar'):
     sys.exit('Unknown program template')
+# Headers every starter includes before project code. The PCH key covers these fixed library headers
+# only, so editing project headers reuses the precompiled header that the Builder checkpoint ships with.
+LIBRARY_PCH = {
+    'pros': '#include "api.h"\n',
+    'ez-template': '#define PROS_USE_SIMPLE_NAMES\n#define PROS_USE_LITERALS\n#include "api.h"\n#include "EZ-Template/api.hpp"\n',
+}
 root = pathlib.Path.cwd()
 if template in ('pros', 'ez-template'):
     dependencies = pathlib.Path('/opt/v5x/deps')
@@ -34,4 +40,8 @@ else:
     command = ['make', '-j2', 'CXX=/usr/local/bin/v5x-cxx', 'T=/opt/vex/sdk', 'P=program', 'CC=/usr/bin/clang']
 os.environ['V5X_REAL_CXX'] = compiler
 os.environ['V5X_PCH_HEADER'] = str(root / 'include' / header)
+if template in LIBRARY_PCH:
+    os.environ['V5X_PCH_SOURCE'] = LIBRARY_PCH[template]
+else:
+    os.environ.pop('V5X_PCH_SOURCE', None)
 subprocess.run(command, check=True)

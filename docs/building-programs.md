@@ -22,7 +22,7 @@ EZ-Template uses PROS 4.2.2, LVGL 8.3.9, and the pinned Okapi 5.1.0 sources. The
 
 Build uploads omit the managed paths listed in `packages/backend/convex/lib/buildDependencies.ts`. The image links those paths from its read-only dependency tree into each build directory. `src/`, `include/main.h`, robot-specific headers such as `autons.hpp` and `subsystems.hpp`, `Makefile`, and `project.pros` remain repository-owned. Existing repositories may still have older committed copies; builds ignore those and use the image versions.
 
-C++ compilation uses a precompiled `vex.h` or `main.h`. The wrapper hashes compiler options and program header contents, serializes creation with a file lock, and reuses the result across builds on the same machine. Header changes invalidate it. Machine deletion clears the cache.
+C++ compilation uses a precompiled header. For PROS and EZ-Template, the wrapper precompiles only the starter's library headers (`api.h`, plus `EZ-Template/api.hpp` for EZ), with debug info disabled. Its cache key covers the compiler, flags, and those library headers, so project header edits reuse it. Macros that `include/main.h` defines before the library includes are not part of the key. VEXcode and JAR keep the full project-header key. Serialization uses a file lock. `infra/build/prewarm-pch.py` compiles each starter once, and the checkpoint stores those caches, so a restored Builder's first build skips the precompile. Machine deletion clears the cache.
 
 ## Convex configuration
 
@@ -30,7 +30,7 @@ Set these deployment environment variables through the Convex dashboard:
 
 - `SMOL_CLOUD_TOKEN`: a server-only Smolmachines API key with machine lifecycle and exec permissions.
 - `SMOL_BUILD_IMAGE`: the published AMD64 OCI image reference.
-- `SMOL_BUILD_CHECKPOINT`: optional startup checkpoint of `SMOL_BUILD_IMAGE`, printed by `SMOL_CLOUD_TOKEN=... infra/build/checkpoint-image.py IMAGE`. Recreate it whenever the image changes.
+- `SMOL_BUILD_CHECKPOINT`: optional startup checkpoint of `SMOL_BUILD_IMAGE`. Create it with `bun infra/build/export-prewarm.ts > prewarm.json` and then `SMOL_CLOUD_TOKEN=... infra/build/checkpoint-image.py IMAGE prewarm.json`, which prints the checkpoint ID. The prewarm step fills the PCH caches before capture. Recreate it whenever the image changes.
 - `PIERRE_ORG` and `PIERRE_PRIVATE_KEY`: the existing Code Storage credentials.
 
 Deploy the backend with `bun run --cwd packages/backend deploy`. The Smolmachines tenant API key stays server-side; browsers receive only a scoped connect token. Machines have 2 vCPUs, 2 GiB RAM, one private published port, 8080, and a 120-second idle stop fallback. With `SMOL_BUILD_CHECKPOINT`, each program entry restores a machine whose `v5x-server` is already running, and the backend writes the program's template to `/home/builder/workspace/template`. This takes about 1.3 seconds from entry until the machine is reachable, compared with about 15 seconds for an image boot. The checkpoint's source machine is deleted after capture, so no machines stay running. Restored machines have no idle stop fallback, because restore requests cannot set one. Backend reconciliation is what deletes them. While viewers remain, direct browser heartbeats track presence on the build service. The backend samples viewer counts for lifecycle cleanup and keeps occupied machines alive. Source builds run as the image's unprivileged `builder` user. Network egress is open so the cloud can pull the image.
@@ -55,17 +55,17 @@ The upgrade was verified by compiling all four starters and the committed source
 
 ## Configured development deployment
 
-The `fabulous-hornet-670` development deployment has a dedicated Smolmachines API key for machine create/read/exec/delete and this pinned image:
+The `fabulous-hornet-670` development deployment has a dedicated Smolmachines API key for machine create/read/exec/delete and this pinned image, tagged `20261027-ezfast`:
 
 ```text
-registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:9592fd8d55c2a9fd27a1c39cd4c6bcec54cae41f814968053bcf9c9b843275c2
+registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:0adbc9faf83bd125a45fe0047c279cf43495d5d3f70ff7ead0336b574562d6de
 ```
 
-Its startup checkpoint is `ckpt-07de92dae97d43d99f3418183fe577e0`.
+Its startup checkpoint is `ckpt-5a66f7e8453044eba5fa6f1c2a9daeda`, created with the PROS and EZ-Template PCH caches prewarmed. The image keeps the hard-float multilib for EZ-Template, rebuilds the EZ and Okapi archives with it, and strips debug sections from the baked archives. The previous pinned image, `sha256:9592fd8d55c2a9fd27a1c39cd4c6bcec54cae41f814968053bcf9c9b843275c2`, with checkpoint `ckpt-07de92dae97d43d99f3418183fe577e0`, is the rollback point.
 
 The previous image is also tagged `20261026-slim`. It keeps only the `thumb/v7-a+simd/softfp` ARM multilib, the one every V5 template selects for the Cortex-A9, which cuts the unpacked image from 3.6 GB to 0.96 GB. Source snapshots and PCH caches live under `/home/builder/` so the guest's `/workspace` mount does not replace their permissions. The token is stored only in the Convex deployment environment. Reconciliation replaces machines whose source differs from the configured image digest, waiting for an active build to finish first.
 
-Cloud verification compiled all four templates from editable-only snapshots. Direct-connection verification built EZ-Template, received logs before completion, downloaded both package binaries without Convex storage, and rejected the scoped token on other cloud API routes. A browser build also populated the client-only binary folder. Local PCH reuse and header invalidation checks pass for all four templates.
+Cloud verification compiled all four templates from editable-only snapshots. Direct-connection verification built EZ-Template, received logs before completion, downloaded both package binaries without Convex storage, and rejected the scoped token on other cloud API routes. A browser build also populated the client-only binary folder. Local PCH reuse and header invalidation checks pass for all four templates. On `ckpt-5a66f7e8453044eba5fa6f1c2a9daeda` through the production connect contract, EZ-Template's first restored build took 2.1 s with no precompile, a one-line source edit 1.3 s, an `autons.hpp` edit 1.6 s, and PROS's first build 1.1 s.
 
 Successful artifacts automatically download into read-only `bin/` entries in the existing Pierre file tree. The generated folder has a `client only` label. Only `.bin` entries are extracted, with a 64 MiB total uncompressed limit. These files exist in browser memory, are cleared on leaving the program, and never enter repository paths, collaborative drafts, or commits. Select a binary, or use the tree’s Download action, to save it to disk. Generated entries disable repository edits, uploads, cut, copy, paste, rename, and delete.
 
