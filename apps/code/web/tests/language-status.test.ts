@@ -13,7 +13,10 @@ it("reports startup, readiness, worker failure, restart, and stop", async () => 
     read: vi.fn(),
     stop: vi.fn(),
   }
-  const client = new LanguageClient(transport, async () => ({ sha: "test", files: {} }))
+  const client = new LanguageClient(transport, async () => ({
+    sha: "test",
+    files: {},
+  }))
   const internals = client as unknown as { call: () => Promise<unknown> }
   vi.spyOn(internals, "call").mockResolvedValue({ capabilities: {} })
   const states: string[] = []
@@ -28,7 +31,9 @@ it("reports startup, readiness, worker failure, restart, and stop", async () => 
   expect(client.getStatus()).toBe("ready")
   failWorker(new Error("Worker crashed"))
   expect(client.getStatus()).toBe("error")
+  expect(client.error).toBe("Worker crashed")
   await client.start()
+  expect(client.error).toBeNull()
   client.stop()
   expect(states).toEqual([
     "starting",
@@ -53,4 +58,5 @@ it("reports a failed startup", async () => {
   )
   await client.start()
   expect(client.getStatus()).toBe("error")
+  expect(client.error).toBe("Startup failed")
 })

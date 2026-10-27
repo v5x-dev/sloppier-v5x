@@ -15,7 +15,7 @@ export function MachineStatus() {
     client?.getStatus ?? stoppedStatus,
     stoppedStatus
   )
-  const languageLabel = `clangd worker: ${languageStatus}`
+  const languageLabel = `clangd worker: ${languageStatus}${client?.error ? `. ${client.error}` : ""}`
   const { machineStatus, ready, status, error } = useProgramConnection()
   const failed = Boolean(error) || machineStatus === "error"
   const building = ready && status?.building

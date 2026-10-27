@@ -114,6 +114,7 @@ export class LanguageClient {
   private sending: Promise<void> = Promise.resolve()
   private documents = new Map<string, OpenDocument>()
   private generation = 0
+  private lastError: string | null = null
   private status: LanguageStatus = "stopped"
   private statusListeners = new Set<() => void>()
   private ready = false
@@ -124,6 +125,10 @@ export class LanguageClient {
     private readonly transport: LanguageTransport,
     private readonly prepareSource: () => Promise<BuildSource>
   ) {}
+
+  get error() {
+    return this.lastError
+  }
 
   getStatus = () => this.status
 
@@ -160,8 +165,8 @@ export class LanguageClient {
         (message) => {
           if (generation === this.generation) this.receive(message)
         },
-        () => {
-          if (generation === this.generation) this.reset()
+        (error) => {
+          if (generation === this.generation) this.reset("error", error)
         }
       )
       if (generation !== this.generation) return
@@ -214,9 +219,9 @@ export class LanguageClient {
       this.notify("initialized", {})
       for (const document of this.documents.values()) this.didOpen(document)
       this.setReady(true)
-    } catch {
+    } catch (error) {
       if (generation === this.generation && !controller.signal.aborted)
-        this.reset()
+        this.reset("error", error)
     }
   }
 
@@ -401,7 +406,13 @@ export class LanguageClient {
     for (const listener of this.readyListeners) listener(ready)
   }
 
-  private reset(status: LanguageStatus = "error") {
+  private reset(status: LanguageStatus = "error", error?: unknown) {
+    this.lastError =
+      status === "error"
+        ? error instanceof Error
+          ? error.message
+          : String(error ?? "Language worker stopped unexpectedly")
+        : null
     this.setStatus(status)
     this.transport.stop()
     this.controller?.abort()
@@ -458,8 +469,8 @@ export class LanguageClient {
       this.transport.send(
         messages.map((message) => ({ jsonrpc: "2.0", ...message }))
       )
-    } catch {
-      this.reset()
+    } catch (error) {
+      this.reset("error", error)
     }
   }
 
