@@ -83,6 +83,24 @@ export function parseAutonPaths(
   if (!Number.isFinite(trackWidth) || trackWidth <= 0)
     throw new Error("Track width must be a positive number.")
   const { motion, names } = templateCalls[template]
+  // Resolve literal project constants without evaluating arbitrary C++ expressions.
+  const constants = new Map<string, number | null>()
+  for (const source of files.values()) {
+    const code = clean(source)
+    const declarations = [
+      ...code.matchAll(/\b(?:constexpr|const)\s+(?:\w+\s+)*?(\w+)\s*=\s*([^;]+);/g),
+      ...code.matchAll(/^\s*#\s*define\s+(\w+)\s+([^\n]+)/gm),
+    ]
+    for (const match of declarations) {
+      const value = number(match[2])
+      constants.set(
+        match[1],
+        constants.has(match[1]) && constants.get(match[1]) !== value ? null : value
+      )
+    }
+  }
+  const resolveNumber = (text: string) =>
+    number(text) ?? constants.get(text.trim()) ?? null
   // JAR's boomerang tuning is set in constants; fall back to the template's usual values.
   const boomerangLead = assignedNumber(files, "boomerang_lead") ?? 0.5
   const boomerangSetback = assignedNumber(files, "boomerang_setback") ?? 0
@@ -286,8 +304,9 @@ export function parseAutonPaths(
           const fourthIsOption =
             parts.length > 3 &&
             (behaviorPattern.test(parts[3]) || /^(true|false)$/.test(parts[3]))
-          const stillSpeed = parts.length > 3 && !fourthIsOption ? values[3] : 0
-          const movingSpeed = values[2]
+          const stillSpeed =
+            parts.length > 3 && !fourthIsOption ? resolveNumber(parts[3]) : 0
+          const movingSpeed = resolveNumber(parts[2] ?? "")
           let ratio = 0
           if (
             stillSpeed === null ||

@@ -115,6 +115,26 @@ describe("EZ-Template path previews", () => {
     expect(route.warnings).toEqual([])
   })
   it.each([
+    "constexpr int SWING_SPEED = 100;",
+    "const int SWING_SPEED = 100;",
+    "#define SWING_SPEED 100",
+  ])("resolves named swing speeds from %s", (declaration) => {
+    const [route] = parseAutonPaths(
+      new Map([
+        ["include/main.h", declaration],
+        [
+          "src/autons.cpp",
+          "void red() { chassis.pid_swing_set(ez::LEFT_SWING, -90_deg, SWING_SPEED, 20, ez::cw); }",
+        ],
+      ]),
+      "ez-template"
+    )
+    expect(route.warnings).toEqual([])
+    expect(route.points.at(-1)!.heading).toBe(270)
+    expect(route.points.at(-1)!.x).toBeCloseTo(9)
+    expect(route.points.at(-1)!.y).toBeCloseTo(-9)
+  })
+  it.each([
     ["ez::cw", -90, 270],
     ["ez::ccw", 90, -270],
     ["ez::shortest", 270, -90],
