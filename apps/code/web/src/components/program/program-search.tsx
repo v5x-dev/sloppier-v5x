@@ -1,5 +1,12 @@
 import { ActionTooltip } from "@/components/shared/action-tooltip"
-import { useEffect, useId, useMemo, useRef, useState } from "react"
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import { useAction, useQuery } from "convex/react"
 import { MagnifyingGlassIcon, FileCodeIcon, XIcon } from "@phosphor-icons/react"
 import { api } from "@workspace/backend/api"
@@ -15,6 +22,7 @@ import {
 } from "@pierre/diffs"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { errorMessage } from "@/lib/errors"
+import type { WorkbenchSource } from "@/lib/workbench-source"
 
 function SearchSnippet({
   path,
@@ -104,18 +112,21 @@ function SearchSnippet({
   )
 }
 
+const subscribeToNothing = () => () => {}
+
 type Results = { files: SearchFile[]; truncated: boolean; skipped: number }
 export function ProgramSearch({
   programId,
   revision,
-  getDrafts,
-  subscribeDrafts,
+  drafts,
   onSelect,
 }: {
   programId: Id<"programs">
   revision?: string
-  getDrafts: () => ReadonlyMap<string, string>
-  subscribeDrafts: (listener: () => void) => () => void
+  drafts: Pick<
+    WorkbenchSource,
+    "getDrafts" | "subscribeDrafts" | "getDraftVersion"
+  >
   onSelect: (path: string, line: number, column: number) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -123,7 +134,6 @@ export function ProgramSearch({
   const [sourceOnly, setSourceOnly] = useState(false)
   const [pathFilter, setPathFilter] = useState("")
   const [matchCase, setMatchCase] = useState(false)
-  const [version, setVersion] = useState(0)
   const [retry, setRetry] = useState(0)
   const [result, setResult] = useState<Results | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -146,6 +156,11 @@ export function ProgramSearch({
     open ? { programId } : "skip"
   )
   const liveRevision = JSON.stringify(documents)
+  // Drafts only matter while the panel is open, so typing elsewhere does not rerender it.
+  const draftVersion = useSyncExternalStore(
+    open ? drafts.subscribeDrafts : subscribeToNothing,
+    drafts.getDraftVersion
+  )
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (
@@ -161,11 +176,6 @@ export function ProgramSearch({
     window.addEventListener("keydown", shortcut)
     return () => window.removeEventListener("keydown", shortcut)
   }, [])
-  useEffect(() => {
-    if (!open) return
-    setVersion((v) => v + 1)
-    return subscribeDrafts(() => setVersion((v) => v + 1))
-  }, [open, subscribeDrafts])
   useEffect(() => {
     let cancelled = false
     setResult(null)
@@ -202,11 +212,11 @@ export function ProgramSearch({
   ])
   const merged = useMemo(
     () =>
-      overlaySearch(result?.files ?? [], getDrafts(), query, matchCase, {
+      overlaySearch(result?.files ?? [], drafts.getDrafts(), query, matchCase, {
         sourceOnly,
         pathFilter,
       }),
-    [result, getDrafts, query, matchCase, sourceOnly, pathFilter, version]
+    [result, drafts, query, matchCase, sourceOnly, pathFilter, draftVersion]
   )
   const matches = merged.files.flatMap((file) =>
     file.matches.map((match) => ({

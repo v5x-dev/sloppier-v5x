@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import { createPortal } from "react-dom"
 import "@vscode/codicons/dist/codicon.css"
 import type { EditorChangeEvent } from "@pierre/diffs/edit"
@@ -318,108 +324,107 @@ export function useEditorCompletion(
     })
   }
 
-  useEffect(() => {
-    const host = wrapper.current
-    if (!host) return
-    const keydown = (event: KeyboardEvent) => {
-      if (event.isComposing) return
-      const consume = () => {
-        event.preventDefault()
-        event.stopPropagation()
-      }
-      if (event.code === "Space" && event.ctrlKey && !event.altKey) {
-        consume()
-        if (event.shiftKey) signatureHelp()
-        else complete()
-        return
-      }
-      const menu = state.menu
-      const plain = !event.ctrlKey && !event.metaKey && !event.altKey
-      if (menu && plain && menu.matches.length) {
-        const count = menu.matches.length
-        const move = {
-          ArrowDown: 1,
-          ArrowUp: -1,
-          PageDown: ROWS - 1,
-          PageUp: 1 - ROWS,
-        }[event.key]
-        if (move) {
-          consume()
-          const next = menu.selected + move
-          setMenu({
-            ...menu,
-            selected:
-              Math.abs(move) === 1
-                ? (next + count) % count
-                : Math.min(count - 1, Math.max(0, next)),
-          })
-          return
-        }
-        if ((event.key === "Enter" || event.key === "Tab") && !event.shiftKey) {
-          consume()
-          accept(menu.matches[menu.selected].item)
-          return
-        }
-      }
-      const help = state.signature
-      if (
-        !menu &&
-        help &&
-        plain &&
-        help.signatures.length > 1 &&
-        (event.key === "ArrowUp" || event.key === "ArrowDown")
-      ) {
-        consume()
-        const count = help.signatures.length
-        const step = event.key === "ArrowDown" ? 1 : -1
-        setSignature({
-          ...help,
-          activeSignature: ((help.activeSignature ?? 0) + step + count) % count,
-        })
-        return
-      }
-      if (event.key === "Escape" && (menu || state.signature)) {
-        consume()
-        if (menu) close()
-        else setSignature(null)
-        return
-      }
-      // Caret movement keeps the menu only while the caret stays in the word.
-      if (/^(Arrow|Home|End|Page)/.test(event.key))
-        setTimeout(() => {
-          refilter()
-          if (state.signature) signatureHelp()
-        })
+  // Listeners stay bound to the host once; effect events hand them the latest handlers.
+  const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.isComposing) return
+    const consume = () => {
+      event.preventDefault()
+      event.stopPropagation()
     }
-    const pointer = () => {
+    if (event.code === "Space" && event.ctrlKey && !event.altKey) {
+      consume()
+      if (event.shiftKey) signatureHelp()
+      else complete()
+      return
+    }
+    const menu = state.menu
+    const plain = !event.ctrlKey && !event.metaKey && !event.altKey
+    if (menu && plain && menu.matches.length) {
+      const count = menu.matches.length
+      const move = {
+        ArrowDown: 1,
+        ArrowUp: -1,
+        PageDown: ROWS - 1,
+        PageUp: 1 - ROWS,
+      }[event.key]
+      if (move) {
+        consume()
+        const next = menu.selected + move
+        setMenu({
+          ...menu,
+          selected:
+            Math.abs(move) === 1
+              ? (next + count) % count
+              : Math.min(count - 1, Math.max(0, next)),
+        })
+        return
+      }
+      if ((event.key === "Enter" || event.key === "Tab") && !event.shiftKey) {
+        consume()
+        accept(menu.matches[menu.selected].item)
+        return
+      }
+    }
+    const help = state.signature
+    if (
+      !menu &&
+      help &&
+      plain &&
+      help.signatures.length > 1 &&
+      (event.key === "ArrowUp" || event.key === "ArrowDown")
+    ) {
+      consume()
+      const count = help.signatures.length
+      const step = event.key === "ArrowDown" ? 1 : -1
+      setSignature({
+        ...help,
+        activeSignature: ((help.activeSignature ?? 0) + step + count) % count,
+      })
+      return
+    }
+    if (event.key === "Escape" && (menu || state.signature)) {
+      consume()
+      if (menu) close()
+      else setSignature(null)
+      return
+    }
+    // Caret movement keeps the menu only while the caret stays in the word.
+    if (/^(Arrow|Home|End|Page)/.test(event.key))
+      setTimeout(() => {
+        refilter()
+        if (state.signature) signatureHelp()
+      })
+  })
+  const onPointer = useEffectEvent(() => {
+    close()
+    setSignature(null)
+  })
+  const onBlur = useEffectEvent((event: FocusEvent) => {
+    if (!wrapper.current?.contains(event.relatedTarget as Node | null)) {
       close()
       setSignature(null)
     }
-    const blur = (event: FocusEvent) => {
-      if (!host.contains(event.relatedTarget as Node | null)) pointer()
-    }
-    const scroll = () => {
-      if (state.menu || state.signature) requestAnimationFrame(measure)
-    }
-    host.addEventListener("keydown", keydown, true)
-    host.addEventListener("pointerdown", pointer, true)
-    host.addEventListener("focusout", blur)
-    window.addEventListener("scroll", scroll, true)
-    return () => {
-      host.removeEventListener("keydown", keydown, true)
-      host.removeEventListener("pointerdown", pointer, true)
-      host.removeEventListener("focusout", blur)
-      window.removeEventListener("scroll", scroll, true)
-    }
   })
-  useEffect(
-    () => () => {
+  const onScroll = useEffectEvent(() => {
+    if (state.menu || state.signature) requestAnimationFrame(measure)
+  })
+  useEffect(() => {
+    const host = wrapper.current
+    if (!host) return
+    host.addEventListener("keydown", onKeyDown, true)
+    host.addEventListener("pointerdown", onPointer, true)
+    host.addEventListener("focusout", onBlur)
+    window.addEventListener("scroll", onScroll, true)
+    return () => {
+      host.removeEventListener("keydown", onKeyDown, true)
+      host.removeEventListener("pointerdown", onPointer, true)
+      host.removeEventListener("focusout", onBlur)
+      window.removeEventListener("scroll", onScroll, true)
       clearTimeout(state.timer)
       state.request?.abort()
       state.signatureRequest?.abort()
-    },
-    [state]
-  )
+    }
+  }, [state])
 
   const popup =
     anchor && (shownMenu?.matches.length || signature)

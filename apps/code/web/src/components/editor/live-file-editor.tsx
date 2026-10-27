@@ -7,7 +7,7 @@ import { useEditorFormatting, type FormatChange } from "./editor-formatting"
 import { useEditorNavigation } from "./editor-navigation"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useEffectEvent, useRef, useState } from "react"
 import { useAuth } from "@/lib/auth"
 import { useConvex, useConvexConnectionState } from "convex/react"
 import type { Id } from "@workspace/backend/dataModel"
@@ -219,25 +219,27 @@ function PierreFile({
       codeLeft: code?.scrollLeft ?? 0,
     })
   }
+  // Listeners bind once; the effect event reads the current binding and view refs.
+  const saveViewState = useEffectEvent(saveView)
   useEffect(() => {
-    const timer = setInterval(saveView, 300)
-    document.addEventListener("selectionchange", saveView)
-    window.addEventListener("keyup", saveView)
-    window.addEventListener("pointerup", saveView)
-    window.addEventListener("scroll", saveView, true)
-    window.addEventListener("pagehide", saveView)
-    window.addEventListener("beforeunload", saveView)
+    const timer = setInterval(saveViewState, 300)
+    document.addEventListener("selectionchange", saveViewState)
+    window.addEventListener("keyup", saveViewState)
+    window.addEventListener("pointerup", saveViewState)
+    window.addEventListener("scroll", saveViewState, true)
+    window.addEventListener("pagehide", saveViewState)
+    window.addEventListener("beforeunload", saveViewState)
     return () => {
-      saveView()
+      saveViewState()
       clearInterval(timer)
-      document.removeEventListener("selectionchange", saveView)
-      window.removeEventListener("keyup", saveView)
-      window.removeEventListener("pointerup", saveView)
-      window.removeEventListener("scroll", saveView, true)
-      window.removeEventListener("pagehide", saveView)
-      window.removeEventListener("beforeunload", saveView)
+      document.removeEventListener("selectionchange", saveViewState)
+      window.removeEventListener("keyup", saveViewState)
+      window.removeEventListener("pointerup", saveViewState)
+      window.removeEventListener("scroll", saveViewState, true)
+      window.removeEventListener("pagehide", saveViewState)
+      window.removeEventListener("beforeunload", saveViewState)
     }
-  })
+  }, [])
   const appliedTarget = useRef<number | undefined>(undefined)
   const targetRef = useRef(diagnosticTarget)
   targetRef.current = diagnosticTarget

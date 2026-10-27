@@ -54,6 +54,7 @@ export class WorkbenchSource {
   private drafts = new Map<string, string>()
   private listeners = new Set<() => void>()
   private draftListeners = new Set<() => void>()
+  private draftVersion = 0
   private reads = new Map<string, object>()
   private operationBusy = false
   private initialOpen = false
@@ -72,6 +73,8 @@ export class WorkbenchSource {
     }
   }
   getDrafts = () => this.drafts as ReadonlyMap<string, string>
+  // Changes on every draft update, so React can read drafts with useSyncExternalStore.
+  getDraftVersion = () => this.draftVersion
   subscribeDrafts = (listener: () => void) => {
     this.draftListeners.add(listener)
     return () => {
@@ -99,6 +102,7 @@ export class WorkbenchSource {
       dirtyPaths.join("\n") !== this.state.dirtyPaths.join("\n")
     )
       this.update({ ...patch, dirtyPaths })
+    this.draftVersion++
     for (const listener of this.draftListeners) listener()
   }
 

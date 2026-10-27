@@ -326,8 +326,6 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
     commit,
     restoreFile,
     applyExplorerUpdate,
-    getDrafts: getSearchDrafts,
-    subscribeDrafts: subscribeSearchDrafts,
   } = source
   const allSynced = source.isSynced()
   const tabSensors = useSensors(
@@ -356,11 +354,6 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
     event.stopPropagation()
     if (!event.repeat && activePath) formatActions[activePath]?.()
   })
-  useEffect(() => {
-    const keydown = (event: KeyboardEvent) => formatFromKeyboard(event)
-    window.addEventListener("keydown", keydown, true)
-    return () => window.removeEventListener("keydown", keydown, true)
-  }, [])
   const [commitOpen, setCommitOpen] = useState(false)
   const savePending = useRef(false)
   useEffect(() => {
@@ -403,10 +396,13 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
     }
   )
 
+  // One capture listener serves both workbench shortcuts; each ignores keys it does not own.
   useEffect(() => {
     const controller = new AbortController()
-    const onKeyDown = (event: KeyboardEvent) =>
+    const onKeyDown = (event: KeyboardEvent) => {
+      formatFromKeyboard(event)
       saveFromKeyboard(event, controller.signal)
+    }
     window.addEventListener("keydown", onKeyDown, true)
     return () => {
       controller.abort()
@@ -701,8 +697,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 <ProgramSearch
                   programId={program._id}
                   revision={program.repositoryHeadSha}
-                  getDrafts={getSearchDrafts}
-                  subscribeDrafts={subscribeSearchDrafts}
+                  drafts={source}
                   onSelect={(path, line, column) => {
                     setDiagnosticTarget((current) => ({
                       path,
@@ -761,8 +756,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                   revision={program.repositoryHeadSha}
                   template={program.template}
                   paths={paths}
-                  getDrafts={getSearchDrafts}
-                  subscribeDrafts={subscribeSearchDrafts}
+                  drafts={source}
                 />
               </>
             )}

@@ -6,6 +6,7 @@ import {
   useId,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react"
 import {
@@ -55,6 +56,8 @@ import { ProgramConsole } from "./program-console"
 
 type Device = { connection: Connection; bluetooth?: BluetoothConnection }
 
+const subscribeToNothing = () => () => {}
+
 export function ProgramUpload({
   name,
   buildAction,
@@ -102,13 +105,19 @@ export function ProgramUpload({
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [success, setSuccess] = useState(false)
-  const [support, setSupport] = useState({ serial: false, bluetooth: false })
+  // Browser support is read on the client; the server render reports none.
+  const serialSupported = useSyncExternalStore(
+    subscribeToNothing,
+    () => "serial" in navigator,
+    () => false
+  )
+  const bluetoothSupported = useSyncExternalStore(
+    subscribeToNothing,
+    () => "bluetooth" in navigator,
+    () => false
+  )
   useEffect(() => {
     mounted.current = true
-    setSupport({
-      serial: "serial" in navigator,
-      bluetooth: "bluetooth" in navigator,
-    })
     return () => {
       mounted.current = false
       preparation.current?.abort()
@@ -349,7 +358,7 @@ export function ProgramUpload({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={busy || !support.serial}
+                  disabled={busy || !serialSupported}
                   onClick={() => connect("USB")}
                 >
                   <PlugIcon />
@@ -358,7 +367,7 @@ export function ProgramUpload({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={busy || !support.bluetooth}
+                  disabled={busy || !bluetoothSupported}
                   onClick={() => connect("Bluetooth")}
                 >
                   <BluetoothIcon />
@@ -368,7 +377,7 @@ export function ProgramUpload({
             )}
             {!connected && (
               <p className="text-xs leading-relaxed text-muted-foreground">
-                {!support.serial && !support.bluetooth
+                {!serialSupported && !bluetoothSupported
                   ? "Use Chrome or Edge on a supported device to connect your Brain."
                   : "For USB, select the Brain’s system port."}
               </p>

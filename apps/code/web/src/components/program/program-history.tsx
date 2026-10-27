@@ -83,45 +83,61 @@ export function ProgramHistory({
       generation.current++
     }
   }, [open, programId, revision, refresh, history])
-  useEffect(() => {
-    if (!open || !commit) return
-    let cancelled = false
+  // Commit and file loads run from the handlers that select them, so a stale reply
+  // from an earlier selection is dropped by comparing against the latest request.
+  const detailRequest = useRef(0)
+  async function loadDiff(
+    target: Commit,
+    changed: ChangedFile,
+    request: number
+  ) {
+    try {
+      const next = await historyDiff({
+        programId,
+        sha: target.sha,
+        path: changed.path,
+      })
+      if (request === detailRequest.current) setDiff(next)
+    } catch (err) {
+      if (request === detailRequest.current) setDetailError(errorMessage(err))
+    }
+  }
+  async function loadFiles(target: Commit) {
+    const request = ++detailRequest.current
     setFiles(null)
     setFile(null)
     setDiff(null)
     setDetailError(null)
-    void historyFiles({ programId, sha: commit.sha })
-      .then((next) => {
-        if (!cancelled) {
-          setFiles(next)
-          setFile(next[0] ?? null)
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setDetailError(errorMessage(err))
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [open, commit, programId, historyFiles, refresh])
-  useEffect(() => {
     setConfirm(false)
     setResult(null)
-    if (!open || !commit || !file) return
-    let cancelled = false
+    try {
+      const next = await historyFiles({ programId, sha: target.sha })
+      if (request !== detailRequest.current) return
+      setFiles(next)
+      const first = next.at(0)
+      setFile(first ?? null)
+      if (first) await loadDiff(target, first, request)
+    } catch (err) {
+      if (request === detailRequest.current) setDetailError(errorMessage(err))
+    }
+  }
+  function openCommit(next: Commit) {
+    setCommit(next)
+    void loadFiles(next)
+  }
+  function selectFile(next: ChangedFile) {
+    if (!commit) return
+    setFile(next)
     setDiff(null)
     setDetailError(null)
-    void historyDiff({ programId, sha: commit.sha, path: file.path })
-      .then((next) => {
-        if (!cancelled) setDiff(next)
-      })
-      .catch((err) => {
-        if (!cancelled) setDetailError(errorMessage(err))
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [open, commit, file, programId, historyDiff, refresh])
+    setConfirm(false)
+    setResult(null)
+    void loadDiff(commit, next, ++detailRequest.current)
+  }
+  function reload() {
+    setRefresh((current) => current + 1)
+    if (commit) void loadFiles(commit)
+  }
   const parsed = useMemo(() => {
     if (!diff?.raw) return []
     try {
@@ -173,7 +189,11 @@ export function ProgramHistory({
     <Popover
       open={open}
       onOpenChange={(value) => {
-        if (!restoring) setOpen(value)
+        if (restoring) return
+        setOpen(value)
+        setConfirm(false)
+        setResult(null)
+        if (value && commit) void loadFiles(commit)
       }}
     >
       <ActionTooltip label="Program history">
@@ -203,6 +223,7 @@ export function ProgramHistory({
               disabled={restoring}
               aria-label="Back to commits"
               onClick={() => {
+                detailRequest.current++
                 setCommit(null)
                 setDetailError(null)
                 setResult(null)
@@ -232,7 +253,7 @@ export function ProgramHistory({
             size="icon-xs"
             aria-label="Refresh history"
             disabled={loading || restoring}
-            onClick={() => setRefresh((current) => current + 1)}
+            onClick={reload}
           >
             <ArrowClockwiseIcon />
           </Button>
@@ -242,11 +263,7 @@ export function ProgramHistory({
             {error && (
               <p role="alert" className="p-3 text-xs text-destructive">
                 {error}
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => setRefresh((current) => current + 1)}
-                >
+                <Button size="xs" variant="ghost" onClick={reload}>
                   Retry
                 </Button>
               </p>
@@ -269,7 +286,7 @@ export function ProgramHistory({
                   <button
                     type="button"
                     className="flex w-full gap-3 p-3 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
-                    onClick={() => setCommit(item)}
+                    onClick={() => openCommit(item)}
                   >
                     <GitCommitIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <span className="min-w-0 flex-1">
@@ -330,7 +347,7 @@ export function ProgramHistory({
                   variant="ghost"
                   size="xs"
                   disabled={restoring}
-                  onClick={() => setRefresh((current) => current + 1)}
+                  onClick={reload}
                 >
                   Retry
                 </Button>
@@ -355,7 +372,7 @@ export function ProgramHistory({
                     disabled={restoring}
                     aria-pressed={file?.path === item.path}
                     className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset aria-pressed:bg-accent aria-pressed:text-accent-foreground"
-                    onClick={() => setFile(item)}
+                    onClick={() => selectFile(item)}
                   >
                     <FileCodeIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                     <span className="min-w-0">

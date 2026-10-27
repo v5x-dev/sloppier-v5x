@@ -68,13 +68,13 @@ export function ProgramBuild({
   const [tab, setTab] = useState("problems")
   const [pending, setPending] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  // The machine reports startedAt while building; this covers the gap before the first poll.
   const [fallbackStartedAt, setFallbackStartedAt] = useState<number | null>(
     null
   )
   const [connectingStartedAt, setConnectingStartedAt] = useState<number | null>(
     null
   )
-  const sawBuilding = useRef(false)
   const logs = state?.logs ?? ""
   const diagnostics = useMemo(() => parseBuildDiagnostics(logs), [logs])
   const groups = useMemo(() => {
@@ -97,28 +97,16 @@ export function ProgramBuild({
   const building = pending || Boolean(state?.building)
   const startedAt = state?.startedAt ?? fallbackStartedAt
   const elapsedSeconds =
-    startedAt == null
-      ? null
-      : Math.max(0, Math.floor((now - startedAt) / 1000))
+    startedAt == null ? null : Math.max(0, Math.floor((now - startedAt) / 1000))
   const connectingSeconds =
     connectingStartedAt == null
       ? null
       : Math.max(0, Math.floor((now - connectingStartedAt) / 1000))
   const succeeded = !building && logs.trimEnd().endsWith("Build succeeded.")
+  // Runs the status-row clock: connecting time starts when the builder drops out of ready.
   useEffect(() => {
-    if (state?.building) {
-      sawBuilding.current = true
-      setFallbackStartedAt((current) => current ?? Date.now())
-    } else if (sawBuilding.current) {
-      sawBuilding.current = false
-      setFallbackStartedAt(null)
-    }
-  }, [state?.building])
-  useEffect(() => {
-    if (!ready) setConnectingStartedAt((current) => current ?? Date.now())
-    else setConnectingStartedAt(null)
-  }, [ready])
-  useEffect(() => {
+    if (ready) setConnectingStartedAt(null)
+    else setConnectingStartedAt((current) => current ?? Date.now())
     if (!building && ready) return
     setNow(Date.now())
     const timer = setInterval(() => setNow(Date.now()), 1000)
@@ -146,6 +134,7 @@ export function ProgramBuild({
       })
     } finally {
       setPending(false)
+      setFallbackStartedAt(null)
     }
   }
   function buildOrOpen() {
@@ -236,7 +225,7 @@ export function ProgramBuild({
                       <Spinner className="size-3" />
                       Building committed source
                       {elapsedSeconds !== null && (
-                        <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+                        <span className="shrink-0 font-mono text-muted-foreground tabular-nums">
                           {elapsedSeconds}s
                         </span>
                       )}
@@ -245,7 +234,7 @@ export function ProgramBuild({
                     <>
                       <span>Connecting to the build service…</span>
                       {connectingSeconds !== null && (
-                        <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+                        <span className="shrink-0 font-mono text-muted-foreground tabular-nums">
                           {connectingSeconds}s
                         </span>
                       )}

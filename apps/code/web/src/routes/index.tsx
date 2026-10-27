@@ -204,11 +204,7 @@ function AppHeader({
   onToggleArchived: () => void
 }) {
   const { user, signOut } = useAuth()
-  const searchInput = useRef<HTMLInputElement>(null)
   const searchButton = useRef<HTMLButtonElement>(null)
-  useEffect(() => {
-    if (searching) searchInput.current?.focus()
-  }, [searching])
   const [creatingWorkspace, setCreatingWorkspace] = useState(false)
   const [managingTeam, setManagingTeam] = useState(false)
   const [viewingInvitations, setViewingInvitations] = useState(false)
@@ -243,7 +239,7 @@ function AppHeader({
           >
             {searching && (
               <Input
-                ref={searchInput}
+                autoFocus
                 id="dashboard-search"
                 type="search"
                 aria-label="Search programs"
@@ -620,27 +616,25 @@ function NewProgramDialog({
   const [generatedName, setGeneratedName] = useState("")
   const [template, setTemplate] = useState<Template>(initialTemplate)
   const [pending, setPending] = useState(false)
+  // Numbers each suggestion request so a reply that arrives after close is ignored.
+  const suggestion = useRef(0)
 
-  useEffect(() => {
-    if (!open) return
-    let cancelled = false
+  function suggestName() {
+    const request = ++suggestion.current
     setGeneratedName("")
     void generateName({})
-      .then((suggestion) => {
-        if (!cancelled) setGeneratedName(suggestion)
+      .then((next) => {
+        if (request === suggestion.current) setGeneratedName(next)
       })
       .catch((error) => {
-        if (!cancelled)
+        if (request === suggestion.current)
           toast.add({
             type: "error",
             title: "Could not suggest a name",
             description: errorMessage(error),
           })
       })
-    return () => {
-      cancelled = true
-    }
-  }, [open, generateName])
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -670,7 +664,10 @@ function NewProgramDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (next) setTemplate(initialTemplate)
+        if (next) {
+          setTemplate(initialTemplate)
+          suggestName()
+        } else suggestion.current++
         setOpen(next)
       }}
     >

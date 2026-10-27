@@ -57,6 +57,16 @@ describe("workbench source", () => {
     expect(source.getDrafts().get("src/main.cpp")).toBe("second")
   })
 
+  it("advances the draft version on each real draft change", async () => {
+    const { source } = await opened()
+    const before = source.getDraftVersion()
+    source.setDraft("src/main.cpp", "first")
+    const after = source.getDraftVersion()
+    expect(after).toBeGreaterThan(before)
+    source.setDraft("src/main.cpp", "first")
+    expect(source.getDraftVersion()).toBe(after)
+  })
+
   it("acknowledges the commit snapshot while later typing stays dirty", async () => {
     const { source, actions } = await opened()
     const write = deferred<{ commitSha: string }>()

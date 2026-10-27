@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type PointerEvent as ReactPointerEvent,
 } from "react"
 import { useAction } from "convex/react"
@@ -29,6 +30,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 import { parseAutonPaths, type AutonTemplate } from "@/lib/auton-paths"
 import { errorMessage } from "@/lib/errors"
+import type { WorkbenchSource } from "@/lib/workbench-source"
 
 const fields = ["H2H", "Skills"].map((setup) => ({
   label: `Override · ${setup}`,
@@ -56,21 +58,25 @@ export function ProgramPathPreview({
   revision,
   template,
   paths,
-  getDrafts,
-  subscribeDrafts,
+  drafts,
 }: {
   programId: Id<"programs">
   revision?: string
   template: AutonTemplate
   paths: string[] | null
-  getDrafts: () => ReadonlyMap<string, string>
-  subscribeDrafts: (listener: () => void) => () => void
+  drafts: Pick<
+    WorkbenchSource,
+    "getDrafts" | "subscribeDrafts" | "getDraftVersion"
+  >
 }) {
   const readFile = useAction(api.codeStorage.readFile)
   const [open, setOpen] = useState(false)
   const [files, setFiles] = useState<Map<string, string> | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [version, setVersion] = useState(0)
+  const draftVersion = useSyncExternalStore(
+    drafts.subscribeDrafts,
+    drafts.getDraftVersion
+  )
   const [retry, setRetry] = useState(0)
   const [selected, setSelected] = useState("")
   const [field, setField] = useState("0")
@@ -142,10 +148,6 @@ export function ProgramPathPreview({
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId)
   }
-  useEffect(
-    () => subscribeDrafts(() => setVersion((value) => value + 1)),
-    [subscribeDrafts]
-  )
   useEffect(() => {
     if (!open || !paths) return
     const controller = new AbortController()
@@ -187,10 +189,10 @@ export function ProgramPathPreview({
   }, [open, paths, programId, revision, readFile, retry])
   const routes = useMemo(() => {
     const source = new Map(files)
-    for (const [path, text] of getDrafts())
+    for (const [path, text] of drafts.getDrafts())
       if (paths?.includes(path)) source.set(path, text)
     return parseAutonPaths(source, template, trackWidth)
-  }, [files, getDrafts, paths, template, version, trackWidth])
+  }, [files, drafts, paths, template, draftVersion, trackWidth])
   const route = routes.find((item) => item.id === selected) ?? routes.at(0)
   const segments: string[][] = []
   for (const point of route?.points ?? []) {
