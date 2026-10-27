@@ -134,6 +134,46 @@ function setup(hydration = Promise.resolve(), pageCount = 1) {
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())
 
+function memoryStorage() {
+  const values = new Map<string, string>()
+  return {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => void values.set(key, value),
+  }
+}
+function heartbeatSessionId(s: ReturnType<typeof setup>) {
+  const heartbeat = s.client.mutation.mock.calls.find(
+    ([reference]) => getFunctionName(reference) === "presence:heartbeatFile"
+  )
+  return (heartbeat?.[1] as { sessionId?: string } | undefined)?.sessionId
+}
+
+describe("presence session", () => {
+  it("reuses one session per tab, user and file, so a reloaded page replaces its previous caret", async () => {
+    vi.stubGlobal("sessionStorage", memoryStorage())
+    const previousPage = setup()
+    const reloadedPage = setup()
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      const id = heartbeatSessionId(previousPage)
+      expect(id).toBeDefined()
+      expect(heartbeatSessionId(reloadedPage)).toBe(id)
+      vi.stubGlobal("sessionStorage", memoryStorage())
+      const otherTab = setup()
+      try {
+        await vi.advanceTimersByTimeAsync(0)
+        expect(heartbeatSessionId(otherTab)).not.toBe(id)
+      } finally {
+        otherTab.session.dispose()
+      }
+    } finally {
+      previousPage.session.dispose()
+      reloadedPage.session.dispose()
+      vi.unstubAllGlobals()
+    }
+  })
+})
+
 describe("live file session", () => {
   it("replays every page before mounting and advances the subscription cursor", async () => {
     const s = setup(Promise.resolve(), 2)

@@ -63,6 +63,22 @@ type SessionOptions = {
   ) => { whenSynced: Promise<unknown>; destroy: () => Promise<unknown> }
 }
 
+// Presence is kept per tab, user and file. A reload reuses the id, so the new
+// page replaces its previous session and never shows that page's caret.
+function presenceSessionId(userId: string, programId: string, path: string) {
+  const key = `v5x:presence:${userId}:${programId}:${path}`
+  try {
+    const saved = sessionStorage.getItem(key)
+    if (saved && saved.length >= 8 && saved.length <= 128) return saved
+    const created = crypto.randomUUID()
+    sessionStorage.setItem(key, created)
+    return created
+  } catch {
+    // Storage can be unavailable, for example in private or sandboxed contexts.
+    return crypto.randomUUID()
+  }
+}
+
 /** Owns one document's replay, local recovery, synchronization and presence. */
 export function createLiveFileSession({
   client,
@@ -76,7 +92,7 @@ export function createLiveFileSession({
   const doc = new Y.Doc()
   const server = new Y.Doc()
   const awareness = new Awareness(doc)
-  const sessionId = crypto.randomUUID()
+  const sessionId = presenceSessionId(userId, programId, path)
   function subscribe<TQuery extends FunctionReference<"query">>(
     query: TQuery,
     queryArgs: FunctionArgs<TQuery>,
