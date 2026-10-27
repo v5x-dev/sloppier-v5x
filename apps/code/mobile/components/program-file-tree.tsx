@@ -1,3 +1,4 @@
+import { retryOnReconnect } from "@/lib/retry"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ActivityIndicator,
@@ -54,7 +55,9 @@ export function ProgramFileTree({
       let cursor: string | undefined
       const seenCursors = new Set<string>()
       do {
-        const page = await listFiles({ programId, cursor })
+        const page = await retryOnReconnect(() =>
+          listFiles({ programId, cursor })
+        )
         if (request !== generation.current) return
         all.push(...page.paths)
         cursor = page.hasMore ? page.nextCursor : undefined

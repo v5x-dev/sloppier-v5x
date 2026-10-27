@@ -3,6 +3,11 @@ import { useConvex } from "convex/react"
 import { randomUUID } from "expo-crypto"
 import type { Id } from "@workspace/backend/dataModel"
 import { createLiveFileSession, type LiveFileSession } from "@/lib/live-file"
+import {
+  isEdited,
+  markCommitted as clearPending,
+  markEdited,
+} from "@/lib/pending-edits"
 
 type LiveFileState = {
   // Editor text with CRLF normalized to LF. Null until the document loads.
@@ -29,7 +34,12 @@ export function useLiveFile(
 
   useEffect(() => {
     if (!path) return
-    setState({ text: null, synced: false, edited: false, error: null })
+    setState({
+      text: null,
+      synced: false,
+      edited: isEdited(programId, path),
+      error: null,
+    })
     session.current = createLiveFileSession({
       client,
       programId,
@@ -57,16 +67,27 @@ export function useLiveFile(
     }
   }, [client, programId, path, attempt])
 
-  const edit = useCallback((next: string) => {
-    session.current?.edit(next)
-    setState((prev) => (prev.edited ? prev : { ...prev, edited: true }))
-  }, [])
+  const edit = useCallback(
+    (next: string) => {
+      session.current?.edit(next)
+      if (path) markEdited(programId, path)
+      setState((prev) => (prev.edited ? prev : { ...prev, edited: true }))
+    },
+    [programId, path]
+  )
 
   // Only the text that was committed is acknowledged. Typing that happened
   // while the commit was in flight stays uncommitted.
-  const markCommitted = useCallback((committed: string) => {
-    setState((prev) => ({ ...prev, edited: prev.text !== committed }))
-  }, [])
+  const markCommitted = useCallback(
+    (committed: string) => {
+      setState((prev) => {
+        const edited = prev.text !== committed
+        if (!edited && path) clearPending(programId, [path])
+        return { ...prev, edited }
+      })
+    },
+    [programId, path]
+  )
 
   const retry = useCallback(() => setAttempt((count) => count + 1), [])
 

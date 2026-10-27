@@ -7,6 +7,7 @@ import type {
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import * as Y from "yjs"
+import { retryOnReconnect } from "./retry"
 
 // Joins the same Yjs update log as the web live editor
 // (apps/code/web/src/lib/live-file-session.ts). Presence and offline caching
@@ -265,7 +266,9 @@ export function createLiveFileSession({
 
   async function start() {
     try {
-      documentId = await client.action(api.codeStorage.openLiveFile, args)
+      documentId = await retryOnReconnect(() =>
+        client.action(api.codeStorage.openLiveFile, args)
+      )
       if (disposed) return
       watchUpdates()
     } catch (failure) {

@@ -99,6 +99,19 @@ export function parseAutonPaths(
       })
     }
   }
+  // Templates set the starting pose in autonomous() before running the
+  // selected routine, so every route starts from the last pose set there.
+  const poseCall =
+    template === "jar"
+      ? /\bset_coordinates\s*\(([^()]*)\)/g
+      : /\bodom_(?:xyt_)?set\s*\(([^()]*)\)/g
+  let entry: PathPoint = { x: 0, y: 0, heading: 0, start: true }
+  for (const fn of functions.filter((item) => item.name === "autonomous"))
+    for (const match of fn.body.matchAll(poseCall)) {
+      const [x, y, heading] = match[1].split(",").map(number)
+      if (x != null && y != null && heading != null)
+        entry = { x, y, heading, start: true }
+    }
   const hasMotion = (body: string, seen = new Set<string>()): boolean => {
     if (motion.test(body)) return true
     return functions.some(
@@ -111,22 +124,27 @@ export function parseAutonPaths(
   return functions
     .filter((fn) => hasMotion(fn.body))
     .map((fn) => {
-      let pose: PathPoint = { x: 0, y: 0, heading: 0, start: true }
+      let pose: PathPoint = { ...entry }
       const points = [pose]
+      // Until the robot moves, a pose reset replaces the starting point.
+      let moved = false
       const warnings = new Set<string>()
       let budget = 2000
 
       // Starts a new segment at an odometry pose.
       function resetPose(x: number, y: number, heading: number) {
         pose = { x, y, heading, start: true }
-        points.push(pose)
+        if (moved) points.push(pose)
+        else points[points.length - 1] = pose
       }
       // Turns in place; the chassis does not translate.
       function turnTo(heading: number) {
+        moved = true
         pose = { ...pose, start: false, heading }
         points.push(pose)
       }
       function moveTo(x: number, y: number, heading: number) {
+        moved = true
         pose = { x, y, heading }
         points.push(pose)
       }
@@ -179,6 +197,7 @@ export function parseAutonPaths(
           const shortest = wrap(clockwise)
           delta = shortest === 0 ? 0 : shortest - Math.sign(shortest) * 360
         }
+        moved = true
         const steps = Math.min(720, Math.max(1, Math.ceil(Math.abs(delta) / 5)))
         const startHeading = pose.heading
         for (let step = 1; step <= steps; step++) {
@@ -204,6 +223,7 @@ export function parseAutonPaths(
         warnings.add(
           "drive_to_pose is approximated with an instant heading response."
         )
+        moved = true
         for (let step = 0; step < 400; step++) {
           const distance = Math.hypot(x - pose.x, y - pose.y)
           if (distance < 0.5) break

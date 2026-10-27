@@ -26,7 +26,15 @@
       "expo-router",
       "expo-web-browser",
       "expo-secure-store",
-      "@workspace-sh/react-native-source-editor"
+      "@workspace-sh/react-native-source-editor",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": [],
+          "bluetoothAlwaysPermission": "V5X uses Bluetooth to connect to your V5 Brain."
+        }
+      ]
     ],
     "scheme": "v5x-code"
   }

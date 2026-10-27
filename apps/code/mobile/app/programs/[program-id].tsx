@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { ProgramFileTree } from "@/components/program-file-tree"
 import { GlassButton } from "@/components/glass-button"
+import { ProgramActionsBar } from "@/components/program-actions-bar"
 import { useState } from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
@@ -150,6 +151,12 @@ export default function ProgramScreen() {
           muted={backTint}
         />
       )}
+      {program && program.repositoryStatus === "ready" ? (
+        <ProgramActionsBar
+          programId={program._id}
+          template={program.template}
+        />
+      ) : null}
     </SafeAreaView>
   )
 }

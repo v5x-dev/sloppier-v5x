@@ -13,6 +13,7 @@ import { CodeEditor, type CodeEditorRef } from "@/components/code-editor"
 import { SourceFileView } from "@/components/source-file-view"
 import { useCSSVariable } from "uniwind"
 import { sourceColors } from "@/lib/source-highlighting"
+import { retryOnReconnect } from "@/lib/retry"
 import { useLiveFile } from "@/lib/use-live-file"
 
 export default function FileScreen() {
@@ -59,12 +60,14 @@ export default function FileScreen() {
       let offset = 0
       let total = 0
       do {
-        const page = await readFile({
-          programId: programId as Id<"programs">,
-          path,
-          offset,
-          length: 256 * 1024,
-        })
+        const page = await retryOnReconnect(() =>
+          readFile({
+            programId: programId as Id<"programs">,
+            path,
+            offset,
+            length: 256 * 1024,
+          })
+        )
         if (!active) return
         const chunk = Buffer.from(page.bytes)
         if (!offset && chunk.includes(0))
