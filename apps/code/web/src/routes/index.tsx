@@ -270,7 +270,11 @@ function AppHeader({
               aria-expanded={searching}
               aria-controls={searching ? "dashboard-search" : undefined}
               onClick={onSearch}
-              className={searching ? "absolute top-0 right-0" : undefined}
+              className={
+                searching
+                  ? "absolute top-0 right-0 aria-expanded:bg-transparent aria-expanded:hover:bg-muted dark:aria-expanded:hover:bg-muted/50"
+                  : undefined
+              }
             >
               {searching ? (
                 <XIcon className="size-4" />
@@ -463,7 +467,7 @@ function ProgramList({
                   className="group relative min-h-11 rounded-xl border-0 bg-card px-4 py-2 hover:bg-muted"
                 >
                   <ItemContent>
-                    <ItemTitle className="text-lg leading-7 font-normal">
+                    <ItemTitle className="text-base leading-7 font-normal">
                       <Link
                         to="/programs/$programId"
                         params={{ programId: program._id }}
