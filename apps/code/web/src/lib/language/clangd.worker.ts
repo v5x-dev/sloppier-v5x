@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { unzipSync } from "fflate"
+import { wasmResponse } from "./wasm-response"
 import {
   definitionPath,
   encodeMessage,
@@ -98,7 +99,9 @@ async function start(data: {
   // Native HTTP decompression streams directly into V8. A stable, hashed URL
   // also lets Chromium cache compiled Wasm code across worker sessions.
   const modulePromise = WebAssembly.compileStreaming(
-    fetch(new URL(artifact.wasm, base), { cache: "force-cache" })
+    fetch(new URL(artifact.wasm, base), { cache: "force-cache" }).then(
+      wasmResponse
+    )
   )
   const sdkPromise = sdkManifestRequest.then(async (response) => {
     if (!response.ok) throw new Error("Language SDK manifest unavailable")
