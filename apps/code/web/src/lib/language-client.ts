@@ -410,8 +410,10 @@ export class LanguageClient {
     this.lastError =
       status === "error"
         ? error instanceof Error
-          ? error.message
-          : String(error ?? "Language worker stopped unexpectedly")
+          ? error.message.trim() ||
+            "Browser language worker failed without an error message"
+          : String(error ?? "Language worker stopped unexpectedly").trim() ||
+            "Browser language worker failed without an error message"
         : null
     this.setStatus(status)
     this.transport.stop()

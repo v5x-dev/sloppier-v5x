@@ -57,7 +57,14 @@ export class WorkerLanguageTransport implements LanguageTransport {
       }
       worker.onerror = (event) => {
         event.preventDefault()
-        failure(new Error(event.message))
+        const location = event.filename
+          ? ` (${event.filename}:${event.lineno}:${event.colno})`
+          : ""
+        failure(
+          new Error(
+            `${event.message.trim() || "Chrome could not load or run the clangd worker and supplied no error details"}${location}`
+          )
+        )
       }
       worker.onmessage = ({ data }) => {
         if (this.worker !== worker) return

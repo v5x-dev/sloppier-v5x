@@ -60,3 +60,17 @@ it("reports a failed startup", async () => {
   expect(client.getStatus()).toBe("error")
   expect(client.error).toBe("Startup failed")
 })
+
+it("keeps a diagnostic when the browser supplies an empty error message", async () => {
+  const client = new LanguageClient(
+    {
+      start: vi.fn().mockRejectedValue(new Error("")),
+      send: vi.fn(),
+      read: vi.fn(),
+      stop: vi.fn(),
+    },
+    async () => ({ sha: "test", files: {} })
+  )
+  await client.start()
+  expect(client.error).toBeTruthy()
+})
