@@ -495,7 +495,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
               />
             )}
           </SidebarContent>
-          <SidebarFooter className="h-9 flex-row items-center px-3 py-0">
+          <SidebarFooter className="h-9 flex-row items-center py-0 pr-3 pl-2">
             <AvatarGroup
               aria-label="People in this file"
               className="*:data-[slot=avatar]:ring-0.5"
