@@ -345,12 +345,23 @@ export class AutocompleteEngine {
   }
   private expressionStart(tokens: Token[], end = tokens.length) {
     let depth = 0
+    let closing = -1
     for (let i = end - 1; i >= 0; i--) {
       const value = tokens[i].value
-      if ([")", "]"].includes(value)) depth++
-      else if (["(", "["].includes(value)) {
+      if ([")", "]"].includes(value)) {
+        if (!depth) closing = i
+        depth++
+      } else if (["(", "["].includes(value)) {
         if (!depth) return i + 1
         depth--
+        if (
+          !depth &&
+          value === "(" &&
+          ["if", "while", "for", "switch", "catch"].includes(
+            tokens[i - 1]?.value
+          )
+        )
+          return closing + 1
       } else if (
         !depth &&
         [
@@ -367,6 +378,7 @@ export class AutocompleteEngine {
           "&&",
           "||",
           "return",
+          "else",
         ].includes(value)
       )
         return i + 1

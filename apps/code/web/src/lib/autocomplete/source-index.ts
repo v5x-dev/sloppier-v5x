@@ -10,8 +10,9 @@ export type Token = {
 /** Keep source offsets while excluding strings, comments, and preprocessor bodies. */
 export function tokenize(text: string): Token[] {
   const result: Token[] = []
+  // The multiline flag anchors directives; EOF must not match a line ending.
   const pattern =
-    /\/\*[\s\S]*?(?:\*\/|$)|\/\/[^\n]*|R"([^\s()\\]{0,16})\([\s\S]*?\)\1"|"(?:\\[\s\S]|[^"\\])*"?|'(?:\\[\s\S]|[^'\\])*'?|^[\t ]*#(?:\\\r?\n|[^\n])*|[A-Za-z_$][\w$]*|\d+(?:[\w.]*\w)?|::|->|==|!=|<=|>=|&&|\|\||\+\+|--|[^\s]/gm
+    /\/\*[\s\S]*?(?:\*\/|(?![\s\S]))|\/\/[^\n]*|R"([^\s()\\]{0,16})\([\s\S]*?\)\1"|"(?:\\[\s\S]|[^"\\])*"?|'(?:\\[\s\S]|[^'\\])*'?|^[\t ]*#(?:\\\r?\n|[^\n])*|[A-Za-z_$][\w$]*|\d+(?:[\w.]*\w)?|::|->|==|!=|<=|>=|&&|\|\||\+\+|--|[^\s]/gm
   for (const match of text.matchAll(pattern)) {
     const value = match[0]
     const kind = /^\s*#/.test(value)

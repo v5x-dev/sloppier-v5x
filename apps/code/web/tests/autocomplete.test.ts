@@ -121,6 +121,29 @@ extern ez::Drive chassis;`,
       expect(labels()).toEqual(expect.arrayContaining(["chassis", "other"]))
     }
   )
+  it("completes chassis members after multiline documentation with apostrophes", () => {
+    const { labels } = setup(
+      `ez::Drive chassis({-20, -19}, {17, 16}, 13, 2.75, 600);
+/**
+ * Gives you some extras in opcontrol.
+ * Only enabled when you're not connected to competition control.
+ */
+void extras() {}
+void opcontrol() { chassis.| }`,
+      ez
+    )
+    expect(labels()).toContain("pid_drive_set")
+  })
+  it.each([
+    "if (enabled) chassis.|",
+    "while (enabled) chassis.|",
+    "for (int i = 0; i < 1; i++) chassis.|",
+    "if (enabled) {} else chassis.|",
+  ])("completes members in an unbraced control body: %s", (body) => {
+    expect(
+      setup(`ez::Drive chassis; void run() { ${body} }`, ez).labels()
+    ).toContain("pid_drive_set")
+  })
   it("suggests parameter enum values and preserves full signatures", () => {
     const { engine, at, items } = setup(
       "using namespace vex; motor left(PORT1); void run() { left.spin(|); }"
@@ -265,6 +288,19 @@ describe("program source context", () => {
     expect(
       source.engine.symbolAt("src/main.cpp", source.at)[0].position
     ).toEqual({ line: 1, character: 4 })
+  })
+  it("keeps multiline block comments intact through the closing delimiter or EOF", () => {
+    const comment = "/* first line\n * you're inside a comment\n */"
+    expect(tokenize(comment + "\nint value;")[0]).toEqual({
+      value: comment,
+      start: 0,
+      end: comment.length,
+      kind: "comment",
+    })
+    const unfinished = "/* unfinished\nsecond line\nint fake;"
+    expect(tokenize(unfinished)).toEqual([
+      { value: unfinished, start: 0, end: unfinished.length, kind: "comment" },
+    ])
   })
   it("tokenizes incomplete input without inventing declarations from comments", () => {
     expect(
