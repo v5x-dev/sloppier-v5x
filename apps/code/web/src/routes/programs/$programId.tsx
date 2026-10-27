@@ -504,8 +504,10 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 (person) => (
                   <Avatar
                     key={person.id}
-                    className="size-5"
-                    title={person.name}
+                    className={cn("size-5", !person.active && "grayscale")}
+                    title={
+                      person.active ? person.name : `${person.name} (away)`
+                    }
                     aria-label={person.name}
                   >
                     {person.imageUrl && (

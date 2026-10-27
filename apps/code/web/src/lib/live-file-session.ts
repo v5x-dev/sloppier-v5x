@@ -28,6 +28,7 @@ export type LivePerson = {
   name: string
   color: string
   imageUrl?: string
+  active: boolean
 }
 
 type LiveEditor = {
@@ -255,6 +256,7 @@ export function createLiveFileSession({
         id,
         name: person.name,
         color: person.color,
+        active: state.active === true || people.get(id)?.active === true,
         imageUrl:
           typeof person.imageUrl === "string" ? person.imageUrl : undefined,
       })
@@ -397,11 +399,23 @@ export function createLiveFileSession({
                 new Uint8Array(session.bytes),
                 REMOTE
               )
-              const ids = remoteClients.get(session.sessionId) ?? []
-              for (const id of awareness.getStates().keys())
-                if (!before.has(id) && id !== doc.clientID && !ids.includes(id))
-                  ids.push(id)
-              remoteClients.set(session.sessionId, ids)
+              const previous = remoteClients.get(session.sessionId) ?? []
+              const added = [...awareness.getStates().keys()].filter(
+                (id) => !before.has(id) && id !== doc.clientID
+              )
+              // A reload preserves the tab's session ID but creates a new Y.Doc.
+              // Its new client replaces the previous client's selection immediately.
+              if (added.length) {
+                removeAwarenessStates(
+                  awareness,
+                  previous.filter((id) => !added.includes(id)),
+                  REMOTE
+                )
+              }
+              remoteClients.set(
+                session.sessionId,
+                added.length ? added : previous
+              )
             } catch {
               /* Ignore malformed or incompatible presence messages. */
             }
@@ -443,6 +457,8 @@ export function createLiveFileSession({
     retry,
     hasPendingChanges: () => replaced || !caughtUp || hasChanges(doc, server),
     setActive(active: boolean) {
+      if (awareness.getLocalState()?.active !== active)
+        awareness.setLocalStateField("active", active)
       if (!active) awareness.setLocalStateField("cursor", null)
     },
     dispose() {

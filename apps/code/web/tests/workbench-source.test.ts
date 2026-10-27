@@ -100,7 +100,7 @@ describe("workbench source", () => {
     const { source } = await opened()
     source.setDraft("src/main.cpp", "draft")
     source.setPeople("src/main.cpp", [
-      { id: "alice", name: "Alice", color: "red" },
+      { id: "alice", name: "Alice", color: "red", active: true },
     ])
     source.setSynced("src/main.cpp", true)
     source.scrollPositions.set("src/main.cpp", 123)

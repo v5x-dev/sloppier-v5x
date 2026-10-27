@@ -87,6 +87,8 @@ export function LiveFileEditor({
         onReplaced: () => host.current?.setAttribute("inert", ""),
         isFocused: () =>
           activeRef.current &&
+          document.visibilityState === "visible" &&
+          document.hasFocus() &&
           Boolean(host.current?.contains(document.activeElement)),
         mount: (doc, awareness) => {
           const collaboration = new PierreCollaboration(
@@ -117,7 +119,6 @@ export function LiveFileEditor({
       },
     })
     sessionRef.current = session
-    session.setActive(activeRef.current)
     retry.current = session.retry
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (session.hasPendingChanges()) {
@@ -134,8 +135,21 @@ export function LiveFileEditor({
   }, [client, path, programId, user?.id])
 
   useEffect(() => {
-    sessionRef.current?.setActive(active)
-  }, [active])
+    const updateActivity = () => {
+      sessionRef.current?.setActive(
+        active && document.visibilityState === "visible" && document.hasFocus()
+      )
+    }
+    updateActivity()
+    document.addEventListener("visibilitychange", updateActivity)
+    window.addEventListener("focus", updateActivity)
+    window.addEventListener("blur", updateActivity)
+    return () => {
+      document.removeEventListener("visibilitychange", updateActivity)
+      window.removeEventListener("focus", updateActivity)
+      window.removeEventListener("blur", updateActivity)
+    }
+  }, [active, client, path, programId, user?.id])
 
   return (
     <div className="flex min-h-full flex-col">

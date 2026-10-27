@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { getFunctionName } from "convex/server"
 import * as Y from "yjs"
-import { createLiveFileSession } from "../src/lib/live-file-session"
+import { Awareness, encodeAwarenessUpdate } from "y-protocols/awareness"
+import {
+  createLiveFileSession,
+  type LivePerson,
+} from "../src/lib/live-file-session"
 import type { Id } from "@workspace/backend/dataModel"
 
 type Options = Parameters<typeof createLiveFileSession>[0]
@@ -25,6 +29,7 @@ function setup(hydration = Promise.resolve(), pageCount = 1) {
     .slice(0, pageCount)
     .map((bytes, index) => ({ sequence: index + 1, bytes }))
   remote.destroy()
+  let presence: { sessionId: string; bytes: ArrayBuffer }[] = []
   let documentId = "document"
   let local: Y.Doc | undefined
   const watches: {
@@ -94,7 +99,9 @@ function setup(hydration = Promise.resolve(), pageCount = 1) {
                   hasMore: Number(args.afterSequence) + 1 < pageCount,
                   lastSequence: pageCount,
                 }
-              : [],
+              : watch.name === "presence:listAwareness"
+                ? presence
+                : [],
           onUpdate: (update: () => void) => {
             watch.update = update
             return () => {
@@ -123,6 +130,12 @@ function setup(hydration = Promise.resolve(), pageCount = 1) {
     watches,
     disconnect,
     text: () => local!.getText("source"),
+    setPresence: (sessions: typeof presence) => {
+      presence = sessions
+      for (const watch of watches)
+        if (watch.active && watch.name === "presence:listAwareness")
+          watch.update?.()
+    },
     replace: () => {
       documentId = "replacement"
       for (const watch of [...watches])
@@ -149,6 +162,92 @@ function heartbeatSessionId(s: ReturnType<typeof setup>) {
 }
 
 describe("presence session", () => {
+  it("shares tab activity and keeps a person active while any of their tabs is active", async () => {
+    const s = setup()
+    const docs = [new Y.Doc(), new Y.Doc()]
+    const peers = docs.map((doc) => new Awareness(doc))
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      const local = s.callbacks.mount.mock.calls[0] as unknown as [
+        Y.Doc,
+        Awareness,
+      ]
+      s.session.setActive(true)
+      expect(local[1].getLocalState()?.active).toBe(true)
+      s.session.setActive(false)
+      expect(local[1].getLocalState()?.active).toBe(false)
+      const update = (states: boolean[]) => {
+        s.setPresence(
+          peers.map((peer, index) => {
+            peer.setLocalState({
+              user: { id: "bob", name: "Bob", color: "blue" },
+              active: states[index],
+            })
+            return {
+              sessionId: `bob-tab-${index}`,
+              bytes: encodeAwarenessUpdate(peer, [peer.clientID])
+                .buffer as ArrayBuffer,
+            }
+          })
+        )
+      }
+      for (const states of [
+        [true, false],
+        [false, true],
+        [false, false],
+        [true, true],
+      ]) {
+        update(states)
+        expect(
+          s.callbacks.onPeopleChange.mock.lastCall?.[0].find(
+            (person: LivePerson) => person.id === "bob"
+          )?.active
+        ).toBe(states.some(Boolean))
+      }
+    } finally {
+      s.session.dispose()
+      peers.forEach((peer) => peer.destroy())
+      docs.forEach((doc) => doc.destroy())
+    }
+  })
+
+  it("replaces the old Yjs client when a peer reloads the same session", async () => {
+    const s = setup()
+    const peers = [new Y.Doc(), new Y.Doc(), new Y.Doc()]
+    const awareness = peers.map((doc) => new Awareness(doc))
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      const local = s.callbacks.mount.mock.calls[0] as unknown as [
+        Y.Doc,
+        Awareness,
+      ]
+      for (const peer of awareness) {
+        peer.setLocalState({
+          user: { id: "bob", name: "Bob", color: "blue" },
+          cursor: {},
+        })
+        s.setPresence([
+          {
+            sessionId: "bob-tab",
+            bytes: encodeAwarenessUpdate(peer, [peer.clientID])
+              .buffer as ArrayBuffer,
+          },
+        ])
+        expect(
+          [...local[1].getStates().keys()].filter(
+            (id) => id !== local[0].clientID
+          )
+        ).toEqual([peer.clientID])
+      }
+      s.setPresence([])
+      expect([...local[1].getStates().keys()]).toEqual([local[0].clientID])
+    } finally {
+      s.session.dispose()
+      awareness.forEach((peer) => peer.destroy())
+      peers.forEach((doc) => doc.destroy())
+    }
+  })
+
   it("reuses one session per tab, user and file, so a reloaded page replaces its previous caret", async () => {
     vi.stubGlobal("sessionStorage", memoryStorage())
     const previousPage = setup()
