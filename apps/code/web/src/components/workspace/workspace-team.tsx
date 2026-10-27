@@ -7,6 +7,13 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -329,16 +336,19 @@ function RolePicker({
   return (
     <Field className="w-auto">
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <select
-        className="h-8 rounded-lg border border-input bg-background px-2 text-sm"
-        id={id}
+      <Select
         value={value}
+        onValueChange={(role) => onChange(role as Role)}
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value as Role)}
       >
-        <option value="member">Member</option>
-        <option value="admin">Admin</option>
-      </select>
+        <SelectTrigger id={id}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent align="start">
+          <SelectItem value="member">Member</SelectItem>
+          <SelectItem value="admin">Admin</SelectItem>
+        </SelectContent>
+      </Select>
     </Field>
   )
 }
