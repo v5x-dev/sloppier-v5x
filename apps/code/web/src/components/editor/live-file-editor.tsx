@@ -135,9 +135,13 @@ export function LiveFileEditor({
   }, [client, path, programId, user?.id])
 
   useEffect(() => {
+    sessionRef.current?.setActive(active)
+  }, [active, client, path, programId, user?.id])
+
+  useEffect(() => {
     const updateActivity = () => {
-      sessionRef.current?.setActive(
-        active && document.visibilityState === "visible" && document.hasFocus()
+      sessionRef.current?.setBrowserActive(
+        document.visibilityState === "visible" && document.hasFocus()
       )
     }
     updateActivity()
@@ -149,7 +153,7 @@ export function LiveFileEditor({
       window.removeEventListener("focus", updateActivity)
       window.removeEventListener("blur", updateActivity)
     }
-  }, [active, client, path, programId, user?.id])
+  }, [client, path, programId, user?.id])
 
   return (
     <div className="flex min-h-full flex-col">

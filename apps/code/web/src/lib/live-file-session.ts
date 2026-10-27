@@ -456,9 +456,11 @@ export function createLiveFileSession({
   return {
     retry,
     hasPendingChanges: () => replaced || !caughtUp || hasChanges(doc, server),
-    setActive(active: boolean) {
+    setBrowserActive(active: boolean) {
       if (awareness.getLocalState()?.active !== active)
         awareness.setLocalStateField("active", active)
+    },
+    setActive(active: boolean) {
       if (!active) awareness.setLocalStateField("cursor", null)
     },
     dispose() {

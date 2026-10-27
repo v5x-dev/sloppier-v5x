@@ -172,9 +172,11 @@ describe("presence session", () => {
         Y.Doc,
         Awareness,
       ]
-      s.session.setActive(true)
+      s.session.setBrowserActive(true)
       expect(local[1].getLocalState()?.active).toBe(true)
       s.session.setActive(false)
+      expect(local[1].getLocalState()?.active).toBe(true)
+      s.session.setBrowserActive(false)
       expect(local[1].getLocalState()?.active).toBe(false)
       const update = (states: boolean[]) => {
         s.setPresence(
