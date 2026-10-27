@@ -94,3 +94,32 @@ export function hoverContent(contents: HoverContents) {
   }
   return { source, blocks }
 }
+
+export type InlineSegment = { text: string; style?: "code" | "strong" }
+
+// Calls, constants and macros are code. A namespace prefix such as pros:: is part
+// of the same token, so it stays inside the code span with its identifier.
+const inlinePattern =
+  /(`[^`]+`|\*\*[^*]+\*\*|\b\w+(?:::\w+)*\(\)|\b(?:\w+::)*E[A-Z0-9_]{2,}\b|\b(?:\w+::)*[A-Z][A-Z0-9]*_[A-Z0-9_]+\b)/
+const identifierPattern =
+  /^(?:\w+(?:::\w+)*\(\)|(?:\w+::)*E[A-Z0-9_]{2,}|(?:\w+::)*[A-Z][A-Z0-9]*_[A-Z0-9_]+)$/
+
+/** Splits one line of documentation prose into plain, code, and bold segments. */
+export function inlineSegments(text: string): InlineSegment[] {
+  return text
+    .split(inlinePattern)
+    .filter(Boolean)
+    .map((part): InlineSegment => {
+      if (
+        (part.startsWith("`") && part.endsWith("`")) ||
+        identifierPattern.test(part)
+      )
+        return {
+          text: part.startsWith("`") ? part.slice(1, -1) : part,
+          style: "code",
+        }
+      if (part.startsWith("**") && part.endsWith("**"))
+        return { text: part.slice(2, -2), style: "strong" }
+      return { text: part }
+    })
+}

@@ -1,7 +1,11 @@
 import { File } from "@pierre/diffs/react"
 import { FileCodeIcon } from "@phosphor-icons/react"
 import { editorThemeOptions } from "@/lib/editor-theme"
-import { hoverContent, type HoverContents } from "@/lib/hover-content"
+import {
+  hoverContent,
+  inlineSegments,
+  type HoverContents,
+} from "@/lib/hover-content"
 
 const proseStyle = { fontFamily: '"DM Sans Variable", sans-serif' }
 
@@ -17,29 +21,22 @@ const codeOptions = {
 }
 
 function InlineText({ text }: { text: string }) {
-  return text
-    .split(
-      /(`[^`]+`|\*\*[^*]+\*\*|\b\w+(?:::\w+)*\(\)|\bE[A-Z0-9_]{2,}\b|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b)/g
+  return inlineSegments(text).map((segment, index) =>
+    segment.style === "code" ? (
+      <code
+        key={index}
+        className="rounded bg-foreground/5 px-1 py-0.5 font-mono text-[0.95em] text-foreground"
+      >
+        {segment.text}
+      </code>
+    ) : segment.style === "strong" ? (
+      <strong key={index} className="font-semibold text-foreground">
+        {segment.text}
+      </strong>
+    ) : (
+      segment.text
     )
-    .map((part, index) =>
-      (part.startsWith("`") && part.endsWith("`")) ||
-      /^(?:\w+(?:::\w+)*\(\)|E[A-Z0-9_]{2,}|[A-Z][A-Z0-9]*_[A-Z0-9_]+)$/.test(
-        part
-      ) ? (
-        <code
-          key={index}
-          className="rounded bg-foreground/5 px-1 py-0.5 font-mono text-[0.95em] text-foreground"
-        >
-          {part.startsWith("`") ? part.slice(1, -1) : part}
-        </code>
-      ) : part.startsWith("**") && part.endsWith("**") ? (
-        <strong key={index} className="font-semibold text-foreground">
-          {part.slice(2, -2)}
-        </strong>
-      ) : (
-        part
-      )
-    )
+  )
 }
 
 export function HoverDocumentation({

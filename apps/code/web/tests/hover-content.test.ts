@@ -1,5 +1,35 @@
 import { describe, expect, it } from "vitest"
-import { hoverContent } from "../src/lib/hover-content"
+import { hoverContent, inlineSegments } from "../src/lib/hover-content"
+
+describe("inline documentation text", () => {
+  it("keeps a namespace-qualified constant in one code span", () => {
+    expect(
+      inlineSegments("'pros::E_MOTOR_BRAKE_COAST' 'pros::E_MOTOR_BRAKE_HOLD'")
+    ).toEqual([
+      { text: "'" },
+      { text: "pros::E_MOTOR_BRAKE_COAST", style: "code" },
+      { text: "' '" },
+      { text: "pros::E_MOTOR_BRAKE_HOLD", style: "code" },
+      { text: "'" },
+    ])
+  })
+  it("styles parameter names, calls, and bold text without touching prose", () => {
+    expect(
+      inlineSegments(
+        "`brake_type`: the 'brake mode' of **drive**, see pros::delay() and E_MOTOR_BRAKE_INVALID."
+      )
+    ).toEqual([
+      { text: "brake_type", style: "code" },
+      { text: ": the 'brake mode' of " },
+      { text: "drive", style: "strong" },
+      { text: ", see " },
+      { text: "pros::delay()", style: "code" },
+      { text: " and " },
+      { text: "E_MOTOR_BRAKE_INVALID", style: "code" },
+      { text: "." },
+    ])
+  })
+})
 
 describe("hover documentation", () => {
   it("separates API markdown signatures, documentation, and source paths", () => {
