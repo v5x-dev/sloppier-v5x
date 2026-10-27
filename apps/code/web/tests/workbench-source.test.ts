@@ -96,6 +96,25 @@ describe("workbench source", () => {
     source.setDraft("src/main.cpp", "captured")
     expect(source.getSnapshot().dirtyPaths).toEqual([])
   })
+  it("refreshes another viewer's committed baseline without losing later edits", async () => {
+    const { source, actions } = await opened()
+    source.setDraft("src/main.cpp", "shared commit")
+    actions.readFile.mockResolvedValue({
+      bytes: new TextEncoder().encode("shared commit").buffer,
+      contentRange: null,
+      contentType: "text/plain",
+    })
+    await source.refreshRepository()
+    expect(source.getSnapshot().dirtyPaths).toEqual([])
+    expect(source.getSnapshot().loaded["src/main.cpp"]?.contents).toBe(
+      "shared commit"
+    )
+    source.setDraft("src/main.cpp", "later edits")
+    await source.refreshRepository()
+    expect(source.getDrafts().get("src/main.cpp")).toBe("later edits")
+    expect(source.getSnapshot().dirtyPaths).toEqual(["src/main.cpp"])
+  })
+
   it("moves a dirty file with its draft, tab, editor identity, scroll, and presence", async () => {
     const { source } = await opened()
     source.setDraft("src/main.cpp", "draft")

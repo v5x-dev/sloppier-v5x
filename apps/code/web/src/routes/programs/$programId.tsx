@@ -357,8 +357,8 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
   const [commitOpen, setCommitOpen] = useState(false)
   const savePending = useRef(false)
   useEffect(() => {
-    void loadPaths()
-  }, [loadPaths])
+    void source.refreshRepository()
+  }, [source, program.repositoryHeadSha])
 
   const saveFromKeyboard = useEffectEvent(
     (event: KeyboardEvent, signal: AbortSignal) => {

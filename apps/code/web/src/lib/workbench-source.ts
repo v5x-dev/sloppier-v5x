@@ -58,6 +58,7 @@ export class WorkbenchSource {
   private reads = new Map<string, object>()
   private operationBusy = false
   private initialOpen = false
+  private pathRequest = 0
   readonly scrollPositions = new Map<string, number>()
 
   constructor(
@@ -124,6 +125,7 @@ export class WorkbenchSource {
   }
 
   loadPaths = async () => {
+    const request = ++this.pathRequest
     this.update({ listError: null })
     try {
       const all: string[] = []
@@ -136,6 +138,7 @@ export class WorkbenchSource {
         all.push(...page.paths)
         cursor = page.hasMore ? page.nextCursor : undefined
       } while (cursor)
+      if (request !== this.pathRequest) return
       const paths = all.filter((path) => !path.startsWith(".v5x/")).sort()
       this.update({ paths })
       if (!this.initialOpen) {
@@ -163,6 +166,18 @@ export class WorkbenchSource {
     }
   }
 
+  refreshRepository = async () => {
+    const refresh = this.initialOpen
+    await this.loadPaths()
+    if (!refresh || this.state.listError) return
+    // Re-read the saved baseline, keeping live drafts and editor identities.
+    await Promise.all(
+      Object.keys(this.state.loaded)
+        .filter((path) => this.state.paths?.includes(path))
+        .map((path) => this.loadFile(path, true))
+    )
+  }
+
   openFile = (path: string) => {
     this.update({
       openPaths: this.state.openPaths.includes(path)
@@ -172,11 +187,12 @@ export class WorkbenchSource {
     })
     void this.loadFile(path)
   }
-  private async loadFile(path: string) {
+  private async loadFile(path: string, refresh = false) {
     if (
-      this.state.loaded[path] ||
-      this.state.readError[path] ||
-      this.reads.has(path)
+      !refresh &&
+      (this.state.loaded[path] ||
+        this.state.readError[path] ||
+        this.reads.has(path))
     )
       return
     const request = {}
@@ -194,13 +210,18 @@ export class WorkbenchSource {
           "This is a binary file. Use Download to open it locally."
         )
       const total = Number(contentRange?.split("/").at(1))
+      const previous = this.committed.get(path)
+      if (refresh && this.drafts.get(path) === previous)
+        this.drafts.delete(path)
       this.committed.set(path, contents)
       this.sourceChanged({
         loaded: {
           ...this.state.loaded,
           [path]: {
             contents,
-            editorKey: `${this.programId}:${crypto.randomUUID()}`,
+            editorKey:
+              this.state.loaded[path]?.editorKey ??
+              `${this.programId}:${crypto.randomUUID()}`,
             truncated: Number.isFinite(total) && total > bytes.byteLength,
           },
         },
