@@ -1,8 +1,21 @@
+import { useSyncExternalStore } from "react"
+import { CodeIcon, HammerIcon } from "@phosphor-icons/react"
+import { useLanguageClient } from "@/components/editor/language-session"
 import { useProgramConnection } from "./program-connection"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
+const subscribeToNothing = () => () => {}
+const stoppedStatus = () => "stopped" as const
+
 export function MachineStatus() {
+  const client = useLanguageClient()
+  const languageStatus = useSyncExternalStore(
+    client?.onStatusChange ?? subscribeToNothing,
+    client?.getStatus ?? stoppedStatus,
+    stoppedStatus
+  )
+  const languageLabel = `clangd worker: ${languageStatus}`
   const { machineStatus, ready, status, error } = useProgramConnection()
   const failed = Boolean(error) || machineStatus === "error"
   const building = ready && status?.building
@@ -25,17 +38,39 @@ export function MachineStatus() {
           tabIndex={0}
           className="flex size-6 items-center justify-center rounded-sm outline-offset-2"
         >
-          <span
+          <HammerIcon
             aria-hidden="true"
             className={cn(
-              "size-2 rounded-full",
+              "size-3.5",
               failed
-                ? "bg-red-500"
+                ? "text-red-500"
                 : building
-                  ? "bg-blue-500"
+                  ? "text-blue-500"
                   : ready
-                    ? "bg-emerald-500"
-                    : "bg-amber-500"
+                    ? "text-emerald-500"
+                    : "text-amber-500"
+            )}
+          />
+        </span>
+      </ActionTooltip>
+      <ActionTooltip label={languageLabel}>
+        <span
+          role="status"
+          aria-label={languageLabel}
+          tabIndex={0}
+          className="flex size-6 items-center justify-center rounded-sm outline-offset-2"
+        >
+          <CodeIcon
+            aria-hidden="true"
+            className={cn(
+              "size-3.5",
+              languageStatus === "error"
+                ? "text-red-500"
+                : languageStatus === "ready"
+                  ? "text-emerald-500"
+                  : languageStatus === "starting"
+                    ? "text-amber-500"
+                    : "text-muted-foreground"
             )}
           />
         </span>

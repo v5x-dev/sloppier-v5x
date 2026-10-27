@@ -59,6 +59,8 @@ type OpenDocument = {
   observe: (event: Y.YTextEvent) => void
 }
 
+export type LanguageStatus = "stopped" | "starting" | "ready" | "error"
+
 export class RequestCancelled extends Error {}
 
 export function isLanguageFile(path: string) {
@@ -112,6 +114,8 @@ export class LanguageClient {
   private sending: Promise<void> = Promise.resolve()
   private documents = new Map<string, OpenDocument>()
   private generation = 0
+  private status: LanguageStatus = "stopped"
+  private statusListeners = new Set<() => void>()
   private ready = false
   private readyListeners = new Set<(ready: boolean) => void>()
   private controller: AbortController | null = null
@@ -120,6 +124,19 @@ export class LanguageClient {
     private readonly transport: LanguageTransport,
     private readonly prepareSource: () => Promise<BuildSource>
   ) {}
+
+  getStatus = () => this.status
+
+  onStatusChange = (listener: () => void) => {
+    this.statusListeners.add(listener)
+    return () => void this.statusListeners.delete(listener)
+  }
+
+  private setStatus(status: LanguageStatus) {
+    if (this.status === status) return
+    this.status = status
+    for (const listener of this.statusListeners) listener()
+  }
 
   get isReady() {
     return this.ready
@@ -134,7 +151,7 @@ export class LanguageClient {
   /** Start or restart the worker from the latest source snapshot. */
   async start() {
     const generation = ++this.generation
-    this.reset()
+    this.reset("starting")
     const controller = new AbortController()
     this.controller = controller
     try {
@@ -205,7 +222,7 @@ export class LanguageClient {
 
   stop() {
     this.generation++
-    this.reset()
+    this.reset("stopped")
     for (const document of this.documents.values())
       document.text.unobserve(document.observe)
     this.documents.clear()
@@ -378,12 +395,14 @@ export class LanguageClient {
   }
 
   private setReady(ready: boolean) {
+    if (ready) this.setStatus("ready")
     if (this.ready === ready) return
     this.ready = ready
     for (const listener of this.readyListeners) listener(ready)
   }
 
-  private reset() {
+  private reset(status: LanguageStatus = "error") {
+    this.setStatus(status)
     this.transport.stop()
     this.controller?.abort()
     this.controller = null
