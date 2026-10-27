@@ -588,25 +588,29 @@ function CompletionPopup({
               )
             })}
           </div>
-          {/* Keep documentation beside the list, with its own scroll area. */}
-          <div
-            aria-label="Completion documentation"
-            className="absolute top-0 overflow-y-auto rounded-md bg-popover px-3 py-2 [overflow-wrap:anywhere] text-muted-foreground shadow-md ring-1 ring-foreground/10"
-            style={{
-              left: "calc(100% + 4px)",
-              width: detailsWidth,
-              height: popupHeight,
-            }}
-          >
-            {selected?.item.detail && (
-              <div className="text-foreground">{selected.item.detail}</div>
-            )}
-            {docs && (
-              <div className="mt-1">
-                <HoverDocumentation contents={docs} compact />
-              </div>
-            )}
-          </div>
+          {/* Keep documentation beside the list. It sizes to its text, wrapping at
+              detailsWidth and scrolling past the list height. */}
+          {(selected?.item.detail || docs) && (
+            <div
+              aria-label="Completion documentation"
+              className="absolute top-0 overflow-y-auto rounded-md bg-popover px-3 py-2 [overflow-wrap:anywhere] text-muted-foreground shadow-md ring-1 ring-foreground/10"
+              style={{
+                left: "calc(100% + 4px)",
+                width: "max-content",
+                maxWidth: detailsWidth,
+                maxHeight: popupHeight,
+              }}
+            >
+              {selected.item.detail && (
+                <div className="text-foreground">{selected.item.detail}</div>
+              )}
+              {docs && (
+                <div className="mt-1">
+                  <HoverDocumentation contents={docs} compact />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
