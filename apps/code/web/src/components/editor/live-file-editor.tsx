@@ -1,3 +1,8 @@
+import {
+  readEditorState,
+  writeEditorState,
+  type FileView,
+} from "@/lib/editor-persistence"
 import { useEditorFormatting, type FormatChange } from "./editor-formatting"
 import { useEditorNavigation } from "./editor-navigation"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
@@ -184,6 +189,55 @@ function PierreFile({
   path: string
   programId: Id<"programs">
 }) {
+  const viewKey = `${programId}:file:${path}`
+  const viewRestored = useRef(false)
+  const saveView = () => {
+    const editor = binding.editor
+    const viewport = completion.wrapper.current?.closest('[role="tabpanel"]')
+    if (!editor || !viewport || viewport.getClientRects().length === 0) return
+    const code = [...(completion.wrapper.current?.querySelectorAll("*") ?? [])]
+      .map((node) => node.shadowRoot?.querySelector<HTMLElement>("[data-code]"))
+      .find(Boolean)
+    if (!viewRestored.current) {
+      const saved = readEditorState<FileView>(viewKey)
+      if (saved && !targetRef.current) {
+        viewport.scrollTop = Number.isFinite(saved.top) ? saved.top : 0
+        viewport.scrollLeft = Number.isFinite(saved.left) ? saved.left : 0
+        if (code) code.scrollLeft = saved.codeLeft ?? 0
+      }
+      viewRestored.current = true
+      return
+    }
+    writeEditorState(viewKey, {
+      selections: (editor.getViewState().selections ?? []).map((selection) => ({
+        start: binding.document.offsetAt(selection.start),
+        end: binding.document.offsetAt(selection.end),
+        direction: selection.direction,
+      })),
+      top: viewport.scrollTop,
+      left: viewport.scrollLeft,
+      codeLeft: code?.scrollLeft ?? 0,
+    })
+  }
+  useEffect(() => {
+    const timer = setInterval(saveView, 300)
+    document.addEventListener("selectionchange", saveView)
+    window.addEventListener("keyup", saveView)
+    window.addEventListener("pointerup", saveView)
+    window.addEventListener("scroll", saveView, true)
+    window.addEventListener("pagehide", saveView)
+    window.addEventListener("beforeunload", saveView)
+    return () => {
+      saveView()
+      clearInterval(timer)
+      document.removeEventListener("selectionchange", saveView)
+      window.removeEventListener("keyup", saveView)
+      window.removeEventListener("pointerup", saveView)
+      window.removeEventListener("scroll", saveView, true)
+      window.removeEventListener("pagehide", saveView)
+      window.removeEventListener("beforeunload", saveView)
+    }
+  })
   const appliedTarget = useRef<number | undefined>(undefined)
   const targetRef = useRef(diagnosticTarget)
   targetRef.current = diagnosticTarget
@@ -219,6 +273,30 @@ function PierreFile({
             initialState: { type: "file", document: binding.document },
             onAttach: (editor) => {
               binding.attach(editor)
+              if (!viewRestored.current) {
+                const saved = readEditorState<FileView>(viewKey)
+                if (saved && Array.isArray(saved.selections)) {
+                  const length = binding.document.getText().length
+                  const position = (offset: number) =>
+                    binding.document.positionAt(
+                      Math.max(
+                        0,
+                        Math.min(length, Number.isFinite(offset) ? offset : 0)
+                      )
+                    )
+                  editor.setSelections(
+                    saved.selections.map((selection) => ({
+                      start: position(selection.start),
+                      end: position(selection.end),
+                      direction:
+                        selection.direction === "backward"
+                          ? "backward"
+                          : "forward",
+                    }))
+                  )
+                }
+                requestAnimationFrame(saveView)
+              }
               const target = targetRef.current
               if (target && appliedTarget.current !== target.request) {
                 appliedTarget.current = target.request

@@ -32,6 +32,37 @@ describe("hover documentation", () => {
       "code",
     ])
   })
+  it("renders structured API paragraphs, parameters and errors as separate blocks", () => {
+    expect(
+      hoverContent(`Sets motor voltage.
+
+A second paragraph.
+
+### Parameters
+
+- \`voltage\`: The new voltage.
+- \`reversed\`: Whether to reverse.
+
+### Returns
+
+1 on success.
+
+Errors:
+- \`ENODEV\`: Not a motor.`).blocks
+    ).toEqual([
+      { kind: "text", text: "Sets motor voltage." },
+      { kind: "text", text: "A second paragraph." },
+      { kind: "heading", text: "Parameters" },
+      {
+        kind: "list",
+        text: "`voltage`: The new voltage.\n`reversed`: Whether to reverse.",
+      },
+      { kind: "heading", text: "Returns" },
+      { kind: "text", text: "1 on success." },
+      { kind: "text", text: "Errors:" },
+      { kind: "list", text: "`ENODEV`: Not a motor." },
+    ])
+  })
   it("preserves marked code and literal HTML as text", () => {
     const result = hoverContent([
       { language: "cpp", value: "void drive();" },

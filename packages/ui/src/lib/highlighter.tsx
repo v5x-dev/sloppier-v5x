@@ -1,29 +1,30 @@
 import * as React from "react"
 import {
-  createHighlighterCore,
-  type GrammarState,
-  type HighlighterCore,
-} from "shiki/core"
-import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
+  codeToTokens,
+  LiveTokenizer,
+  type Lang,
+  type ThemedToken,
+} from "@pierre/highlights"
+import { birdsOfParadiseTheme } from "./birds-of-paradise-theme"
 
-// Add the languages you need. Each one loads the first time it is used.
+// Keep this list aligned with languages used by the code web app.
 const languages = {
-  bash: () => import("shiki/langs/shellscript.mjs"),
-  css: () => import("shiki/langs/css.mjs"),
-  diff: () => import("shiki/langs/diff.mjs"),
-  html: () => import("shiki/langs/html.mjs"),
-  javascript: () => import("shiki/langs/javascript.mjs"),
-  json: () => import("shiki/langs/json.mjs"),
-  jsx: () => import("shiki/langs/jsx.mjs"),
-  markdown: () => import("shiki/langs/markdown.mjs"),
-  python: () => import("shiki/langs/python.mjs"),
-  sql: () => import("shiki/langs/sql.mjs"),
-  tsx: () => import("shiki/langs/tsx.mjs"),
-  typescript: () => import("shiki/langs/typescript.mjs"),
-  yaml: () => import("shiki/langs/yaml.mjs"),
-}
+  bash: "bash",
+  css: "css",
+  diff: "diff",
+  html: "html",
+  javascript: "javascript",
+  json: "json",
+  jsx: "jsx",
+  markdown: "markdown",
+  python: "python",
+  sql: "sql",
+  tsx: "tsx",
+  typescript: "typescript",
+  yaml: "yaml",
+} as const satisfies Record<string, Lang>
 
-const aliases: Record<string, keyof typeof languages> = {
+const aliases: Record<string, Lang> = {
   js: "javascript",
   md: "markdown",
   py: "python",
@@ -35,26 +36,28 @@ const aliases: Record<string, keyof typeof languages> = {
   zsh: "bash",
 }
 
-let highlighter: Promise<HighlighterCore> | undefined
+const themes = {
+  light: birdsOfParadiseTheme,
+  dark: birdsOfParadiseTheme,
+} as const
 
-function getHighlighter() {
-  highlighter ??= createHighlighterCore({
-    themes: [
-      import("shiki/themes/github-light.mjs"),
-      import("shiki/themes/github-dark.mjs"),
-    ],
-    langs: [],
-    engine: createJavaScriptRegexEngine({ forgiving: true }),
-  })
-
-  return highlighter
+function renderTokens(tokens: readonly ThemedToken[]) {
+  return tokens.map((token, index) => (
+    <span
+      key={index}
+      style={token.htmlStyle as React.CSSProperties}
+      className="text-(--hls-light) dark:text-(--hls-dark)"
+    >
+      {token.content}
+    </span>
+  ))
 }
 
 function getLanguage(language: string) {
   const name = language.toLowerCase()
 
   if (name === "ansi") {
-    return name
+    return "text"
   }
 
   if (name in languages) {
@@ -64,8 +67,7 @@ function getLanguage(language: string) {
   return aliases[name] ?? null
 }
 
-// Loads a language and returns a highlighter for it, or null for a language
-// that is not listed.
+// Returns a highlighter for a supported language, or null for an unknown one.
 export async function loadHighlighter(language: string) {
   const lang = getLanguage(language)
 
@@ -73,46 +75,25 @@ export async function loadHighlighter(language: string) {
     return null
   }
 
-  const shiki = await getHighlighter()
-
-  if (lang !== "ansi" && !shiki.getLoadedLanguages().includes(lang)) {
-    await shiki.loadLanguage(languages[lang])
-  }
-
   return {
-    // Returns one React node per line, and the grammar state after the last
-    // line. Pass that state back to continue where the code left off.
-    highlight(code: string, state?: GrammarState) {
-      const tokenize = (text: string) =>
-        shiki.codeToTokens(text, {
-          lang,
-          themes: { light: "github-light", dark: "github-dark" },
-          defaultColor: false,
-          grammarState: state,
-        }).tokens
+    // Returns one React node per line.
+    highlight(code: string) {
+      const tokens = codeToTokens(code, {
+        lang,
+        themes,
+        defaultColor: false,
+      }).tokens
 
-      // ANSI has no grammar state, so each line is tokenized on its own and
-      // gets the same colors whether it arrives in one piece or streams.
-      const tokens =
-        lang === "ansi"
-          ? code.split("\n").flatMap((line) => tokenize(line))
-          : tokenize(code)
-
-      return {
-        lines: tokens.map((line) =>
-          line.map((token, index) => (
-            <span
-              key={index}
-              style={token.htmlStyle as React.CSSProperties}
-              className="text-(--shiki-light) dark:text-(--shiki-dark)"
-            >
-              {token.content}
-            </span>
-          ))
-        ),
-        state: shiki.getLastGrammarState(tokens),
-      }
+      return tokens.map(renderTokens)
     },
+    createTokenizer() {
+      return new LiveTokenizer({
+        lang,
+        themes,
+        defaultColor: false,
+      })
+    },
+    renderTokens,
   }
 }
 
@@ -120,5 +101,5 @@ export async function loadHighlighter(language: string) {
 export async function highlightCode(code: string, language: string) {
   const highlighter = await loadHighlighter(language)
 
-  return highlighter ? highlighter.highlight(code).lines : null
+  return highlighter ? highlighter.highlight(code) : null
 }

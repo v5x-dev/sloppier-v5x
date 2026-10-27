@@ -247,3 +247,34 @@ describe("workbench source", () => {
     ).toBe(true)
   })
 })
+
+describe("persisted workbench tabs", () => {
+  it("restores tab order, active file, and an intentionally empty workbench", async () => {
+    const values = new Map<string, string>()
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
+    try {
+      const { source } = await opened()
+      source.openFile("include/robot.h")
+      source.reorderTabs("include/robot.h", "src/main.cpp")
+      source.openFile("src/main.cpp")
+      const restored = setup()
+      await restored.source.loadPaths()
+      expect(restored.source.getSnapshot().openPaths).toEqual([
+        "include/robot.h",
+        "src/main.cpp",
+      ])
+      expect(restored.source.getSnapshot().activePath).toBe("src/main.cpp")
+      expect(restored.actions.readFile).toHaveBeenCalledTimes(2)
+      restored.source.closeTab("src/main.cpp")
+      restored.source.closeTab("include/robot.h")
+      const empty = setup()
+      await empty.source.loadPaths()
+      expect(empty.source.getSnapshot().openPaths).toEqual([])
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})

@@ -19,6 +19,7 @@ import {
 } from "@/lib/language-service"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { useLanguageService } from "./language-session"
+import { HoverDocumentation } from "./hover-documentation"
 
 type Menu = {
   items: CompletionItem[]
@@ -458,7 +459,21 @@ function CompletionPopup({
       ?.querySelector("[aria-selected=true]")
       ?.scrollIntoView({ block: "nearest" })
   }, [menu?.selected, menu?.matches])
-  const below = window.innerHeight - anchor.bottom > 320
+  const availableWidth = Math.max(0, window.innerWidth - 20)
+  const hasMenu = Boolean(menu?.matches.length)
+  const listWidth = Math.min(
+    520,
+    hasMenu ? availableWidth * 0.6 : availableWidth
+  )
+  const detailsWidth = Math.min(360, availableWidth - listWidth)
+  const popupWidth = listWidth + (hasMenu ? detailsWidth + 4 : 0)
+  const left = Math.max(
+    8,
+    Math.min(anchor.left, window.innerWidth - popupWidth - 8)
+  )
+  const listHeight = Math.min(menu?.matches.length ?? 0, ROWS) * 24 + 4
+  const popupHeight = Math.max(96, listHeight)
+  const below = window.innerHeight - anchor.bottom > Math.max(80, popupHeight)
   const docs = selected && documentation(selected.item.documentation)
   const active = signature?.signatures[signature.activeSignature ?? 0]
   const parameter =
@@ -478,7 +493,7 @@ function CompletionPopup({
     <div
       className="pointer-events-none fixed z-50 flex flex-col gap-1 font-mono text-xs"
       style={{
-        left: Math.min(anchor.left, window.innerWidth - 520),
+        left,
         ...(below
           ? { top: anchor.bottom + 2 }
           : {
@@ -511,12 +526,15 @@ function CompletionPopup({
         </div>
       )}
       {menu && menu.matches.length > 0 && (
-        <div className="pointer-events-auto flex w-[520px] flex-col overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10">
+        <div
+          className="pointer-events-auto relative flex flex-col rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10"
+          style={{ width: listWidth }}
+        >
           <div
             ref={list}
             role="listbox"
             aria-label="Suggestions"
-            className="overflow-y-auto py-0.5"
+            className="overflow-y-auto rounded-md py-0.5"
             style={{ maxHeight: `calc(${ROWS} * 1.5rem + 0.25rem)` }}
           >
             {menu.matches.map((match, index) => {
@@ -565,13 +583,24 @@ function CompletionPopup({
               )
             })}
           </div>
-          {/* Reserve the same space for every selection, including undocumented
-              items, so wrapping cannot move the list when it opens above the caret. */}
-          <div className="h-32 shrink-0 overflow-y-auto border-t px-2 py-1.5 whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
+          {/* Keep documentation beside the list, with its own scroll area. */}
+          <div
+            aria-label="Completion documentation"
+            className="absolute top-0 overflow-y-auto rounded-md bg-popover px-3 py-2 [overflow-wrap:anywhere] text-muted-foreground shadow-md ring-1 ring-foreground/10"
+            style={{
+              left: "calc(100% + 4px)",
+              width: detailsWidth,
+              height: popupHeight,
+            }}
+          >
             {selected?.item.detail && (
               <div className="text-foreground">{selected.item.detail}</div>
             )}
-            {docs && <div className="mt-1 font-sans">{docs}</div>}
+            {docs && (
+              <div className="mt-1">
+                <HoverDocumentation contents={docs} compact />
+              </div>
+            )}
           </div>
         </div>
       )}

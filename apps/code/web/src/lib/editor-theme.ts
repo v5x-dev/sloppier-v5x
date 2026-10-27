@@ -1,15 +1,8 @@
 import { registerCustomTheme } from "@pierre/diffs"
+import { birdsOfParadiseTheme } from "@workspace/ui/lib/birds-of-paradise-theme"
 
-// Zed palette from https://github.com/LoganBresnahan/birds-of-paradise-zed.
-// The upstream license is included alongside the theme.
 const themeName = "v5x-birds-of-paradise"
-registerCustomTheme(themeName, async () => {
-  const { default: theme } = await import("./themes/birds-of-paradise-zed.json")
-  return {
-    ...theme.themes[0],
-    appearance: "dark" as const,
-  }
-}, "zed")
+registerCustomTheme(themeName, async () => birdsOfParadiseTheme, "zed")
 
 export const editorThemeOptions = {
   preferredHighlighter: "highlights" as const,

@@ -12,6 +12,8 @@ import subprocess
 import tempfile
 import zipfile
 
+from documentation import documentation
+
 HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE.parents[1] / 'apps/code/web/src/lib/autocomplete/data'
 OUT.mkdir(parents=True, exist_ok=True)
@@ -40,14 +42,6 @@ def generate(root, sdk, includes, namespaces):
     entry.write_text(''.join('#include <' + name + '>\n' for name in includes))
     symbols, sources, inline, seen = [], {}, {}, set()
     current_file = ''
-
-    def doc(node):
-        def texts(n):
-            if n.get('kind') == 'TextComment':
-                yield n.get('text', '').strip()
-            for child in n.get('inner', []):
-                yield from texts(child)
-        return ' '.join(texts(node)).strip()[:2400]
 
     def visit(node, scope='', access='public', record=False):
         nonlocal current_file
@@ -110,8 +104,9 @@ def generate(root, sdk, includes, namespaces):
             if node.get('storageClass') == 'static':
                 symbol['static'] = True
             comment = next((c for c in children if c.get('kind') == 'FullComment'), None)
-            if comment and doc(comment):
-                symbol['documentation'] = doc(comment)
+            rendered = documentation(comment) if comment else ''
+            if rendered:
+                symbol['documentation'] = rendered
             key = (scope, name, typ, path)
             if key not in seen:
                 seen.add(key)

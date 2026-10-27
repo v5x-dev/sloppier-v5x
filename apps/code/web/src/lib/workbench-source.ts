@@ -1,3 +1,4 @@
+import { readEditorState, writeEditorState } from "./editor-persistence"
 import type { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import type { FunctionArgs, FunctionReturnType } from "convex/server"
@@ -81,6 +82,11 @@ export class WorkbenchSource {
 
   private update(patch: Partial<State>) {
     this.state = { ...this.state, ...patch }
+    if ("openPaths" in patch || "activePath" in patch)
+      writeEditorState(`${this.programId}:tabs`, {
+        openPaths: this.state.openPaths,
+        activePath: this.state.activePath,
+      })
     for (const listener of this.listeners) listener()
   }
   private sourceChanged(patch: Partial<State> = {}) {
@@ -130,8 +136,23 @@ export class WorkbenchSource {
       this.update({ paths })
       if (!this.initialOpen) {
         this.initialOpen = true
-        const entry = pickEntryFile(paths)
-        if (entry) this.openFile(entry)
+        const saved = readEditorState<{
+          openPaths: string[]
+          activePath: string | null
+        }>(`${this.programId}:tabs`)
+        if (saved && Array.isArray(saved.openPaths)) {
+          const openPaths = [
+            ...new Set(saved.openPaths.filter((path) => paths.includes(path))),
+          ]
+          const activePath = openPaths.includes(saved.activePath ?? "")
+            ? saved.activePath
+            : (openPaths.at(-1) ?? null)
+          this.update({ openPaths, activePath })
+          for (const path of openPaths) void this.loadFile(path)
+        } else {
+          const entry = pickEntryFile(paths)
+          if (entry) this.openFile(entry)
+        }
       }
     } catch (error) {
       this.update({ listError: errorMessage(error) })

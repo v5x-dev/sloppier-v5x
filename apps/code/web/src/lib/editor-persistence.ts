@@ -1,0 +1,29 @@
+/** Device-local editor preferences only; source text remains in live documents. */
+export function readEditorState<T>(key: string): T | null {
+  try {
+    return JSON.parse(
+      localStorage.getItem(`v5x:editor:${key}`) ?? "null"
+    ) as T | null
+  } catch {
+    return null
+  }
+}
+
+export function writeEditorState(key: string, value: unknown) {
+  try {
+    localStorage.setItem(`v5x:editor:${key}`, JSON.stringify(value))
+  } catch {
+    // Editing still works when browser storage is unavailable or full.
+  }
+}
+
+export type FileView = {
+  selections: {
+    start: number
+    end: number
+    direction: "forward" | "backward"
+  }[]
+  top: number
+  left: number
+  codeLeft?: number
+}

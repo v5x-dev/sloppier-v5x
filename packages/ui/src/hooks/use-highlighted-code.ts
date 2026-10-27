@@ -1,75 +1,76 @@
 import * as React from "react"
+import type { LiveTokenizer } from "@pierre/highlights"
 
 import { loadHighlighter } from "@workspace/ui/lib/highlighter"
+
+type LoadedHighlighter = NonNullable<Awaited<ReturnType<typeof loadHighlighter>>>
+type Loaded = {
+  language: string
+  highlighter: LoadedHighlighter | null
+  tokenizer: LiveTokenizer | null
+}
 
 export function useHighlightedCode(value: string, language: string) {
   // A trailing newline would render as an extra empty line.
   const code = value.endsWith("\n") ? value.slice(0, -1) : value
-  const [loaded, setLoaded] = React.useState<{
-    language: string
-    highlighter: Awaited<ReturnType<typeof loadHighlighter>>
-  } | null>(null)
-  const highlighter = loaded?.language === language ? loaded.highlighter : null
+  const [loaded, setLoaded] = React.useState<Loaded | null>(null)
 
   React.useEffect(() => {
     let cancelled = false
+    let tokenizer: LiveTokenizer | null = null
 
     loadHighlighter(language)
       .then((next) => {
         if (!cancelled) {
-          setLoaded({ language, highlighter: next })
+          tokenizer = next?.createTokenizer() ?? null
+          setLoaded({ language, highlighter: next, tokenizer })
         }
       })
       .catch(() => {})
 
     return () => {
       cancelled = true
+      tokenizer?.dispose()
     }
   }, [language])
 
-  // The complete lines, highlighted. While the code streams, only the new
-  // lines are tokenized, starting from the grammar state of the last one.
-  const [done, setDone] = React.useState<{
-    highlighter: typeof highlighter
-    text: string
-    lines: React.ReactNode[]
-    state?: Parameters<NonNullable<typeof highlighter>["highlight"]>[1]
-  }>({ highlighter: null, text: "", lines: [] })
-
-  let next = done
-
-  if (next.highlighter !== highlighter || !code.startsWith(next.text)) {
-    next = { highlighter, text: "", lines: [] }
-  }
-
-  const end = code.lastIndexOf("\n") + 1
-
-  if (highlighter && end > next.text.length) {
-    const result = highlighter.highlight(
-      code.slice(next.text.length, end - 1),
-      next.state
-    )
-
-    next = {
-      highlighter,
-      text: code.slice(0, end),
-      lines: [...next.lines, ...result.lines],
-      state: result.state,
-    }
-  }
-
-  if (next !== done) {
-    setDone(next)
-  }
-
-  // The last line is still being written, so it is tokenized on every render.
-  const tail = code.slice(end)
+  const active = loaded?.language === language ? loaded : null
+  const current = React.useRef<{ tokenizer: LiveTokenizer | null; code: string }>(
+    { tokenizer: null, code: "" }
+  )
 
   return React.useMemo(() => {
-    if (!highlighter) {
+    if (!active?.highlighter || !active.tokenizer) {
       return code.split("\n")
     }
 
-    return [...next.lines, highlighter.highlight(tail, next.state).lines[0]]
-  }, [code, highlighter, next, tail])
+    const { tokenizer, highlighter } = active
+
+    if (current.current.tokenizer !== tokenizer) {
+      current.current = { tokenizer, code: "" }
+    }
+
+    if (current.current.code !== code) {
+      if (code.startsWith(current.current.code)) {
+        const line = tokenizer.lineCount - 1
+        const character = tokenizer.getLineLength(line)
+        tokenizer.applyEdits([
+          {
+            range: {
+              start: { line, character },
+              end: { line, character },
+            },
+            newText: code.slice(current.current.code.length),
+          },
+        ])
+      } else {
+        tokenizer.reset(code)
+      }
+      current.current.code = code
+    }
+
+    return Array.from({ length: tokenizer.lineCount }, (_, line) =>
+      highlighter.renderTokens(tokenizer.getLineTokens(line).tokens)
+    )
+  }, [active, code])
 }

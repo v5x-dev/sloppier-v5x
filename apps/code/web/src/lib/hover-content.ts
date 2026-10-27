@@ -2,7 +2,7 @@ export type HoverValue =
   string | { value: string; kind?: string; language?: string }
 export type HoverContents = HoverValue | HoverValue[]
 export type HoverBlock = {
-  kind: "code" | "text" | "heading"
+  kind: "code" | "text" | "heading" | "list"
   text: string
   language?: string
 }
@@ -20,15 +20,17 @@ export function hoverContent(contents: HoverContents) {
     let pending: string[] = []
     let language: string | undefined
     let fenced = false
+    let list = false
     const flush = () => {
       const content = pending.join("\n").trim()
       if (content)
         blocks.push({
-          kind: fenced ? "code" : "text",
+          kind: fenced ? "code" : list ? "list" : "text",
           text: content,
           ...(fenced ? { language: language || "cpp" } : {}),
         })
       pending = []
+      list = false
     }
     for (const line of text.split("\n")) {
       const fence = line.match(/^\s*```([\w+-]*)/)
@@ -50,6 +52,20 @@ export function hoverContent(contents: HoverContents) {
           flush()
           blocks.push({ kind: "heading", text: heading[1].trim() })
           continue
+        }
+        const bullet = line.match(/^\s*[-*]\s+(.+)/)
+        if (bullet) {
+          if (!list) flush()
+          list = true
+          pending.push(bullet[1])
+          continue
+        }
+        if (list && line.trim()) {
+          if (/^\s+/.test(line)) {
+            pending[pending.length - 1] += ` ${line.trim()}`
+            continue
+          }
+          flush()
         }
         if (/^\s*(?:---+|\*\*\*+)\s*$/.test(line) || !line.trim()) {
           flush()
