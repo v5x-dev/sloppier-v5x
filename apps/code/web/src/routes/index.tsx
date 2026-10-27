@@ -1,6 +1,7 @@
 import {
   ArchiveBoxIcon,
   MagnifyingGlassIcon,
+  XIcon,
   DotsThreeIcon,
   BuildingsIcon,
   CodeIcon,
@@ -69,7 +70,7 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { useAction, useMutation, useQuery } from "convex/react"
 import { startOfDay, startOfWeek, subDays } from "date-fns"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { prefetchLanguageAssets } from "@/lib/language/prefetch"
 import {
   NewWorkspace,
@@ -127,11 +128,13 @@ function ProgramsPage() {
             ?.role === "admin"
         }
         onSelect={setSelectedId}
+        searching={searching}
+        query={query}
+        onQueryChange={setQuery}
+        archived={archived}
+        onToggleArchived={() => setArchived((value) => !value)}
         onSearch={() => {
-          if (searching) {
-            setQuery("")
-            setArchived(false)
-          }
+          if (searching) setQuery("")
           setSearching((value) => !value)
         }}
       />
@@ -165,26 +168,6 @@ function ProgramsPage() {
         </div>
       </section>
       <main className="mx-auto flex w-3xl max-w-full flex-1 flex-col gap-4 px-4 py-4">
-        {searching && (
-          <div className="flex items-center gap-3">
-            <Input
-              autoFocus
-              aria-label="Search programs"
-              placeholder="Search programs…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            <Button
-              variant={archived ? "secondary" : "ghost"}
-              size="icon"
-              aria-label="Toggle archived programs"
-              aria-pressed={archived}
-              onClick={() => setArchived((value) => !value)}
-            >
-              <ArchiveBoxIcon />
-            </Button>
-          </div>
-        )}
         {!workspace ? (
           <ProgramListSkeleton />
         ) : (
@@ -205,14 +188,29 @@ function AppHeader({
   isAdmin,
   onSelect,
   onSearch,
+  searching,
+  query,
+  onQueryChange,
+  archived,
+  onToggleArchived,
 }: {
   workspaces: Doc<"workspaces">[]
   workspace: Doc<"workspaces"> | undefined
   isAdmin: boolean
   onSelect: (id: Id<"workspaces">) => void
   onSearch: () => void
+  searching: boolean
+  query: string
+  onQueryChange: (query: string) => void
+  archived: boolean
+  onToggleArchived: () => void
 }) {
   const { user, signOut } = useAuth()
+  const searchInput = useRef<HTMLInputElement>(null)
+  const searchButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (searching) searchInput.current?.focus()
+  }, [searching])
   const [creatingWorkspace, setCreatingWorkspace] = useState(false)
   const [managingTeam, setManagingTeam] = useState(false)
   const [viewingInvitations, setViewingInvitations] = useState(false)
@@ -242,15 +240,45 @@ function AppHeader({
           />
         </Link>
         <div className="ml-auto flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Search programs"
-            onClick={onSearch}
-            className="text-muted-foreground"
+          <div
+            className={`relative h-8 shrink-0 transition-[width] duration-200 ease-out motion-reduce:transition-none ${searching ? "w-64 max-w-[calc(100vw-8rem)]" : "w-8"}`}
           >
-            <MagnifyingGlassIcon weight="light" className="size-5" />
-          </Button>
+            {searching && (
+              <Input
+                ref={searchInput}
+                id="dashboard-search"
+                type="search"
+                aria-label="Search programs"
+                placeholder="Search programs…"
+                value={query}
+                onChange={(event) => onQueryChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault()
+                    onSearch()
+                    searchButton.current?.focus()
+                  }
+                }}
+                className="pr-9 [&::-webkit-search-cancel-button]:appearance-none"
+              />
+            )}
+            <Button
+              ref={searchButton}
+              variant="ghost"
+              size="icon"
+              aria-label={searching ? "Close search" : "Search programs"}
+              aria-expanded={searching}
+              aria-controls={searching ? "dashboard-search" : undefined}
+              onClick={onSearch}
+              className={searching ? "absolute top-0 right-0" : undefined}
+            >
+              {searching ? (
+                <XIcon className="size-4" />
+              ) : (
+                <MagnifyingGlassIcon />
+              )}
+            </Button>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="Account menu"
@@ -303,6 +331,10 @@ function AppHeader({
                   Invitations
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onToggleArchived}>
+                  <ArchiveBoxIcon />
+                  {archived ? "Show active programs" : "Show archived programs"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => signOut()}>
                   <SignOutIcon />
                   Sign out
