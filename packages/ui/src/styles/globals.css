@@ -79,6 +79,11 @@
   --chart-3: oklch(0.681 0.162 75.834);
   --chart-4: oklch(0.554 0.135 66.442);
   --chart-5: oklch(0.476 0.114 61.907);
+  --template-vexcode: #cf202e;
+  --template-jar: #ffff00;
+  --template-pros: #e8b957;
+  --template-ez-template: #ff90d2;
+  --template-import: #4a4542;
   --radius: 0.45rem;
   --sidebar: oklch(0.986 0.002 67.8);
   --sidebar-foreground: oklch(0.147 0.004 49.3);

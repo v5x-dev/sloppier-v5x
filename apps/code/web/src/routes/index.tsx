@@ -1,5 +1,6 @@
 import {
   ArchiveBoxIcon,
+  MagnifyingGlassIcon,
   DotsThreeIcon,
   BuildingsIcon,
   CodeIcon,
@@ -53,7 +54,6 @@ import {
   Item,
   ItemActions,
   ItemContent,
-  ItemDescription,
   ItemGroup,
   ItemTitle,
 } from "@workspace/ui/components/item"
@@ -68,7 +68,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { useAction, useMutation, useQuery } from "convex/react"
-import { formatDistanceToNow } from "date-fns"
+import { startOfDay, startOfWeek, subDays } from "date-fns"
 import { useEffect, useState } from "react"
 import { prefetchLanguageAssets } from "@/lib/language/prefetch"
 import {
@@ -108,6 +108,8 @@ function ProgramsPage() {
     search.workspace ?? null
   )
   const [archived, setArchived] = useState(false)
+  const [query, setQuery] = useState("")
+  const [searching, setSearching] = useState(false)
 
   const available = (workspaces ?? []).flatMap(({ workspace }) =>
     workspace ? [workspace] : []
@@ -125,36 +127,72 @@ function ProgramsPage() {
             ?.role === "admin"
         }
         onSelect={setSelectedId}
+        onSearch={() => {
+          if (searching) {
+            setQuery("")
+            setArchived(false)
+          }
+          setSearching((value) => !value)
+        }}
       />
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-10">
-        {/* AuthGate creates the first workspace; show loading until it lands. */}
+      <section aria-label="Create a program" className="border-b bg-card">
+        <div className="mx-auto grid w-full max-w-[1360px] grid-cols-[repeat(5,minmax(96px,1fr))] gap-3 overflow-x-auto px-6 py-6 sm:gap-6">
+          {(["vexcode", "jar", "pros", "ez-template"] as const).map(
+            (template) =>
+              workspace ? (
+                <NewProgramDialog
+                  key={`${workspace._id}-${template}`}
+                  workspaceId={workspace._id}
+                  initialTemplate={template}
+                  tile
+                />
+              ) : (
+                <Skeleton
+                  key={template}
+                  className="aspect-[4/3] min-w-24 rounded-2xl"
+                />
+              )
+          )}
+          {workspace ? (
+            <ImportFolder
+              key={workspace._id}
+              workspaceId={workspace._id}
+              tile
+            />
+          ) : (
+            <Skeleton className="aspect-[4/3] min-w-24 rounded-2xl" />
+          )}
+        </div>
+      </section>
+      <main className="mx-auto flex w-full max-w-[1128px] flex-1 flex-col gap-4 px-6 py-6">
+        {searching && (
+          <div className="flex items-center gap-3">
+            <Input
+              autoFocus
+              aria-label="Search programs"
+              placeholder="Search programs…"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <Button
+              variant={archived ? "secondary" : "ghost"}
+              size="icon"
+              aria-label="Toggle archived programs"
+              aria-pressed={archived}
+              onClick={() => setArchived((value) => !value)}
+            >
+              <ArchiveBoxIcon />
+            </Button>
+          </div>
+        )}
         {!workspace ? (
           <ProgramListSkeleton />
         ) : (
-          <>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <h1 className="font-heading text-2xl font-semibold">
-                Your programs
-              </h1>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={archived ? "secondary" : "outline"}
-                  size="icon"
-                  aria-label="Toggle archived programs"
-                  aria-pressed={archived}
-                  title={
-                    archived ? "Show active programs" : "Show archived programs"
-                  }
-                  onClick={() => setArchived((current) => !current)}
-                >
-                  <ArchiveBoxIcon />
-                </Button>
-                <ImportFolder key={workspace._id} workspaceId={workspace._id} />
-                <NewProgramDialog workspaceId={workspace._id} />
-              </div>
-            </div>
-            <ProgramList workspaceId={workspace._id} archived={archived} />
-          </>
+          <ProgramList
+            workspaceId={workspace._id}
+            archived={archived}
+            query={query}
+          />
         )}
       </main>
     </div>
@@ -166,11 +204,13 @@ function AppHeader({
   workspace,
   isAdmin,
   onSelect,
+  onSearch,
 }: {
   workspaces: Doc<"workspaces">[]
   workspace: Doc<"workspaces"> | undefined
   isAdmin: boolean
   onSelect: (id: Id<"workspaces">) => void
+  onSearch: () => void
 }) {
   const { user, signOut } = useAuth()
   const [creatingWorkspace, setCreatingWorkspace] = useState(false)
@@ -193,70 +233,84 @@ function AppHeader({
 
   return (
     <header className="border-b">
-      <div className="mx-auto flex min-h-14 max-w-4xl items-center justify-between gap-4 px-6 py-2">
+      <div className="mx-auto flex min-h-[72px] max-w-[1176px] items-center justify-between gap-4 px-6 py-2">
         <Link to="/" aria-label="code (by v5x) home" className="text-primary">
           <span
             aria-hidden="true"
-            className="block size-6 bg-current"
+            className="block h-7 w-9 bg-current"
             style={{ mask: "url(/favicon.svg) center / contain no-repeat" }}
           />
         </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label="Account menu"
-            className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        <div className="ml-auto flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Search programs"
+            onClick={onSearch}
+            className="text-muted-foreground [&_svg]:size-7"
           >
-            <Avatar size="sm">
-              <AvatarImage src={user?.profilePictureUrl ?? undefined} alt="" />
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="flex flex-col gap-1 px-2 py-1.5">
-                {name && <span className="text-foreground">{name}</span>}
-                <span className="truncate font-normal">{user?.email}</span>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Workspace</DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                value={workspace?._id ?? ""}
-                onValueChange={(value) => {
-                  const selected = workspaces.find(
-                    (entry) => entry._id === value
-                  )
-                  if (selected) onSelect(selected._id)
-                }}
-              >
-                {workspaces.map((entry) => (
-                  <DropdownMenuRadioItem key={entry._id} value={entry._id}>
-                    <BuildingsIcon />
-                    <span className="truncate">{entry.name}</span>
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-              <DropdownMenuItem onClick={() => setCreatingWorkspace(true)}>
-                <PlusIcon />
-                New workspace
-              </DropdownMenuItem>
-              {workspace && isAdmin && (
-                <DropdownMenuItem onClick={() => setManagingTeam(true)}>
-                  <UsersIcon />
-                  Manage team
+            <MagnifyingGlassIcon weight="light" className="size-7" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Account menu"
+              className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Avatar className="size-10">
+                <AvatarImage
+                  src={user?.profilePictureUrl ?? undefined}
+                  alt=""
+                />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="flex flex-col gap-1 px-2 py-1.5">
+                  {name && <span className="text-foreground">{name}</span>}
+                  <span className="truncate font-normal">{user?.email}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={workspace?._id ?? ""}
+                  onValueChange={(value) => {
+                    const selected = workspaces.find(
+                      (entry) => entry._id === value
+                    )
+                    if (selected) onSelect(selected._id)
+                  }}
+                >
+                  {workspaces.map((entry) => (
+                    <DropdownMenuRadioItem key={entry._id} value={entry._id}>
+                      <BuildingsIcon />
+                      <span className="truncate">{entry.name}</span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+                <DropdownMenuItem onClick={() => setCreatingWorkspace(true)}>
+                  <PlusIcon />
+                  New workspace
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => setViewingInvitations(true)}>
-                <EnvelopeSimpleIcon />
-                Invitations
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => signOut()}>
-                <SignOutIcon />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                {workspace && isAdmin && (
+                  <DropdownMenuItem onClick={() => setManagingTeam(true)}>
+                    <UsersIcon />
+                    Manage team
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => setViewingInvitations(true)}>
+                  <EnvelopeSimpleIcon />
+                  Invitations
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <SignOutIcon />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         <NewWorkspace
           open={creatingWorkspace}
           onOpenChange={setCreatingWorkspace}
@@ -297,12 +351,13 @@ function AppHeader({
 function ProgramList({
   workspaceId,
   archived,
+  query,
 }: {
   workspaceId: Id<"workspaces">
   archived: boolean
+  query: string
 }) {
   const programs = useQuery(api.programs.listByWorkspace, { workspaceId })
-  const templates = useQuery(api.programs.listTemplates)
 
   if (programs === undefined) {
     return <ProgramListSkeleton />
@@ -327,50 +382,76 @@ function ProgramList({
     )
   }
 
-  const templateLabel = (id: Template) =>
-    templates?.find((template) => template.id === id)?.label ?? id
-
+  const now = new Date()
+  const today = startOfDay(now).getTime()
+  const yesterday = startOfDay(subDays(now, 1)).getTime()
+  const week = startOfWeek(now, { weekStartsOn: 1 }).getTime()
+  const groups = ["Today", "Yesterday", "This week", "Older"]
+  const visible = [...programs]
+    .filter(
+      (program) =>
+        Boolean(program.archivedAt) === archived &&
+        program.name.toLowerCase().includes(query.toLowerCase())
+    )
+    .sort((a, b) => b.createdAt - a.createdAt)
   return (
-    <ItemGroup className="gap-2">
-      {!programs.some(
-        (program) => Boolean(program.archivedAt) === archived
-      ) && (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          No {archived ? "archived" : "active"} programs.
+    <div className="flex flex-col gap-3">
+      {visible.length === 0 && (
+        <p className="py-8 text-center text-muted-foreground">
+          No matching {archived ? "archived" : "active"} programs.
         </p>
       )}
-      {[...programs]
-        .filter((program) => Boolean(program.archivedAt) === archived)
-        .sort((left, right) => right.createdAt - left.createdAt)
-        .map((program) => (
-          <Item key={program._id} variant="outline">
-            <ItemContent>
-              <ItemTitle>
-                <Link
-                  to="/programs/$programId"
-                  params={{ programId: program._id }}
-                  className="hover:underline"
+      {groups.map((label, index) => {
+        const entries = visible.filter(
+          ({ createdAt }) =>
+            (createdAt >= today
+              ? 0
+              : createdAt >= yesterday
+                ? 1
+                : createdAt >= week
+                  ? 2
+                  : 3) === index
+        )
+        if (!entries.length) return null
+        return (
+          <section
+            key={label}
+            aria-label={label}
+            className="flex flex-col gap-3"
+          >
+            <h2
+              className={`font-heading text-2xl ${index === 0 ? "text-foreground" : "text-muted-foreground"}`}
+            >
+              {label}
+            </h2>
+            <ItemGroup className="gap-3">
+              {entries.map((program) => (
+                <Item
+                  key={program._id}
+                  className="group relative min-h-16 rounded-2xl border-0 bg-card px-6 py-3 hover:bg-muted"
                 >
-                  {program.name}
-                </Link>
-              </ItemTitle>
-              <ItemDescription className="text-xs">
-                Created{" "}
-                {formatDistanceToNow(program.createdAt, { addSuffix: true })}
-              </ItemDescription>
-            </ItemContent>
-            <ItemActions>
-              <img
-                src={templateIcons[program.template]}
-                alt={templateLabel(program.template)}
-                className="mr-2 size-5 shrink-0 object-contain"
-              />
-              <RepositoryStatusBadge status={program.repositoryStatus} />
-              <ProgramActions program={program} />
-            </ItemActions>
-          </Item>
-        ))}
-    </ItemGroup>
+                  <ItemContent>
+                    <ItemTitle className="text-2xl font-normal">
+                      <Link
+                        to="/programs/$programId"
+                        params={{ programId: program._id }}
+                        className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
+                      >
+                        {program.name}
+                      </Link>
+                    </ItemTitle>
+                  </ItemContent>
+                  <ItemActions className="relative z-10">
+                    <RepositoryStatusBadge status={program.repositoryStatus} />
+                    <ProgramActions program={program} />
+                  </ItemActions>
+                </Item>
+              ))}
+            </ItemGroup>
+          </section>
+        )
+      })}
+    </div>
   )
 }
 
@@ -487,7 +568,15 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
   )
 }
 
-function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
+function NewProgramDialog({
+  workspaceId,
+  initialTemplate = "pros",
+  tile = false,
+}: {
+  workspaceId: Id<"workspaces">
+  initialTemplate?: Template
+  tile?: boolean
+}) {
   const templates = useQuery(api.programs.listTemplates)
   const createProgram = useMutation(api.programs.create)
   const generateName = useMutation(api.programs.generateName)
@@ -495,7 +584,7 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [generatedName, setGeneratedName] = useState("")
-  const [template, setTemplate] = useState<Template>("pros")
+  const [template, setTemplate] = useState<Template>(initialTemplate)
   const [pending, setPending] = useState(false)
 
   useEffect(() => {
@@ -544,9 +633,43 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="icon" />}>
-        <PlusIcon data-icon="inline-start" />
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setTemplate(initialTemplate)
+        setOpen(next)
+      }}
+    >
+      <DialogTrigger
+        render={
+          <Button
+            aria-label={`New ${initialTemplate} program`}
+            title={`New ${initialTemplate} program`}
+            className={
+              tile
+                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-2xl bg-(--template-tile)/25 p-6 hover:bg-(--template-tile)/25 hover:brightness-110"
+                : undefined
+            }
+            style={
+              tile
+                ? ({
+                    "--template-tile": `var(--template-${initialTemplate})`,
+                  } as React.CSSProperties)
+                : undefined
+            }
+            size={tile ? "default" : "icon"}
+          />
+        }
+      >
+        {tile ? (
+          <img
+            src={templateIcons[initialTemplate]}
+            alt={initialTemplate}
+            className="h-10 w-1/4 object-contain sm:h-12"
+          />
+        ) : (
+          <PlusIcon data-icon="inline-start" />
+        )}
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-6">

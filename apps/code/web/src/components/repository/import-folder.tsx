@@ -1,4 +1,4 @@
-import { FolderOpenIcon, UploadSimpleIcon } from "@phosphor-icons/react"
+import { UploadSimpleIcon } from "@phosphor-icons/react"
 import { useState } from "react"
 import { useMutation } from "convex/react"
 import { useNavigate } from "@tanstack/react-router"
@@ -42,8 +42,10 @@ const templates = [
 
 export function ImportFolder({
   workspaceId,
+  tile = false,
 }: {
   workspaceId: Id<"workspaces">
+  tile?: boolean
 }) {
   const begin = useMutation(api.programs.beginFolderImport)
   const append = useMutation(api.programs.appendFolderImport)
@@ -84,6 +86,11 @@ export function ImportFolder({
       <DialogTrigger
         render={
           <Button
+            className={
+              tile
+                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-2xl border-0 bg-(--template-import)/25 text-foreground hover:brightness-110 dark:bg-(--template-import)/25"
+                : undefined
+            }
             variant="outline"
             size="icon"
             aria-label="Import folder"
@@ -91,7 +98,7 @@ export function ImportFolder({
           />
         }
       >
-        <FolderOpenIcon />
+        <UploadSimpleIcon className={tile ? "size-6" : undefined} />
       </DialogTrigger>
       <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-xl">
         <form
