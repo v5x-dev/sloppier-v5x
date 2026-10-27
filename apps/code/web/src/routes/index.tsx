@@ -136,7 +136,7 @@ function ProgramsPage() {
         }}
       />
       <section aria-label="Create a program" className="border-b bg-card">
-        <div className="mx-auto grid w-3xl max-w-full grid-cols-[repeat(5,minmax(96px,1fr))] gap-3 overflow-x-auto px-6 py-6 sm:gap-6">
+        <div className="mx-auto grid w-[58rem] max-w-full grid-cols-[repeat(5,minmax(96px,1fr))] gap-4 overflow-x-auto px-4 py-4">
           {(["vexcode", "jar", "pros", "ez-template"] as const).map(
             (template) =>
               workspace ? (
@@ -164,7 +164,7 @@ function ProgramsPage() {
           )}
         </div>
       </section>
-      <main className="mx-auto flex w-2xl max-w-full flex-1 flex-col gap-4 px-6 py-6">
+      <main className="mx-auto flex w-3xl max-w-full flex-1 flex-col gap-4 px-4 py-4">
         {searching && (
           <div className="flex items-center gap-3">
             <Input
@@ -233,30 +233,30 @@ function AppHeader({
 
   return (
     <header className="border-b">
-      <div className="mx-auto flex min-h-[72px] w-2xl max-w-full items-center justify-between gap-4 px-6 py-2">
+      <div className="mx-auto flex min-h-12 w-[50rem] max-w-full items-center justify-between gap-3 px-4 py-2">
         <Link to="/" aria-label="code (by v5x) home" className="text-primary">
           <span
             aria-hidden="true"
-            className="block h-7 w-9 bg-current"
+            className="block h-5 w-6 bg-current"
             style={{ mask: "url(/favicon.svg) center / contain no-repeat" }}
           />
         </Link>
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             aria-label="Search programs"
             onClick={onSearch}
-            className="text-muted-foreground [&_svg]:size-7"
+            className="text-muted-foreground"
           >
-            <MagnifyingGlassIcon weight="light" className="size-7" />
+            <MagnifyingGlassIcon weight="light" className="size-5" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="Account menu"
               className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <Avatar className="size-10">
+              <Avatar className="size-7">
                 <AvatarImage
                   src={user?.profilePictureUrl ?? undefined}
                   alt=""
@@ -395,7 +395,7 @@ function ProgramList({
     )
     .sort((a, b) => b.createdAt - a.createdAt)
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {visible.length === 0 && (
         <p className="py-8 text-center text-muted-foreground">
           No matching {archived ? "archived" : "active"} programs.
@@ -417,25 +417,25 @@ function ProgramList({
           <section
             key={label}
             aria-label={label}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-2"
           >
             <h2
-              className={`font-heading text-2xl ${index === 0 ? "text-foreground" : "text-muted-foreground"}`}
+              className={`font-heading text-lg leading-5 ${index === 0 ? "text-foreground" : "text-muted-foreground"}`}
             >
               {label}
             </h2>
-            <ItemGroup className="gap-3">
+            <ItemGroup className="gap-2">
               {entries.map((program) => (
                 <Item
                   key={program._id}
-                  className="group relative min-h-16 rounded-2xl border-0 bg-card px-6 py-3 hover:bg-muted"
+                  className="group relative min-h-11 rounded-xl border-0 bg-card px-4 py-2 hover:bg-muted"
                 >
                   <ItemContent>
-                    <ItemTitle className="text-2xl font-normal">
+                    <ItemTitle className="text-lg leading-7 font-normal">
                       <Link
                         to="/programs/$programId"
                         params={{ programId: program._id }}
-                        className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
+                        className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
                       >
                         {program.name}
                       </Link>
@@ -484,7 +484,7 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
           render={
             <Button
               variant="ghost"
-              size="icon"
+              size="icon-sm"
               aria-label={`Actions for ${program.name}`}
               disabled={pending}
             />
@@ -647,7 +647,7 @@ function NewProgramDialog({
             title={`New ${initialTemplate} program`}
             className={
               tile
-                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-2xl bg-(--template-tile)/25 p-6 hover:bg-(--template-tile)/25 hover:brightness-110"
+                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-xl bg-(--template-tile)/25 p-4 hover:bg-(--template-tile)/25 hover:brightness-110"
                 : undefined
             }
             style={
@@ -665,7 +665,7 @@ function NewProgramDialog({
           <img
             src={templateIcons[initialTemplate]}
             alt={initialTemplate}
-            className="h-10 w-1/4 object-contain sm:h-12"
+            className="size-8 object-contain"
           />
         ) : (
           <PlusIcon data-icon="inline-start" />
@@ -735,7 +735,7 @@ function ProgramListSkeleton() {
   return (
     <div className="flex flex-col gap-2">
       {[0, 1, 2].map((index) => (
-        <Skeleton key={index} className="h-16 w-full" />
+        <Skeleton key={index} className="h-11 w-full" />
       ))}
     </div>
   )

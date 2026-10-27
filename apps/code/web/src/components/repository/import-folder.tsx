@@ -88,7 +88,7 @@ export function ImportFolder({
           <Button
             className={
               tile
-                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-2xl border-0 bg-(--template-import)/25 text-foreground hover:brightness-110 dark:bg-(--template-import)/25"
+                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-xl border-0 bg-(--template-import)/25 text-foreground hover:brightness-110 dark:bg-(--template-import)/25"
                 : undefined
             }
             variant="outline"
