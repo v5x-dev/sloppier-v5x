@@ -322,7 +322,15 @@ export function indexSource(path: string, text: string) {
         const declaration = head.findIndex((t) =>
           ["namespace", "class", "struct", "enum"].includes(t.value)
         )
-        if (declaration >= 0 && !head.some((t) => t.value === "(")) {
+        if (
+          head.length === 2 &&
+          head[0].value === "extern" &&
+          ['"C"', '"C++"'].includes(head[1].value)
+        ) {
+          // Linkage specifications contain declarations in the surrounding scope.
+          // Treating them as initializers also consumes the declaration after '}'.
+          parse(i + 1, end, scope, local, record)
+        } else if (declaration >= 0 && !head.some((t) => t.value === "(")) {
           const tag = head[declaration].value
           let nameAt = declaration + 1
           if (

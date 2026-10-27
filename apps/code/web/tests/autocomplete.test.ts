@@ -91,6 +91,36 @@ describe("local SDK completion", () => {
     expect(labels()).toContain("pid_drive_set")
     expect(setup("void run() { vex::| }", pros).labels()).toEqual([])
   })
+  it("completes an EZ chassis declared after a C linkage block in a header", () => {
+    const { labels } = setup(
+      '#include "main.h"\nvoid opcontrol() { chassis.| }',
+      ez,
+      {
+        "include/main.h": `#include "EZ-Template/api.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
+void opcontrol(void);
+#ifdef __cplusplus
+}
+#endif
+extern ez::Drive chassis;`,
+      }
+    )
+    expect(labels()).toContain("pid_drive_set")
+  })
+  it.each(['"C"', '"C++"'])(
+    "preserves declarations inside and after an extern %s block",
+    (linkage) => {
+      const { labels } = setup(
+        `namespace robot { extern ${linkage} { extern ez::Drive chassis; }
+         extern ez::Drive other; }
+         void run() { robot::| }`,
+        ez
+      )
+      expect(labels()).toEqual(expect.arrayContaining(["chassis", "other"]))
+    }
+  )
   it("suggests parameter enum values and preserves full signatures", () => {
     const { engine, at, items } = setup(
       "using namespace vex; motor left(PORT1); void run() { left.spin(|); }"
