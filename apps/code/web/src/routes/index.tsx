@@ -136,7 +136,7 @@ function ProgramsPage() {
         }}
       />
       <section aria-label="Create a program" className="border-b bg-card">
-        <div className="mx-auto grid w-full max-w-[1360px] grid-cols-[repeat(5,minmax(96px,1fr))] gap-3 overflow-x-auto px-6 py-6 sm:gap-6">
+        <div className="mx-auto grid w-3xl max-w-full grid-cols-[repeat(5,minmax(96px,1fr))] gap-3 overflow-x-auto px-6 py-6 sm:gap-6">
           {(["vexcode", "jar", "pros", "ez-template"] as const).map(
             (template) =>
               workspace ? (
@@ -164,7 +164,7 @@ function ProgramsPage() {
           )}
         </div>
       </section>
-      <main className="mx-auto flex w-full max-w-[1128px] flex-1 flex-col gap-4 px-6 py-6">
+      <main className="mx-auto flex w-2xl max-w-full flex-1 flex-col gap-4 px-6 py-6">
         {searching && (
           <div className="flex items-center gap-3">
             <Input
@@ -233,7 +233,7 @@ function AppHeader({
 
   return (
     <header className="border-b">
-      <div className="mx-auto flex min-h-[72px] max-w-[1176px] items-center justify-between gap-4 px-6 py-2">
+      <div className="mx-auto flex min-h-[72px] w-2xl max-w-full items-center justify-between gap-4 px-6 py-2">
         <Link to="/" aria-label="code (by v5x) home" className="text-primary">
           <span
             aria-hidden="true"
