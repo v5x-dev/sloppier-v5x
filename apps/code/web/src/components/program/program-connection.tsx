@@ -137,7 +137,7 @@ export function ProgramConnection({
   }, [connect, programId, machine?.machineId, machine?.status])
   const request = useCallback(
     async (path: string, body?: unknown, signal?: AbortSignal) => {
-      if (!connection) throw new Error("Build machine is connecting.")
+      if (!connection) throw new Error("Builder is connecting.")
       const response = await fetch(`${connection.baseUrl}${path}`, {
         method: body === undefined ? "GET" : "POST",
         headers: {
@@ -150,7 +150,7 @@ export function ProgramConnection({
           : AbortSignal.timeout(30_000),
       })
       if (!response.ok)
-        throw new Error(`Build machine request failed (${response.status}).`)
+        throw new Error(`Builder request failed (${response.status}).`)
       return response
     },
     [connection]

@@ -754,7 +754,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
               <>
                 <Separator
                   orientation="vertical"
-                  className="mx-1 h-5 self-center bg-sidebar-border"
+                  className="mx-1 bg-sidebar-border"
                 />
                 <ProgramPathPreview
                   programId={program._id}

@@ -565,16 +565,14 @@ function CompletionPopup({
               )
             })}
           </div>
-          {selected && (selected.item.detail || docs) && (
-            <div className="border-t px-2 py-1.5 whitespace-pre-wrap text-muted-foreground">
-              {selected.item.detail && (
-                <div className="text-foreground">{selected.item.detail}</div>
-              )}
-              {docs && (
-                <div className="mt-1 line-clamp-4 font-sans">{docs}</div>
-              )}
-            </div>
-          )}
+          {/* Reserve the same space for every selection, including undocumented
+              items, so wrapping cannot move the list when it opens above the caret. */}
+          <div className="h-32 shrink-0 overflow-y-auto border-t px-2 py-1.5 whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
+            {selected?.item.detail && (
+              <div className="text-foreground">{selected.item.detail}</div>
+            )}
+            {docs && <div className="mt-1 font-sans">{docs}</div>}
+          </div>
         </div>
       )}
     </div>

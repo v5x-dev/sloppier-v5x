@@ -3,6 +3,7 @@ import type { HoverContents } from "@/lib/hover-content"
 import {
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -15,6 +16,7 @@ import type { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { positionAt, RequestCancelled } from "@/lib/language-service"
 import { DefinitionContext, useLanguageService } from "./language-session"
 import { toast } from "@workspace/ui/components/toast"
+import { hoverPosition, type HoverAnchor } from "@/lib/hover-position"
 
 import {
   Dialog,
@@ -23,8 +25,106 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 
-type Popup = { contents: HoverContents; left: number; top: number }
+type Popup = { contents: HoverContents; anchor: HoverAnchor }
 type Definition = { path: string; contents: string; line: number }
+
+function HoverCard({
+  popup,
+  onEnter,
+  onLeave,
+}: {
+  popup: Popup
+  onEnter: () => void
+  onLeave: () => void
+}) {
+  const content = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState(() =>
+    hoverPosition(popup.anchor, 360, window.innerWidth, window.innerHeight)
+  )
+  useLayoutEffect(() => {
+    const node = content.current
+    if (!node) return
+    const measure = () =>
+      setPosition(
+        hoverPosition(
+          popup.anchor,
+          node.getBoundingClientRect().height,
+          window.innerWidth,
+          window.innerHeight
+        )
+      )
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    window.addEventListener("resize", measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", measure)
+    }
+  }, [popup])
+  return (
+    <div
+      role="tooltip"
+      data-language-hover
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      className="pointer-events-auto fixed z-50 overflow-auto rounded-lg bg-popover text-popover-foreground shadow-xl ring-1 shadow-black/25 ring-foreground/15"
+      style={position}
+    >
+      <div ref={content} className="flow-root">
+        <HoverDocumentation contents={popup.contents} />
+      </div>
+    </div>
+  )
+}
+
+/** Measure the symbol itself, rather than anchoring the card to a moving pointer. */
+function symbolAnchor(
+  event: MouseEvent,
+  text: string,
+  start: number,
+  end: number
+): HoverAnchor {
+  const line = event
+    .composedPath()
+    .find(
+      (node): node is HTMLElement =>
+        node instanceof HTMLElement && node.hasAttribute("data-line")
+    )
+  if (line) {
+    const lineStart = text.lastIndexOf("\n", start - 1) + 1
+    const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+    const range = document.createRange()
+    let offset = lineStart
+    let started = false
+    while (walker.nextNode()) {
+      const node = walker.currentNode
+      const length = node.textContent?.length ?? 0
+      if (!started && start < offset + length) {
+        range.setStart(node, start - offset)
+        started = true
+      }
+      if (started && end <= offset + length) {
+        range.setEnd(node, end - offset)
+        const rects = [...range.getClientRects()]
+        const rect =
+          rects.find(
+            (candidate) =>
+              event.clientY >= candidate.top &&
+              event.clientY <= candidate.bottom
+          ) ?? rects.at(0)
+        if (rect) return { left: rect.left, top: rect.top, bottom: rect.bottom }
+        break
+      }
+      offset += length
+    }
+  }
+  return {
+    left: event.clientX,
+    top: event.clientY - 10,
+    bottom: event.clientY + 10,
+  }
+}
 
 /** Read-only toolchain source in the editor theme, scrolled to its definition line. */
 function DefinitionSource({ source }: { source: Definition }) {
@@ -136,11 +236,20 @@ export function useEditorNavigation(
     let timer: ReturnType<typeof setTimeout> | undefined
     let hover: AbortController | undefined
     let definition: AbortController | undefined
+    let hoveredWord: { start: number; end: number; text: string } | undefined
     let disposed = false
-    const dismiss = () => {
+    const cancelHover = () => {
       clearTimeout(timer)
-      clearTimeout(leaveTimer.current)
       hover?.abort()
+      hoveredWord = undefined
+    }
+    const hideSoon = () => {
+      clearTimeout(leaveTimer.current)
+      leaveTimer.current = setTimeout(() => setPopup(null), 200)
+    }
+    const dismiss = () => {
+      cancelHover()
+      clearTimeout(leaveTimer.current)
       setPopup(null)
     }
     const go = async (offset: number) => {
@@ -205,11 +314,31 @@ export function useEditorNavigation(
       void go(binding.document.offsetAt(selection.start))
     }
     const move = (event: MouseEvent) => {
-      dismiss()
-      if (!client.isReady || event.buttons) return
+      if (!client.isReady || event.buttons) return dismiss()
       const text = binding.document.getText()
       const offset = pointerOffset(event, host, text)
-      if (offset === null || !/[\w]/.test(text[offset] ?? "")) return
+      if (offset === null || !/[\w]/.test(text[offset] ?? "")) {
+        cancelHover()
+        hideSoon()
+        return
+      }
+      let start = offset
+      let end = offset + 1
+      while (start > 0 && /\w/.test(text[start - 1])) start--
+      while (end < text.length && /\w/.test(text[end])) end++
+      clearTimeout(leaveTimer.current)
+      if (
+        hoveredWord?.start === start &&
+        hoveredWord.end === end &&
+        hoveredWord.text === text
+      )
+        return
+      cancelHover()
+      hoveredWord = { start, end, text }
+      const anchor = symbolAnchor(event, text, start, end)
+      // Keep the old card briefly so the pointer can cross onto it, even if
+      // another token lies between the originating symbol and the card.
+      hideSoon()
       timer = setTimeout(() => {
         const controller = (hover = new AbortController())
         const version = client.version(path)
@@ -230,18 +359,13 @@ export function useEditorNavigation(
               .map((value) => (typeof value === "string" ? value : value.value))
               .join("\n\n")
               .trim()
-            if (content)
+            if (content) {
+              clearTimeout(leaveTimer.current)
               setPopup({
                 contents: result.contents,
-                left: Math.max(
-                  8,
-                  Math.min(event.clientX, window.innerWidth - 456)
-                ),
-                top: Math.max(
-                  8,
-                  Math.min(event.clientY + 20, window.innerHeight - 376)
-                ),
+                anchor,
               })
+            }
           })
           .catch(() => {
             /* Hover is optional; later pointer movement retries. */
@@ -256,8 +380,18 @@ export function useEditorNavigation(
       event.stopPropagation()
       void go(offset)
     }
-    const leave = () => {
-      leaveTimer.current = setTimeout(dismiss, 200)
+    const leave = (event: MouseEvent) => {
+      cancelHover()
+      // React's portaled mouse-enter can run before the editor's native leave.
+      // Do not re-arm dismissal after the pointer has already entered the card.
+      if (
+        event.relatedTarget instanceof Element &&
+        event.relatedTarget.closest("[data-language-hover]")
+      ) {
+        clearTimeout(leaveTimer.current)
+        return
+      }
+      hideSoon()
     }
     host.addEventListener("keydown", keydown, true)
     host.addEventListener("mousemove", move)
@@ -303,16 +437,14 @@ export function useEditorNavigation(
       </Dialog>
       {popup &&
         createPortal(
-          <div
-            role="tooltip"
-            data-language-hover
-            onMouseEnter={() => clearTimeout(leaveTimer.current)}
-            onMouseLeave={() => setPopup(null)}
-            className="pointer-events-auto fixed z-50 max-h-[min(360px,calc(100vh-16px))] w-[min(440px,calc(100vw-16px))] overflow-auto rounded-lg bg-popover text-popover-foreground shadow-xl ring-1 shadow-black/25 ring-foreground/15"
-            style={{ left: popup.left, top: popup.top }}
-          >
-            <HoverDocumentation contents={popup.contents} />
-          </div>,
+          <HoverCard
+            popup={popup}
+            onEnter={() => clearTimeout(leaveTimer.current)}
+            onLeave={() => {
+              clearTimeout(leaveTimer.current)
+              leaveTimer.current = setTimeout(() => setPopup(null), 200)
+            }}
+          />,
           document.body
         )}
     </>

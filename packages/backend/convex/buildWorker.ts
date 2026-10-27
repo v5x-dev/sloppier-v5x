@@ -23,7 +23,7 @@ export async function cloud<T>(
   if (method === "DELETE" && response.status === 404) return undefined as T
   if (!response.ok)
     throw new Error(
-      `Smolmachines request failed (${response.status}, request ${response.headers.get("x-request-id") ?? "unknown"}).`
+      `Builder request failed (${response.status}, request ${response.headers.get("x-request-id") ?? "unknown"}).`
     )
   return response.status === 204
     ? (undefined as T)
@@ -88,7 +88,7 @@ export const reconcile = internalAction({
           ...args,
           machineId,
           status: "starting",
-          logs: "Waiting for build machine…",
+          logs: "Waiting for builder…",
         })
         // Exec starts the restored machine; the server reads its template from this file.
         const health = await cloud<{ stdout?: string; exitCode?: number }>(
@@ -104,11 +104,11 @@ export const reconcile = internalAction({
           }
         )
         if (health.exitCode !== 0)
-          throw new Error("Build machine failed to start.")
+          throw new Error("Builder failed to start.")
         await ctx.runMutation(internal.builds.update, {
           ...args,
           status: "ready",
-          logs: "Build machine is ready. Commit changes, then select Build.",
+          logs: "Builder is ready. Commit changes, then select Build.",
         })
         return
       }
@@ -134,7 +134,7 @@ export const reconcile = internalAction({
           ...args,
           machineId,
           status: "starting",
-          logs: "Waiting for build machine…",
+          logs: "Waiting for builder…",
         })
       }
       const machine = await cloud<{
@@ -183,7 +183,7 @@ export const reconcile = internalAction({
       if (machine.state === "stopped")
         await cloud(`/machines/${encodeURIComponent(machineId)}/start`, {})
       if (machine.state === "error")
-        throw new Error("Build machine failed to start.")
+        throw new Error("Builder failed to start.")
       if (machine.ready) {
         // Keep occupied machines alive and sample only build lifecycle metadata.
         const health = await cloud<{ stdout?: string; exitCode?: number }>(
@@ -207,7 +207,7 @@ export const reconcile = internalAction({
           status: "ready",
           ...(!state.machine.building && state.machine.status !== "ready"
             ? {
-                logs: "Build machine is ready. Commit changes, then select Build.",
+                logs: "Builder is ready. Commit changes, then select Build.",
               }
             : {}),
         })

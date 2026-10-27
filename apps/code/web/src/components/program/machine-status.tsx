@@ -20,14 +20,14 @@ export function MachineStatus() {
   const failed = Boolean(error) || machineStatus === "error"
   const building = ready && status?.building
   const label = failed
-    ? "Smolmachine: connection error"
+    ? "Builder: connection error"
     : building
-      ? "Smolmachine: building"
+      ? "Builder: building"
       : ready
-        ? "Smolmachine: connected"
+        ? "Builder: connected"
         : machineStatus === "starting"
-          ? "Smolmachine: starting"
-          : "Smolmachine: connecting"
+          ? "Builder: starting"
+          : "Builder: connecting"
 
   return (
     <div className="ml-auto flex items-center">

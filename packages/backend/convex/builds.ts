@@ -51,7 +51,7 @@ export const heartbeat = mutation({
       await ctx.db.insert("buildMachines", {
         programId: args.programId,
         status: "starting",
-        logs: "Starting build machine…",
+        logs: "Starting builder…",
         building: false,
       })
       await ctx.scheduler.runAfter(0, internal.buildWorker.reconcile, {
@@ -175,7 +175,7 @@ export const refreshImage = internalMutation({
       return false
     await ctx.db.patch(machine._id, {
       status: "starting",
-      logs: "Updating the build machine image…",
+      logs: "Updating the builder image…",
       ...(args.deleted ? { machineId: undefined } : {}),
     })
     return true

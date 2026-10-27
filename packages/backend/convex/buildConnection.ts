@@ -14,7 +14,7 @@ export const connect = action({
     // This query verifies membership before any credential can be minted.
     const state = await ctx.runQuery(api.builds.status, args)
     if (state?.status !== "ready" || !state.machineId)
-      throw new Error("Build machine is not ready.")
+      throw new Error("Builder is not ready.")
     const credential = await cloud<{ token: string; expiresAt: string }>(
       `/machines/${encodeURIComponent(state.machineId)}/connect-token`,
       { port: 8080, includeDescendants: false, ttlSeconds: 900 }
