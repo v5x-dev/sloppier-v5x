@@ -1,5 +1,5 @@
-import { Plus, CaretRight } from "phosphor-react-native"
-import { useEffect, useState } from "react"
+import { Plus } from "phosphor-react-native"
+import { useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   FlatList,
@@ -13,10 +13,13 @@ import { BottomSheet, Host, RNHostView } from "@expo/ui"
 import { useConvexAuth, useMutation, useQuery } from "convex/react"
 import { useRouter } from "expo-router"
 import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
+import type { Doc, Id } from "@workspace/backend/dataModel"
 import { useAuth } from "@/lib/auth"
 import { ActionMenu } from "@/components/action-menu"
 import { GlassButton } from "@/components/glass-button"
+import { ProgramListItem } from "@/components/program-list-item"
+import { RenameProgramSheet } from "@/components/rename-program-sheet"
+import { useCSSVariable } from "uniwind"
 
 type Template = "vexcode" | "pros" | "jar" | "ez-template"
 const templateIcons = {
@@ -28,7 +31,7 @@ const templateIcons = {
 const templates: { id: Template; name: string }[] = [
   { id: "vexcode", name: "VEXCode" },
   { id: "pros", name: "PROS" },
-  { id: "ez-template", name: "EZ-Template" },
+  { id: "ez-template", name: "EZ" },
   { id: "jar", name: "JAR" },
 ]
 function createdAgo(timestamp: number) {
@@ -43,18 +46,26 @@ function createdAgo(timestamp: number) {
   ] as const) {
     if (seconds >= size) {
       const count = Math.floor(seconds / size)
-      return `Created ${count} ${unit}${count === 1 ? "" : "s"} ago`
+      return `${count} ${unit}${count === 1 ? "" : "s"} ago`
     }
   }
-  return "Created just now"
+  return "Just now"
 }
 
 export default function DashboardScreen() {
   const { user, signOut } = useAuth()
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null)
+  const avatarUrl = user?.profile_picture_url
   const { isAuthenticated, isLoading } = useConvexAuth()
   const router = useRouter()
   const ensurePersonal = useMutation(api.workspaces.ensurePersonal)
   const createProgram = useMutation(api.programs.create)
+  const setArchived = useMutation(api.programs.setArchived)
+  const [renameTarget, setRenameTarget] = useState<Doc<"programs"> | null>(null)
+  const [updatingProgram, setUpdatingProgram] = useState<Id<"programs"> | null>(
+    null
+  )
+  const updating = useRef(false)
   const workspaces = useQuery(
     api.workspaces.listMine,
     isAuthenticated ? {} : "skip"
@@ -76,6 +87,8 @@ export default function DashboardScreen() {
   const [creating, setCreating] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const dark = useColorScheme() === "dark"
+  const popoverColor = useCSSVariable("--popover")
+  const mutedColor = useCSSVariable("--muted")
   const colors = {
     background: dark ? "#0C0A09" : "#FFFFFF",
     foreground: dark ? "#FBFAF9" : "#0C0A09",
@@ -130,6 +143,30 @@ export default function DashboardScreen() {
       )
     } finally {
       setCreating(false)
+    }
+  }
+  const programAction = async (program: Doc<"programs">, action: string) => {
+    if (updating.current) return
+    if (action === "rename") {
+      setRenameTarget(program)
+      return
+    }
+    if (action !== "archive") return
+    updating.current = true
+    setUpdatingProgram(program._id)
+    setError(null)
+    try {
+      await setArchived({
+        programId: program._id,
+        archived: !program.archivedAt,
+      })
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not update the program."
+      )
+    } finally {
+      updating.current = false
+      setUpdatingProgram(null)
     }
   }
   const loading =
@@ -196,6 +233,7 @@ export default function DashboardScreen() {
                 width: 24,
                 height: 24,
                 borderRadius: 12,
+                overflow: "hidden",
                 backgroundColor: colors.muted,
                 borderWidth: 1,
                 borderColor: colors.border,
@@ -203,17 +241,27 @@ export default function DashboardScreen() {
                 justifyContent: "center",
               }}
             >
-              <Text
-                style={{
-                  fontFamily: "Merriweather",
-                  fontSize: 12,
-                  color: colors.mutedForeground,
-                }}
-              >
-                {(user?.first_name ?? user?.email ?? "?")
-                  .slice(0, 1)
-                  .toUpperCase()}
-              </Text>
+              {avatarUrl && failedAvatarUrl !== avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  resizeMode="cover"
+                  style={{ width: "100%", height: "100%" }}
+                  onError={() => setFailedAvatarUrl(avatarUrl)}
+                  accessibilityLabel="Profile photo"
+                />
+              ) : (
+                <Text
+                  style={{
+                    fontFamily: "Merriweather",
+                    fontSize: 12,
+                    color: colors.mutedForeground,
+                  }}
+                >
+                  {(user?.first_name ?? user?.email ?? "?")
+                    .slice(0, 1)
+                    .toUpperCase()}
+                </Text>
+              )}
             </View>
           </View>
         </ActionMenu>
@@ -226,13 +274,11 @@ export default function DashboardScreen() {
         }
         keyExtractor={(program) => program._id}
         contentContainerStyle={{
-          paddingHorizontal: 16,
           paddingTop: 20,
           paddingBottom: 24,
-          gap: 8,
         }}
         ListHeaderComponent={
-          <View style={{ gap: 16, paddingBottom: 8 }}>
+          <View style={{ gap: 16, paddingBottom: 8, paddingHorizontal: 16 }}>
             <View
               style={{
                 flexDirection: "row",
@@ -243,9 +289,9 @@ export default function DashboardScreen() {
               <Text
                 accessibilityRole="header"
                 style={{
-                  fontFamily: "MerriweatherSemiBold",
+                  fontFamily: "Merriweather",
                   fontSize: 22,
-                  color: colors.foreground,
+                  color: colors.mutedForeground,
                 }}
               >
                 Your programs
@@ -260,12 +306,21 @@ export default function DashboardScreen() {
                 width={44}
                 radius={16}
               >
-                <Plus
-                  size={18}
-                  color={colors.primaryForeground}
-                  weight="regular"
-                  style={{ alignSelf: "center" }}
-                />
+                <View
+                  pointerEvents="none"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Plus
+                    size={20}
+                    color={colors.primaryForeground}
+                    weight="bold"
+                  />
+                </View>
               </GlassButton>
             </View>
             {error ? (
@@ -305,6 +360,7 @@ export default function DashboardScreen() {
                 fontSize: 13,
                 color: colors.mutedForeground,
                 paddingVertical: 20,
+                paddingHorizontal: 20,
               }}
             >
               {!isAuthenticated
@@ -314,71 +370,55 @@ export default function DashboardScreen() {
           )
         }
         renderItem={({ item }) => (
-          <GlassButton
-            label={`${item.name}, ${createdAgo(item.createdAt)}`}
+          <ProgramListItem
+            name={item.name}
+            created={createdAgo(item.createdAt)}
+            templateName={
+              templates.find((template) => template.id === item.template)
+                ?.name ?? item.template
+            }
+            icon={templateIcons[item.template]}
+            foreground={colors.foreground}
+            mutedForeground={colors.mutedForeground}
+            pressedColor={colors.muted}
+            border={colors.border}
             onPress={() =>
               router.push({
                 pathname: "/programs/[program-id]",
                 params: { "program-id": item._id },
               })
             }
-            tint={colors.card}
-            border={colors.border}
-            height={64}
-          >
-            <View
-              style={{
-                paddingHorizontal: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: colors.foreground,
-                    fontSize: 15,
-                    fontFamily: "MerriweatherSemiBold",
-                  }}
-                >
-                  {item.name}
-                </Text>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: colors.mutedForeground,
-                    fontSize: 12,
-                    fontFamily: "Merriweather",
-                  }}
-                >
-                  {createdAgo(item.createdAt)}
-                </Text>
-              </View>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <Image
-                  source={templateIcons[item.template]}
-                  accessibilityLabel={item.template}
-                  resizeMode="contain"
-                  style={{ width: 20, height: 20 }}
-                />
-                <CaretRight
-                  size={16}
-                  color={colors.mutedForeground}
-                  weight="regular"
-                />
-              </View>
-            </View>
-          </GlassButton>
+            dark={dark}
+            actionsDisabled={Boolean(updatingProgram)}
+            onAction={(action) => {
+              void programAction(item, action)
+            }}
+          />
         )}
       />
+      {renameTarget ? (
+        <RenameProgramSheet
+          key={renameTarget._id}
+          program={renameTarget}
+          onClose={() => setRenameTarget(null)}
+          colors={{
+            ...colors,
+            popover:
+              typeof popoverColor === "string" ? popoverColor : colors.card,
+          }}
+        />
+      ) : null}
       <Host matchContents>
         <BottomSheet
           isPresented={showCreate}
           onDismiss={() => setShowCreate(false)}
+          containerColor={
+            typeof popoverColor === "string"
+              ? popoverColor
+              : dark
+                ? "#1D1816"
+                : "#FFFFFF"
+          }
         >
           <RNHostView matchContents={{ vertical: true }}>
             <View style={{ padding: 24, gap: 12, width: "100%" }}>
@@ -389,7 +429,7 @@ export default function DashboardScreen() {
                   color: colors.foreground,
                 }}
               >
-                New program
+                Create new program
               </Text>
               {error ? (
                 <Text
@@ -411,7 +451,9 @@ export default function DashboardScreen() {
                   onPress={() => {
                     void create(template.id)
                   }}
-                  tint={colors.card}
+                  tint={
+                    typeof mutedColor === "string" ? mutedColor : colors.muted
+                  }
                   border={colors.border}
                   height={52}
                 >
@@ -434,7 +476,7 @@ export default function DashboardScreen() {
                         color: colors.foreground,
                       }}
                     >
-                      {creating ? "Creating…" : `New ${template.name} program`}
+                      {template.name}
                     </Text>
                   </View>
                 </GlassButton>

@@ -1,10 +1,18 @@
 import { CaretLeft } from "phosphor-react-native"
-import { ActivityIndicator, Text, View, useColorScheme } from "react-native"
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  View,
+  useColorScheme,
+} from "react-native"
 import { Stack } from "expo-router/stack"
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { ProgramFileTree } from "@/components/program-file-tree"
 import { GlassButton } from "@/components/glass-button"
-import { useQuery } from "convex/react"
+import { useState } from "react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { useCSSVariable } from "uniwind"
@@ -17,9 +25,27 @@ export default function ProgramScreen() {
   const program = useQuery(api.programs.get, {
     programId: programId as Id<"programs">,
   })
+  const retryProvisioning = useMutation(api.programs.retryProvisioning)
+  const [retryError, setRetryError] = useState<string | null>(null)
+  const [retrying, setRetrying] = useState(false)
+  const retry = async () => {
+    if (retrying) return
+    setRetrying(true)
+    setRetryError(null)
+    try {
+      await retryProvisioning({ programId: programId as Id<"programs"> })
+    } catch (cause) {
+      setRetryError(cause instanceof Error ? cause.message : "Could not retry.")
+    } finally {
+      setRetrying(false)
+    }
+  }
   const dark = useColorScheme() === "dark"
   const foreground = dark ? "#FBFAF9" : "#0C0A09"
   const sidebarColor = useCSSVariable("--sidebar")
+  const mutedColor = useCSSVariable("--muted")
+  const backTint =
+    typeof mutedColor === "string" ? mutedColor : dark ? "#2B2422" : "#F3F1F1"
   const backgroundColor =
     typeof sidebarColor === "string"
       ? sidebarColor
@@ -47,12 +73,14 @@ export default function ProgramScreen() {
           flexDirection: "row",
           alignItems: "center",
           gap: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: dark ? "#FFFFFF1A" : "#E8E4E3",
         }}
       >
         <GlassButton
           label="Back to programs"
           onPress={() => router.back()}
-          tint={backgroundColor}
+          tint={backTint}
           border={dark ? "#FFFFFF1A" : "#E8E4E3"}
           width={44}
           height={44}
@@ -71,48 +99,57 @@ export default function ProgramScreen() {
             flex: 1,
             fontFamily: "Merriweather",
             fontSize: 17,
+            textAlign: "center",
             color: foreground,
           }}
         >
           {program?.name ?? "Program"}
         </Text>
+        <View style={{ width: 44 }} />
       </View>
-      <View style={{ flex: 1, padding: 16, gap: 16 }}>
-        {!program ? (
-          <ActivityIndicator accessibilityLabel="Loading program" />
-        ) : (
-          <>
-            <Text
-              style={{
-                fontFamily: "MerriweatherSemiBold",
-                fontSize: 22,
-                color: foreground,
-              }}
-            >
-              {program.name}
-            </Text>
+      {program === undefined ? (
+        <ActivityIndicator
+          accessibilityLabel="Loading program"
+          color={foreground}
+          style={{ padding: 24 }}
+        />
+      ) : program === null ? (
+        <Text
+          style={{ fontFamily: "Merriweather", color: foreground, padding: 16 }}
+        >
+          Program not found.
+        </Text>
+      ) : program.repositoryStatus === "failed" ? (
+        <View style={{ padding: 16, gap: 12 }}>
+          <Text
+            accessibilityRole="alert"
+            style={{ fontFamily: "Merriweather", color: foreground }}
+          >
+            {retryError ?? "Could not prepare this program’s files."}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={retrying}
+            onPress={() => {
+              void retry()
+            }}
+            style={{ paddingVertical: 12 }}
+          >
             <Text style={{ fontFamily: "Merriweather", color: foreground }}>
-              {program.template === "ez-template"
-                ? "EZ-Template"
-                : program.template === "vexcode"
-                  ? "VEXCode"
-                  : program.template.toUpperCase()}
+              {retrying ? "Retrying…" : "Retry"}
             </Text>
-            <Text
-              style={{
-                fontFamily: "Merriweather",
-                fontSize: 12,
-                color: dark ? "#ABA09C" : "#7C6D67",
-              }}
-            >
-              Created {new Date(program.createdAt).toLocaleDateString()}
-            </Text>
-            <Text style={{ fontFamily: "Merriweather", color: foreground }}>
-              Repository: {program.repositoryStatus}
-            </Text>
-          </>
-        )}
-      </View>
+          </Pressable>
+        </View>
+      ) : (
+        <ProgramFileTree
+          key={program._id}
+          programId={program._id}
+          ready={program.repositoryStatus === "ready"}
+          foreground={foreground}
+          mutedForeground={dark ? "#ABA09C" : "#7C6D67"}
+          muted={backTint}
+        />
+      )}
     </SafeAreaView>
   )
 }

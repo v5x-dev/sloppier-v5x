@@ -70,6 +70,7 @@ import { toast } from "@workspace/ui/components/toast"
 import { useAction, useMutation, useQuery } from "convex/react"
 import { formatDistanceToNow } from "date-fns"
 import { useEffect, useState } from "react"
+import { prefetchLanguageAssets } from "@/lib/language/prefetch"
 import {
   NewWorkspace,
   WorkspaceTeam,
@@ -100,6 +101,7 @@ const templateIcons: Record<Template, string> = {
 }
 
 function ProgramsPage() {
+  useEffect(() => prefetchLanguageAssets(), [])
   const workspaces = useQuery(api.workspaces.listMine)
   const search = Route.useSearch()
   const [selectedId, setSelectedId] = useState<string | null>(

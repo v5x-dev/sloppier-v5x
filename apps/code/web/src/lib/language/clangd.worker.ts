@@ -49,9 +49,14 @@ function stdin() {
   }
   return null
 }
+const directories = new Set<string>()
 function write(path: string, contents: string | Uint8Array) {
   if (!runtime) throw new Error("clangd is not initialized")
-  runtime.FS.mkdirTree(path.slice(0, path.lastIndexOf("/")))
+  const directory = path.slice(0, path.lastIndexOf("/"))
+  if (!directories.has(directory)) {
+    runtime.FS.mkdirTree(directory)
+    directories.add(directory)
+  }
   runtime.FS.writeFile(path, contents, { canOwn: true })
 }
 async function start(data: {
@@ -66,7 +71,10 @@ async function start(data: {
     throw new Error("Browser language services require cross-origin isolation")
   const started = performance.now()
   const base = new URL("/language/", self.location.origin)
-  const manifestResponse = await fetch(new URL("runtime.json", base))
+  // Start every independent request before awaiting any of them.
+  const manifestRequest = fetch(new URL("runtime.json", base))
+  const sdkManifestRequest = fetch(new URL("sdk.json", base))
+  const manifestResponse = await manifestRequest
   if (!manifestResponse.ok)
     throw new Error("Browser clangd assets are unavailable")
   type Artifact = {
@@ -92,7 +100,7 @@ async function start(data: {
   const modulePromise = WebAssembly.compileStreaming(
     fetch(new URL(artifact.wasm, base), { cache: "force-cache" })
   )
-  const sdkPromise = fetch(new URL("sdk.json", base)).then(async (response) => {
+  const sdkPromise = sdkManifestRequest.then(async (response) => {
     if (!response.ok) throw new Error("Language SDK manifest unavailable")
     const sdks = (await response.json()) as Record<string, string[]>
     if (!Object.hasOwn(sdks, data.template))
@@ -110,8 +118,9 @@ async function start(data: {
     return Object.assign({}, ...archives) as Record<string, Uint8Array>
   })
   const js = new URL(artifact.js, base).href
+  const scriptPromise = import(/* @vite-ignore */ js)
   const [{ default: Clangd }, wasm, sdk] = await Promise.all([
-    import(/* @vite-ignore */ js),
+    scriptPromise,
     modulePromise,
     sdkPromise,
   ])

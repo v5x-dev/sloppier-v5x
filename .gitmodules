@@ -1,0 +1,4 @@
+[submodule "packages/react-native-source-editor"]
+	path = packages/react-native-source-editor
+	url = https://github.com/Qainguin/react-native-source-editor.git
+	branch = sloppier

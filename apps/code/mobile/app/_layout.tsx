@@ -3,6 +3,12 @@ import {
   Merriweather_400Regular,
   Merriweather_600SemiBold,
 } from "@expo-google-fonts/merriweather"
+import {
+  JetBrainsMono_400Regular,
+  JetBrainsMono_400Regular_Italic,
+  JetBrainsMono_700Bold,
+  JetBrainsMono_700Bold_Italic,
+} from "@expo-google-fonts/jetbrains-mono"
 import { useFonts } from "expo-font"
 import { StatusBar } from "expo-status-bar"
 import { Stack } from "expo-router/stack"
@@ -69,6 +75,7 @@ function Routes() {
           <Stack.Protected guard={Boolean(user)}>
             <Stack.Screen name="index" />
             <Stack.Screen name="programs/[program-id]" />
+            <Stack.Screen name="programs/[program-id]/file" />
           </Stack.Protected>
           <Stack.Screen name="callback" />
         </Stack>
@@ -79,6 +86,10 @@ function Routes() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
+    JetBrainsMono: JetBrainsMono_400Regular,
+    JetBrainsMonoItalic: JetBrainsMono_400Regular_Italic,
+    JetBrainsMonoBold: JetBrainsMono_700Bold,
+    JetBrainsMonoBoldItalic: JetBrainsMono_700Bold_Italic,
     Merriweather: Merriweather_400Regular,
     MerriweatherSemiBold: Merriweather_600SemiBold,
   })

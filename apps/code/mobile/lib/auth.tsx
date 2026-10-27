@@ -23,6 +23,7 @@ type User = {
   email: string
   first_name: string | null
   last_name: string | null
+  profile_picture_url?: string | null
 }
 type Session = { access_token: string; refresh_token: string; user: User }
 type SignInOptions = {

@@ -28,6 +28,7 @@ import {
   FolderPlusIcon,
 } from "@phosphor-icons/react"
 import type { useProgramBinaries } from "@/hooks/use-program-binaries"
+import { makefileIcons } from "@/lib/makefile-icons"
 import { errorMessage } from "@/lib/errors"
 import {
   assertAvailable,
@@ -120,6 +121,7 @@ export function RepositoryExplorer(props: Props) {
   openRef.current = onOpen
   const resetting = useRef(false)
   const { model } = useFileTree({
+    icons: makefileIcons,
     paths: [],
     flattenEmptyDirectories: true,
     initialExpansion: "closed",
