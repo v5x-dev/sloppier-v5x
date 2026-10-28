@@ -110,19 +110,21 @@ export function WorkspaceTeam({
             workspace.
           </DialogDescription>
         </DialogHeader>
-        {open && <TeamSettings workspaceId={workspace._id} />}
+        {open && <TeamSettings workspace={workspace} />}
       </DialogContent>
     </Dialog>
   )
 }
 
-function TeamSettings({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
+function TeamSettings({ workspace }: { workspace: Doc<"workspaces"> }) {
+  const workspaceId = workspace._id
   const members = useQuery(api.workspaces.listMembers, { workspaceId })
   const invitations = useQuery(api.workspaces.listInvitations, { workspaceId })
   const invite = useMutation(api.workspaces.invite)
   const revoke = useMutation(api.workspaces.revokeInvitation)
   const updateRole = useMutation(api.workspaces.updateMemberRole)
   const remove = useMutation(api.workspaces.removeMember)
+  const setIcon = useMutation(api.workspaces.setIcon)
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<Role>("member")
   const [busy, setBusy] = useState(false)
@@ -143,6 +145,71 @@ function TeamSettings({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-3" aria-label="Workspace icon">
+        <h3 className="font-semibold">Workspace icon</h3>
+        <div className="flex flex-wrap items-center gap-3">
+          {workspace.icon && (
+            <img
+              src={workspace.icon}
+              alt=""
+              className="size-10 rounded-md object-cover"
+            />
+          )}
+          <Input
+            aria-label="Choose workspace icon"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="max-w-xs"
+            disabled={busy}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0]
+              event.currentTarget.value = ""
+              if (!file) return
+              if (
+                file.size > 128 * 1024 ||
+                ![
+                  "image/png",
+                  "image/jpeg",
+                  "image/webp",
+                  "image/gif",
+                ].includes(file.type)
+              ) {
+                report(
+                  new Error(
+                    "Choose a PNG, JPEG, WebP, or GIF image under 128 KB."
+                  )
+                )
+                return
+              }
+              const reader = new FileReader()
+              reader.onerror = () =>
+                report(new Error("Could not read the image."))
+              reader.onload = () => {
+                if (typeof reader.result === "string")
+                  void run(() =>
+                    setIcon({ workspaceId, icon: reader.result as string })
+                  )
+              }
+              reader.readAsDataURL(file)
+            }}
+          />
+          {workspace.icon && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void run(() => setIcon({ workspaceId, icon: null }))
+              }
+            >
+              Remove icon
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          PNG, JPEG, WebP, or GIF, up to 128 KB.
+        </p>
+      </section>
       <form
         className="flex flex-col gap-3"
         onSubmit={(event) => {

@@ -47,6 +47,31 @@ export const create = mutation({
   },
 })
 
+export const setIcon = mutation({
+  args: {
+    workspaceId: v.id("workspaces"),
+    icon: v.union(v.string(), v.null()),
+  },
+  handler: async (ctx, { workspaceId, icon }) => {
+    const { membership } = await requireWorkspaceMembership(ctx, workspaceId)
+    if (membership.role !== "admin") {
+      throw new ConvexError("Only workspace admins can change the icon.")
+    }
+    if (
+      icon !== null &&
+      (icon.length > 175000 ||
+        !/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(
+          icon
+        ))
+    ) {
+      throw new ConvexError(
+        "Choose a PNG, JPEG, WebP, or GIF image under 128 KB."
+      )
+    }
+    await ctx.db.patch(workspaceId, { icon: icon ?? undefined })
+  },
+})
+
 // Gives a new user somewhere to put programs. Safe to call repeatedly:
 // it does nothing once the user belongs to any workspace.
 export const ensurePersonal = mutation({
