@@ -562,7 +562,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                       <SortableTabsList
                         aria-label="Open files"
                         variant="line"
-                        className="h-auto! justify-start gap-0.5 rounded-[10px] surface-inset p-0.5"
+                        className="h-auto! justify-start gap-0.5 surface-inset p-0.5 data-[variant=line]:rounded-[10px]"
                       >
                         {openPaths.map((path) => (
                           <SortableFileTab
