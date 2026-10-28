@@ -30,6 +30,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -58,12 +59,131 @@
 :root {
   --diffs-font-family: var(--font-mono);
 }
+
+/* Tactile controls follow tactile-buttons.vercel.app: a flat face, a border
+   shaded from the face color, a light top edge, and a short drop shadow. The
+   amber key also stands on a hard 3px ledge. Pressing nudges the key down and
+   in under an inset shadow; latched keys (open menus, pressed toggles) stay
+   pressed. These rules are unlayered so they win over consumer utilities. */
+.tactile {
+  border: 1px solid var(--tactile-border);
+  background-color: var(--tactile-bg);
+  box-shadow: var(--tactile-shadow);
+  transition-property: translate, scale, box-shadow, background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover:not(:disabled) {
+    background-color: var(--tactile-bg-hover);
+    box-shadow: var(--tactile-shadow-hover);
+  }
+  &:active:not(:disabled):not([aria-haspopup]) {
+    translate: 0 1px;
+    scale: 0.992;
+  }
+  &:active:not(:disabled),
+  &[aria-expanded="true"],
+  &[data-pressed] {
+    background-color: var(--tactile-bg-active);
+    box-shadow: var(--tactile-shadow-active);
+  }
+}
+
+/* The "dark" recipe: neutral keys on the app's graphite surfaces. Latched
+   neutral keys light their icon amber. */
+.tactile-neutral {
+  --tactile-bg: var(--secondary);
+  --tactile-border: color-mix(in oklab, var(--tactile-bg), white 7%);
+  --tactile-bg-hover: color-mix(in oklab, var(--tactile-bg), white 5%);
+  --tactile-bg-active: color-mix(in oklab, var(--tactile-bg), black 22%);
+  --tactile-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14), 0 1px 2px rgb(0 0 0 / 0.3);
+  --tactile-shadow-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.18), 0 2px 4px rgb(0 0 0 / 0.26);
+  --tactile-shadow-active:
+    inset 0 2px 4px rgb(0 0 0 / 0.28), 0 1px 2px rgb(0 0 0 / 0.12);
+  &[aria-expanded="true"],
+  &[data-pressed] {
+    color: var(--primary);
+  }
+}
+
+/* The "tactile" recipe: a colored key standing on a ledge of its own color. */
+@utility tactile-primary {
+  --tactile-bg: var(--primary);
+  --tactile-border: color-mix(in oklab, var(--tactile-bg) 78%, black);
+  --tactile-bg-hover: color-mix(in oklab, var(--tactile-bg) 90%, black);
+  --tactile-bg-active: color-mix(in oklab, var(--tactile-bg) 90%, black);
+  --tactile-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.36),
+    0 3px 0 color-mix(in oklab, var(--tactile-bg) 68%, black),
+    0 4px 8px color-mix(in oklab, var(--tactile-bg) 28%, transparent);
+  --tactile-shadow-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    0 3px 0 color-mix(in oklab, var(--tactile-bg) 68%, black),
+    0 6px 12px color-mix(in oklab, var(--tactile-bg) 32%, transparent);
+  --tactile-shadow-active:
+    inset 0 2px 4px color-mix(in oklab, var(--tactile-bg) 40%, black),
+    0 2px 0 color-mix(in oklab, var(--tactile-bg) 68%, black),
+    0 3px 6px color-mix(in oklab, var(--tactile-bg) 22%, transparent);
+}
+
+@utility tactile-destructive {
+  --tactile-bg: color-mix(in oklab, var(--destructive), var(--background) 80%);
+  --tactile-border: color-mix(in oklab, var(--destructive), var(--background) 62%);
+  --tactile-bg-hover: color-mix(in oklab, var(--destructive), var(--background) 72%);
+  --tactile-bg-active: color-mix(in oklab, var(--destructive), var(--background) 86%);
+  --tactile-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1), 0 1px 2px rgb(0 0 0 / 0.3);
+  --tactile-shadow-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.14), 0 2px 4px rgb(0 0 0 / 0.26);
+  --tactile-shadow-active:
+    inset 0 2px 4px rgb(0 0 0 / 0.28), 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+/* Toolbar and inline controls: flat at rest, pressed in when held or open. */
+@utility tactile-ghost {
+  transition-property: translate, box-shadow, background-color, color;
+  transition-duration: 90ms;
+  &:hover:not(:disabled) {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+    box-shadow: inset 0 1px 0 0 var(--highlight);
+  }
+  &:active:not(:disabled),
+  &[aria-expanded="true"] {
+    background-color: color-mix(in oklab, var(--accent), black 18%);
+    box-shadow: inset 0 1px 2px 0 var(--shadow-color);
+    color: var(--accent-foreground);
+  }
+  &:active:not(:disabled):not([aria-haspopup]) {
+    translate: 0 1px;
+  }
+}
+
+@utility surface-raised {
+  background-color: var(--card);
+  box-shadow: var(--shadow-raised);
+}
+
+@utility shadow-overlay {
+  box-shadow: var(--shadow-overlay);
+}
+
+/* Recessed wells: inputs and track backgrounds. */
+@utility surface-inset {
+  background-color: color-mix(in oklab, var(--background), black 12%);
+  box-shadow: inset 0 1px 2px 0 var(--shadow-color);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary), transparent 65%);
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {

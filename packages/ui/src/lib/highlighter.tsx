@@ -53,7 +53,7 @@ function renderTokens(tokens: readonly ThemedToken[]) {
   ))
 }
 
-function getLanguage(language: string) {
+function getLanguage(language: string): Lang | null {
   const name = language.toLowerCase()
 
   if (name === "ansi") {

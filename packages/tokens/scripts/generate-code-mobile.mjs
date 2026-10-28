@@ -14,7 +14,7 @@ function tokens(selector) {
 
 function colors(values) {
   return Object.entries(values)
-    .filter(([name]) => name !== "radius")
+    .filter(([name]) => !["radius", "shadow-raised", "shadow-overlay"].includes(name))
     .map(([name, value]) => `      --color-${name}: ${value};`)
     .join("\n");
 }

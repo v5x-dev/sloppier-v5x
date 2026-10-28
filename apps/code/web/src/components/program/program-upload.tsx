@@ -1,3 +1,4 @@
+import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import {
   useCallback,
@@ -14,9 +15,9 @@ import {
   BluetoothIcon,
   CheckCircleIcon,
   CpuIcon,
-  DownloadSimpleIcon,
   PlugIcon,
   PlugsConnectedIcon,
+  UploadSimpleIcon,
 } from "@phosphor-icons/react"
 import {
   FileExitAction,
@@ -51,6 +52,7 @@ import { Progress } from "@workspace/ui/components/progress"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
+import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 
 import { ProgramConsole } from "./program-console"
 
@@ -281,6 +283,12 @@ export function ProgramUpload({
       }
     }, fromKeyboard)
   }
+  const brainReady = Boolean(connected) && paired
+  const connectTitle = !connected
+    ? "Connect V5 Brain"
+    : !paired
+      ? "Pair V5 Brain"
+      : `V5 Brain connected over ${connected}`
   const uploadLabel = !connected
     ? "Connect a V5 Brain to upload"
     : !paired
@@ -310,19 +318,25 @@ export function ProgramUpload({
   }, [])
 
   return (
-    <>
+    <ActionGroup label="V5 Brain">
       <Popover open={connectOpen} onOpenChange={setConnectOpen}>
-        <ActionTooltip label={"Connect V5 Brain"}>
+        <ActionTooltip label={connectTitle}>
           <PopoverTrigger
             render={
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label="Connect V5 Brain"
+                aria-label={connectTitle}
               />
             }
           >
-            {connected ? <PlugsConnectedIcon /> : <PlugIcon />}
+            {connected ? (
+              <PlugsConnectedIcon
+                className={brainReady ? "text-success" : "text-primary"}
+              />
+            ) : (
+              <PlugIcon className="text-primary" />
+            )}
           </PopoverTrigger>
         </ActionTooltip>
         <PopoverContent
@@ -433,21 +447,22 @@ export function ProgramUpload({
         </PopoverContent>
       </Popover>
       {buildAction}
-      <Popover open={open} onOpenChange={setOpen}>
-        <ActionTooltip label={uploadLabel}>
-          <PopoverTrigger
-            disabled={!connected || !paired}
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Upload to V5 Brain"
-              />
-            }
-          >
-            <DownloadSimpleIcon />
-          </PopoverTrigger>
-        </ActionTooltip>
+      <Popover open={open && brainReady} onOpenChange={setOpen}>
+        {brainReady && (
+          <ActionTooltip label={uploadLabel} shortcut={shortcutKeys("⇧", "B")}>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Upload to V5 Brain"
+                />
+              }
+            >
+              <UploadSimpleIcon className="text-primary" />
+            </PopoverTrigger>
+          </ActionTooltip>
+        )}
         <PopoverContent
           side="top"
           align="end"
@@ -547,6 +562,6 @@ export function ProgramUpload({
         slot={slot}
         onSlotChange={setSlot}
       />
-    </>
+    </ActionGroup>
   )
 }

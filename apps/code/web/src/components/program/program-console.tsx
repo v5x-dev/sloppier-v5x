@@ -117,25 +117,18 @@ export function ProgramConsole({
   const disabled = !connection || busy || pending
   return (
     <>
-      <ActionTooltip
-        label={
-          connection
-            ? "Robot console"
-            : "Connect a V5 Brain to open the console"
-        }
-      >
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Open robot console"
-          disabled={!connection}
-          onClick={() => {
-            if (connection) setOpen(true)
-          }}
-        >
-          <TerminalIcon />
-        </Button>
-      </ActionTooltip>
+      {connection && (
+        <ActionTooltip label="Robot console">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Open robot console"
+            onClick={() => setOpen(true)}
+          >
+            <TerminalIcon />
+          </Button>
+        </ActionTooltip>
+      )}
       <Sheet
         open={open && Boolean(connection)}
         onOpenChange={(nextOpen) => setOpen(nextOpen && Boolean(connection))}

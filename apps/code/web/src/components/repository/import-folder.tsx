@@ -4,6 +4,11 @@ import { useMutation } from "convex/react"
 import { useNavigate } from "@tanstack/react-router"
 import { api } from "@workspace/backend/api"
 import type { Doc, Id } from "@workspace/backend/dataModel"
+import {
+  StarterTile,
+  starterTileClassName,
+  starterTileStyle,
+} from "@/components/program/starter-tile"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -86,19 +91,25 @@ export function ImportFolder({
       <DialogTrigger
         render={
           <Button
-            className={
-              tile
-                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-xl border-0 bg-(--template-import)/25 text-foreground hover:brightness-110 dark:bg-(--template-import)/25"
-                : undefined
+            className={tile ? starterTileClassName : undefined}
+            style={
+              tile ? starterTileStyle("var(--template-import)") : undefined
             }
             variant="outline"
-            size="icon"
+            size={tile ? "default" : "icon"}
             aria-label="Import folder"
             title="Import folder"
           />
         }
       >
-        <UploadSimpleIcon className={tile ? "size-6" : undefined} />
+        {tile ? (
+          <StarterTile
+            icon={<UploadSimpleIcon className="size-5 text-foreground" />}
+            label="Import"
+          />
+        ) : (
+          <UploadSimpleIcon />
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-xl">
         <form

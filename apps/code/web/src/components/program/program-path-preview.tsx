@@ -114,9 +114,12 @@ export function ProgramPathPreview({
   }, [])
   function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
     // Let the header's buttons receive their own clicks.
+    if (event.button !== 0 || !event.isPrimary) return
     if ((event.target as HTMLElement).closest("button")) return
     const rect = panel.current?.getBoundingClientRect()
     if (!rect) return
+    // Prevent native text selection/dragging from competing with pointer capture.
+    event.preventDefault()
     dragStart.current = {
       pointerX: event.clientX,
       pointerY: event.clientY,
@@ -224,11 +227,15 @@ export function ProgramPathPreview({
             )}
           >
             <div
-              className="flex cursor-grab touch-none items-center justify-between gap-2 select-none active:cursor-grabbing"
+              className="flex shrink-0 cursor-grab touch-none items-center justify-between gap-2 select-none active:cursor-grabbing"
               onPointerDown={startDrag}
               onPointerMove={moveDrag}
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
+              onLostPointerCapture={() => {
+                dragStart.current = null
+              }}
+              onDragStart={(event) => event.preventDefault()}
             >
               <span className="text-sm font-medium">Auton paths</span>
               <div className="flex items-center">
@@ -255,7 +262,7 @@ export function ProgramPathPreview({
               </div>
             </div>
             {optionsOpen && (
-              <div id={optionsId} className="flex flex-col gap-2">
+              <div id={optionsId} className="flex shrink-0 flex-col gap-2">
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex min-w-0 flex-col gap-1 text-xs">
                     <span className="text-muted-foreground">Field</span>
@@ -359,11 +366,12 @@ export function ProgramPathPreview({
               </p>
             ) : (
               <>
-                <div className="relative aspect-square shrink-0 overflow-hidden rounded border bg-muted">
+                <div className="relative aspect-square min-h-16 shrink overflow-hidden rounded border bg-muted">
                   <img
                     src={fields[Number(field)].image}
                     alt={fields[Number(field)].label}
-                    className="absolute inset-0 size-full"
+                    draggable={false}
+                    className="absolute inset-0 size-full object-contain"
                     onError={() => setImageError(true)}
                   />
                   <svg
@@ -429,7 +437,7 @@ export function ProgramPathPreview({
               href="https://field-rendering.jerryio.com/"
               target="_blank"
               rel="noreferrer"
-              className="text-[10px] text-muted-foreground underline"
+              className="shrink-0 text-[10px] text-muted-foreground underline"
             >
               Field renders by JerryIO · CC BY 4.0
             </a>

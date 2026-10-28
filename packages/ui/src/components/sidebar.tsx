@@ -87,7 +87,9 @@ function SidebarProvider({
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
+    return isMobile
+      ? setOpenMobile((current) => !current)
+      : setOpen((current) => !current)
   }, [isMobile, setOpen, setOpenMobile])
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
@@ -223,7 +225,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-[inset_0_1px_0_0_var(--highlight),0_0_0_1px_var(--sidebar-border)]"
         >
           {children}
         </div>
