@@ -33,7 +33,28 @@ describe("EZ-Template path previews", () => {
     }`)
     expect(route.points[0]).toEqual({ x: -24, y: -48, heading: 0, start: true })
     expect(route.points.at(-1)).toMatchObject({ x: 12, y: 24, heading: 90 })
+    expect(route.warnings).toContain(
+      "pid_odom_set pose is approximated with an instant heading response."
+    )
+  })
+  it("honors odometry directions and turns to points", () => {
+    const [route] = parse(`void red() {
+      chassis.pid_odom_set({{0_in, 24_in}, rev, 110});
+      chassis.pid_turn_set({24_in, 24_in}, rev, 90);
+      chassis.pid_odom_set(-12_in, 110);
+    }`)
+    expect(route.points[1]).toMatchObject({ x: 0, y: 24, heading: 180 })
+    expect(route.points[2].heading).toBe(270)
+    expect(route.points.at(-1)!.x).toBeCloseTo(12)
     expect(route.warnings).toEqual([])
+  })
+  it("resolves waypoint constants and reports unresolved headings", () => {
+    const [route] = parse(`const int X = 12;
+      void red() { chassis.pid_odom_set({{{X, 24}, fwd, 110}, {{0, 0, angle}, rev, 110}}); }`)
+    expect(route.points.at(-1)).toMatchObject({ x: 12, y: 24 })
+    expect(route.warnings).toContain(
+      "Some waypoint headings could not be resolved."
+    )
   })
   it("excludes PID configuration routines from route discovery", () => {
     expect(
