@@ -100,11 +100,15 @@ refuses to overwrite an existing demo provider. It creates a personal workspace
 for the seeded identity. Run it only on an isolated test deployment; concurrent
 runs against the same deployment conflict. If the process is forcibly killed,
 clear both variables before using that deployment again. Ports 4100 and 4173
-must be available. The emulator handles WorkOS requests locally, but Convex and
-its configured services are still required. This does not verify a real hosted
+must be available. AuthKit uses the local emulator, but Convex and its configured
+services are still required. Backend profile refresh may call WorkOS when the
+token lacks a verified email claim. This does not verify a real hosted
 WorkOS deployment or the production cookie proxy.
 
-For CI, provision an isolated development Convex deployment and CLI credentials
-and configure `packages/backend/.env.local` before running this command. The
-existing production deployment workflow is not connected to this test: it uses
-a production backend and must not install an emulator signing key there.
+The production workflow runs this test in a separate, serialized job against a
+dedicated development deployment before deploying. Configure the
+`CONVEX_E2E_DEPLOY_KEY` repository secret with a development deployment key and
+the `CONVEX_E2E_URL` repository variable with that deployment’s URL. The job
+checks both the key’s target and that the URL differs from production before
+pushing backend functions. Fork pull requests skip this job because GitHub
+does not supply repository secrets to them.

@@ -18,9 +18,19 @@ automatically cancelling an in-progress deployment.
 Configure these GitHub Actions repository settings:
 
 - Secrets: `CONVEX_DEPLOY_KEY`, a production deployment key from the Convex
-  dashboard, and `CLOUDFLARE_API_TOKEN`.
+  dashboard, `CONVEX_E2E_DEPLOY_KEY`, a development key for a dedicated test
+  deployment, and `CLOUDFLARE_API_TOKEN`.
 - Variables: `CLOUDFLARE_ACCOUNT_ID`, `VITE_CONVEX_URL`,
-  `VITE_WORKOS_CLIENT_ID`, and `VITE_WORKOS_REDIRECT_URI`.
+  `VITE_WORKOS_CLIENT_ID`, `VITE_WORKOS_REDIRECT_URI`, and `CONVEX_E2E_URL`
+  for the dedicated test deployment.
+
+The WorkOS end-to-end job deploys backend functions to the dedicated test
+deployment and runs before release. Initialize `WORKOS_CLIENT_ID`,
+`CODE_DEMO_ISSUER`, and `CODE_DEMO_JWKS` as empty environment variables on that
+test deployment before the first backend push. It is serialized across workflow runs and
+skipped for fork pull requests, which cannot access repository secrets. The
+production job is allowed to run for those pull requests, but the emulator
+check is unavailable there.
 
 The workflow rejects non-production Convex keys and verifies that the key's
 deployment URL matches `VITE_CONVEX_URL` before pushing backend changes. Convex
@@ -131,3 +141,13 @@ the repository. `programs.setArchived({ programId, archived })` sets or clears
 `archivedAt`. Archiving changes dashboard organization; existing program links,
 files, history, and workspace access continue to work. The workspace list query
 returns both active and archived programs so clients can provide both views.
+
+## Testing layers
+
+Run `bun run test` in this package for fast `convex-test` checks of backend
+business rules and membership, including live-edit access after a member is
+removed. These tests use an in-memory backend and do not verify hosted service
+configuration. The Code web Playwright emulator suite adds a browser smoke test
+against a dedicated hosted development deployment; see the root README for its
+setup and limitations. It does not replace production-like preview testing of
+the deployed frontend and its external services.

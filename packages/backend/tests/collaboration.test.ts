@@ -83,6 +83,68 @@ describe("live document backend", () => {
     ).toMatchObject({ updates: [], hasMore: false })
   })
 
+  test("removing a workspace member revokes live reads and writes", async () => {
+    const t = convexTest(schema, modules)
+    const owner = t.withIdentity({ subject: "owner" })
+    const member = t.withIdentity({ subject: "member" })
+    const workspaceId = await owner.mutation(api.workspaces.create, {
+      name: "Team",
+    })
+    const memberId = await owner.mutation(api.workspaces.addMember, {
+      workspaceId,
+      userId: "member",
+    })
+    const programId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("programs", {
+        workspaceId,
+        name: "Robot",
+        template: "pros",
+        repositoryId: "repo",
+        repositoryStatus: "ready",
+        createdBy: "owner",
+        createdAt: 1,
+      })
+      await ctx.db.insert("files", {
+        programId: id,
+        path: "main.cpp",
+        origin: "template",
+        createdBy: "owner",
+        createdAt: 1,
+        updatedAt: 1,
+      })
+      return id
+    })
+    const doc = new Y.Doc()
+    doc.getText("source").insert(0, "int main() {}\n")
+    const args = { programId, path: "main.cpp" }
+    const documentId = await t.mutation(internal.crdt.initializeDocument, {
+      ...args,
+      actorId: "owner",
+      bytes: Y.encodeStateAsUpdate(doc).buffer as ArrayBuffer,
+    })
+    expect(
+      (await member.query(api.crdt.updatesSince, args)).updates
+    ).toHaveLength(1)
+    const vector = Y.encodeStateVector(doc)
+    doc.getText("source").insert(0, "// member edit\n")
+    const update = {
+      ...args,
+      documentId,
+      updateId: "member-edit",
+      bytes: Y.encodeStateAsUpdate(doc, vector).buffer as ArrayBuffer,
+    }
+    await owner.mutation(api.workspaces.removeMember, { memberId })
+    await expect(member.query(api.crdt.updatesSince, args)).rejects.toThrow(
+      "access"
+    )
+    await expect(
+      member.mutation(api.crdt.appendUpdate, update)
+    ).rejects.toThrow("access")
+    expect(
+      (await owner.query(api.crdt.updatesSince, args)).updates
+    ).toHaveLength(1)
+  })
+
   test("acknowledgement retries are idempotent, with validation and stale-file protection", async () => {
     const { t, args, bytes, alice, seed } = await setup()
     const documentId = await t.mutation(internal.crdt.initializeDocument, {
