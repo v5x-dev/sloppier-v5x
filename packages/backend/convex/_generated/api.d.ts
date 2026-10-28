@@ -12,6 +12,7 @@ import type * as backups from "../backups.js";
 import type * as buildConnection from "../buildConnection.js";
 import type * as buildWorker from "../buildWorker.js";
 import type * as builds from "../builds.js";
+import type * as checkpoints from "../checkpoints.js";
 import type * as codeStorage from "../codeStorage.js";
 import type * as crdt from "../crdt.js";
 import type * as files from "../files.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   buildConnection: typeof buildConnection;
   buildWorker: typeof buildWorker;
   builds: typeof builds;
+  checkpoints: typeof checkpoints;
   codeStorage: typeof codeStorage;
   crdt: typeof crdt;
   files: typeof files;
