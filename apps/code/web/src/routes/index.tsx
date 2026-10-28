@@ -1,7 +1,7 @@
 import {
   ArchiveBoxIcon,
+  CaretUpDownIcon,
   MagnifyingGlassIcon,
-  XIcon,
   DotsThreeIcon,
   BuildingsIcon,
   CodeIcon,
@@ -55,7 +55,9 @@ import {
   Item,
   ItemActions,
   ItemContent,
+  ItemDescription,
   ItemGroup,
+  ItemMedia,
   ItemTitle,
 } from "@workspace/ui/components/item"
 import {
@@ -69,8 +71,15 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { useAction, useMutation, useQuery } from "convex/react"
-import { startOfDay, startOfWeek, subDays } from "date-fns"
+import { formatDistanceToNow, startOfDay, startOfWeek, subDays } from "date-fns"
+import { Toggle } from "@workspace/ui/components/toggle"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { useEffect, useRef, useState } from "react"
+import {
+  StarterTile,
+  starterTileClassName,
+  starterTileStyle,
+} from "@/components/program/starter-tile"
 import {
   NewWorkspace,
   WorkspaceTeam,
@@ -100,6 +109,13 @@ const templateIcons: Record<Template, string> = {
   "ez-template": "/template-icons/ez.png",
 }
 
+const templateLabels: Record<Template, string> = {
+  vexcode: "VEXCode",
+  jar: "JAR",
+  pros: "PROS",
+  "ez-template": "EZ",
+}
+
 function ProgramsPage() {
   const workspaces = useQuery(api.workspaces.listMine)
   const search = Route.useSearch()
@@ -108,7 +124,6 @@ function ProgramsPage() {
   )
   const [archived, setArchived] = useState(false)
   const [query, setQuery] = useState("")
-  const [searching, setSearching] = useState(false)
 
   const available = (workspaces ?? []).flatMap(({ workspace }) =>
     workspace ? [workspace] : []
@@ -126,55 +141,96 @@ function ProgramsPage() {
             ?.role === "admin"
         }
         onSelect={setSelectedId}
-        searching={searching}
-        query={query}
-        onQueryChange={setQuery}
-        archived={archived}
-        onToggleArchived={() => setArchived((value) => !value)}
-        onSearch={() => {
-          if (searching) setQuery("")
-          setSearching((value) => !value)
-        }}
       />
-      <section aria-label="Create a program" className="border-b bg-card">
-        <div className="mx-auto grid w-[58rem] max-w-full grid-cols-[repeat(5,minmax(96px,1fr))] gap-4 overflow-x-auto px-4 py-4">
-          {(["vexcode", "jar", "pros", "ez-template"] as const).map(
-            (template) =>
-              workspace ? (
-                <NewProgramDialog
-                  key={`${workspace._id}-${template}`}
-                  workspaceId={workspace._id}
-                  initialTemplate={template}
-                  tile
+      <main className="mx-auto flex w-[52rem] max-w-full flex-1 flex-col gap-10 px-4 pt-8 pb-16 sm:px-6">
+        <section
+          aria-labelledby="starters-heading"
+          className="flex flex-col gap-3"
+        >
+          <h2 id="starters-heading" className="text-base font-semibold">
+            Create program
+          </h2>
+          <div className="grid grid-cols-2 gap-3 pb-1 sm:grid-cols-5">
+            {(["vexcode", "jar", "pros", "ez-template"] as const).map(
+              (template) =>
+                workspace ? (
+                  <NewProgramDialog
+                    key={`${workspace._id}-${template}`}
+                    workspaceId={workspace._id}
+                    initialTemplate={template}
+                    tile
+                  />
+                ) : (
+                  <Skeleton key={template} className="h-[6.75rem] rounded-xl" />
+                )
+            )}
+            {workspace ? (
+              <ImportFolder
+                key={workspace._id}
+                workspaceId={workspace._id}
+                tile
+              />
+            ) : (
+              <Skeleton className="h-[6.75rem] rounded-xl" />
+            )}
+          </div>
+        </section>
+        <section
+          aria-labelledby="programs-heading"
+          className="flex flex-col gap-4"
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <h2
+              id="programs-heading"
+              className="mr-auto text-base font-semibold"
+            >
+              Programs
+            </h2>
+            <div className="flex max-w-full items-center gap-1.5">
+              <div className="relative w-56 max-w-full">
+                <MagnifyingGlassIcon
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
                 />
-              ) : (
-                <Skeleton
-                  key={template}
-                  className="aspect-[4/3] min-w-24 rounded-2xl"
+                <Input
+                  type="search"
+                  aria-label="Search programs"
+                  placeholder="Search programs…"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setQuery("")
+                  }}
+                  className="h-8 pl-8 [&::-webkit-search-cancel-button]:appearance-none"
                 />
-              )
-          )}
-          {workspace ? (
-            <ImportFolder
-              key={workspace._id}
-              workspaceId={workspace._id}
-              tile
-            />
+              </div>
+              <ActionTooltip
+                label={
+                  archived ? "Show active programs" : "Show archived programs"
+                }
+              >
+                <Toggle
+                  variant="outline"
+                  className="h-8 w-8 shrink-0 px-0"
+                  aria-label="Show archived programs"
+                  pressed={archived}
+                  onPressedChange={setArchived}
+                >
+                  <ArchiveBoxIcon />
+                </Toggle>
+              </ActionTooltip>
+            </div>
+          </div>
+          {!workspace ? (
+            <ProgramListSkeleton />
           ) : (
-            <Skeleton className="aspect-[4/3] min-w-24 rounded-2xl" />
+            <ProgramList
+              workspaceId={workspace._id}
+              archived={archived}
+              query={query}
+            />
           )}
-        </div>
-      </section>
-      <main className="mx-auto flex w-3xl max-w-full flex-1 flex-col gap-4 px-4 py-4">
-        {!workspace ? (
-          <ProgramListSkeleton />
-        ) : (
-          <ProgramList
-            workspaceId={workspace._id}
-            archived={archived}
-            query={query}
-          />
-        )}
+        </section>
       </main>
     </div>
   )
@@ -185,26 +241,13 @@ function AppHeader({
   workspace,
   isAdmin,
   onSelect,
-  onSearch,
-  searching,
-  query,
-  onQueryChange,
-  archived,
-  onToggleArchived,
 }: {
   workspaces: Doc<"workspaces">[]
   workspace: Doc<"workspaces"> | undefined
   isAdmin: boolean
   onSelect: (id: Id<"workspaces">) => void
-  onSearch: () => void
-  searching: boolean
-  query: string
-  onQueryChange: (query: string) => void
-  archived: boolean
-  onToggleArchived: () => void
 }) {
   const { user, signOut } = useAuth()
-  const searchButton = useRef<HTMLButtonElement>(null)
   const [creatingWorkspace, setCreatingWorkspace] = useState(false)
   const [managingTeam, setManagingTeam] = useState(false)
   const [viewingInvitations, setViewingInvitations] = useState(false)
@@ -224,123 +267,96 @@ function AppHeader({
     "?"
 
   return (
-    <header className="border-b">
-      <div className="mx-auto flex min-h-12 w-[50rem] max-w-full items-center justify-between gap-3 px-4 py-2">
-        <Link to="/" aria-label="code (by v5x) home" className="text-primary">
+    <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur-md">
+      <div className="mx-auto flex h-14 w-[52rem] max-w-full items-center gap-2 px-4 sm:px-6">
+        <Link
+          to="/"
+          aria-label="code (by v5x) home"
+          className="flex items-center gap-2 rounded-md text-primary outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
           <span
             aria-hidden="true"
             className="block h-5 w-6 bg-current"
             style={{ mask: "url(/favicon.svg) center / contain no-repeat" }}
           />
         </Link>
-        <div className="ml-auto flex items-center gap-3">
-          <div
-            className={`relative h-8 shrink-0 transition-[width] duration-200 ease-out motion-reduce:transition-none ${searching ? "w-64 max-w-[calc(100vw-8rem)]" : "w-8"}`}
-          >
-            {searching && (
-              <Input
-                autoFocus
-                id="dashboard-search"
-                type="search"
-                aria-label="Search programs"
-                placeholder="Search programs…"
-                value={query}
-                onChange={(event) => onQueryChange(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.preventDefault()
-                    onSearch()
-                    searchButton.current?.focus()
-                  }
-                }}
-                className="pr-9 [&::-webkit-search-cancel-button]:appearance-none"
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                className="max-w-56 text-foreground"
+                aria-label="Switch workspace"
               />
-            )}
-            <Button
-              ref={searchButton}
-              variant="ghost"
-              size="icon"
-              aria-label={searching ? "Close search" : "Search programs"}
-              aria-expanded={searching}
-              aria-controls={searching ? "dashboard-search" : undefined}
-              onClick={onSearch}
-              className={
-                searching
-                  ? "absolute top-0 right-0 aria-expanded:bg-transparent aria-expanded:hover:bg-muted dark:aria-expanded:hover:bg-muted/50"
-                  : undefined
-              }
-            >
-              {searching ? (
-                <XIcon className="size-4" />
-              ) : (
-                <MagnifyingGlassIcon />
+            }
+          >
+            <BuildingsIcon data-icon="inline-start" />
+            <span className="truncate">{workspace?.name ?? "Workspace"}</span>
+            <CaretUpDownIcon
+              data-icon="inline-end"
+              className="text-muted-foreground"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-64">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={workspace?._id ?? ""}
+                onValueChange={(value) => {
+                  const selected = workspaces.find(
+                    (entry) => entry._id === value
+                  )
+                  if (selected) onSelect(selected._id)
+                }}
+              >
+                {workspaces.map((entry) => (
+                  <DropdownMenuRadioItem key={entry._id} value={entry._id}>
+                    <span className="truncate">{entry.name}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              {workspace && isAdmin && (
+                <DropdownMenuItem onClick={() => setManagingTeam(true)}>
+                  <UsersIcon />
+                  Manage team
+                </DropdownMenuItem>
               )}
-            </Button>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="Account menu"
-              className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <Avatar className="size-7">
-                <AvatarImage
-                  src={user?.profilePictureUrl ?? undefined}
-                  alt=""
-                />
-                <AvatarFallback>{initials}</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="flex flex-col gap-1 px-2 py-1.5">
-                  {name && <span className="text-foreground">{name}</span>}
-                  <span className="truncate font-normal">{user?.email}</span>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Workspace</DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={workspace?._id ?? ""}
-                  onValueChange={(value) => {
-                    const selected = workspaces.find(
-                      (entry) => entry._id === value
-                    )
-                    if (selected) onSelect(selected._id)
-                  }}
-                >
-                  {workspaces.map((entry) => (
-                    <DropdownMenuRadioItem key={entry._id} value={entry._id}>
-                      <BuildingsIcon />
-                      <span className="truncate">{entry.name}</span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-                <DropdownMenuItem onClick={() => setCreatingWorkspace(true)}>
-                  <PlusIcon />
-                  New workspace
-                </DropdownMenuItem>
-                {workspace && isAdmin && (
-                  <DropdownMenuItem onClick={() => setManagingTeam(true)}>
-                    <UsersIcon />
-                    Manage team
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => setViewingInvitations(true)}>
-                  <EnvelopeSimpleIcon />
-                  Invitations
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onToggleArchived}>
-                  <ArchiveBoxIcon />
-                  {archived ? "Show active programs" : "Show archived programs"}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <SignOutIcon />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              <DropdownMenuItem onClick={() => setCreatingWorkspace(true)}>
+                <PlusIcon />
+                New workspace
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="Account menu"
+            className="ml-auto rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <Avatar className="size-8 ring-1 ring-border">
+              <AvatarImage src={user?.profilePictureUrl ?? undefined} alt="" />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex flex-col gap-1 px-2 py-1.5">
+                {name && <span className="text-foreground">{name}</span>}
+                <span className="truncate font-normal">{user?.email}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setViewingInvitations(true)}>
+                <EnvelopeSimpleIcon />
+                Invitations
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => signOut()}>
+                <SignOutIcon />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <NewWorkspace
           open={creatingWorkspace}
           onOpenChange={setCreatingWorkspace}
@@ -425,9 +441,9 @@ function ProgramList({
     )
     .sort((a, b) => b.createdAt - a.createdAt)
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-6">
       {visible.length === 0 && (
-        <p className="py-8 text-center text-muted-foreground">
+        <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
           No matching {archived ? "archived" : "active"} programs.
         </p>
       )}
@@ -449,27 +465,38 @@ function ProgramList({
             aria-label={label}
             className="flex flex-col gap-2"
           >
-            <h2
-              className={`font-heading text-sm leading-5 ${index === 0 ? "text-foreground" : "text-muted-foreground"}`}
-            >
+            <h3 className="px-1 text-xs font-medium text-muted-foreground">
               {label}
-            </h2>
-            <ItemGroup className="gap-2">
+            </h3>
+            <ItemGroup className="gap-0 overflow-hidden rounded-xl surface-raised">
               {entries.map((program) => (
                 <Item
                   key={program._id}
-                  className="group relative min-h-11 rounded-xl border-0 bg-card px-4 py-2 hover:bg-muted"
+                  className="group relative min-h-14 gap-x-4 rounded-none border-0 px-4 py-2 transition-colors not-last:shadow-[0_1px_0_0_var(--border)] hover:bg-accent/60"
                 >
-                  <ItemContent>
-                    <ItemTitle className="text-base leading-7 font-normal">
+                  <ItemMedia className="translate-y-0! self-center!">
+                    <img
+                      src={templateIcons[program.template]}
+                      alt=""
+                      className="size-6 object-contain"
+                    />
+                  </ItemMedia>
+                  <ItemContent className="gap-0">
+                    <ItemTitle className="text-[13px] leading-5 font-medium">
                       <Link
                         to="/programs/$programId"
                         params={{ programId: program._id }}
-                        className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
+                        className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
                       >
                         {program.name}
                       </Link>
                     </ItemTitle>
+                    <ItemDescription className="font-documentation text-xs">
+                      Created{" "}
+                      {formatDistanceToNow(program.createdAt, {
+                        addSuffix: true,
+                      })}
+                    </ItemDescription>
                   </ItemContent>
                   <ItemActions className="relative z-10">
                     <RepositoryStatusBadge status={program.repositoryStatus} />
@@ -676,30 +703,30 @@ function NewProgramDialog({
           <Button
             aria-label={`New ${initialTemplate} program`}
             title={`New ${initialTemplate} program`}
-            className={
-              tile
-                ? "aspect-[4/3] h-auto w-full min-w-24 rounded-xl bg-(--template-tile)/25 p-4 hover:bg-(--template-tile)/25 hover:brightness-110"
-                : undefined
-            }
+            className={tile ? starterTileClassName : undefined}
             style={
               tile
-                ? ({
-                    "--template-tile": `var(--template-${initialTemplate})`,
-                  } as React.CSSProperties)
+                ? starterTileStyle(`var(--template-${initialTemplate})`)
                 : undefined
             }
+            variant={tile ? "outline" : "default"}
             size={tile ? "default" : "icon"}
           />
         }
       >
         {tile ? (
-          <img
-            src={templateIcons[initialTemplate]}
-            alt={initialTemplate}
-            className="size-8 object-contain"
+          <StarterTile
+            icon={
+              <img
+                src={templateIcons[initialTemplate]}
+                alt=""
+                className="size-6 object-contain"
+              />
+            }
+            label={templateLabels[initialTemplate]}
           />
         ) : (
-          <PlusIcon data-icon="inline-start" />
+          <PlusIcon />
         )}
       </DialogTrigger>
       <DialogContent>
@@ -766,7 +793,7 @@ function ProgramListSkeleton() {
   return (
     <div className="flex flex-col gap-2">
       {[0, 1, 2].map((index) => (
-        <Skeleton key={index} className="h-11 w-full" />
+        <Skeleton key={index} className="h-14 w-full rounded-xl" />
       ))}
     </div>
   )

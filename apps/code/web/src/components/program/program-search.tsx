@@ -1,4 +1,5 @@
 import { ActionTooltip } from "@/components/shared/action-tooltip"
+import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 import {
   useEffect,
   useId,
@@ -244,7 +245,7 @@ export function ProgramSearch({
   }
   return (
     <>
-      <ActionTooltip label="Search program">
+      <ActionTooltip label="Search program" shortcut={shortcutKeys("⇧", "F")}>
         <Button
           variant="ghost"
           size="icon-sm"

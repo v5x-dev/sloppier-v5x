@@ -1,11 +1,12 @@
 import type { FormatChange } from "@/components/editor/editor-formatting"
-import { MachineStatus } from "@/components/program/machine-status"
 import { ProgramPathPreview } from "@/components/program/program-path-preview"
+import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { ProgramSearch } from "@/components/program/program-search"
 import { ProgramHistory } from "@/components/program/program-history"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
+import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 import {
   DndContext,
   KeyboardSensor,
@@ -59,7 +60,6 @@ import {
 } from "@workspace/ui/components/empty"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
-import { Separator } from "@workspace/ui/components/separator"
 import {
   Sidebar,
   SidebarContent,
@@ -79,12 +79,7 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
 import { toast } from "@workspace/ui/components/toast"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@workspace/ui/components/tooltip"
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { useAction, useMutation, useQuery } from "convex/react"
 import {
   useCallback,
@@ -197,7 +192,7 @@ function ProgramBootShape() {
           </Button>
         </SidebarHeader>
         <SidebarContent className="overflow-hidden" />
-        <SidebarFooter className="items-start p-3" />
+        <SidebarFooter className="h-11 p-0" />
       </Sidebar>
       <SidebarInset className="min-h-0 min-w-0 pt-2">
         <div className="flex min-h-0 min-w-0 flex-1">
@@ -357,6 +352,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
     if (!event.repeat && activePath) formatActions[activePath]?.()
   })
   const [commitOpen, setCommitOpen] = useState(false)
+  const commitLabel = `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
   const savePending = useRef(false)
   useEffect(() => {
     void source.refreshRepository()
@@ -497,7 +493,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
               />
             )}
           </SidebarContent>
-          <SidebarFooter className="h-9 flex-row items-center py-0 pr-3 pl-2">
+          <SidebarFooter className="h-11 flex-row items-center py-0 pr-3 pl-2">
             <AvatarGroup
               aria-label="People in this file"
               className="*:data-[slot=avatar]:ring-0.5"
@@ -506,7 +502,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 (person) => (
                   <Avatar
                     key={person.id}
-                    className={cn("size-5", !person.active && "grayscale")}
+                    className={cn("size-7", !person.active && "grayscale")}
                     title={
                       person.active ? person.name : `${person.name} (away)`
                     }
@@ -516,7 +512,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                       <AvatarImage src={person.imageUrl} alt={person.name} />
                     )}
                     <AvatarFallback
-                      className="text-[0.5rem] leading-none"
+                      className="text-[0.625rem] leading-none"
                       style={{
                         backgroundColor: `${person.color}33`,
                         color: person.color,
@@ -534,7 +530,6 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 )
               )}
             </AvatarGroup>
-            <MachineStatus />
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-h-0 min-w-0 pt-2">
@@ -547,7 +542,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
               className="min-h-0 min-w-0 flex-1 gap-0"
             >
               {openPaths.length > 0 && (
-                <div className="shrink-0 overflow-x-auto overflow-y-hidden">
+                <div className="shrink-0 overflow-x-auto overflow-y-hidden px-1 pb-1">
                   <DndContext
                     sensors={tabSensors}
                     collisionDetection={closestCenter}
@@ -566,7 +561,8 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                     >
                       <SortableTabsList
                         aria-label="Open files"
-                        className="h-8! justify-start"
+                        variant="line"
+                        className="h-auto! justify-start gap-0.5 rounded-[10px] surface-inset p-0.5"
                       >
                         {openPaths.map((path) => (
                           <SortableFileTab
@@ -589,8 +585,12 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                     key={loaded[path]?.editorKey ?? path}
                     value={path}
                     keepMounted
-                    className="relative no-scrollbar min-h-0 overflow-auto"
+                    ref={(panel) => {
+                      if (panel) updateScrollFade(panel)
+                    }}
+                    className="relative no-scrollbar min-h-0 overflow-auto [mask-image:linear-gradient(to_bottom,transparent,black_var(--fade-top,0px),black_calc(100%_-_var(--fade-bottom,0px)),transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_var(--fade-top,0px),black_calc(100%_-_var(--fade-bottom,0px)),transparent)]"
                     onScroll={(event) => {
+                      updateScrollFade(event.currentTarget)
                       if (path === activePath) {
                         source.scrollPositions.set(
                           path,
@@ -656,48 +656,47 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
           <ActionsBar
             activePath={activePath}
             leftAction={
-              <>
-                <ActionTooltip label="Format document">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Format document"
-                    disabled={!activePath || !formatActions[activePath]}
-                    onClick={() => {
-                      if (activePath) formatActions[activePath]?.()
-                    }}
+              <ActionGroup label="Editor tools">
+                {activePath && formatActions[activePath] && (
+                  <ActionTooltip
+                    label="Format document"
+                    shortcut={shortcutKeys("P")}
                   >
-                    <TextAlignLeftIcon />
-                  </Button>
-                </ActionTooltip>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Format document"
+                      onClick={() => formatActions[activePath]?.()}
+                    >
+                      <TextAlignLeftIcon />
+                    </Button>
+                  </ActionTooltip>
+                )}
                 <ProgramHistory
                   programId={program._id}
                   revision={program.repositoryHeadSha}
                   canRestore={dirtyPaths.length === 0 && allSynced}
                   onRestore={restoreCommit}
                 />
-                <Tooltip>
-                  <TooltipTrigger render={<span className="inline-flex" />}>
+                {dirtyPaths.length > 0 && (
+                  <ActionTooltip
+                    label={commitLabel}
+                    shortcut={shortcutKeys("S")}
+                  >
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={
-                        dirtyPaths.length === 0
-                          ? "No changes"
-                          : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
-                      }
-                      disabled={dirtyPaths.length === 0 || !allSynced}
+                      aria-label={commitLabel}
                       onClick={() => setCommitOpen(true)}
                     >
                       <GitCommitIcon />
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-1 right-1 size-1.5 rounded-full bg-primary"
+                      />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {dirtyPaths.length === 0
-                      ? "No changes"
-                      : `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`}
-                  </TooltipContent>
-                </Tooltip>
+                  </ActionTooltip>
+                )}
                 <ProgramSearch
                   programId={program._id}
                   revision={program.repositoryHeadSha}
@@ -712,7 +711,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                     openFile(path)
                   }}
                 />
-              </>
+              </ActionGroup>
             }
           >
             <ProgramUpload
@@ -750,19 +749,13 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
             />
             {(program.template === "ez-template" ||
               program.template === "jar") && (
-              <>
-                <Separator
-                  orientation="vertical"
-                  className="mx-1 bg-sidebar-border"
-                />
-                <ProgramPathPreview
-                  programId={program._id}
-                  revision={program.repositoryHeadSha}
-                  template={program.template}
-                  paths={paths}
-                  drafts={source}
-                />
-              </>
+              <ProgramPathPreview
+                programId={program._id}
+                revision={program.repositoryHeadSha}
+                template={program.template}
+                paths={paths}
+                drafts={source}
+              />
             )}
           </ActionsBar>
         </SidebarInset>
@@ -770,7 +763,13 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
           open={commitOpen}
           onOpenChange={setCommitOpen}
           paths={dirtyPaths}
-          onCommit={commit}
+          onCommit={async (message) => {
+            await waitForSourceSync(
+              source.isSynced,
+              new AbortController().signal
+            )
+            await commit(message)
+          }}
         />
       </SidebarProvider>
     </LanguageSession>
@@ -834,9 +833,9 @@ function SortableFileTab({
         value={path}
         title={path}
         className={cn(
-          "flex-none touch-pan-y px-3 pr-8",
-          isDragging &&
-            "bg-background text-foreground shadow-sm dark:border-input dark:bg-input/30 dark:text-foreground"
+          "h-7 flex-none touch-pan-y rounded-lg border-0 px-3 pr-8 font-normal text-muted-foreground transition-[translate,box-shadow,color] duration-100 after:hidden active:translate-y-px",
+          "data-active:bg-secondary! data-active:text-foreground data-active:shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_1px_2px_rgb(0_0_0/0.3),0_0_0_1px_color-mix(in_oklab,var(--secondary),white_7%)]!",
+          isDragging && "bg-secondary text-foreground shadow-overlay"
         )}
         onAuxClick={(event) => {
           if (event.button === 1) {
@@ -941,6 +940,18 @@ function FileEditor({
 // disappear; clip-path drops the bar's left outline and the `before` cover
 // hides the part of its top outline that falls inside the sidebar. The `after`
 // fillet rounds the inside corner where the sidebar meets the bar.
+// Fades only the edges with code beyond them, so a file's first and last lines
+// stay solid. The mask on each editor panel reads these two variables.
+const SCROLL_FADE = "2rem"
+function updateScrollFade(panel: HTMLElement) {
+  const { scrollTop, scrollHeight, clientHeight } = panel
+  panel.style.setProperty("--fade-top", scrollTop > 0 ? SCROLL_FADE : "0px")
+  panel.style.setProperty(
+    "--fade-bottom",
+    scrollTop + clientHeight < scrollHeight - 1 ? SCROLL_FADE : "0px"
+  )
+}
+
 function ActionsBar({
   leftAction,
   activePath,
@@ -950,30 +961,18 @@ function ActionsBar({
   leftAction: React.ReactNode
   children: React.ReactNode
 }) {
-  const { isMobile, state } = useSidebar()
-  const joined = !isMobile && state === "expanded"
+  const { isMobile } = useSidebar()
 
   return (
     <TooltipProvider>
-      <div
-        className={cn(
-          "relative z-20 mr-2 mb-2 flex h-9 shrink-0 items-center gap-0.5 bg-sidebar px-2 text-sidebar-foreground shadow-[0_0_0_1px_var(--sidebar-border)]",
-          joined
-            ? cn(
-                "-ml-4 rounded-r-lg pl-4 [clip-path:inset(calc(var(--radius-lg)*-1)_-1px_-1px_0)]",
-                "before:absolute before:-top-px before:left-0 before:h-px before:w-2 before:bg-sidebar",
-                "after:pointer-events-none after:absolute after:bottom-full after:left-2 after:size-(--radius-lg) after:bg-[radial-gradient(circle_at_100%_0,transparent_calc(var(--radius-lg)-1.5px),var(--sidebar-border)_calc(var(--radius-lg)-1px),var(--sidebar-border)_calc(var(--radius-lg)-0.5px),var(--sidebar)_var(--radius-lg))]"
-              )
-            : "ml-2 rounded-lg"
-        )}
-      >
+      <div className="flex h-8 shrink-0 items-center gap-0.5 px-1.5 text-sidebar-foreground">
         {leftAction}
         {/* On mobile the sidebar is a sheet, so the bar carries its toggle and
           the open file's path. */}
         {isMobile ? (
           <>
             <ActionTooltip label="Toggle sidebar">
-              <SidebarTrigger />
+              <SidebarTrigger variant="outline" />
             </ActionTooltip>
             <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
               {activePath}

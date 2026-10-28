@@ -39,6 +39,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
+import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 
 export function ProgramBuild({
   dirty,
@@ -164,6 +165,7 @@ export function ProgramBuild({
     <>
       <ActionTooltip
         label={state?.building ? "View build logs" : "Build program"}
+        shortcut={state?.building ? undefined : shortcutKeys("B")}
       >
         <Button
           variant="ghost"
