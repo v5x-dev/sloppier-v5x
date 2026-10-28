@@ -47,3 +47,64 @@ By default Playwright starts a dedicated development server on port 4173. Set
 `PLAYWRIGHT_BASE_URL` to test an already running app instead; that server must
 be configured for the same authentication flow. Failure traces are saved in
 `test-results/`. Run `bunx playwright show-trace <trace.zip>` to inspect one.
+
+The signed-in dashboard and editor tests require a dedicated test account and
+workspace. Start the app on port 4173 with the same environment used by the
+suite, then run the interactive sign-in helper in another terminal:
+
+```sh
+bun run dev -- --host 127.0.0.1 --port 4173 --strictPort
+# In another terminal, sign in in the opened browser:
+bun run test:e2e:sign-in
+PLAYWRIGHT_PROGRAM_ID=<test-program-id> bun run test:e2e
+```
+
+The helper waits for the authenticated Programs dashboard before saving the
+session in `.auth/state.json`, including IndexedDB. The dashboard tests use it
+automatically; the editor tests also require a ready test Program containing
+`#include` (or set `PLAYWRIGHT_EDITOR_SEARCH` to text present in its source).
+Set `PLAYWRIGHT_AUTH_STATE` to use a different state file. Signed-in tests are
+skipped when the state or Program ID is missing. Session state contains
+credentials: keep it private and use a disposable test account. Sessions may
+expire; run the helper again if authentication fails. The editor tests search, open, and edit a file, then undo the edit. Use a
+disposable Program: an interrupted test can leave a live edit behind.
+
+For development-only testing without a WorkOS account, the existing demo
+session can create a signed test identity and Program on the configured dev
+Convex deployment. See [live editing](docs/live-editing.md) for its effects on
+the deployment and cleanup. Run `node apps/code/web/scripts/completion-demo.mjs`
+from the repository root, then use the Program ID and `demoUser` in the printed
+URL from `apps/code/web`:
+
+```sh
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 \
+PLAYWRIGHT_PROGRAM_ID=<program-id> PLAYWRIGHT_DEMO_USER=<demo-user> \
+  bunx playwright test e2e/editor.spec.ts
+```
+
+Stop the demo process afterward. This verifies signed Convex authentication and
+membership, but does not test the WorkOS sign-in callback.
+
+### Automated WorkOS sign-in
+
+`bun run test:e2e:workos` follows the WorkOS emulator workflow: it starts a
+loopback-only emulator with a seeded user, signs in through AuthKit, checks that
+Convex grants access to the workspace, and checks the session after reload. The
+emulator and its test signing key are never used by production builds.
+
+This command needs a **dedicated development Convex deployment** selected in
+`packages/backend/.env.local`, CLI access to it, deployed backend functions, and
+the Chromium browser installed. It temporarily sets `CODE_DEMO_ISSUER` and
+`CODE_DEMO_JWKS` to trust the emulator's public key and clears them on exit; it
+refuses to overwrite an existing demo provider. It creates a personal workspace
+for the seeded identity. Run it only on an isolated test deployment; concurrent
+runs against the same deployment conflict. If the process is forcibly killed,
+clear both variables before using that deployment again. Ports 4100 and 4173
+must be available. The emulator handles WorkOS requests locally, but Convex and
+its configured services are still required. This does not verify a real hosted
+WorkOS deployment or the production cookie proxy.
+
+For CI, provision an isolated development Convex deployment and CLI credentials
+and configure `packages/backend/.env.local` before running this command. The
+existing production deployment workflow is not connected to this test: it uses
+a production backend and must not install an emulator signing key there.

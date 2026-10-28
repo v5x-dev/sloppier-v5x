@@ -1,0 +1,7 @@
+users:
+  - email: playwright@example.test
+    first_name: Playwright
+    password: test-password
+    email_verified: true
+jwtTemplate:
+  content: '{"aud":"code-collaboration-demo","email":"{{ user.email }}","email_verified":true}'

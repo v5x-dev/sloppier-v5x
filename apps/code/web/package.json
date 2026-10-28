@@ -15,7 +15,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests --config vitest.config.ts",
     "generate-autocomplete": "python3 ../../../infra/autocomplete/generate.py",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:sign-in": "node scripts/e2e-sign-in.mjs",
+    "test:e2e:workos": "node scripts/e2e-workos.mjs"
   },
   "dependencies": {
     "@convex-dev/workos": "^0.0.3",
@@ -58,6 +60,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",
+    "@workos/emulate": "^0.17.1",
     "eslint": "^10",
     "fake-indexeddb": "^6.2.6",
     "typescript": "^6.0.2",

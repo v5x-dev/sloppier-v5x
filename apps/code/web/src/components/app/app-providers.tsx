@@ -10,6 +10,20 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const emulator =
+    import.meta.env.DEV && import.meta.env.VITE_WORKOS_EMULATOR_URL
+      ? new URL(import.meta.env.VITE_WORKOS_EMULATOR_URL)
+      : undefined
+
+  if (
+    emulator &&
+    (!["localhost", "127.0.0.1"].includes(emulator.hostname) ||
+      emulator.protocol !== "http:")
+  ) {
+    throw new Error(
+      "The development WorkOS emulator must use a loopback HTTP URL"
+    )
+  }
 
   const content = <Toaster>{children}</Toaster>
 
@@ -17,7 +31,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <AuthKitProvider
       clientId={import.meta.env.VITE_WORKOS_CLIENT_ID}
       devMode={import.meta.env.DEV}
-      apiHostname={import.meta.env.PROD ? window.location.hostname : undefined}
+      apiHostname={
+        emulator?.hostname ??
+        (import.meta.env.PROD ? window.location.hostname : undefined)
+      }
+      port={emulator ? Number(emulator.port) : undefined}
+      https={emulator ? emulator.protocol === "https:" : undefined}
       redirectUri={
         import.meta.env.VITE_WORKOS_REDIRECT_URI ??
         `${window.location.origin}/callback`
