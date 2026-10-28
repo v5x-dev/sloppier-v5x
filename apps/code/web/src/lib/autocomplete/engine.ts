@@ -379,6 +379,7 @@ export class AutocompleteEngine {
           "||",
           "return",
           "else",
+          "inline",
         ].includes(value)
       )
         return i + 1

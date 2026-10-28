@@ -14,7 +14,8 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests --config vitest.config.ts",
-    "generate-autocomplete": "python3 ../../../infra/autocomplete/generate.py"
+    "generate-autocomplete": "python3 ../../../infra/autocomplete/generate.py",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@convex-dev/workos": "^0.0.3",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.65.0",
+    "@playwright/test": "^1.64.1",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/eslint-config": "latest",
     "@tanstack/router-cli": "^1.167.41",

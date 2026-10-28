@@ -27,3 +27,23 @@ To use the components in your app, import them from the `ui` package.
 ```tsx
 import { Button } from "@workspace/ui/components/button";
 ```
+
+## Code web end-to-end tests
+
+The Playwright suite runs separately from the Vitest unit tests. Configure the
+Code web app's local environment with `VITE_CONVEX_URL`,
+`VITE_WORKOS_CLIENT_ID`, and the appropriate WorkOS redirect URI, as for normal
+development. The sign-in test reaches the configured WorkOS sign-in page; it
+does not sign in or modify account data.
+
+From `apps/code/web`, install the Chromium browser once and run the suite:
+
+```sh
+bunx playwright install chromium
+bun run test:e2e
+```
+
+By default Playwright starts a dedicated development server on port 4173. Set
+`PLAYWRIGHT_BASE_URL` to test an already running app instead; that server must
+be configured for the same authentication flow. Failure traces are saved in
+`test-results/`. Run `bunx playwright show-trace <trace.zip>` to inspect one.

@@ -92,6 +92,11 @@ describe("local SDK completion", () => {
       "Motor"
     )
   })
+  it("completes PROS device types after the inline declaration specifier", () => {
+    expect(setup("inline pros::|", pros).labels()).toContain("Motor")
+    expect(setup("inline pros::Mo|", pros).labels()).toContain("Motor")
+    expect(setup("inline pros::|", ez).labels()).toContain("AIVision")
+  })
   it("supports EZ-Template without showing APIs from other templates", () => {
     const { labels } = setup("ez::Drive chassis; void run() { chassis.| }", ez)
     expect(labels()).toContain("pid_drive_set")
