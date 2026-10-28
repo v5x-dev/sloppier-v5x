@@ -154,7 +154,7 @@ target hardware budget. Read the provider's current docs before changing build
 packaging; use its native tooling when requested rather than substituting a
 familiar image workflow.
 
-## Checking web behavior with T3 preview
+## Checking web behavior with agent-browser
 
 Reproduce the reported failure on the reported environment. Local success does
 not establish success on `code-dev.v5x.dev` or production `code.v5x.dev`. For auth,
@@ -169,41 +169,36 @@ applicable. A matching class name or passing unit test does not prove the
 visible issue is fixed. Keep screenshots and recordings out of tracked source
 unless the task explicitly calls for committed artifacts.
 
-When the task asks for browser verification, use the shared T3 preview browser
-to exercise the actual app. Passing typechecks or reading JSX does not establish
-that a user flow works. Follow the session's tool restrictions on when browser
-verification is available and authorized.
+When the task asks for browser verification, use `agent-browser` to exercise the
+actual app instead of the T3 preview browser. Passing typechecks or reading JSX
+does not establish that a user flow works. Follow the session's tool restrictions
+on when browser verification is available and authorized.
 
 1. Read the affected app's scripts and start its development server if needed.
    Use the server's reported port; check startup output for failures before
    opening the app. Start the local backend too if the flow requires it, using
    the documented development environment.
-2. Call `preview_status` first to inspect available tabs. Reuse an appropriate
-   automatable tab; otherwise call `preview_open`. For a local dev server, use
-   the environment-port target supported by the tool rather than assuming the
-   browser shares the shell's localhost.
-3. Call `preview_snapshot` to inspect the rendered page. Use its `aria-ref`
-   locators with `preview_act` to click, type, and submit through the same
-   controls a user uses. Refresh the snapshot after navigation or substantial
-   UI changes so locators refer to the current page.
-4. Exercise the changed flow from its entry point to its observable result.
+2. Open the app with `agent-browser open` and inspect it with
+   `agent-browser snapshot`. Use snapshot references to click, type, and submit
+   through the same controls a user uses. Refresh the snapshot after navigation
+   or substantial UI changes so references refer to the current page.
+3. Exercise the changed flow from its entry point to its observable result.
    Check the saved result after reload when persistence matters. Include the
    relevant empty, error, loading, and permission states. For a bug fix, repeat
    the original reproduction and verify the expected behavior.
-5. Inspect the rendered result visually as well as structurally. Use
-   `preview_resize` for relevant desktop and narrow web viewports; check for
+4. Inspect the rendered result visually as well as structurally. Set relevant
+   desktop and narrow web viewports with `agent-browser set viewport`; check for
    clipped content, overflow, unreadable text, and unreachable controls.
    Browser resizing checks responsive web layout, not the native Expo app.
-6. Use `preview_wait_for` for observable UI conditions instead of arbitrary
-   delays. Use `preview_evaluate` for targeted diagnostics when needed; changing
+5. Use `agent-browser wait` for observable UI conditions instead of arbitrary
+   delays. Use `agent-browser eval` for targeted diagnostics when needed; changing
    page state through JavaScript is not evidence that the user interaction works.
-7. Fix failures and repeat the affected flow. Close tabs opened solely for the
-   check with `t3_preview_close`, unless the user asked to keep them open or is
-   using them. Report which flow and viewport you checked, its result, and any
+6. Fix failures and repeat the affected flow. Close browser sessions opened solely
+   for the check unless the user asked to keep them open or is using them. Report
+   which flow and viewport you checked, its result, and any
    blockers such as missing authentication, backend configuration, or hardware.
 
-If tools are not loaded, discover the T3 `preview_*` tools before declaring them
-unavailable. If preview cannot run, report the specific tool or environment
+If browser verification cannot run, report the specific tool or environment
 failure and the checks you completed. Claim browser verification only after
 actually exercising the flow.
 
