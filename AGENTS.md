@@ -129,6 +129,13 @@ Browser tabs and editor file tabs are different concepts. Removing a shortcut
 does not mean removing its button. Apply the requested scope and preserve
 adjacent behavior.
 
+Carry every requested deliverable through to completion. A partial implementation,
+passing unit tests, or a description of a recording does not satisfy a request for
+the full behavior and a video. If an attempt fails, diagnose the environment, use
+the documented setup, and retry the actual task. Report a specific remaining
+blocker only after exhausting available authorized paths; do not silently replace
+the requested deliverable with a narrower one.
+
 Before proposing a feature, trace the existing UI through its implementation.
 Extend an existing history, build, or workspace flow when it already owns the
 behavior. A missing or broken operation is a fix, not automatically a new
@@ -201,6 +208,19 @@ on when browser verification is available and authorized.
 If browser verification cannot run, report the specific tool or environment
 failure and the checks you completed. Claim browser verification only after
 actually exercising the flow.
+
+When asked to record the app or an editor, record the real application and the
+requested flow, including the actual route, surrounding interface, and controls.
+A standalone reconstruction or component demo is not the real app, even if it
+imports production components. Do not substitute one without the user's explicit
+agreement. A fake device or service may stand in for the requested external
+dependency while the app UI and integration path remain real. Label simulated
+dependencies and distinguish their results from physical-device verification.
+Inspect the recording for the requested states, make sure the file is playable,
+and give the user its accessible path. If the browser opens a blank page or an
+automation tool times out, investigate startup, logs, authentication, and the
+documented test environment, then repeat the flow; a running server alone does
+not prove the app is usable.
 
 Keep this root file focused on rules shared across products. Add nested
 `AGENTS.md` files when an app or package needs its own instructions, and keep

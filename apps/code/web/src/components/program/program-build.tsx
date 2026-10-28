@@ -128,6 +128,13 @@ export function ProgramBuild({
         },
         await prepareSource()
       )
+      // Keep the local indicator active until the shared status poll has had
+      // time to observe the submitted build, including very short builds.
+      let status = await (await request("/status")).json()
+      while (status.building) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        status = await (await request("/status")).json()
+      }
     } catch (error) {
       toast.add({
         type: "error",
@@ -165,13 +172,13 @@ export function ProgramBuild({
   return (
     <>
       <ActionTooltip
-        label={state?.building ? "View build logs" : "Build program"}
-        shortcut={state?.building ? undefined : shortcutKeys("B")}
+        label={building ? "View build logs" : "Build program"}
+        shortcut={building ? undefined : shortcutKeys("B")}
       >
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={state?.building ? "View build logs" : "Build program"}
+          aria-label={building ? "View build logs" : "Build program"}
           aria-busy={building}
           onClick={buildOrOpen}
         >

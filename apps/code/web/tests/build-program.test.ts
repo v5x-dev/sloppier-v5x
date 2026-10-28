@@ -83,6 +83,13 @@ test("reuses a successful build only for the committed source revision", async (
   await prepareUploadBuild(stale.options)
   expect(stale.events).toContain("/build")
 })
+test("does not start the Builder when the Brain already has the committed revision", async () => {
+  const { events, options } = setup([empty])
+  const isInstalled = vi.fn(async (sha: string) => sha === source.sha)
+  expect(await prepareUploadBuild({ ...options, isInstalled })).toBeNull()
+  expect(isInstalled).toHaveBeenCalledWith(source.sha)
+  expect(events).toEqual(["commit", "snapshot"])
+})
 test("waits for compilation before downloading", async () => {
   vi.useFakeTimers()
   const { events, options } = setup([

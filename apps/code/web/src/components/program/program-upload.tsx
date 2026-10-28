@@ -52,6 +52,7 @@ import { Progress } from "@workspace/ui/components/progress"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
+import { isInstalled, recordInstalled } from "@/lib/brain-revision"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 
 import { ProgramConsole } from "./program-console"
@@ -65,13 +66,16 @@ export function ProgramUpload({
   buildAction,
   prepareProgram,
   dirty,
+  programId,
 }: {
   name: string
+  programId: string
   buildAction: ReactNode
   prepareProgram: (
     signal: AbortSignal,
-    onStage: (message: string) => void
-  ) => Promise<ProgramData>
+    onStage: (message: string) => void,
+    isInstalled: (sha: string) => Promise<boolean>
+  ) => Promise<ProgramData | null>
   dirty: boolean
 }) {
   const preparation = useRef<AbortController | null>(null)
@@ -244,11 +248,29 @@ export function ProgramUpload({
       try {
         await verifyBrain(selected.connection)
         preparing = true
-        const program = await prepareProgram(controller.signal, (stage) => {
-          if (mounted.current) setMessage(stage)
-        })
+        let revision = ""
+        const program = await prepareProgram(
+          controller.signal,
+          (stage) => {
+            if (mounted.current) setMessage(stage)
+          },
+          async (sha) => {
+            revision = sha
+            setMessage("Checking the program on your Brain…")
+            return isInstalled(selected.connection, targetSlot, programId, sha)
+          }
+        )
         preparing = false
         controller.signal.throwIfAborted()
+        if (!program) {
+          const resultMessage = `Slot ${targetSlot} already has this version.`
+          if (mounted.current) {
+            setSuccess(true)
+            setMessage(resultMessage)
+          }
+          if (fromKeyboard) toast.add({ type: "success", title: resultMessage })
+          return
+        }
         await verifyBrain(selected.connection)
         setProgress(0)
         await uploadProgram(selected.connection, program, {
@@ -267,6 +289,21 @@ export function ProgramUpload({
             setProgress(Math.round(percent))
           },
         })
+        if (
+          program.type === "monolith" &&
+          selected.connection.type !== "controller"
+        ) {
+          try {
+            await recordInstalled(
+              selected.connection,
+              targetSlot,
+              programId,
+              revision
+            )
+          } catch {
+            // The program was uploaded successfully; a missing record only prevents reuse.
+          }
+        }
         const uploaded = `Uploaded to slot ${targetSlot}${run ? " and started" : ""}.`
         if (mounted.current) {
           setSuccess(true)
@@ -456,10 +493,15 @@ export function ProgramUpload({
                   variant="ghost"
                   size="icon-sm"
                   aria-label="Upload to V5 Brain"
+                  aria-busy={busy}
                 />
               }
             >
-              <UploadSimpleIcon className="text-primary" />
+              {busy ? (
+                <Spinner className="text-primary" />
+              ) : (
+                <UploadSimpleIcon className="text-primary" />
+              )}
             </PopoverTrigger>
           </ActionTooltip>
         )}
@@ -546,7 +588,7 @@ export function ProgramUpload({
             onClick={() => upload()}
             className="w-full"
           >
-            <ArrowUpIcon />
+            {busy ? <Spinner /> : <ArrowUpIcon />}
             {busy
               ? progress !== null
                 ? "Uploading…"
