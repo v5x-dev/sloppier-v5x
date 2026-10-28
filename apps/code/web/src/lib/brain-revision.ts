@@ -7,6 +7,36 @@ import {
   type Connection,
 } from "@workspace/serial"
 
+export const RECORD_MAX_SIZE = 1024
+
+export interface InstalledRecord {
+  programId?: string
+  sha?: string
+  size?: number
+  crc?: number
+}
+
+export function parseRecord(data: Uint8Array): InstalledRecord | null {
+  let value: unknown
+  try {
+    value = JSON.parse(new TextDecoder().decode(data))
+  } catch {
+    return null
+  }
+  return typeof value === "object" && value !== null ? value : null
+}
+
+/** Downloads a small Brain file and closes the transfer session. */
+export async function downloadBrainFile(
+  connection: Connection,
+  fileName: string,
+  size: number
+) {
+  const data = await downloadFile(connection, { fileName, size })
+  await connection.request(fileTransferExit())
+  return data
+}
+
 // A record is written only after the binary transfer finishes. Compare it with
 // the Brain's current binary metadata before trusting the recorded revision.
 export async function isInstalled(
@@ -23,20 +53,13 @@ export async function isInstalled(
       !record ||
       !binary ||
       binary.linkedVendor !== null ||
-      record.size > 1024
+      record.size > RECORD_MAX_SIZE
     )
       return false
-    const data = await downloadFile(connection, {
-      fileName: `v5x_${slot}.dat`,
-      size: record.size,
-    })
-    await connection.request(fileTransferExit())
-    let value: { programId?: string; sha?: string; size?: number; crc?: number }
-    try {
-      value = JSON.parse(new TextDecoder().decode(data))
-    } catch {
-      return false
-    }
+    const value = parseRecord(
+      await downloadBrainFile(connection, `v5x_${slot}.dat`, record.size)
+    )
+    if (!value) return false
     return (
       value.programId === programId &&
       value.sha === sha &&

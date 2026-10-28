@@ -716,6 +716,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
             }
           >
             <ProgramUpload
+              currentSha={program.repositoryHeadSha}
               buildAction={
                 <ProgramBuild
                   dirty={dirtyPaths.length > 0}

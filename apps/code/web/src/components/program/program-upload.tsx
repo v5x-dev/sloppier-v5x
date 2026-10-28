@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react"
 import {
+  ArrowClockwiseIcon,
   ArrowUpIcon,
   BluetoothIcon,
   CheckCircleIcon,
@@ -37,10 +38,6 @@ import {
   InputOTPSlot,
 } from "@workspace/ui/components/input-otp"
 import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@workspace/ui/components/native-select"
-import {
   Popover,
   PopoverContent,
   PopoverDescription,
@@ -53,6 +50,13 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
 import { isInstalled, recordInstalled } from "@/lib/brain-revision"
+import {
+  BRAIN_SLOT_COUNT,
+  matchBrainSlot,
+  readBrainSlots,
+  type BrainSlotMatch,
+  type BrainSlotReading,
+} from "@/lib/brain-slots"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 
 import { ProgramConsole } from "./program-console"
@@ -61,15 +65,26 @@ type Device = { connection: Connection; bluetooth?: BluetoothConnection }
 
 const subscribeToNothing = () => () => {}
 
+const slotMatchLabel: Record<BrainSlotMatch, string | null> = {
+  empty: null,
+  current: "Current revision",
+  "other-revision": "Different revision",
+  "other-program": "Other program",
+  untracked: "Not tracked by v5x",
+}
+
 export function ProgramUpload({
   name,
   buildAction,
   prepareProgram,
   dirty,
   programId,
+  currentSha,
 }: {
   name: string
   programId: string
+  /** The Program's committed head, which uploads record as their revision. */
+  currentSha?: string
   buildAction: ReactNode
   prepareProgram: (
     signal: AbortSignal,
@@ -111,6 +126,9 @@ export function ProgramUpload({
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const [success, setSuccess] = useState(false)
+  const [slots, setSlots] = useState<BrainSlotReading[] | null>(null)
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [slotsError, setSlotsError] = useState<string | null>(null)
   // Browser support is read on the client; the server render reports none.
   const serialSupported = useSyncExternalStore(
     subscribeToNothing,
@@ -139,12 +157,32 @@ export function ProgramUpload({
       setConsoleConnection(null)
       setConnected(null)
       setPaired(false)
+      setSlots(null)
+      setSlotsError(null)
       setError(disconnectError.message)
       if (device.current?.connection === consoleConnection)
         device.current = null
       void consoleConnection.close().catch(() => {})
     })
   }, [consoleConnection])
+
+  // Runs through the console queue so it never overlaps an upload. A skipped
+  // read leaves the last list in place.
+  const refreshSlots = useCallback(async () => {
+    setSlotsLoading(true)
+    setSlotsError(null)
+    try {
+      await consoleIO(async (connection) => {
+        const readings = await readBrainSlots(connection)
+        if (mounted.current && device.current?.connection === connection)
+          setSlots(readings)
+      })
+    } catch (err) {
+      if (mounted.current && device.current) setSlotsError(errorMessage(err))
+    } finally {
+      if (mounted.current) setSlotsLoading(false)
+    }
+  }, [consoleIO])
 
   async function operation(action: () => Promise<void>, notify = false) {
     if (busyRef.current) return
@@ -180,6 +218,8 @@ export function ProgramUpload({
     setPaired(false)
     setPin("")
     setMessage(null)
+    setSlots(null)
+    setSlotsError(null)
     await current?.connection.close()
   }
   function connect(kind: "USB" | "Bluetooth") {
@@ -318,7 +358,7 @@ export function ProgramUpload({
         preparation.current = null
         if (mounted.current) setProgress(null)
       }
-    }, fromKeyboard)
+    }, fromKeyboard).then(refreshSlots)
   }
   const brainReady = Boolean(connected) && paired
   const connectTitle = !connected
@@ -484,7 +524,13 @@ export function ProgramUpload({
         </PopoverContent>
       </Popover>
       {buildAction}
-      <Popover open={open && brainReady} onOpenChange={setOpen}>
+      <Popover
+        open={open && brainReady}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen)
+          if (nextOpen) void refreshSlots()
+        }}
+      >
         {brainReady && (
           <ActionTooltip label={uploadLabel} shortcut={shortcutKeys("⇧", "B")}>
             <PopoverTrigger
@@ -525,25 +571,98 @@ export function ProgramUpload({
               ? `${connected} connected`
               : "Connect your V5 Brain using the Connect button."}
           </p>
-          <Field>
-            <FieldLabel htmlFor={`${id}-slot`}>Program slot</FieldLabel>
-            <NativeSelect
-              id={`${id}-slot`}
-              className="w-full"
-              value={slot}
-              disabled={busy}
-              onChange={(event) => {
-                setSlot(Number(event.target.value))
-                setSuccess(false)
-              }}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span
+                id={`${id}-slots`}
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Brain slots
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Refresh Brain slots"
+                disabled={slotsLoading}
+                onClick={() => void refreshSlots()}
+              >
+                <ArrowClockwiseIcon
+                  className={slotsLoading ? "animate-spin" : undefined}
+                />
+              </Button>
+            </div>
+            <div
+              role="radiogroup"
+              aria-labelledby={`${id}-slots`}
+              className="grid gap-1"
             >
-              {Array.from({ length: 8 }, (_, index) => (
-                <NativeSelectOption key={index} value={index + 1}>
-                  Slot {index + 1}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
+              {Array.from({ length: BRAIN_SLOT_COUNT }, (_, index) => {
+                const number = index + 1
+                const reading = slots?.find((item) => item.slot === number)
+                const match = reading
+                  ? matchBrainSlot(reading, { programId, revision: currentSha })
+                  : null
+                const label = match ? slotMatchLabel[match] : null
+                const named =
+                  match !== null && match !== "empty" && Boolean(reading?.name)
+                const nameLine =
+                  match === "empty"
+                    ? "Empty"
+                    : reading
+                      ? (reading.name ?? "Unnamed program")
+                      : slotsLoading
+                        ? "Reading…"
+                        : "—"
+                return (
+                  <label
+                    key={number}
+                    className="flex items-center gap-2.5 rounded-lg border px-2.5 py-1.5 text-xs has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                  >
+                    <input
+                      type="radio"
+                      name={`${id}-slot`}
+                      value={number}
+                      className="size-3.5 accent-primary"
+                      checked={slot === number}
+                      disabled={busy}
+                      onChange={() => {
+                        setSlot(number)
+                        setSuccess(false)
+                      }}
+                    />
+                    <span className="w-12 shrink-0 font-medium tabular-nums">
+                      Slot {number}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span
+                        className={
+                          named ? "truncate" : "truncate text-muted-foreground"
+                        }
+                      >
+                        {nameLine}
+                      </span>
+                      {label && (
+                        <span
+                          className={
+                            match === "current"
+                              ? "text-success"
+                              : "text-muted-foreground"
+                          }
+                        >
+                          {label}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            {slotsError && (
+              <p role="alert" className="text-xs text-destructive">
+                {slotsError}
+              </p>
+            )}
+          </div>
           <label className="flex items-center gap-2 text-xs">
             <input
               type="checkbox"
