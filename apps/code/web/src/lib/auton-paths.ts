@@ -88,14 +88,18 @@ export function parseAutonPaths(
   for (const source of files.values()) {
     const code = clean(source)
     const declarations = [
-      ...code.matchAll(/\b(?:constexpr|const)\s+(?:\w+\s+)*?(\w+)\s*=\s*([^;]+);/g),
+      ...code.matchAll(
+        /\b(?:constexpr|const)\s+(?:\w+\s+)*?(\w+)\s*=\s*([^;]+);/g
+      ),
       ...code.matchAll(/^\s*#\s*define\s+(\w+)\s+([^\n]+)/gm),
     ]
     for (const match of declarations) {
       const value = number(match[2])
       constants.set(
         match[1],
-        constants.has(match[1]) && constants.get(match[1]) !== value ? null : value
+        constants.has(match[1]) && constants.get(match[1]) !== value
+          ? null
+          : value
       )
     }
   }
@@ -236,25 +240,28 @@ export function parseAutonPaths(
         y: number,
         heading: number,
         lead: number,
-        setback: number
+        setback: number,
+        reverse = false,
+        label = "drive_to_pose"
       ) {
         warnings.add(
-          "drive_to_pose is approximated with an instant heading response."
+          `${label} is approximated with an instant heading response.`
         )
         moved = true
         for (let step = 0; step < 400; step++) {
           const distance = Math.hypot(x - pose.x, y - pose.y)
           if (distance < 0.5) break
           const carrot = lead * distance + setback
-          const carrotX = x - Math.sin(toRadians(heading)) * carrot
-          const carrotY = y - Math.cos(toRadians(heading)) * carrot
+          const travelHeading = heading + (reverse ? 180 : 0)
+          const carrotX = x - Math.sin(toRadians(travelHeading)) * carrot
+          const carrotY = y - Math.cos(toRadians(travelHeading)) * carrot
           const aim = bearingTo(carrotX, carrotY)
           const travel = Math.min(2, distance)
           const angle = toRadians(aim)
           pose = {
             x: pose.x + Math.sin(angle) * travel,
             y: pose.y + Math.cos(angle) * travel,
-            heading: aim,
+            heading: aim + (reverse ? 180 : 0),
             interpolated: true,
           }
           points.push(pose)
@@ -270,20 +277,45 @@ export function parseAutonPaths(
           )
             resetPose(values[0]!, values[1]!, values[2]!)
           else warnings.add(`Cannot resolve ${name}.`)
-        } else if (name === "pid_drive_set" || name === "pid_odom_set") {
-          const targets = [...args.matchAll(/\{\s*([^{}]+)\}/g)]
+        } else if (
+          name === "pid_drive_set" ||
+          name === "pid_odom_set" ||
+          name === "pid_odom_boomerang_set" ||
+          name === "pid_odom_pure_pursuit_set"
+        ) {
+          const targets = [
+            ...args.matchAll(
+              /\{\s*\{\s*([^{}]+)\}\s*,\s*((?:ez::)?(?:fwd|rev))\b[^{}]*\}/g
+            ),
+          ]
           if (targets.length) {
             for (const target of targets) {
-              const coordinates = target[1].split(",").map(number)
+              const coordinates = target[1].split(",").map(resolveNumber)
               if (coordinates[0] === null || coordinates[1] == null) {
                 warnings.add("Some waypoint coordinates could not be resolved.")
                 continue
               }
               const x = coordinates[0],
                 y = coordinates[1]
-              moveTo(x, y, coordinates[2] ?? bearingTo(x, y))
+              const reverse = target[2].endsWith("rev")
+              if (coordinates.length > 2 && coordinates[2] == null) {
+                warnings.add("Some waypoint headings could not be resolved.")
+                continue
+              }
+              if (coordinates[2] != null)
+                boomerang(
+                  x,
+                  y,
+                  coordinates[2],
+                  0.5,
+                  0,
+                  reverse,
+                  "pid_odom_set pose"
+                )
+              else moveTo(x, y, bearingTo(x, y) + (reverse ? 180 : 0))
             }
-          } else if (values[0] !== null) driveAlong(values[0])
+          } else if (!args.includes("{") && values[0] !== null)
+            driveAlong(values[0])
           else warnings.add(`Cannot resolve ${name} distance.`)
         } else if (
           name === "pid_swing_set" ||
@@ -330,6 +362,16 @@ export function parseAutonPaths(
           name === "pid_turn_relative_set" ||
           name === "drive_angle_set"
         ) {
+          const point =
+            name === "pid_turn_set" &&
+            args.match(/^\s*\{\s*([^{}]+)\}\s*,\s*((?:ez::)?(?:fwd|rev))\b/)
+          if (point) {
+            const [x, y] = point[1].split(",").map(resolveNumber)
+            if (x == null || y == null)
+              warnings.add(`Cannot resolve ${name} point.`)
+            else turnTo(bearingTo(x, y) + (point[2].endsWith("rev") ? 180 : 0))
+            return
+          }
           const angle = values[0]
           if (angle === null) warnings.add(`Cannot resolve ${name} angle.`)
           else
@@ -432,7 +474,7 @@ export function parseAutonPaths(
             continue
           }
           if (!names.test(name)) continue
-          const values = args.split(",").map(number)
+          const values = args.split(",").map(resolveNumber)
           if (template === "jar") jarCall(name, args, values)
           else ezCall(name, args, values)
         }
