@@ -16,11 +16,15 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { Editor, type EditorFactory } from "@pierre/diffs/edit"
 import { EditProvider, File } from "@pierre/diffs/react"
 import { PierreCollaboration } from "@/lib/pierre-collaboration"
-import { source } from "@/lib/live-document"
+import { MAX_SOURCE_BYTES, source } from "@/lib/live-document"
 import { createLiveFileSession } from "@/lib/live-file-session"
 import type { LivePerson } from "@/lib/live-file-session"
 import { useEditorCompletion } from "./editor-completion"
 import { useLanguageService } from "./language-session"
+import {
+  replacementEdits,
+  type ReplacementAction,
+} from "@/lib/search-replacement"
 
 export type { LivePerson } from "@/lib/live-file-session"
 
@@ -39,6 +43,7 @@ type Props = {
   onChange: (text: string) => void
   onPeopleChange: (people: LivePerson[]) => void
   onSyncChange: (synced: boolean) => void
+  onReplacementAction: (path: string, action: ReplacementAction | null) => void
 }
 
 export function LiveFileEditor({
@@ -50,6 +55,7 @@ export function LiveFileEditor({
   onChange,
   onSyncChange,
   onPeopleChange,
+  onReplacementAction,
 }: Props) {
   const client = useConvex()
   const connection = useConvexConnectionState()
@@ -84,7 +90,10 @@ export function LiveFileEditor({
         onPeopleChange: (people) => callbacks.current.onPeopleChange(people),
         onStatus: setStatus,
         onError: setError,
-        onReplaced: () => host.current?.setAttribute("inert", ""),
+        onReplaced: () => {
+          onReplacementAction(path, null)
+          host.current?.setAttribute("inert", "")
+        },
         isFocused: () =>
           activeRef.current &&
           document.visibilityState === "visible" &&
@@ -187,6 +196,7 @@ export function LiveFileEditor({
             diagnosticTarget={active ? diagnosticTarget : undefined}
             path={path}
             programId={programId}
+            onReplacementAction={onReplacementAction}
           />
         )}
       </div>
@@ -200,13 +210,19 @@ function PierreFile({
   binding,
   path,
   programId,
+  onReplacementAction,
 }: {
   binding: PierreCollaboration
   onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   path: string
   programId: Id<"programs">
+  onReplacementAction: (path: string, action: ReplacementAction | null) => void
 }) {
+  useEffect(
+    () => () => onReplacementAction(path, null),
+    [path, onReplacementAction]
+  )
   const viewKey = `${programId}:file:${path}`
   const viewRestored = useRef(false)
   const saveView = () => {
@@ -293,6 +309,31 @@ function PierreFile({
             initialState: { type: "file", document: binding.document },
             onAttach: (editor) => {
               binding.attach(editor)
+              onReplacementAction(path, (matches, replacement) => {
+                const text = binding.document.getText()
+                const edits = replacementEdits(text, matches, replacement)
+                const nextSize =
+                  new TextEncoder().encode(text).byteLength +
+                  matches.reduce(
+                    (total, match) =>
+                      total +
+                      new TextEncoder().encode(replacement).byteLength -
+                      new TextEncoder().encode(
+                        match.text.slice(match.start, match.end)
+                      ).byteLength,
+                    0
+                  )
+                if (nextSize > MAX_SOURCE_BYTES)
+                  throw new Error(
+                    "The replacement exceeds the 256 KiB live editing limit."
+                  )
+                binding.undo.stopCapturing()
+                try {
+                  editor.applyEdits(edits)
+                } finally {
+                  binding.undo.stopCapturing()
+                }
+              })
               if (!viewRestored.current) {
                 const saved = readEditorState<FileView>(viewKey)
                 if (saved && Array.isArray(saved.selections)) {

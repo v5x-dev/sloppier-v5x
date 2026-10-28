@@ -45,6 +45,17 @@ async function opened() {
 }
 
 describe("workbench source", () => {
+  it("opens replacement files in the background and waits for their live editor", async () => {
+    const { source } = await opened()
+    const active = source.getSnapshot().activePath
+    const action = vi.fn()
+    const replacement = source.replaceMatches("include/robot.h", [], "wheel")
+    expect(source.getSnapshot().openPaths).toContain("include/robot.h")
+    expect(source.getSnapshot().activePath).toBe(active)
+    source.setReplacementAction("include/robot.h", action)
+    await replacement
+    expect(action).toHaveBeenCalledWith([], "wheel")
+  })
   it("notifies draft readers without rerendering the workbench on every keystroke", async () => {
     const { source } = await opened()
     const render = vi.fn(),

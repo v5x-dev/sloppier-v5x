@@ -5,6 +5,8 @@ import type { FunctionArgs, FunctionReturnType } from "convex/server"
 import { containsPath, type ExplorerUpdate } from "./explorer"
 import { errorMessage } from "./errors"
 import type { LivePerson } from "./live-file-session"
+import type { SearchMatch } from "@workspace/backend/search"
+import type { ReplacementAction } from "./search-replacement"
 
 type Action<TName extends keyof typeof api.codeStorage> = (
   args: FunctionArgs<(typeof api.codeStorage)[TName]>
@@ -60,6 +62,8 @@ export class WorkbenchSource {
   private operationBusy = false
   private initialOpen = false
   private pathRequest = 0
+  private replacementActions = new Map<string, ReplacementAction>()
+  private replacementListeners = new Set<() => void>()
   readonly scrollPositions = new Map<string, number>()
 
   constructor(
@@ -113,6 +117,62 @@ export class WorkbenchSource {
     if (this.drafts.get(path) === text) return
     this.drafts.set(path, text)
     this.sourceChanged()
+  }
+  setReplacementAction = (path: string, action: ReplacementAction | null) => {
+    if (action) this.replacementActions.set(path, action)
+    else this.replacementActions.delete(path)
+    for (const listener of this.replacementListeners) listener()
+  }
+
+  replaceMatches = async (
+    path: string,
+    matches: SearchMatch[],
+    replacement: string
+  ) => {
+    if (!this.state.paths?.includes(path))
+      throw new Error(`${path} no longer exists.`)
+    if (!this.state.openPaths.includes(path))
+      this.update({ openPaths: [...this.state.openPaths, path] })
+    void this.loadFile(path)
+    const action = await new Promise<ReplacementAction>((resolve, reject) => {
+      const finish = (error?: string, ready?: ReplacementAction) => {
+        clearTimeout(timer)
+        this.replacementListeners.delete(check)
+        unsubscribe()
+        if (error) reject(new Error(error))
+        else if (ready) resolve(ready)
+      }
+      const check = () => {
+        if (
+          !this.state.paths?.includes(path) ||
+          !this.state.openPaths.includes(path)
+        )
+          return finish(`${path} was closed or removed.`)
+        const ready = this.replacementActions.get(path)
+        if (ready) return finish(undefined, ready)
+        const error = this.state.readError[path]
+        if (error) return finish(error)
+        const file = this.state.loaded[path]
+        if (
+          file &&
+          (file.truncated ||
+            new TextEncoder().encode(file.contents).byteLength > 256 * 1024 ||
+            file.contents.includes("\0") ||
+            file.contents.includes("\ufffd"))
+        )
+          return finish(`${path} is read-only.`)
+      }
+      const unsubscribe = this.subscribe(check)
+      const timer = setTimeout(
+        () => finish(`Could not open ${path} for editing.`),
+        15000
+      )
+      this.replacementListeners.add(check)
+      check()
+    })
+    if (this.replacementActions.get(path) !== action)
+      throw new Error(`${path} was closed or replaced. Search again.`)
+    action(matches, replacement)
   }
   setSynced = (path: string, synced: boolean) => {
     if (this.state.paths && !this.state.paths.includes(path)) return

@@ -45,6 +45,8 @@ Search combines committed files with collaborative documents and local editor dr
 
 Search scope can be narrowed to source and header files, excluding bundled toolchain and library directories. The path field intersects that scope: `src/` searches a directory recursively, `*.cpp` matches filenames anywhere, and `src/**/*.cpp` matches nested paths. Both saved results and live drafts are filtered before applying the match limit.
 
+Enter replacement text and select the matches to change, then choose **Replace selected**. An empty replacement deletes the selected text. Matches are checked against the current live document before each file is changed; stale results stop the operation and report any files already changed. Replacement is unavailable while results are incomplete or truncated. Affected files open as tabs, and replacements are live edits that can be undone in each file and committed normally.
+
 Use Up/Down in the search field or result list to move the selected match into view, then Enter to open it. Arrow navigation from the search field keeps focus there so typing can continue. Changing the query or filters selects the first available result.
 
 ## Ownership and verification

@@ -8,6 +8,8 @@ import {
 import * as Y from "yjs"
 import { PierreCollaboration } from "../src/lib/pierre-collaboration"
 import { source } from "../src/lib/live-document"
+import { replacementEdits } from "../src/lib/search-replacement"
+import { searchText } from "@workspace/backend/search"
 
 const cleanup: Array<() => void> = []
 afterEach(() => {
@@ -66,6 +68,32 @@ function pair() {
 }
 
 describe("Pierre collaboration", () => {
+  test("search replacement syncs and local undo preserves a peer edit", () => {
+    const { a, b, alice, bob } = pair()
+    const edits = replacementEdits(
+      alice.document.getText(),
+      searchText(alice.document.getText(), "robot"),
+      "drive"
+    )
+    alice.binding.undo.stopCapturing()
+    alice.renderer.applyEdits(edits)
+    alice.binding.undo.stopCapturing()
+    Y.applyUpdate(b, Y.encodeStateAsUpdate(a), "remote")
+    expect(bob.document.getText()).toBe("drive 🤖\n")
+    bob.renderer.applyEdits([
+      {
+        range: {
+          start: { line: 1, character: 0 },
+          end: { line: 1, character: 0 },
+        },
+        newText: "peer ",
+      },
+    ])
+    Y.applyUpdate(a, Y.encodeStateAsUpdate(b), "remote")
+    alice.document.undo()
+    Y.applyUpdate(b, Y.encodeStateAsUpdate(a), "remote")
+    expect(bob.document.getText()).toBe("robot 🤖\npeer ")
+  })
   test("two editors converge and native undo hooks preserve the peer's changes", () => {
     const { a, b, alice, bob } = pair()
     alice.renderer.applyEdits([

@@ -629,6 +629,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                         loaded={loaded[path]}
                         scrollPositions={source.scrollPositions}
                         onChange={(text) => source.setDraft(path, text)}
+                        onReplacementAction={source.setReplacementAction}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -877,6 +878,7 @@ function FileEditor({
   onPeopleChange,
   scrollPositions,
   onChange,
+  onReplacementAction,
 }: {
   programId: Id<"programs">
   path: string
@@ -888,6 +890,7 @@ function FileEditor({
   onPeopleChange: (people: LivePerson[]) => void
   scrollPositions: Map<string, number>
   onChange: (text: string) => void
+  onReplacementAction: WorkbenchSource["setReplacementAction"]
 }) {
   const container = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -929,6 +932,7 @@ function FileEditor({
           onChange={onChange}
           onSyncChange={onSyncChange}
           onPeopleChange={onPeopleChange}
+          onReplacementAction={onReplacementAction}
         />
       )}
     </div>

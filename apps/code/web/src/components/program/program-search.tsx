@@ -126,7 +126,7 @@ export function ProgramSearch({
   revision?: string
   drafts: Pick<
     WorkbenchSource,
-    "getDrafts" | "subscribeDrafts" | "getDraftVersion"
+    "getDrafts" | "subscribeDrafts" | "getDraftVersion" | "replaceMatches"
   >
   onSelect: (path: string, line: number, column: number) => void
 }) {
@@ -135,8 +135,16 @@ export function ProgramSearch({
   const [sourceOnly, setSourceOnly] = useState(false)
   const [pathFilter, setPathFilter] = useState("")
   const [matchCase, setMatchCase] = useState(false)
+  const [replacement, setReplacement] = useState("")
+  const [replacing, setReplacing] = useState(false)
+  const [replaceMessage, setReplaceMessage] = useState<string | null>(null)
+  const [excluded, setExcluded] = useState<{ scope: string; keys: string[] }>({
+    scope: "",
+    keys: [],
+  })
   const [retry, setRetry] = useState(0)
   const [result, setResult] = useState<Results | null>(null)
+  const [resultKey, setResultKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const input = useRef<HTMLInputElement>(null)
@@ -157,6 +165,15 @@ export function ProgramSearch({
     open ? { programId } : "skip"
   )
   const liveRevision = JSON.stringify(documents)
+  const searchKey = JSON.stringify([
+    programId,
+    query,
+    matchCase,
+    sourceOnly,
+    pathFilter,
+    revision,
+    liveRevision,
+  ])
   // Drafts only matter while the panel is open, so typing elsewhere does not rerender it.
   const draftVersion = useSyncExternalStore(
     open ? drafts.subscribeDrafts : subscribeToNothing,
@@ -180,13 +197,17 @@ export function ProgramSearch({
   useEffect(() => {
     let cancelled = false
     setResult(null)
+    setResultKey(null)
     setError(null)
     setLoading(open && Boolean(query))
     if (!open || !query) return
     const timer = window.setTimeout(() => {
       void search({ programId, query, matchCase, sourceOnly, pathFilter })
         .then((value) => {
-          if (!cancelled) setResult(value)
+          if (!cancelled) {
+            setResult(value)
+            setResultKey(searchKey)
+          }
         })
         .catch((reason) => {
           if (!cancelled) setError(errorMessage(reason))
@@ -210,6 +231,7 @@ export function ProgramSearch({
     liveRevision,
     retry,
     search,
+    searchKey,
   ])
   const merged = useMemo(
     () =>
@@ -228,6 +250,48 @@ export function ProgramSearch({
   )
   const count = matches.length
   const scope = JSON.stringify([query, matchCase, sourceOnly, pathFilter])
+  const excludedKeys = new Set(excluded.scope === scope ? excluded.keys : [])
+  const selectedMatches = matches.filter(
+    (match) => !excludedKeys.has(match.key)
+  )
+  const canReplace = Boolean(
+    query &&
+    result &&
+    resultKey === searchKey &&
+    !loading &&
+    !error &&
+    !result.skipped &&
+    !result.truncated &&
+    !merged.truncated &&
+    selectedMatches.length &&
+    !replacing
+  )
+  async function replaceSelected() {
+    if (!canReplace) return
+    const groups = new Map<string, typeof selectedMatches>()
+    for (const match of selectedMatches)
+      groups.set(match.path, [...(groups.get(match.path) ?? []), match])
+    let applied = 0
+    setReplacing(true)
+    setReplaceMessage(null)
+    try {
+      for (const [path, items] of groups) {
+        await drafts.replaceMatches(path, items, replacement)
+        applied += items.length
+      }
+      setReplaceMessage(
+        `Replaced ${applied} ${applied === 1 ? "match" : "matches"}.`
+      )
+    } catch (failure) {
+      setReplaceMessage(
+        `${applied ? `Replaced ${applied} matches. ` : ""}${errorMessage(failure)}`
+      )
+    } finally {
+      setReplacing(false)
+      setExcluded({ scope: "", keys: [] })
+      setRetry((value) => value + 1)
+    }
+  }
   const selectedIndex =
     selection?.scope === scope
       ? matches.findIndex((match) => match.key === selection.key)
@@ -318,19 +382,12 @@ export function ProgramSearch({
               <Input
                 ref={input}
                 value={query}
+                disabled={replacing}
                 maxLength={200}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search for text…"
                 aria-label="Search text"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={count > 0}
                 aria-controls={resultsId}
-                aria-activedescendant={
-                  selected
-                    ? `${resultsId}-${matches.indexOf(selected)}`
-                    : undefined
-                }
                 aria-describedby={`${resultsId}-help`}
                 className="font-mono"
               />
@@ -339,6 +396,7 @@ export function ProgramSearch({
                 size="icon-sm"
                 aria-label="Match case"
                 aria-pressed={matchCase}
+                disabled={replacing}
                 onClick={() => setMatchCase((value) => !value)}
                 className="shrink-0 font-mono"
               >
@@ -357,6 +415,30 @@ export function ProgramSearch({
                 <XIcon />
               </SheetClose>
             </div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={replacement}
+                disabled={replacing}
+                onChange={(event) => setReplacement(event.target.value)}
+                placeholder="Replace with…"
+                aria-label="Replace with"
+                className="font-mono"
+              />
+              <Button
+                size="sm"
+                disabled={!canReplace}
+                onClick={() => void replaceSelected()}
+              >
+                {replacing
+                  ? "Replacing…"
+                  : `${replacement ? "Replace" : "Delete"} selected (${selectedMatches.length})`}
+              </Button>
+            </div>
+            {replaceMessage && (
+              <p role="status" className="text-xs text-muted-foreground">
+                {replaceMessage}
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               <div
                 role="group"
@@ -368,6 +450,7 @@ export function ProgramSearch({
                   variant={sourceOnly ? "ghost" : "secondary"}
                   aria-pressed={!sourceOnly}
                   onClick={() => setSourceOnly(false)}
+                  disabled={replacing}
                 >
                   All files
                 </Button>
@@ -376,6 +459,7 @@ export function ProgramSearch({
                   variant={sourceOnly ? "secondary" : "ghost"}
                   aria-pressed={sourceOnly}
                   onClick={() => setSourceOnly(true)}
+                  disabled={replacing}
                   title="Source and header files, excluding bundled libraries"
                 >
                   Source files
@@ -383,6 +467,7 @@ export function ProgramSearch({
               </div>
               <Input
                 value={pathFilter}
+                disabled={replacing}
                 onChange={(event) => setPathFilter(event.target.value)}
                 maxLength={200}
                 aria-label="Filter by path"
@@ -402,6 +487,26 @@ export function ProgramSearch({
                     ? "Search could not finish"
                     : `${count} ${count === 1 ? "match" : "matches"} in ${merged.files.length} ${merged.files.length === 1 ? "file" : "files"}`}
               </p>
+            )}
+            {count > 0 && (
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>Check the matches you want to replace.</span>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  disabled={replacing}
+                  onClick={() =>
+                    setExcluded({
+                      scope,
+                      keys: selectedMatches.length
+                        ? matches.map((match) => match.key)
+                        : [],
+                    })
+                  }
+                >
+                  {selectedMatches.length ? "Deselect all" : "Select all"}
+                </Button>
+              </div>
             )}
           </div>
           <p id={`${resultsId}-help`} className="sr-only">
@@ -434,7 +539,7 @@ export function ProgramSearch({
                 No matches. Try a different search.
               </p>
             )}
-            <div id={resultsId} role="listbox" aria-label="Search results">
+            <div id={resultsId} role="region" aria-label="Search results">
               {merged.files.map((file) => (
                 <section
                   key={file.path}
@@ -451,52 +556,84 @@ export function ProgramSearch({
                       {file.matches.length}
                     </span>
                   </h3>
-                  {file.matches.map((match) => (
-                    <button
-                      key={`${match.line}:${match.column}`}
-                      type="button"
-                      role="option"
-                      data-search-result=""
-                      id={`${resultsId}-${matches.findIndex((item) => item.path === file.path && item.line === match.line && item.column === match.column)}`}
-                      aria-selected={
-                        selected?.path === file.path &&
-                        selected.line === match.line &&
-                        selected.column === match.column
-                      }
-                      ref={(element) => {
-                        const key = JSON.stringify([
-                          file.path,
-                          match.line,
-                          match.column,
-                        ])
-                        if (element) resultButtons.current.set(key, element)
-                        else resultButtons.current.delete(key)
-                      }}
-                      onFocus={() =>
-                        setSelection({
-                          scope,
-                          key: JSON.stringify([
-                            file.path,
-                            match.line,
-                            match.column,
-                          ]),
-                        })
-                      }
-                      className="flex w-full items-baseline gap-3 rounded-md px-3 py-2 text-left font-mono text-xs hover:bg-accent focus-visible:bg-accent focus-visible:outline-ring aria-selected:bg-primary/10 aria-selected:ring-1 aria-selected:ring-primary/40 aria-selected:ring-inset"
-                      onClick={() =>
-                        openMatch({
-                          path: file.path,
-                          line: match.line,
-                          column: match.column,
-                        })
-                      }
-                    >
-                      <span className="w-8 shrink-0 text-right text-muted-foreground tabular-nums">
-                        {match.line}
-                      </span>
-                      <SearchSnippet path={file.path} match={match} />
-                    </button>
-                  ))}
+                  {file.matches.map((match) => {
+                    const key = JSON.stringify([
+                      file.path,
+                      match.line,
+                      match.column,
+                    ])
+                    return (
+                      <div key={key} className="flex items-start gap-1">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select match in ${file.path} at line ${match.line}, column ${match.column}`}
+                          checked={!excludedKeys.has(key)}
+                          disabled={replacing}
+                          onChange={(event) =>
+                            setExcluded({
+                              scope,
+                              keys: event.target.checked
+                                ? [...excludedKeys].filter(
+                                    (item) => item !== key
+                                  )
+                                : [...excludedKeys, key],
+                            })
+                          }
+                          className="mt-2.5 accent-primary"
+                        />
+                        <button
+                          type="button"
+                          data-search-result=""
+                          id={`${resultsId}-${matches.findIndex((item) => item.path === file.path && item.line === match.line && item.column === match.column)}`}
+                          data-selected={
+                            selected?.path === file.path &&
+                            selected.line === match.line &&
+                            selected.column === match.column
+                          }
+                          aria-current={
+                            selected?.path === file.path &&
+                            selected.line === match.line &&
+                            selected.column === match.column
+                              ? "true"
+                              : undefined
+                          }
+                          ref={(element) => {
+                            const buttonKey = JSON.stringify([
+                              file.path,
+                              match.line,
+                              match.column,
+                            ])
+                            if (element)
+                              resultButtons.current.set(buttonKey, element)
+                            else resultButtons.current.delete(buttonKey)
+                          }}
+                          onFocus={() =>
+                            setSelection({
+                              scope,
+                              key: JSON.stringify([
+                                file.path,
+                                match.line,
+                                match.column,
+                              ]),
+                            })
+                          }
+                          className="flex w-full items-baseline gap-3 rounded-md px-3 py-2 text-left font-mono text-xs hover:bg-accent focus-visible:bg-accent focus-visible:outline-ring data-[selected=true]:bg-primary/10 data-[selected=true]:ring-1 data-[selected=true]:ring-primary/40 data-[selected=true]:ring-inset"
+                          onClick={() =>
+                            openMatch({
+                              path: file.path,
+                              line: match.line,
+                              column: match.column,
+                            })
+                          }
+                        >
+                          <span className="w-8 shrink-0 text-right text-muted-foreground tabular-nums">
+                            {match.line}
+                          </span>
+                          <SearchSnippet path={file.path} match={match} />
+                        </button>
+                      </div>
+                    )
+                  })}
                 </section>
               ))}
             </div>
@@ -506,10 +643,10 @@ export function ProgramSearch({
             Boolean(result?.skipped)) && (
             <p className="border-t p-4 text-xs text-muted-foreground">
               {merged.truncated || result?.truncated
-                ? "Showing up to 300 matches. Narrow your search for more specific results. "
+                ? "Showing up to 300 matches. Narrow your search before replacing. "
                 : ""}
               {result?.skipped
-                ? `${result.skipped} live files could not be searched. Try again after syncing.`
+                ? `${result.skipped} live files could not be searched. Try again after syncing before replacing.`
                 : ""}
             </p>
           )}
