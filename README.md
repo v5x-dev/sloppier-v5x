@@ -82,7 +82,22 @@ PLAYWRIGHT_PROGRAM_ID=<program-id> PLAYWRIGHT_DEMO_USER=<demo-user> \
   bunx playwright test e2e/editor.spec.ts
 ```
 
-Stop the demo process afterward. This verifies signed Convex authentication and
+For interactive browser checks or a recording, use the same printed Alice URL
+with `agent-browser open` and exercise the controls normally. The script starts
+Vite on port 3001 and creates a disposable Program with a source commit. Before
+starting it, confirm that `packages/backend/.env.local` selects the intended
+dedicated `dev:` deployment, that its `CODE_DEMO_ISSUER` and `CODE_DEMO_JWKS`
+settings are empty, and that the web app points at that same deployment. The
+script overwrites those settings and clears them on exit; do not run concurrent
+demo sessions or use a shared deployment with another demo provider. Sync the
+current backend functions first with `bunx convex dev --once` from
+`packages/backend`, especially after backend changes. Wait for Vite's ready
+message and the Program to finish provisioning before opening history.
+
+Stop the demo process with Ctrl+C afterward and check that both demo settings
+were cleared. Its temporary credentials directory contains signed tokens; remove
+it after the session and never commit it. The demo workspace and Program remain
+on the development deployment. This verifies signed Convex authentication and
 membership, but does not test the WorkOS sign-in callback.
 
 ### Automated WorkOS sign-in

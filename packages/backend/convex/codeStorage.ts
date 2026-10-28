@@ -711,6 +711,51 @@ export const history = action({
   },
 })
 
+export const createCheckpoint = action({
+  args: { programId: v.id("programs"), sha: v.string(), name: v.string() },
+  handler: async (ctx, { programId, sha, name }): Promise<void> => {
+    const program = await requireAuthorizedProgram(ctx, programId)
+    validateHistorySha(sha)
+    const repo = storage().repo({
+      id: program.repositoryId,
+      defaultBranch: "main",
+    })
+    // Resolve metadata from the Program's history, never from the client.
+    let cursor: string | undefined
+    do {
+      const page = await repo.listCommits({
+        branch: "main",
+        cursor,
+        limit: 100,
+      })
+      const commit = page.commits.find((item) => item.sha === sha)
+      if (commit) {
+        const diff = await repo.getCommitDiff({ sha })
+        if (
+          ![...diff.files, ...diff.filteredFiles].some((file) =>
+            visibleHistoryPath(file.path)
+          )
+        )
+          throw new ConvexError("Choose a source commit for this checkpoint.")
+        await ctx.runMutation(internal.checkpoints.save, {
+          programId,
+          sha,
+          name,
+          message: commit.message,
+          author: commit.authorName,
+          date: commit.date.toISOString(),
+        })
+        return
+      }
+      if (!page.hasMore) break
+      if (!page.nextCursor || page.nextCursor === cursor)
+        throw new ConvexError("Could not search Program history.")
+      cursor = page.nextCursor
+    } while (cursor)
+    throw new ConvexError("Commit not found in Program history.")
+  },
+})
+
 export const historyFiles = action({
   args: { programId: v.id("programs"), sha: v.string() },
   handler: async (ctx, { programId, sha }) => {

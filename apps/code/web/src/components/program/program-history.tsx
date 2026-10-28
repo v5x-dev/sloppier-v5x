@@ -1,7 +1,7 @@
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { format, formatDistanceToNow } from "date-fns"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useAction } from "convex/react"
+import { useAction, useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import type { FunctionReturnType } from "convex/server"
@@ -44,6 +44,11 @@ export function ProgramHistory({
   canRestore: boolean
   onRestore: (sha: string) => Promise<string | null>
 }) {
+  const checkpoints = useQuery(api.checkpoints.list, { programId })
+  const createCheckpoint = useAction(api.codeStorage.createCheckpoint)
+  const removeCheckpoint = useMutation(api.checkpoints.remove)
+  const [checkpointName, setCheckpointName] = useState("")
+  const [checkpointBusy, setCheckpointBusy] = useState(false)
   const history = useAction(api.codeStorage.history)
   const historyFiles = useAction(api.codeStorage.historyFiles)
   const historyDiff = useAction(api.codeStorage.historyDiff)
@@ -169,6 +174,31 @@ export function ProgramHistory({
       if (generation.current === request) setLoading(false)
     }
   }
+  async function saveCheckpoint() {
+    if (!commit || checkpointBusy) return
+    setCheckpointBusy(true)
+    setDetailError(null)
+    try {
+      await createCheckpoint({
+        programId,
+        sha: commit.sha,
+        name: checkpointName,
+      })
+      setCheckpointName("")
+      setResult("Checkpoint saved.")
+    } catch (err) {
+      setDetailError(errorMessage(err))
+    } finally {
+      setCheckpointBusy(false)
+    }
+  }
+  async function removeSavedCheckpoint(checkpointId: Id<"programCheckpoints">) {
+    try {
+      await removeCheckpoint({ checkpointId })
+    } catch (err) {
+      setError(errorMessage(err))
+    }
+  }
   async function restore() {
     if (!commit || !canRestore || restoreBusy.current) return
     restoreBusy.current = true
@@ -279,6 +309,45 @@ export function ProgramHistory({
                 No source commits on this page.
                 {page.hasMore ? " Load more to look further back." : ""}
               </p>
+            )}
+            {!!checkpoints?.length && (
+              <section
+                className="border-b"
+                aria-label="Competition checkpoints"
+              >
+                <h3 className="px-3 pt-3 text-xs font-semibold text-muted-foreground">
+                  Checkpoints
+                </h3>
+                <ul>
+                  {checkpoints.map((item) => (
+                    <li
+                      key={item._id}
+                      className="flex items-center gap-1 px-3 py-1"
+                    >
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 rounded py-2 text-left hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => openCommit(item)}
+                      >
+                        <span className="block truncate text-sm">
+                          {item.name}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {item.message} · {item.sha.slice(0, 7)}
+                        </span>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        aria-label={`Remove checkpoint ${item.name}`}
+                        onClick={() => void removeSavedCheckpoint(item._id)}
+                      >
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
             <ul className="divide-y">
               {page?.commits.map((item) => (
@@ -419,6 +488,33 @@ export function ProgramHistory({
               </div>
             </div>
             <div className="space-y-2 border-t p-3">
+              <form
+                className="flex gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void saveCheckpoint()
+                }}
+              >
+                <label className="sr-only" htmlFor="checkpoint-name">
+                  Checkpoint name
+                </label>
+                <input
+                  id="checkpoint-name"
+                  className="min-w-0 flex-1 rounded-md border bg-background px-2 text-sm"
+                  placeholder="Checkpoint name, e.g. Skills run"
+                  maxLength={80}
+                  value={checkpointName}
+                  onChange={(event) => setCheckpointName(event.target.value)}
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="outline"
+                  disabled={!checkpointName.trim() || checkpointBusy}
+                >
+                  Save checkpoint
+                </Button>
+              </form>
               {result && (
                 <p role="status" className="text-xs text-muted-foreground">
                   {result}
