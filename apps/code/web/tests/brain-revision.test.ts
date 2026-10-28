@@ -37,3 +37,24 @@ test("fake Brain only skips an upload when slot, revision and installed binary m
   files.get("slot_1.bin").linkedVendor = 24
   expect(await isInstalled(brain, 1, "program", "revision")).toBe(false)
 })
+
+test("a record that is valid JSON but not an object is not installed", async () => {
+  const files = new Map<string, any>([
+    ["slot_1.bin", { size: 12, crc: 42, linkedVendor: null }],
+    [
+      "v5x_1.dat",
+      {
+        data: new TextEncoder().encode("null"),
+        size: 4,
+        crc: 1,
+        linkedVendor: null,
+      },
+    ],
+  ])
+  const brain = {
+    type: "serial",
+    files,
+    request: async (command: any) => files.get(command.name) ?? null,
+  } as unknown as Connection
+  expect(await isInstalled(brain, 1, "program", "revision")).toBe(false)
+})
