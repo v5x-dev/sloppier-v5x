@@ -7,6 +7,7 @@ import {
 
 import appCss from "@workspace/ui/globals.css?url"
 import tokenCss from "@workspace/tokens/code/web.css?url"
+import noiseCss from "../noise.css?url"
 import { AppProviders } from "@/components/app/app-providers"
 
 export const Route = createRootRoute({
@@ -40,6 +41,10 @@ export const Route = createRootRoute({
       {
         rel: "stylesheet",
         href: tokenCss,
+      },
+      {
+        rel: "stylesheet",
+        href: noiseCss,
       },
     ],
   }),
