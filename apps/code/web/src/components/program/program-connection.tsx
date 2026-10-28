@@ -7,7 +7,7 @@ import {
   useRef,
   type ReactNode,
 } from "react"
-import { useAction, useMutation, useQuery } from "convex/react"
+import { useAction, useMutation, useQuery, useConvex } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { errorMessage } from "@/lib/errors"
@@ -44,7 +44,9 @@ export function ProgramConnection({
   children: ReactNode
 }) {
   const connect = useAction(api.buildConnection.connect)
-  const heartbeat = useMutation(api.builds.heartbeat)
+  const start = useMutation(api.builds.start)
+  const convex = useConvex()
+  const starting = useRef<Promise<Connection> | null>(null)
   // Convex carries lifecycle state only. Build output never enters this query.
   const machine = useQuery(api.builds.status, { programId })
   const [connection, setConnection] = useState<Connection | null>(null)
@@ -53,61 +55,9 @@ export function ProgramConnection({
   const [status, setStatus] = useState<Status | null>(null)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
-    const sessionId = crypto.randomUUID()
-    let disposed = false
-    const isDisposed = () => disposed
-    let queue = Promise.resolve()
-    const beat = () => {
-      queue = queue.then(async () => {
-        if (disposed) return
-        try {
-          const direct = connectionRef.current
-          if (direct) {
-            const response = await fetch(`${direct.baseUrl}/presence`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${direct.token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ sessionId }),
-              signal: AbortSignal.timeout(10_000),
-            })
-            if (!response.ok)
-              throw new Error(`Presence request failed (${response.status}).`)
-          } else await heartbeat({ programId, sessionId })
-        } catch (err) {
-          if (!isDisposed()) setError(errorMessage(err))
-        }
-      })
-    }
-    beat()
-    const timer = setInterval(beat, 10_000)
-    return () => {
-      disposed = true
-      clearInterval(timer)
-      void queue
-        .then(async () => {
-          const direct = connectionRef.current
-          if (direct)
-            await fetch(`${direct.baseUrl}/presence`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${direct.token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ sessionId, leave: true }),
-              keepalive: true,
-              signal: AbortSignal.timeout(10_000),
-            }).catch(() => {})
-          await heartbeat({ programId, sessionId, leave: true })
-        })
-        .catch(() => {})
-    }
-  }, [heartbeat, programId])
-  useEffect(() => {
     if (machine?.status !== "ready") {
+      connectionRef.current = null
       setConnection(null)
-      setStatus(null)
       return
     }
     let disposed = false
@@ -137,11 +87,35 @@ export function ProgramConnection({
   }, [connect, programId, machine?.machineId, machine?.status])
   const request = useCallback(
     async (path: string, body?: unknown, signal?: AbortSignal) => {
-      if (!connection) throw new Error("Builder is connecting.")
-      const response = await fetch(`${connection.baseUrl}${path}`, {
+      signal?.throwIfAborted()
+      let direct = connectionRef.current
+      if (!direct) {
+        if (!starting.current)
+          starting.current = (async () => {
+            await start({ programId })
+            const deadline = Date.now() + 90_000
+            while (Date.now() < deadline) {
+              const state = await convex.query(api.builds.status, { programId })
+              if (state?.status === "error") throw new Error(state.logs)
+              if (state?.status === "ready") {
+                const result = await connect({ programId })
+                connectionRef.current = result
+                setConnection(result)
+                return result
+              }
+              await new Promise((resolve) => setTimeout(resolve, 500))
+            }
+            throw new Error("Builder startup timed out.")
+          })().finally(() => {
+            starting.current = null
+          })
+        direct = await starting.current
+      }
+      signal?.throwIfAborted()
+      const response = await fetch(`${direct.baseUrl}${path}`, {
         method: body === undefined ? "GET" : "POST",
         headers: {
-          Authorization: `Bearer ${connection.token}`,
+          Authorization: `Bearer ${direct.token}`,
           ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -153,25 +127,26 @@ export function ProgramConnection({
         throw new Error(`Builder request failed (${response.status}).`)
       return response
     },
-    [connection]
+    [connect, convex, programId, start]
   )
   useEffect(() => {
     if (!connection) return
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
+    const isAborted = () => controller.signal.aborted
     const poll = async () => {
+      if (!connectionRef.current || isAborted()) return
       try {
         const response = await request("/status", undefined, controller.signal)
         const next = (await response.json()) as Status
-        if (!controller.signal.aborted) {
+        if (!isAborted()) {
           setStatus(next)
           setError(null)
         }
       } catch (err) {
-        if (!controller.signal.aborted) setError(errorMessage(err))
+        if (!isAborted()) setError(errorMessage(err))
       } finally {
-        if (!controller.signal.aborted)
-          timer = setTimeout(() => void poll(), 500)
+        if (!isAborted()) timer = setTimeout(() => void poll(), 500)
       }
     }
     void poll()

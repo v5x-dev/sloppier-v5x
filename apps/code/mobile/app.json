@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "code (by v5x)",
+    "slug": "v5x-code",
+    "scheme": "v5x-code",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "react-native-ble-plx",
+        {
+          "bluetoothAlwaysPermission": "Allow v5x Code to connect to your Brain over Bluetooth."
+        }
+      ],
+      "expo-web-browser",
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.v5x.code",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.v5x.code",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

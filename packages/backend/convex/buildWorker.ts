@@ -38,6 +38,72 @@ export const reconcile = internalAction({
     let machineId = state.machine.machineId
     let again = true
     try {
+      if (state.machine.expiresAt) {
+        if (
+          Date.now() >= state.machine.expiresAt ||
+          state.machine.status === "error"
+        ) {
+          if (machineId)
+            await cloud(
+              `/machines/${encodeURIComponent(machineId)}`,
+              undefined,
+              "DELETE"
+            )
+          await ctx.runMutation(internal.builds.retire, args)
+          again = false
+          return
+        }
+        if (machineId && state.machine.status === "ready") {
+          const result = await cloud<{ stdout?: string; exitCode?: number }>(
+            `/machines/${encodeURIComponent(machineId)}/exec?output=text`,
+            {
+              command: [
+                "python3",
+                "-c",
+                "import urllib.request,json,hashlib; s=json.load(urllib.request.urlopen('http://127.0.0.1:8080/status',timeout=5)); print(json.dumps({'building':s['building'],'completed':not s['building'] and s['logs'].startswith('Building commit '),'key':hashlib.sha256((str(s['artifactId'])+s['logs']).encode()).hexdigest()}))",
+              ],
+              timeoutSeconds: 10,
+            }
+          )
+          if (result.exitCode !== 0 || !result.stdout)
+            throw new Error("Builder status unavailable.")
+          const status = JSON.parse(result.stdout)
+          await ctx.runMutation(internal.builds.update, {
+            ...args,
+            expectedMachineId: machineId,
+            building: Boolean(status.building),
+          })
+          const completionKey = status.key as string
+          if (status.building)
+            await ctx.runMutation(internal.builds.completed, {
+              ...args,
+              machineId,
+              building: true,
+            })
+          if (
+            !status.building &&
+            state.machine.completedKey === completionKey &&
+            state.machine.completedAt &&
+            Date.now() >= state.machine.completedAt + 30_000
+          ) {
+            await cloud(
+              `/machines/${encodeURIComponent(machineId)}`,
+              undefined,
+              "DELETE"
+            )
+            await ctx.runMutation(internal.builds.retire, args)
+            again = false
+            return
+          }
+          if (status.completed)
+            await ctx.runMutation(internal.builds.completed, {
+              ...args,
+              machineId,
+              key: completionKey,
+            })
+          return
+        }
+      }
       for (const session of state.sessions) {
         if (session.expiresAt <= Date.now())
           await ctx.runMutation(internal.builds.expireSession, {
@@ -47,7 +113,7 @@ export const reconcile = internalAction({
       const hasJoiningViewers = state.sessions.some(
         (s) => s.expiresAt > Date.now()
       )
-      if (!hasJoiningViewers) {
+      if (!state.machine.expiresAt && !hasJoiningViewers) {
         let viewers = 0
         if (machineId) {
           const health = await cloud<{ stdout?: string; exitCode?: number }>(
@@ -103,8 +169,7 @@ export const reconcile = internalAction({
             timeoutSeconds: 10,
           }
         )
-        if (health.exitCode !== 0)
-          throw new Error("Builder failed to start.")
+        if (health.exitCode !== 0) throw new Error("Builder failed to start.")
         await ctx.runMutation(internal.builds.update, {
           ...args,
           status: "ready",
@@ -182,8 +247,7 @@ export const reconcile = internalAction({
       }
       if (machine.state === "stopped")
         await cloud(`/machines/${encodeURIComponent(machineId)}/start`, {})
-      if (machine.state === "error")
-        throw new Error("Builder failed to start.")
+      if (machine.state === "error") throw new Error("Builder failed to start.")
       if (machine.ready) {
         // Keep occupied machines alive and sample only build lifecycle metadata.
         const health = await cloud<{ stdout?: string; exitCode?: number }>(

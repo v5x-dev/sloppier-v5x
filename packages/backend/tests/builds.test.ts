@@ -338,3 +338,60 @@ test("direct viewer heartbeats keep the machine alive after Convex join sessions
     vi.unstubAllEnvs()
   }
 })
+
+test("ephemeral requests authorize and share one bounded checkpoint restore without viewers", async () => {
+  const { t, programId, alice, bob } = await setup()
+  vi.stubEnv("SMOL_CLOUD_TOKEN", "test-token")
+  vi.stubEnv("SMOL_BUILD_CHECKPOINT", "startup-checkpoint")
+  const calls: string[] = []
+  let logs = "Builder ready"
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init: RequestInit) => {
+      calls.push(`${init.method} ${url}`)
+      if (init.method === "DELETE") return new Response(null, { status: 204 })
+      if (url.includes("/restore"))
+        return Response.json({ id: "ephemeral-machine" })
+      return Response.json({
+        exitCode: 0,
+        stdout: JSON.stringify({
+          building: false,
+          completed: logs.startsWith("Building commit "),
+          key: logs,
+        }),
+      })
+    })
+  )
+  try {
+    await expect(
+      t
+        .withIdentity({ subject: "outsider" })
+        .mutation(api.builds.start, { programId })
+    ).rejects.toThrow("access")
+    expect(calls).toHaveLength(0)
+    await alice.mutation(api.builds.start, { programId })
+    await bob.mutation(api.builds.start, { programId })
+    await t.action(internal.buildWorker.reconcile, { programId })
+    expect(calls.filter((c) => c.includes("/restore"))).toHaveLength(1)
+    expect(await alice.query(api.builds.status, { programId })).toMatchObject({
+      status: "ready",
+      machineId: "ephemeral-machine",
+    })
+    logs = "Building commit abc\nBuild succeeded."
+    await t.action(internal.buildWorker.reconcile, { programId })
+    expect(calls.some((c) => c.startsWith("DELETE"))).toBe(false)
+    vi.setSystemTime(Date.now() + 31_000)
+    await t.action(internal.buildWorker.reconcile, { programId })
+    expect(calls.at(-1)).toContain("DELETE")
+    expect(await alice.query(api.builds.status, { programId })).toBeNull()
+    await alice.mutation(api.builds.start, { programId })
+    await t.action(internal.buildWorker.reconcile, { programId })
+    expect(calls.filter((c) => c.includes("/restore"))).toHaveLength(2)
+    vi.setSystemTime(Date.now() + 361_000)
+    await t.action(internal.buildWorker.reconcile, { programId })
+    expect(await alice.query(api.builds.status, { programId })).toBeNull()
+  } finally {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  }
+})

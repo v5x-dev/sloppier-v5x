@@ -145,7 +145,7 @@ export const retire = internalMutation({
       .query("programSessions")
       .withIndex("by_program_session", (q) => q.eq("programId", args.programId))
       .collect()
-    if (sessions.some((s) => s.expiresAt > Date.now())) {
+    if (!m.expiresAt && sessions.some((s) => s.expiresAt > Date.now())) {
       await ctx.db.patch(m._id, {
         machineId: undefined,
         status: "starting",
@@ -179,5 +179,57 @@ export const refreshImage = internalMutation({
       ...(args.deleted ? { machineId: undefined } : {}),
     })
     return true
+  },
+})
+
+// Additive lifecycle for new clients. Older clients retain the viewer contract.
+export const start = mutation({
+  args: programArgs,
+  handler: async (ctx, args) => {
+    const { program } = await requireProgramMembership(ctx, args.programId)
+    if (program.repositoryStatus !== "ready")
+      throw new ConvexError("Repository is not ready.")
+    const machine = await ctx.db
+      .query("buildMachines")
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
+      .unique()
+    if (machine && machine.status !== "error") return
+    if (machine?.machineId)
+      throw new ConvexError(
+        "Builder cleanup is still in progress. Try again shortly."
+      )
+    const fields = {
+      status: "starting",
+      logs: "Starting Builder…",
+      building: false,
+      expiresAt: Date.now() + 360_000,
+      completedAt: undefined,
+    }
+    if (machine) await ctx.db.patch(machine._id, fields)
+    else await ctx.db.insert("buildMachines", { ...args, ...fields })
+    await ctx.scheduler.runAfter(0, internal.buildWorker.reconcile, args)
+  },
+})
+export const completed = internalMutation({
+  args: {
+    ...programArgs,
+    machineId: v.string(),
+    building: v.optional(v.boolean()),
+    key: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const machine = await ctx.db
+      .query("buildMachines")
+      .withIndex("by_program", (q) => q.eq("programId", args.programId))
+      .unique()
+    if (machine?.machineId === args.machineId && machine.expiresAt) {
+      if (args.building)
+        await ctx.db.patch(machine._id, { completedAt: undefined })
+      else if (!machine.completedAt || machine.completedKey !== args.key)
+        await ctx.db.patch(machine._id, {
+          completedAt: Date.now(),
+          completedKey: args.key,
+        })
+    }
   },
 })

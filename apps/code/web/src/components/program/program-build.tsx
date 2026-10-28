@@ -60,6 +60,7 @@ export function ProgramBuild({
   } | null>(null)
   const {
     status: state,
+    machineStatus,
     ready,
     error: presenceError,
     request,
@@ -138,7 +139,7 @@ export function ProgramBuild({
     }
   }
   function buildOrOpen() {
-    if (building || !ready) setOpen(true)
+    if (building) setOpen(true)
     else void build()
   }
   const buildFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
@@ -152,7 +153,7 @@ export function ProgramBuild({
     )
       return
     event.preventDefault()
-    if (building || !ready) return
+    if (building) return
     void build(false)
   })
   useEffect(() => {
@@ -230,7 +231,7 @@ export function ProgramBuild({
                         </span>
                       )}
                     </>
-                  ) : !ready ? (
+                  ) : !ready && machineStatus === "starting" ? (
                     <>
                       <span>Connecting to the build service…</span>
                       {connectingSeconds !== null && (
@@ -258,7 +259,7 @@ export function ProgramBuild({
               size="sm"
               className="shrink-0"
               variant="outline"
-              disabled={!ready || building}
+              disabled={building}
               onClick={() => void build()}
             >
               <HammerIcon />

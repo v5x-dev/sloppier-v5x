@@ -27,7 +27,7 @@ export function MachineStatus() {
         ? "Builder: connected"
         : machineStatus === "starting"
           ? "Builder: starting"
-          : "Builder: connecting"
+          : "Builder: idle"
 
   return (
     <div className="ml-auto flex items-center">

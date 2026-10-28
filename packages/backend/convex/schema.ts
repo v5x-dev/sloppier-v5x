@@ -15,6 +15,9 @@ export default defineSchema({
     logs: v.string(),
     building: v.boolean(),
     artifactId: v.optional(v.id("_storage")),
+    expiresAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    completedKey: v.optional(v.string()),
   }).index("by_program", ["programId"]),
   workspaces: defineTable({
     name: v.string(),
