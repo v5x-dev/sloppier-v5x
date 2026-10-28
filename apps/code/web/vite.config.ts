@@ -8,7 +8,12 @@ import tailwindcss from "@tailwindcss/vite"
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({
+      viteEnvironment: { name: "ssr" },
+      ...(process.env.CODE_PR_PREVIEW === "1"
+        ? { configPath: "wrangler.preview.jsonc" }
+        : {}),
+    }),
     devtools(),
     tailwindcss(),
     tanstackStart(),

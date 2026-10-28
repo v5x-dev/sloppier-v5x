@@ -44,6 +44,57 @@ fails after Convex succeeds, the new backend remains deployed; fix the failure
 and rerun the release. Require the workflow's `deploy` status check in the
 repository's `main` branch rules to prevent merging failing pull requests.
 
+## Code web PR previews
+
+The [preview workflow](../../.github/workflows/code-pr-preview.yml) deploys
+same-repository pull requests targeting `main` to
+`https://pr-<number>.code-preview.v5x.dev`. Each PR uses a separate Cloudflare
+Worker and a Convex preview deployment named `code-pr-<number>`. GitHub shows
+the URL as a deployment on the PR. New commits update the same deployment and
+retain its data while it exists. Closing a PR deletes its Worker; Convex
+automatically expires its preview deployment (currently five days on Free and
+Starter, 14 days on Professional and higher). An expired deployment is created
+again on the next push, with an empty database. Fork PRs do not receive secrets
+or previews. Only allow trusted contributors to push branches in this repository:
+PR code runs with access to preview credentials.
+
+Before enabling the workflow, configure:
+
+- GitHub repository secret `CONVEX_PREVIEW_DEPLOY_KEY`: a **project preview**
+  deploy key, never a production or development key. See [Convex preview
+  deployments](https://docs.convex.dev/production/hosting/preview-deployments).
+- GitHub repository secret `CLOUDFLARE_PREVIEW_API_TOKEN`: a token able to
+  deploy and delete Workers and manage their custom domains in the account and
+  `v5x.dev` zone. Use a dedicated token with the narrowest available scope.
+- GitHub repository variables `CLOUDFLARE_ACCOUNT_ID`, `VITE_CONVEX_URL`
+  (the production URL, used only as a safety check), and
+  `PREVIEW_WORKOS_CLIENT_ID` (from a separate WorkOS test environment).
+- Cloudflare DNS and the zone must support Worker custom domains under
+  `code-preview.v5x.dev`. The preview Worker configuration has no production
+  route and is built separately from production.
+- Configure Convex project default environment variables for **preview**
+  deployments, including `WORKOS_CLIENT_ID` matching
+  `PREVIEW_WORKOS_CLIENT_ID`. Preview deployments start with these defaults;
+  changing defaults does not necessarily update existing deployments. Use
+  separate test credentials for `PIERRE_ORG` and `PIERRE_PRIVATE_KEY` to enable
+  Programs, and configure the other variables in the table below only when
+  their features are needed. Do not use production accounts, keys, or data.
+- Register `https://pr-<number>.code-preview.v5x.dev/callback` in the test
+  WorkOS application's allowed redirect URIs for each PR, unless the WorkOS
+  configuration explicitly supports the chosen preview domain pattern. Confirm
+  WorkOS logout/return URL settings for the preview domain too. Until this is
+  configured, the Worker can deploy but sign-in will fail. The workflow does
+  not change WorkOS settings.
+
+Builder is unavailable unless its separate preview Convex environment is
+configured with dedicated Builder credentials and limits; see
+[Building programs](../../docs/building-programs.md). Email invitations also
+need test-only email settings and a preview-specific `APP_URL`; a shared default
+`APP_URL` cannot point to every PR. Verify sign-in, authenticated Convex access,
+reload, Program creation, and any enabled integrations on a real preview before
+relying on it. Deployments require external account configuration; a successful
+local build alone does not establish that a preview is working.
+
 ## Program and repository lifecycle
 
 The Convex table and relationship fields use `programs` and `programId`. An

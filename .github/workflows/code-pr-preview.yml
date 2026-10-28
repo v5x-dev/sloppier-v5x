@@ -1,0 +1,106 @@
+name: Code PR preview
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: code-pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: code-pr-${{ github.event.pull_request.number }}
+      url: https://pr-${{ github.event.pull_request.number }}.code-preview.v5x.dev
+    env:
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_DEPLOY_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      VITE_WORKOS_CLIENT_ID: ${{ vars.PREVIEW_WORKOS_CLIENT_ID }}
+      PRODUCTION_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+      CODE_PR_PREVIEW: '1'
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - name: Validate preview settings
+        shell: bash
+        run: |
+          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_PREVIEW_API_TOKEN}"
+          : "${CLOUDFLARE_ACCOUNT_ID:?Missing CLOUDFLARE_ACCOUNT_ID}"
+          : "${VITE_WORKOS_CLIENT_ID:?Missing PREVIEW_WORKOS_CLIENT_ID}"
+          : "${PRODUCTION_CONVEX_URL:?Missing VITE_CONVEX_URL}"
+          case "$CONVEX_DEPLOY_KEY" in
+            preview:*:*) ;;
+            *) echo "CONVEX_PREVIEW_DEPLOY_KEY must be a project preview deploy key" >&2; exit 1 ;;
+          esac
+      - name: Deploy isolated Convex backend
+        working-directory: packages/backend
+        run: |
+          bunx convex deploy --preview-name "code-pr-${PR_NUMBER}" --typecheck enable --codegen disable \
+            --cmd-url-env-var-name PREVIEW_CONVEX_URL \
+            --cmd 'if [ "$PREVIEW_CONVEX_URL" = "$PRODUCTION_CONVEX_URL" ]; then echo "Preview must not use production Convex" >&2; exit 1; fi; printf "VITE_CONVEX_URL=%s\n" "$PREVIEW_CONVEX_URL" >> "$GITHUB_ENV"'
+      - name: Build preview Worker
+        working-directory: apps/code/web
+        run: bun run build
+      - name: Deploy preview Worker
+        working-directory: apps/code/web
+        run: |
+          bunx wrangler deploy --config dist/server/wrangler.json --keep-vars \
+            --name "code-v5x-pr-${PR_NUMBER}" \
+            --domain "pr-${PR_NUMBER}.code-preview.v5x.dev" \
+            --var "VITE_CONVEX_URL:${VITE_CONVEX_URL}" \
+            --var "VITE_WORKOS_CLIENT_ID:${VITE_WORKOS_CLIENT_ID}"
+      - name: Show preview details
+        env:
+          PREVIEW_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          printf 'Preview: https://pr-%s.code-preview.v5x.dev\nCommit: %s\nConvex: %s\n' "$PR_NUMBER" "$PREVIEW_SHA" "$VITE_CONVEX_URL" >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - name: Delete preview Worker if it exists
+        working-directory: apps/code/web
+        run: |
+          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_PREVIEW_API_TOKEN}"
+          : "${CLOUDFLARE_ACCOUNT_ID:?Missing CLOUDFLARE_ACCOUNT_ID}"
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/code-v5x-pr-${PR_NUMBER}")
+          if [ "$status" = 404 ]; then exit 0; fi
+          if [ "$status" != 200 ]; then echo "Cloudflare Worker lookup failed: HTTP $status" >&2; exit 1; fi
+          bunx wrangler delete "code-v5x-pr-${PR_NUMBER}" --config wrangler.preview.jsonc --force
