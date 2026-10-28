@@ -68,11 +68,6 @@ jobs:
             --domain "pr-${PR_NUMBER}.code-preview.v5x.dev" \
             --var "VITE_CONVEX_URL:${VITE_CONVEX_URL}" \
             --var "VITE_WORKOS_CLIENT_ID:${VITE_WORKOS_CLIENT_ID}"
-      - name: Diagnose preview DNS record
-        shell: bash
-        run: |
-          response=$(curl --silent --show-error -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" "https://api.cloudflare.com/client/v4/zones/f9d319f216e53f701eabc7ff1e441e8f/dns_records?name=pr-${PR_NUMBER}.code-preview.v5x.dev")
-          RESPONSE="$response" node -e 'const r=JSON.parse(process.env.RESPONSE); console.log(JSON.stringify({success:r.success, errors:r.errors, records:r.result?.map(({type,name,proxied})=>({type,name,proxied}))}))'
       - name: Show preview details
         env:
           PREVIEW_SHA: ${{ github.event.pull_request.head.sha }}
