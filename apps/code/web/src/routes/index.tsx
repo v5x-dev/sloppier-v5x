@@ -290,7 +290,15 @@ function AppHeader({
               />
             }
           >
-            <BuildingsIcon data-icon="inline-start" />
+            {workspace?.icon ? (
+              <img
+                src={workspace.icon}
+                alt=""
+                className="size-4 rounded-sm object-cover"
+              />
+            ) : (
+              <BuildingsIcon data-icon="inline-start" />
+            )}
             <span className="truncate">{workspace?.name ?? "Workspace"}</span>
             <CaretUpDownIcon
               data-icon="inline-end"
@@ -311,6 +319,13 @@ function AppHeader({
               >
                 {workspaces.map((entry) => (
                   <DropdownMenuRadioItem key={entry._id} value={entry._id}>
+                    {entry.icon && (
+                      <img
+                        src={entry.icon}
+                        alt=""
+                        className="size-4 shrink-0 rounded-sm object-cover"
+                      />
+                    )}
                     <span className="truncate">{entry.name}</span>
                   </DropdownMenuRadioItem>
                 ))}

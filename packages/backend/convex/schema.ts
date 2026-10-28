@@ -21,6 +21,7 @@ export default defineSchema({
   }).index("by_program", ["programId"]),
   workspaces: defineTable({
     name: v.string(),
+    icon: v.optional(v.string()),
     ownerId: v.string(),
     createdAt: v.number(),
   }).index("by_owner", ["ownerId"]),

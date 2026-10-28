@@ -10,6 +10,10 @@ manage invitations, change other members' roles, and remove members. The owner
 cannot be removed or demoted. Admins cannot change their own access; another
 admin must do it.
 
+Admins can also upload or remove a workspace icon in **Manage team**. The icon
+appears in the workspace switcher for all members. PNG, JPEG, WebP, and GIF
+images up to 128 KB are supported.
+
 Invitations expire after seven days. A recipient can accept an invitation from
 **Invitations** in their avatar menu after signing in, or open the invitation link. The signed-in
 account must have the exact invited email address, ignoring case, and that email

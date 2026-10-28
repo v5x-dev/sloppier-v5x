@@ -57,6 +57,31 @@ describe("workspace invitations and access", () => {
     vi.unstubAllGlobals()
   })
 
+  it("lets only admins set and remove a workspace icon", async () => {
+    const { owner, member, recipient, workspaceId } = await setup()
+    const icon = "data:image/png;base64,aGVsbG8="
+    await expect(
+      member.mutation(api.workspaces.setIcon, { workspaceId, icon })
+    ).rejects.toThrow("Only workspace admins")
+    await expect(
+      recipient.mutation(api.workspaces.setIcon, { workspaceId, icon })
+    ).rejects.toThrow("access")
+    await expect(
+      owner.mutation(api.workspaces.setIcon, {
+        workspaceId,
+        icon: "data:image/svg+xml;base64,aGVsbG8=",
+      })
+    ).rejects.toThrow("Choose a PNG")
+    await owner.mutation(api.workspaces.setIcon, { workspaceId, icon })
+    expect(
+      (await member.query(api.workspaces.listMine))[0]?.workspace?.icon
+    ).toBe(icon)
+    await owner.mutation(api.workspaces.setIcon, { workspaceId, icon: null })
+    expect(
+      (await owner.query(api.workspaces.listMine))[0]?.workspace?.icon
+    ).toBeUndefined()
+  })
+
   it("creates and switches between owned workspaces with admin membership", async () => {
     const { owner } = await setup()
     await owner.mutation(api.workspaces.create, { name: "  Second team  " })
