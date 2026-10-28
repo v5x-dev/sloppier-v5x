@@ -20,3 +20,13 @@ Stop the demo process with Ctrl+C, then verify that both demo settings are empty
 Remove the printed temporary credentials directory after the session; it contains
 signed tokens and must not be committed. The demo workspace and Program remain
 on the development deployment.
+
+For recordings and visual checks of the editor, use the actual Program route
+and workbench. If the user requests a fake Brain, simulate the device at the
+connection or transport boundary while exercising the real connection, build,
+upload, and revision-check flows. Do not replace the editor, Builder workflow,
+or revision check with a fabricated page or fixed sequence of UI states. Exercise
+the button and keyboard entry points, progress, completion, and the repeated
+upload result; include errors where relevant. Verify the saved recording shows
+those states before presenting it. If setup fails, investigate the documented
+demo environment and browser diagnostics before concluding it is blocked.

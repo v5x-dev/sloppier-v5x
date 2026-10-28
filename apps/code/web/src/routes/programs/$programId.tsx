@@ -734,8 +734,9 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 />
               }
               name={program.name}
+              programId={program._id}
               dirty={dirtyPaths.length > 0}
-              prepareProgram={(signal, onStage) =>
+              prepareProgram={(signal, onStage, isInstalled) =>
                 prepareUploadBuild({
                   commitChanges: async (commitSignal) => {
                     await waitForSourceSync(source.isSynced, commitSignal)
@@ -745,6 +746,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                   request: buildRequest,
                   signal,
                   onStage,
+                  isInstalled,
                 })
               }
             />

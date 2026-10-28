@@ -79,6 +79,7 @@ export async function prepareUploadBuild(options: {
   request: BuildRequest
   signal: AbortSignal
   onStage: (message: string) => void
+  isInstalled?: (sha: string) => Promise<boolean>
 }) {
   const { request, onStage } = options
   const signal = AbortSignal.any([options.signal, AbortSignal.timeout(300_000)])
@@ -88,6 +89,8 @@ export async function prepareUploadBuild(options: {
   signal.throwIfAborted()
   onStage("Preparing source…")
   const source = await options.prepareSource()
+  if (options.isInstalled && (await options.isInstalled(source.sha)))
+    return null
   const status = async () => {
     signal.throwIfAborted()
     return (await (

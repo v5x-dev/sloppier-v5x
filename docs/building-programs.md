@@ -75,6 +75,8 @@ Successful artifacts automatically download into read-only `bin/` entries in the
 
 The editor's Upload popover checks for uncommitted changes when Upload is pressed. It waits for live edits to sync, commits changed drafts with the message `Save changes before upload`, and snapshots the resulting repository revision. A successful build for that exact revision can be reused; otherwise Upload starts a build and waits before downloading and sending its binaries to the connected V5 brain. Commit or build failures stop the sequence. Failed builds never fall back to older binaries, and leaving the editor cancels pending upload preparation.
 
+For monolithic programs uploaded directly to a Brain, v5x records the Program ID, source revision, and installed binary's size and CRC on the Brain after a successful transfer. Before starting a Builder, Upload checks that record against the selected slot's current binary metadata. If both match, it reports that the version is already installed and does not build, upload, or start the program. Missing or older records cause a normal upload. This check does not yet skip controller or hot/cold uploads. Physical Brain verification is still required.
+
 ## Compiler problems
 
 The Build sheet has Problems and Build output tabs. Problems parses Clang/GCC errors, fatal errors, warnings, and notes, groups them by file, and shows error and warning counts. Repeated identical diagnostics appear once. Compiler escapes and source snippets stay out of the problem messages. Raw output remains available for linker and toolchain failures that have no source location.
