@@ -187,7 +187,7 @@ function TeamSettings({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
         {members?.map((member) => (
           <div
             key={member._id}
-            className="flex flex-wrap items-center justify-between gap-3 border-b pb-3"
+            className="flex min-h-14 flex-wrap items-center justify-between gap-3 border-b pb-3"
           >
             <div className="min-w-0 flex-1">
               <p className="text-sm break-all">
@@ -210,6 +210,7 @@ function TeamSettings({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
                   id={`role-${member._id}`}
                   value={member.role}
                   label={`Role for ${member.name || member.email || "Team member"}`}
+                  hideLabel
                   disabled={busy}
                   onChange={(newRole) =>
                     void run(() =>
@@ -326,23 +327,27 @@ function RolePicker({
   onChange,
   disabled,
   label = "Role",
+  hideLabel = false,
 }: {
   id: string
   value: Role
   onChange: (role: Role) => void
   disabled?: boolean
   label?: string
+  hideLabel?: boolean
 }) {
   return (
     <Field className="w-auto">
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id} className={hideLabel ? "sr-only" : undefined}>
+        {label}
+      </FieldLabel>
       <Select
         value={value}
         onValueChange={(role) => onChange(role as Role)}
         disabled={disabled}
       >
         <SelectTrigger id={id}>
-          <SelectValue />
+          <SelectValue>{value === "admin" ? "Admin" : "Member"}</SelectValue>
         </SelectTrigger>
         <SelectContent align="start">
           <SelectItem value="member">Member</SelectItem>
