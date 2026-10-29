@@ -61,8 +61,9 @@ export function ProgramSymbols() {
     .sort(
       (a, b) =>
         (a.path ?? "").localeCompare(b.path ?? "") ||
-        a.name.localeCompare(b.name) ||
-        (a.position?.line ?? 0) - (b.position?.line ?? 0)
+        (a.position?.line ?? 0) - (b.position?.line ?? 0) ||
+        (a.position?.character ?? 0) - (b.position?.character ?? 0) ||
+        a.name.localeCompare(b.name)
     )
   const files = new Map<string, typeof symbols>()
   for (const symbol of symbols) {
