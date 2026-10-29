@@ -9,6 +9,7 @@ import appCss from "@workspace/ui/globals.css?url"
 import tokenCss from "@workspace/tokens/code/web.css?url"
 import noiseCss from "../noise.css?url"
 import { AppProviders } from "@/components/app/app-providers"
+import { useEffect } from "react"
 
 export const Route = createRootRoute({
   head: () => ({
@@ -23,6 +24,10 @@ export const Route = createRootRoute({
       {
         title: "code (by v5x)",
       },
+      {
+        name: "theme-color",
+        content: "#171717",
+      },
     ],
     links: [
       {
@@ -33,6 +38,10 @@ export const Route = createRootRoute({
       {
         rel: "manifest",
         href: "/manifest.json",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/icons/apple-touch-icon.png",
       },
       {
         rel: "stylesheet",
@@ -59,6 +68,14 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker.register("/sw.js").catch((error) => {
+        console.error("Service worker registration failed", error)
+      })
+    }
+  }, [])
+
   return (
     <AppProviders>
       <Outlet />
