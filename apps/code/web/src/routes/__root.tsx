@@ -8,11 +8,13 @@ import {
 import appCss from "@v5x/ui/globals.css?url"
 import tokenCss from "@v5x/tokens/code/web.css?url"
 import noiseCss from "../noise.css?url"
+import { fontPreloadsForRoute } from "@v5x/ui/lib/font-preloads"
 import { AppProviders } from "@/components/app/app-providers"
 import { useEffect } from "react"
 
 export const Route = createRootRoute({
-  head: () => ({
+  // The root head sees every match, so the leaf route picks the font preloads.
+  head: ({ matches }) => ({
     meta: [
       {
         charSet: "utf-8",
@@ -55,6 +57,7 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: noiseCss,
       },
+      ...fontPreloadsForRoute(matches.at(-1)?.routeId),
     ],
   }),
   notFoundComponent: () => (

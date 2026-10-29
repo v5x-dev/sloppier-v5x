@@ -20,6 +20,12 @@ const config = defineConfig({
     viteReact(),
   ],
   worker: { format: "es" },
+  build: {
+    // Keep font files as separate requests. An inlined font rides along in the
+    // stylesheet and loads on every page, even pages that never use it.
+    assetsInlineLimit: (filePath) =>
+      filePath.endsWith(".woff2") ? false : undefined,
+  },
   server: {
     allowedHosts: ["dev.xdvaychyt7al.opentunnel.xyz", "code-dev.v5x.dev"],
   },
