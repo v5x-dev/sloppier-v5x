@@ -203,6 +203,15 @@ describe("local language session", () => {
     expect(edits[0].range.end).toEqual(positionAt(text.toString(), text.length))
     expect(edits[0].newText).toContain("   return")
   })
+  it("uses a 120-column limit when the program has no formatting configuration", async () => {
+    const { service } = await setup({ "main.cpp": "int x;" })
+    open(service, "int x;")
+    const format = vi
+      .spyOn(SourceFormatter.prototype, "format")
+      .mockResolvedValue("int x;")
+    await service.formatting("main.cpp", signal())
+    expect(format.mock.calls[0][2]).toContain("ColumnLimit: 120")
+  })
 })
 
 it("makes open-buffer completion ready while unopened source is still loading", async () => {

@@ -55,7 +55,7 @@ dragging to select text with Ctrl held does not report a missing definition.
 
 Formatting uses `@wasm-fmt/clang-format` in a separate worker, loaded on the first
 format request. It honors the nearest program `.clang-format`, falling back to
-LLVM style with two-space indentation. Formatting and completion have independent
+LLVM style with two-space indentation and a 120-column limit. Formatting and completion have independent
 lifecycles. Neither requires shared memory or cross-origin isolation headers.
 
 ## Updating API metadata

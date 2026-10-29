@@ -106,6 +106,7 @@ import {
   type LivePerson,
 } from "@/components/editor/live-file-editor"
 import { LanguageSession } from "@/components/editor/language-session"
+import { commitFormattedSource } from "@/lib/commit-formatted-source"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
 import { AuthGate } from "@/components/app/auth-gate"
 import { errorMessage } from "@/lib/errors"
@@ -326,7 +327,6 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
     loadPaths,
     openFile,
     readBytes,
-    commit,
     restoreCommit,
     applyExplorerUpdate,
   } = source
@@ -339,11 +339,33 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
     (DiagnosticTarget & { path: string }) | null
   >(null)
   const [formatActions, setFormatActions] = useState<
-    Record<string, (() => void) | null>
+    Record<string, (() => Promise<void>) | null>
   >({})
+  const formatActionsRef = useRef(formatActions)
   const onFormatChange = useCallback<FormatChange>((path, action) => {
+    formatActionsRef.current = { ...formatActionsRef.current, [path]: action }
     setFormatActions((current) => ({ ...current, [path]: action }))
   }, [])
+  const formatManually = (path: string) => {
+    void formatActionsRef.current[path]?.().catch((error) =>
+      toast.add({
+        type: "error",
+        title: "Could not format document",
+        description: errorMessage(error),
+      })
+    )
+  }
+  const commitFormatted = async (
+    message: string | undefined,
+    signal: AbortSignal
+  ) => {
+    await commitFormattedSource(
+      source,
+      () => formatActionsRef.current,
+      message,
+      signal
+    )
+  }
   const formatFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
     if (
       !(event.ctrlKey || event.metaKey) ||
@@ -355,7 +377,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
       return
     event.preventDefault()
     event.stopPropagation()
-    if (!event.repeat && activePath) formatActions[activePath]?.()
+    if (!event.repeat && activePath) formatManually(activePath)
   })
   const [commitOpen, setCommitOpen] = useState(false)
   const commitLabel = `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
@@ -383,7 +405,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
         try {
           await waitForSourceSync(source.isSynced, signal)
           signal.throwIfAborted()
-          await commit()
+          await commitFormatted(undefined, signal)
           if (!signal.aborted)
             toast.add({ type: "success", title: "Changes committed" })
         } catch (error) {
@@ -704,7 +726,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                       variant="ghost"
                       size="icon-sm"
                       aria-label="Format document"
-                      onClick={() => formatActions[activePath]?.()}
+                      onClick={() => formatManually(activePath)}
                     >
                       <TextAlignLeftIcon />
                     </Button>
@@ -778,7 +800,10 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 prepareUploadBuild({
                   commitChanges: async (commitSignal) => {
                     await waitForSourceSync(source.isSynced, commitSignal)
-                    await commit("Save changes before upload")
+                    await commitFormatted(
+                      "Save changes before upload",
+                      commitSignal
+                    )
                   },
                   prepareSource,
                   request: buildRequest,
@@ -810,7 +835,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
               source.isSynced,
               new AbortController().signal
             )
-            await commit(message)
+            await commitFormatted(message, new AbortController().signal)
           }}
         />
       </SidebarProvider>
