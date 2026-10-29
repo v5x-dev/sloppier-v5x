@@ -154,7 +154,6 @@ export function ProgramPathPreview({
   useEffect(() => {
     if (!open || !paths) return
     const controller = new AbortController()
-    setFiles(null)
     setError(null)
     void (async () => {
       const source = new Map<string, string>()
@@ -191,7 +190,9 @@ export function ProgramPathPreview({
     }
   }, [open, paths, programId, revision, readFile, retry])
   const routes = useMemo(() => {
-    const source = new Map(files)
+    const source = new Map(
+      [...(files ?? [])].filter(([path]) => paths?.includes(path))
+    )
     for (const [path, text] of drafts.getDrafts())
       if (paths?.includes(path)) source.set(path, text)
     return parseAutonPaths(source, template, trackWidth)
@@ -344,7 +345,7 @@ export function ProgramPathPreview({
                 </label>
               </div>
             )}
-            {error ? (
+            {error && (
               <div className="text-xs text-destructive">
                 {error}
                 <Button
@@ -355,16 +356,17 @@ export function ProgramPathPreview({
                   Retry
                 </Button>
               </div>
-            ) : !files ? (
+            )}
+            {!files && !error ? (
               <p className="text-xs text-muted-foreground" role="status">
                 Reading program source…
               </p>
-            ) : !route ? (
+            ) : files && !route ? (
               <p className="text-xs text-muted-foreground">
                 No {templateNames[template].label} motion routines found.{" "}
                 {templateNames[template].hint}
               </p>
-            ) : (
+            ) : route ? (
               <>
                 <div className="relative aspect-square min-h-16 shrink overflow-hidden rounded border bg-muted">
                   <img
@@ -432,7 +434,7 @@ export function ProgramPathPreview({
                   </p>
                 ))}
               </>
-            )}
+            ) : null}
             <a
               href="https://field-rendering.jerryio.com/"
               target="_blank"
