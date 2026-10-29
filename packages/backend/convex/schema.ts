@@ -105,6 +105,15 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId"]),
 
+  programUploads: defineTable({
+    programId: v.id("programs"),
+    revision: v.string(),
+    slot: v.number(),
+    userId: v.string(),
+    userName: v.string(),
+    uploadedAt: v.number(),
+  }).index("by_program", ["programId"]),
+
   programCheckpoints: defineTable({
     programId: v.id("programs"),
     sha: v.string(),

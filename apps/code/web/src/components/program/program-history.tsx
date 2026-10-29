@@ -44,6 +44,7 @@ export function ProgramHistory({
   canRestore: boolean
   onRestore: (sha: string) => Promise<string | null>
 }) {
+  const uploads = useQuery(api.uploads.list, { programId })
   const checkpoints = useQuery(api.checkpoints.list, { programId })
   const createCheckpoint = useAction(api.codeStorage.createCheckpoint)
   const removeCheckpoint = useMutation(api.checkpoints.remove)
@@ -310,6 +311,46 @@ export function ProgramHistory({
                 {page.hasMore ? " Load more to look further back." : ""}
               </p>
             )}
+            <section className="border-b" aria-label="Upload activity">
+              {uploads === undefined ? (
+                <p className="p-3 text-xs text-muted-foreground">
+                  Loading upload activity…
+                </p>
+              ) : uploads.length === 0 ? (
+                <p className="p-3 text-xs text-muted-foreground">
+                  No uploads recorded yet.
+                </p>
+              ) : (
+                <ul className="divide-y">
+                  {uploads.map((item) => (
+                    <li key={item._id} className="px-3 py-2 text-sm">
+                      <div>
+                        {item.userName} uploaded to slot {item.slot}
+                      </div>
+                      <div className="mt-1 flex gap-2 text-xs text-muted-foreground">
+                        <span className="font-mono" title={item.revision}>
+                          {item.revision.slice(0, 7)}
+                        </span>
+                        <time
+                          dateTime={new Date(item.uploadedAt).toISOString()}
+                          title={format(
+                            item.uploadedAt,
+                            "MMMM d, yyyy 'at' h:mm a"
+                          )}
+                        >
+                          {format(item.uploadedAt, "MMM d, yyyy 'at' h:mm a")}
+                        </time>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {uploads && uploads.length === 100 && (
+                <p className="px-3 pb-3 text-xs text-muted-foreground">
+                  Showing the latest 100 uploads.
+                </p>
+              )}
+            </section>
             {!!checkpoints?.length && (
               <section
                 className="border-b"
