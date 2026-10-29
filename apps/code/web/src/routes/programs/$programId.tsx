@@ -1,3 +1,4 @@
+import { ProgramSymbols } from "@/components/program/program-symbols"
 import type { FormatChange } from "@/components/editor/editor-formatting"
 import { ProgramPathPreview } from "@/components/program/program-path-preview"
 import { ActionGroup } from "@/components/shared/action-group"
@@ -698,6 +699,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                     </Button>
                   </ActionTooltip>
                 )}
+                <ProgramSymbols />
                 <ProgramSearch
                   programId={program._id}
                   revision={program.repositoryHeadSha}
