@@ -2,8 +2,8 @@ import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { format, formatDistanceToNow } from "date-fns"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useAction, useMutation, useQuery } from "convex/react"
-import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
+import { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
 import type { FunctionReturnType } from "convex/server"
 import { parsePatchFiles } from "@pierre/diffs"
 import { FileDiff } from "@pierre/diffs/react"
@@ -14,7 +14,7 @@ import {
   GitCommitIcon,
   FileCodeIcon,
 } from "@phosphor-icons/react"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@v5x/ui/components/button"
 import {
   Popover,
   PopoverTrigger,
@@ -22,8 +22,8 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverDescription,
-} from "@workspace/ui/components/popover"
-import { Spinner } from "@workspace/ui/components/spinner"
+} from "@v5x/ui/components/popover"
+import { Spinner } from "@v5x/ui/components/spinner"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { errorMessage } from "@/lib/errors"
 

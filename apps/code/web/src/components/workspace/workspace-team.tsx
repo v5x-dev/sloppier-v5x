@@ -1,27 +1,27 @@
 import { useEffect, useState } from "react"
 import { useAction, useMutation, useQuery } from "convex/react"
 import { Link } from "@tanstack/react-router"
-import { api } from "@workspace/backend/api"
-import type { Doc, Id } from "@workspace/backend/dataModel"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
+import { api } from "@v5x/backend/api"
+import type { Doc, Id } from "@v5x/backend/dataModel"
+import { Button } from "@v5x/ui/components/button"
+import { Input } from "@v5x/ui/components/input"
+import { Field, FieldLabel } from "@v5x/ui/components/field"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
+} from "@v5x/ui/components/select"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog"
-import { Spinner } from "@workspace/ui/components/spinner"
-import { toast } from "@workspace/ui/components/toast"
+} from "@v5x/ui/components/dialog"
+import { Spinner } from "@v5x/ui/components/spinner"
+import { toast } from "@v5x/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
 
 type Role = "admin" | "member"

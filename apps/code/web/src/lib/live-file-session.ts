@@ -1,6 +1,6 @@
 import type { ConvexReactClient } from "convex/react"
-import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
+import { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
 import type {
   FunctionReference,
   FunctionArgs,

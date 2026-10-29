@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useAuth } from "@/lib/auth"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Spinner } from "@v5x/ui/components/spinner"
 import { useEffect } from "react"
 
 // WorkOS "Sign-in endpoint": starts AuthKit sign-in, forwarding any login hint.

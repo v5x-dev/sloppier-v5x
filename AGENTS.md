@@ -63,7 +63,7 @@ Prefer additive API and schema changes. For breaking changes, describe the data
 migration and client rollout sequence before removing the old contract. Backend
 and app deployments are separate operations.
 
-Use the generated API through `@workspace/backend/api`. Keep server credentials
+Use the generated API through `@v5x/backend/api`. Keep server credentials
 and server-only modules out of client bundles. Environment variables exposed by
 Vite or Expo are public; store secrets only in server environments.
 
@@ -75,7 +75,7 @@ email addresses have matched multiple accounts in this project.
 
 For web work, follow the app's existing TanStack Router routes, loaders, and
 TanStack Start server/client boundaries. Keep browser-only APIs safe during SSR.
-Import shared web components through `@workspace/ui` exports.
+Import shared web components through `@v5x/ui` exports.
 
 Use the requested component and its existing variants rather than recreating its
 appearance. Use the tokens in `packages/ui/src/styles/globals.css`, Phosphor for

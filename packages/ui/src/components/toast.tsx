@@ -4,7 +4,7 @@ import * as React from "react"
 import { Toast as ToastPrimitive } from "@base-ui/react/toast"
 import { cn } from "cn"
 
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@v5x/ui/components/button"
 import { XIcon, CheckCircleIcon, InfoIcon, WarningIcon, WarningCircleIcon, SpinnerIcon } from "@phosphor-icons/react"
 
 const toast = ToastPrimitive.createToastManager()

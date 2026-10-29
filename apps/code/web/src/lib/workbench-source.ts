@@ -1,11 +1,11 @@
 import { readEditorState, writeEditorState } from "./editor-persistence"
-import type { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
+import type { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
 import type { FunctionArgs, FunctionReturnType } from "convex/server"
 import { containsPath, type ExplorerUpdate } from "./explorer"
 import { errorMessage } from "./errors"
 import type { LivePerson } from "./live-file-session"
-import type { SearchMatch } from "@workspace/backend/search"
+import type { SearchMatch } from "@v5x/backend/search"
 import type { ReplacementAction } from "./search-replacement"
 
 type Action<TName extends keyof typeof api.codeStorage> = (

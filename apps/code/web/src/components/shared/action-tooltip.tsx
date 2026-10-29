@@ -1,10 +1,10 @@
 import type { ReactNode } from "react"
-import { Kbd, KbdGroup } from "@workspace/ui/components/kbd"
+import { Kbd, KbdGroup } from "@v5x/ui/components/kbd"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
+} from "@v5x/ui/components/tooltip"
 
 export function ActionTooltip({
   label,

@@ -1,6 +1,6 @@
-import type { Doc } from "@workspace/backend/dataModel"
-import { Badge } from "@workspace/ui/components/badge"
-import { Spinner } from "@workspace/ui/components/spinner"
+import type { Doc } from "@v5x/backend/dataModel"
+import { Badge } from "@v5x/ui/components/badge"
+import { Spinner } from "@v5x/ui/components/spinner"
 
 export function RepositoryStatusBadge({
   status,

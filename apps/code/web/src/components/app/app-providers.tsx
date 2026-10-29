@@ -1,6 +1,6 @@
 import { ConvexProviderWithAuthKit } from "@convex-dev/workos"
 import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react"
-import { Toaster } from "@workspace/ui/components/toast"
+import { Toaster } from "@v5x/ui/components/toast"
 import { useRouter } from "@tanstack/react-router"
 import { demoAccount, useDemoConvexAuth } from "@/lib/auth"
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react"

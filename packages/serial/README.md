@@ -2,14 +2,14 @@
 
 TypeScript browser port of [vexide/vex-v5-serial](https://github.com/vexide/vex-v5-serial), based on commit `b3a712a16c9c6819b69faacfee2284826a138070`. The upstream MIT license is included in [LICENSE](./LICENSE).
 
-`@workspace/serial` exports TypeScript source, like the other workspace packages. There are no runtime dependencies or Node APIs. Importing it is safe outside a browser; device discovery requires a browser.
+`@v5x/serial` exports TypeScript source, like the other workspace packages. There are no runtime dependencies or Node APIs. Importing it is safe outside a browser; device discovery requires a browser.
 
 ## USB
 
 Call `requestSerial` from a click handler in a secure context. Choose the brain's **system** port in the browser picker.
 
 ```ts
-import { requestSerial, systemVersion, uploadProgram } from "@workspace/serial"
+import { requestSerial, systemVersion, uploadProgram } from "@v5x/serial"
 
 const connection = await requestSerial()
 console.log(await connection.request(systemVersion()))
@@ -33,7 +33,7 @@ await connection.close()
 Call `requestBluetooth` from a click handler. The picker filters by the V5 service UUID. VEX PIN authentication is separate from browser permission.
 
 ```ts
-import { requestBluetooth, systemVersion } from "@workspace/serial"
+import { requestBluetooth, systemVersion } from "@v5x/serial"
 
 const device = await requestBluetooth()
 if (!(await device.isPaired())) {
@@ -50,7 +50,7 @@ await device.connection.close()
 ## Stdio and commands
 
 ```ts
-import { readUser, writeUser, captureScreen } from "@workspace/serial"
+import { readUser, writeUser, captureScreen } from "@v5x/serial"
 
 const unsubscribe = connection.onUserData((bytes) => console.log(bytes))
 await writeUser(connection, new TextEncoder().encode("hello\n"))
