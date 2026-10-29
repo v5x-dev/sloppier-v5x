@@ -33,6 +33,7 @@ import {
   CaretLeftIcon,
   FileDashedIcon,
   GitCommitIcon,
+  ListMagnifyingGlassIcon,
   TextAlignLeftIcon,
   WarningCircleIcon,
   XIcon,
@@ -282,6 +283,7 @@ function ProvisioningState({ program }: { program: Doc<"programs"> }) {
 }
 
 function Workbench({ program }: { program: Doc<"programs"> }) {
+  const [showSymbols, setShowSymbols] = useState(false)
   const binaries = useProgramBinaries()
   const { request: buildRequest } = useProgramConnection()
   const buildManifest = useAction(api.codeStorage.buildManifest)
@@ -464,35 +466,43 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
             <span className="truncate text-xs font-medium">{program.name}</span>
           </SidebarHeader>
           <SidebarContent className="overflow-hidden">
-            {listError ? (
-              <Empty className="h-full">
-                <EmptyHeader>
-                  <EmptyTitle>Could not list files</EmptyTitle>
-                  <EmptyDescription>{listError}</EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent>
-                  <Button variant="outline" size="sm" onClick={loadPaths}>
-                    Try again
-                  </Button>
-                </EmptyContent>
-              </Empty>
-            ) : paths === null ? (
-              <div className="flex h-full items-center justify-center">
-                <Spinner className="text-muted-foreground" />
-              </div>
-            ) : (
-              <RepositoryExplorer
-                binaries={binaries}
-                paths={paths}
-                dirtyPaths={dirtyPaths}
-                activePath={activePath}
-                programId={program._id}
-                style={treeStyle}
-                readBytes={readBytes}
-                apply={applyExplorerUpdate}
-                onOpen={openFile}
-              />
-            )}
+            {showSymbols && <ProgramSymbols />}
+            <div
+              className={cn(
+                "flex min-h-0 flex-1 flex-col",
+                showSymbols && "hidden"
+              )}
+            >
+              {listError ? (
+                <Empty className="h-full">
+                  <EmptyHeader>
+                    <EmptyTitle>Could not list files</EmptyTitle>
+                    <EmptyDescription>{listError}</EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button variant="outline" size="sm" onClick={loadPaths}>
+                      Try again
+                    </Button>
+                  </EmptyContent>
+                </Empty>
+              ) : paths === null ? (
+                <div className="flex h-full items-center justify-center">
+                  <Spinner className="text-muted-foreground" />
+                </div>
+              ) : (
+                <RepositoryExplorer
+                  binaries={binaries}
+                  paths={paths}
+                  dirtyPaths={dirtyPaths}
+                  activePath={activePath}
+                  programId={program._id}
+                  style={treeStyle}
+                  readBytes={readBytes}
+                  apply={applyExplorerUpdate}
+                  onOpen={openFile}
+                />
+              )}
+            </div>
           </SidebarContent>
           <SidebarFooter className="h-11 flex-row items-center py-0 pr-3 pl-2">
             <AvatarGroup
@@ -531,6 +541,21 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 )
               )}
             </AvatarGroup>
+            <div className="ml-auto">
+              <ActionTooltip
+                label={showSymbols ? "Show files" : "Program symbols"}
+              >
+                <Button
+                  variant={showSymbols ? "secondary" : "ghost"}
+                  size="icon-sm"
+                  aria-label="Program symbols"
+                  aria-pressed={showSymbols}
+                  onClick={() => setShowSymbols((value) => !value)}
+                >
+                  <ListMagnifyingGlassIcon />
+                </Button>
+              </ActionTooltip>
+            </div>
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-h-0 min-w-0 pt-2">
@@ -699,7 +724,6 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                     </Button>
                   </ActionTooltip>
                 )}
-                <ProgramSymbols />
                 <ProgramSearch
                   programId={program._id}
                   revision={program.repositoryHeadSha}
