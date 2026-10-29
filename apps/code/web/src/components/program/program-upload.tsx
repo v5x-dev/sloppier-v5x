@@ -1,3 +1,6 @@
+import { useMutation } from "convex/react"
+import { api } from "@workspace/backend/api"
+import type { Id } from "@workspace/backend/dataModel"
 import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import {
@@ -119,7 +122,7 @@ export function ProgramUpload({
   currentSha,
 }: {
   name: string
-  programId: string
+  programId: Id<"programs">
   /** The Program's committed head, which uploads record as their revision. */
   currentSha?: string
   buildAction: ReactNode
@@ -130,6 +133,7 @@ export function ProgramUpload({
   ) => Promise<ProgramData | null>
   dirty: boolean
 }) {
+  const recordUpload = useMutation(api.uploads.record)
   const preparation = useRef<AbortController | null>(null)
   const id = useId()
   const device = useRef<Device | null>(null)
@@ -402,6 +406,14 @@ export function ProgramUpload({
           } catch {
             // The program was uploaded successfully; a missing record only prevents reuse.
           }
+        }
+        try {
+          await recordUpload({ programId, revision, slot: targetSlot })
+        } catch {
+          toast.add({
+            type: "error",
+            title: "Upload succeeded, but activity could not be saved.",
+          })
         }
         const uploaded = `Uploaded to slot ${targetSlot}${run ? " and started" : ""}.`
         if (mounted.current) {

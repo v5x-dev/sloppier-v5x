@@ -29,6 +29,7 @@ import type * as lib_templates from "../lib/templates.js";
 import type * as presence from "../presence.js";
 import type * as programs from "../programs.js";
 import type * as search from "../search.js";
+import type * as uploads from "../uploads.js";
 import type * as workspaces from "../workspaces.js";
 
 import type {
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   presence: typeof presence;
   programs: typeof programs;
   search: typeof search;
+  uploads: typeof uploads;
   workspaces: typeof workspaces;
 }>;
 
