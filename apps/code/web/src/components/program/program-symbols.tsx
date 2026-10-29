@@ -1,5 +1,12 @@
 import { useContext, useState, useSyncExternalStore } from "react"
+import { CaretRightIcon } from "@phosphor-icons/react"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@v5x/ui/components/collapsible"
 import { Input } from "@v5x/ui/components/input"
+import { ScrollArea } from "@v5x/ui/components/scroll-area"
 import "@vscode/codicons/dist/codicon.css"
 import {
   DefinitionContext,
@@ -53,10 +60,17 @@ export function ProgramSymbols() {
     )
     .sort(
       (a, b) =>
-        a.name.localeCompare(b.name) ||
         (a.path ?? "").localeCompare(b.path ?? "") ||
+        a.name.localeCompare(b.name) ||
         (a.position?.line ?? 0) - (b.position?.line ?? 0)
     )
+  const files = new Map<string, typeof symbols>()
+  for (const symbol of symbols) {
+    const path = symbol.path!
+    const group = files.get(path) ?? []
+    group.push(symbol)
+    files.set(path, group)
+  }
   return (
     <section
       className="flex min-h-0 flex-1 flex-col"
@@ -70,7 +84,7 @@ export function ProgramSymbols() {
           aria-label="Search symbols"
         />
       </div>
-      <div className="min-h-0 overflow-y-auto" aria-label="Symbol results">
+      <ScrollArea className="min-h-0 flex-1" aria-label="Symbol results">
         {client?.error && (
           <p className="p-4 text-sm text-destructive">
             Some symbols could not be loaded: {client.error}
@@ -81,35 +95,49 @@ export function ProgramSymbols() {
         ) : symbols.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No symbols found.</p>
         ) : (
-          symbols.map((symbol, index) => (
-            <button
-              key={`${symbol.path}:${symbol.position!.line}:${symbol.position!.character}:${index}`}
-              className="flex h-8 w-full items-center gap-2 px-4 text-left text-sm hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-              onClick={() => {
-                navigate?.(
-                  symbol.path!,
-                  symbol.position!.line + 1,
-                  symbol.position!.character + 1
-                )
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className={`codicon codicon-${(SYMBOL_ICONS[symbol.kind] ?? ["symbol-variable"])[0]} shrink-0`}
-                style={{ color: SYMBOL_ICONS[symbol.kind]?.[1] }}
-              />
-              <span className="min-w-0 truncate">
-                {symbol.name}
-                {symbol.parameters ? "()" : ""}
-              </span>
-              <span className="min-w-0 truncate text-xs text-muted-foreground">
-                {symbol.scope && `${symbol.scope} · `}
-                {symbol.path}:{symbol.position!.line + 1}
-              </span>
-            </button>
+          [...files].map(([path, fileSymbols]) => (
+            <Collapsible key={path} defaultOpen>
+              <CollapsibleTrigger className="group flex w-full items-center gap-1 px-3 pt-2 pb-1 text-left font-mono text-xs text-muted-foreground hover:bg-accent focus-visible:bg-accent focus-visible:outline-none">
+                <CaretRightIcon className="size-3 shrink-0 transition-transform group-data-[panel-open]:rotate-90" />
+                <span className="min-w-0 break-all">{path}</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {fileSymbols.map((symbol, index) => (
+                  <button
+                    key={`${symbol.path}:${symbol.position!.line}:${symbol.position!.character}:${index}`}
+                    className="flex w-full items-center gap-1.5 px-3 py-1 text-left text-xs hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                    onClick={() => {
+                      navigate?.(
+                        symbol.path!,
+                        symbol.position!.line + 1,
+                        symbol.position!.character + 1
+                      )
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`codicon codicon-${(SYMBOL_ICONS[symbol.kind] ?? ["symbol-variable"])[0]} shrink-0`}
+                      style={{ color: SYMBOL_ICONS[symbol.kind]?.[1] }}
+                    />
+                    <span className="min-w-0 flex-1 break-all">
+                      {symbol.name}
+                      {symbol.parameters ? "()" : ""}
+                      {symbol.scope && (
+                        <span className="block text-muted-foreground">
+                          {symbol.scope}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 font-mono text-muted-foreground">
+                      {symbol.position!.line + 1}
+                    </span>
+                  </button>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
           ))
         )}
-      </div>
+      </ScrollArea>
     </section>
   )
 }
