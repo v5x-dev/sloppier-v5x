@@ -1,7 +1,7 @@
 import { WarningCircleIcon } from "@phosphor-icons/react"
 import { Link, Navigate, createFileRoute } from "@tanstack/react-router"
 import { useAuth } from "@/lib/auth"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@v5x/ui/components/button"
 import {
   Empty,
   EmptyContent,
@@ -9,8 +9,8 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@workspace/ui/components/empty"
-import { Spinner } from "@workspace/ui/components/spinner"
+} from "@v5x/ui/components/empty"
+import { Spinner } from "@v5x/ui/components/spinner"
 
 // AuthKit exchanges the `code` param on load, then `onRedirectCallback` navigates away.
 export const Route = createFileRoute("/callback")({

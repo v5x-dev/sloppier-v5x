@@ -16,20 +16,20 @@ import {
   TimeoutError,
   type Connection,
   type BrainLogEntry,
-} from "@workspace/serial"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+} from "@v5x/serial"
+import { Button } from "@v5x/ui/components/button"
+import { Input } from "@v5x/ui/components/input"
 import {
   NativeSelect,
   NativeSelectOption,
-} from "@workspace/ui/components/native-select"
+} from "@v5x/ui/components/native-select"
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-} from "@workspace/ui/components/sheet"
+} from "@v5x/ui/components/sheet"
 import { errorMessage } from "@/lib/errors"
 
 type IO = (

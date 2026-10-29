@@ -15,7 +15,7 @@ import { editorThemeOptions } from "@/lib/editor-theme"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { positionAt, RequestCancelled } from "@/lib/language-service"
 import { DefinitionContext, useLanguageService } from "./language-session"
-import { toast } from "@workspace/ui/components/toast"
+import { toast } from "@v5x/ui/components/toast"
 import { hoverPosition, type HoverAnchor } from "@/lib/hover-position"
 import { isClickGesture, type Point } from "@/lib/click-gesture"
 
@@ -24,7 +24,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog"
+} from "@v5x/ui/components/dialog"
 
 type Popup = { contents: HoverContents; anchor: HoverAnchor }
 type Definition = { path: string; contents: string; line: number }

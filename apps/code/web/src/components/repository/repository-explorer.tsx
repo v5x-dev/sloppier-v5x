@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FileTree, useFileTree } from "@pierre/trees/react"
 import type { ContextMenuOpenContext } from "@pierre/trees"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@v5x/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-} from "@workspace/ui/components/dropdown-menu"
+} from "@v5x/ui/components/dropdown-menu"
 import {
   Dialog,
   DialogClose,
@@ -17,11 +17,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog"
-import { Input } from "@workspace/ui/components/input"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Spinner } from "@workspace/ui/components/spinner"
-import { toast } from "@workspace/ui/components/toast"
+} from "@v5x/ui/components/dialog"
+import { Input } from "@v5x/ui/components/input"
+import { Field, FieldLabel } from "@v5x/ui/components/field"
+import { Spinner } from "@v5x/ui/components/spinner"
+import { toast } from "@v5x/ui/components/toast"
 import {
   ArrowsInLineVerticalIcon,
   FilePlusIcon,

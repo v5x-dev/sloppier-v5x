@@ -104,18 +104,12 @@ jobs:
           bun-version: 1.4.4
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Lint web
-        run: bun run --cwd apps/code/web lint
-      - name: Typecheck web, backend, and serial
-        run: |
-          bun run --cwd apps/code/web typecheck
-          bun run --cwd packages/backend typecheck
-          bun run --cwd packages/serial typecheck
-      - name: Test web, backend, and serial
-        run: |
-          bun run --cwd apps/code/web test
-          bun run --cwd packages/backend test
-          bun run --cwd packages/serial test
+      - name: Lint workspace
+        run: bun run lint
+      - name: Typecheck workspace
+        run: bun run typecheck
+      - name: Test workspace
+        run: bun run test
       - name: Build web
         run: |
           : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"

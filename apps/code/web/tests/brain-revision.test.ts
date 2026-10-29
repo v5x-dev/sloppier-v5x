@@ -1,8 +1,8 @@
 import { expect, test, vi } from "vitest"
 import { isInstalled, recordInstalled } from "../src/lib/brain-revision"
-import type { Connection } from "@workspace/serial"
+import type { Connection } from "@v5x/serial"
 
-vi.mock("@workspace/serial", () => ({
+vi.mock("@v5x/serial", () => ({
   fileMetadata: (name: string) => ({ name }),
   fileTransferExit: () => ({ exit: true }),
   downloadFile: async (connection: any, options: any) =>

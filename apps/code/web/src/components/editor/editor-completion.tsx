@@ -8,7 +8,7 @@ import {
 import { createPortal } from "react-dom"
 import "@vscode/codicons/dist/codicon.css"
 import type { EditorChangeEvent } from "@pierre/diffs/edit"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@v5x/ui/lib/utils"
 import {
   expandSnippet,
   filterItems,

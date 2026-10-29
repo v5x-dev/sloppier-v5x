@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { searchText } from "@workspace/backend/search"
+import { searchText } from "@v5x/backend/search"
 import { replacementEdits } from "../src/lib/search-replacement"
 
 describe("search replacement", () => {

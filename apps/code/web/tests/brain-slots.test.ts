@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest"
-import type { Connection } from "@workspace/serial"
+import type { Connection } from "@v5x/serial"
 import {
   matchBrainSlot,
   parseProgramName,
@@ -7,7 +7,7 @@ import {
   type BrainSlotReading,
 } from "../src/lib/brain-slots"
 
-vi.mock("@workspace/serial", () => ({
+vi.mock("@v5x/serial", () => ({
   directoryFileCount: () => ({ command: "count" }),
   directoryEntry: (index: number) => ({ command: "entry", index }),
   fileTransferExit: () => ({ command: "exit" }),

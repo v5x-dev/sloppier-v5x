@@ -6,7 +6,7 @@ import {
   createLiveFileSession,
   type LivePerson,
 } from "../src/lib/live-file-session"
-import type { Id } from "@workspace/backend/dataModel"
+import type { Id } from "@v5x/backend/dataModel"
 
 type Options = Parameters<typeof createLiveFileSession>[0]
 function deferred<T>() {

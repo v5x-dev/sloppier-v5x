@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { RequestCancelled } from "@/lib/language-service"
 import { errorMessage } from "@/lib/errors"
-import { toast } from "@workspace/ui/components/toast"
+import { toast } from "@v5x/ui/components/toast"
 import { useLanguageService } from "./language-session"
 
 export type FormatChange = (path: string, action: (() => void) | null) => void

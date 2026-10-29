@@ -10,12 +10,12 @@ import {
 } from "react"
 import { useAction, useQuery } from "convex/react"
 import { MagnifyingGlassIcon, FileCodeIcon, XIcon } from "@phosphor-icons/react"
-import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
-import { overlaySearch, type SearchFile } from "@workspace/backend/search"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Sheet, SheetContent, SheetClose } from "@workspace/ui/components/sheet"
+import { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
+import { overlaySearch, type SearchFile } from "@v5x/backend/search"
+import { Button } from "@v5x/ui/components/button"
+import { Input } from "@v5x/ui/components/input"
+import { Sheet, SheetContent, SheetClose } from "@v5x/ui/components/sheet"
 import {
   getFiletypeFromFileName,
   getSharedHighlighter,

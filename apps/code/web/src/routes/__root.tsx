@@ -5,8 +5,8 @@ import {
   createRootRoute,
 } from "@tanstack/react-router"
 
-import appCss from "@workspace/ui/globals.css?url"
-import tokenCss from "@workspace/tokens/code/web.css?url"
+import appCss from "@v5x/ui/globals.css?url"
+import tokenCss from "@v5x/tokens/code/web.css?url"
 import noiseCss from "../noise.css?url"
 import { AppProviders } from "@/components/app/app-providers"
 import { useEffect } from "react"

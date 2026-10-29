@@ -1,6 +1,6 @@
 import { useMutation } from "convex/react"
-import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
+import { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
 import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import {
@@ -34,27 +34,27 @@ import {
   type BluetoothConnection,
   type Connection,
   type ProgramData,
-} from "@workspace/serial"
-import { Button } from "@workspace/ui/components/button"
-import { ButtonGroup } from "@workspace/ui/components/button-group"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
+} from "@v5x/serial"
+import { Button } from "@v5x/ui/components/button"
+import { ButtonGroup } from "@v5x/ui/components/button-group"
+import { Field, FieldLabel } from "@v5x/ui/components/field"
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@workspace/ui/components/input-otp"
+} from "@v5x/ui/components/input-otp"
 import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from "@workspace/ui/components/popover"
-import { Progress } from "@workspace/ui/components/progress"
-import { Spinner } from "@workspace/ui/components/spinner"
-import { Switch } from "@workspace/ui/components/switch"
-import { toast } from "@workspace/ui/components/toast"
-import { cn } from "@workspace/ui/lib/utils"
+} from "@v5x/ui/components/popover"
+import { Progress } from "@v5x/ui/components/progress"
+import { Spinner } from "@v5x/ui/components/spinner"
+import { Switch } from "@v5x/ui/components/switch"
+import { toast } from "@v5x/ui/components/toast"
+import { cn } from "@v5x/ui/lib/utils"
 import { errorMessage } from "@/lib/errors"
 import { isInstalled, recordInstalled } from "@/lib/brain-revision"
 import {

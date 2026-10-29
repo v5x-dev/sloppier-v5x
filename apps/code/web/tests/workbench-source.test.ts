@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { WorkbenchSource } from "../src/lib/workbench-source"
-import type { Id } from "@workspace/backend/dataModel"
+import type { Id } from "@v5x/backend/dataModel"
 
 function deferred<T>() {
   let resolve!: (value: T) => void

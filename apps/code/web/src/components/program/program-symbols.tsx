@@ -1,5 +1,5 @@
 import { useContext, useState, useSyncExternalStore } from "react"
-import { Input } from "@workspace/ui/components/input"
+import { Input } from "@v5x/ui/components/input"
 import "@vscode/codicons/dist/codicon.css"
 import {
   DefinitionContext,

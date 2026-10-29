@@ -2,7 +2,7 @@ import {
   directoryEntry,
   directoryFileCount,
   type Connection,
-} from "@workspace/serial"
+} from "@v5x/serial"
 import {
   downloadBrainFile,
   parseRecord,

@@ -12,14 +12,14 @@ import {
 } from "@phosphor-icons/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useAuth } from "@/lib/auth"
-import { api } from "@workspace/backend/api"
-import type { Doc, Id } from "@workspace/backend/dataModel"
+import { api } from "@v5x/backend/api"
+import type { Doc, Id } from "@v5x/backend/dataModel"
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@workspace/ui/components/avatar"
-import { Button } from "@workspace/ui/components/button"
+} from "@v5x/ui/components/avatar"
+import { Button } from "@v5x/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +30,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
+} from "@v5x/ui/components/dropdown-menu"
 import {
   Dialog,
   DialogClose,
@@ -40,7 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@workspace/ui/components/dialog"
+} from "@v5x/ui/components/dialog"
 import {
   Empty,
   EmptyContent,
@@ -48,9 +48,9 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@workspace/ui/components/empty"
-import { Field, FieldGroup, FieldLabel } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
+} from "@v5x/ui/components/empty"
+import { Field, FieldGroup, FieldLabel } from "@v5x/ui/components/field"
+import { Input } from "@v5x/ui/components/input"
 import {
   Item,
   ItemActions,
@@ -59,20 +59,20 @@ import {
   ItemGroup,
   ItemMedia,
   ItemTitle,
-} from "@workspace/ui/components/item"
+} from "@v5x/ui/components/item"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
-import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Spinner } from "@workspace/ui/components/spinner"
-import { toast } from "@workspace/ui/components/toast"
+} from "@v5x/ui/components/select"
+import { Skeleton } from "@v5x/ui/components/skeleton"
+import { Spinner } from "@v5x/ui/components/spinner"
+import { toast } from "@v5x/ui/components/toast"
 import { useAction, useMutation, useQuery } from "convex/react"
 import { formatDistanceToNow, startOfDay, startOfWeek, subDays } from "date-fns"
-import { Toggle } from "@workspace/ui/components/toggle"
+import { Toggle } from "@v5x/ui/components/toggle"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { useEffect, useRef, useState } from "react"
 import {

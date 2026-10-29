@@ -8,8 +8,8 @@ import {
   type ReactNode,
 } from "react"
 import { useAction, useMutation, useQuery, useConvex } from "convex/react"
-import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
+import { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
 import { errorMessage } from "@/lib/errors"
 
 type Connection = { baseUrl: string; token: string; expiresAt: string }

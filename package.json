@@ -1,11 +1,12 @@
 {
-  "name": "code-by-v5x",
+  "name": "@v5x/root",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev --ui=tui",
     "lint": "turbo lint",
+    "test": "turbo test",
     "format": "turbo format",
     "typecheck": "turbo typecheck"
   },

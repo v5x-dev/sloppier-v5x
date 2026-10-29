@@ -1,6 +1,6 @@
 # Shared backend
 
-`@workspace/backend` is the shared Convex deployment for the web and mobile apps.
+`@v5x/backend` is the shared Convex deployment for the web and mobile apps.
 WorkOS AuthKit tokens authenticate users; workspace membership checks protect
 programs, repository operations, live CRDT updates, and editor presence.
 Run `bun run dev` from this package to link it to a Convex deployment and have
