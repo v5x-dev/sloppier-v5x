@@ -776,7 +776,6 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
               buildAction={
                 <ProgramBuild
                   dirty={dirtyPaths.length > 0}
-                  prepareSource={prepareSource}
                   paths={paths ?? []}
                   currentSha={program.repositoryHeadSha}
                   onDiagnostic={(path, diagnostic) => {

@@ -1,5 +1,5 @@
 import { ActionTooltip } from "@/components/shared/action-tooltip"
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   HammerIcon,
   XIcon,
@@ -11,7 +11,6 @@ import {
   ArrowUpRightIcon,
   ClockCounterClockwiseIcon,
 } from "@phosphor-icons/react"
-import { submitBuild, type BuildSource } from "@/lib/build-program"
 import {
   diagnosticRevision,
   diagnosticsAreStale,
@@ -37,19 +36,14 @@ import {
   SheetDescription,
 } from "@v5x/ui/components/sheet"
 import { Spinner } from "@v5x/ui/components/spinner"
-import { toast } from "@v5x/ui/components/toast"
-import { errorMessage } from "@/lib/errors"
-import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 
 export function ProgramBuild({
   dirty,
-  prepareSource,
   paths,
   currentSha,
   onDiagnostic,
 }: {
   dirty: boolean
-  prepareSource: () => Promise<BuildSource>
   paths: readonly string[]
   currentSha?: string
   onDiagnostic: (path: string, diagnostic: BuildDiagnostic) => void
@@ -64,16 +58,11 @@ export function ProgramBuild({
     machineStatus,
     ready,
     error: presenceError,
-    request,
   } = useProgramConnection()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState("problems")
-  const [pending, setPending] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   // The machine reports startedAt while building; this covers the gap before the first poll.
-  const [fallbackStartedAt, setFallbackStartedAt] = useState<number | null>(
-    null
-  )
   const [connectingStartedAt, setConnectingStartedAt] = useState<number | null>(
     null
   )
@@ -96,8 +85,8 @@ export function ProgramBuild({
   ).length
   const stale = diagnosticsAreStale(logs, currentSha, dirty)
   const revision = diagnosticRevision(logs)
-  const building = pending || Boolean(state?.building)
-  const startedAt = state?.startedAt ?? fallbackStartedAt
+  const building = Boolean(state?.building)
+  const startedAt = state?.startedAt
   const elapsedSeconds =
     startedAt == null ? null : Math.max(0, Math.floor((now - startedAt) / 1000))
   const connectingSeconds =
@@ -117,74 +106,8 @@ export function ProgramBuild({
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
   }, [logs, open, tab])
-  async function build(showSheet = true) {
-    if (showSheet) setOpen(true)
-    setPending(true)
-    try {
-      await submitBuild(
-        (path, body, signal) => {
-          if (path === "/build") setFallbackStartedAt(Date.now())
-          return request(path, body, signal)
-        },
-        await prepareSource()
-      )
-      // Keep the local indicator active until the shared status poll has had
-      // time to observe the submitted build, including very short builds.
-      let status = await (await request("/status")).json()
-      while (status.building) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        status = await (await request("/status")).json()
-      }
-    } catch (error) {
-      toast.add({
-        type: "error",
-        title: "Could not build",
-        description: errorMessage(error),
-      })
-    } finally {
-      setPending(false)
-      setFallbackStartedAt(null)
-    }
-  }
-  function buildOrOpen() {
-    if (building) setOpen(true)
-    else void build()
-  }
-  const buildFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
-    if (
-      !(event.ctrlKey || event.metaKey) ||
-      event.altKey ||
-      event.shiftKey ||
-      event.isComposing ||
-      event.repeat ||
-      event.key.toLowerCase() !== "b"
-    )
-      return
-    event.preventDefault()
-    if (building) return
-    void build(false)
-  })
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => buildFromKeyboard(event)
-    window.addEventListener("keydown", onKeyDown, true)
-    return () => window.removeEventListener("keydown", onKeyDown, true)
-  }, [])
   return (
     <>
-      <ActionTooltip
-        label={building ? "View build logs" : "Build program"}
-        shortcut={building ? undefined : shortcutKeys("B")}
-      >
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={building ? "View build logs" : "Build program"}
-          aria-busy={building}
-          onClick={buildOrOpen}
-        >
-          {building ? <Spinner /> : <HammerIcon />}
-        </Button>
-      </ActionTooltip>
       {revision && diagnostics.length > 0 && (
         <ActionTooltip
           label={`View build problems, ${errors} errors, ${warnings} warnings`}
@@ -254,7 +177,7 @@ export function ProgramBuild({
                   ) : revision ? (
                     "Build finished"
                   ) : (
-                    "Build committed source to check for problems"
+                    "Upload your Program to check for problems"
                   )}
                 </span>
                 {revision && (
@@ -264,16 +187,6 @@ export function ProgramBuild({
                 )}
               </SheetDescription>
             </div>
-            <Button
-              size="sm"
-              className="shrink-0"
-              variant="outline"
-              disabled={building}
-              onClick={() => void build()}
-            >
-              <HammerIcon />
-              {building ? "Building…" : "Build again"}
-            </Button>
             <SheetClose
               render={
                 <Button
@@ -339,7 +252,7 @@ export function ProgramBuild({
                 className="flex items-center gap-2 border-b bg-muted/50 px-4 py-2 text-xs text-muted-foreground"
               >
                 <ClockCounterClockwiseIcon className="size-4 shrink-0" />
-                Source has changed. Rebuild to update these locations.
+                Source has changed. Upload again to update these locations.
               </div>
             )}
             <TabsContent
@@ -452,7 +365,7 @@ export function ProgramBuild({
                         ? "The compiler reported no errors or warnings."
                         : revision
                           ? "Check Build output for toolchain, linker, or other build messages."
-                          : "Build your committed source to see errors and warnings grouped by file."}
+                          : "Upload your Program to see errors and warnings grouped by file."}
                   </p>
                 </div>
               )}
