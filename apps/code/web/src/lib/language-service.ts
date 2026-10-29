@@ -268,7 +268,7 @@ export class LanguageService {
       throw new RequestCancelled()
     const directories = path.split("/")
     directories.pop()
-    let config = "{BasedOnStyle: LLVM, IndentWidth: 2}"
+    let config = "{BasedOnStyle: LLVM, IndentWidth: 2, ColumnLimit: 120}"
     for (let depth = directories.length; depth >= 0; depth--) {
       const found = this.snapshot.get(
         [...directories.slice(0, depth), ".clang-format"].join("/")

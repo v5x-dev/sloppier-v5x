@@ -1,11 +1,11 @@
 import { useEffect } from "react"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
-import { RequestCancelled } from "@/lib/language-service"
-import { errorMessage } from "@/lib/errors"
-import { toast } from "@v5x/ui/components/toast"
 import { useLanguageService } from "./language-session"
 
-export type FormatChange = (path: string, action: (() => void) | null) => void
+export type FormatChange = (
+  path: string,
+  action: (() => Promise<void>) | null
+) => void
 
 export function useEditorFormatting(
   binding: PierreCollaboration,
@@ -19,23 +19,21 @@ export function useEditorFormatting(
     let pending: AbortController | undefined
     const format = async () => {
       const editor = binding.editor
-      if (!editor || !client.isReady || pending) return
+      if (!editor || !client.isReady || pending)
+        throw new Error("Formatter is not ready.")
       const controller = new AbortController()
       pending = controller
       const version = client.version(path)
       const text = binding.document.getText()
       try {
         const edits = await client.formatting(path, controller.signal)
-        if (disposed || controller.signal.aborted) return
+        if (disposed || controller.signal.aborted)
+          throw new Error("Formatting was interrupted.")
         if (
           version !== client.version(path) ||
           text !== binding.document.getText()
         ) {
-          toast.add({
-            type: "info",
-            title: "Document changed. Try formatting again.",
-          })
-          return
+          throw new Error("Document changed while formatting. Try again.")
         }
         binding.undo.stopCapturing()
         try {
@@ -43,19 +41,12 @@ export function useEditorFormatting(
         } finally {
           binding.undo.stopCapturing()
         }
-      } catch (error) {
-        if (!disposed && !(error instanceof RequestCancelled))
-          toast.add({
-            type: "error",
-            title: "Could not format document",
-            description: errorMessage(error),
-          })
       } finally {
         pending = undefined
       }
     }
     const update = (ready: boolean) =>
-      onFormatChange(path, ready ? () => void format() : null)
+      onFormatChange(path, ready ? format : null)
     const stop = client.onReadyChange(update)
     update(client.isReady)
     return () => {
