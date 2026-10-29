@@ -50,6 +50,8 @@ Completion edits go through Pierre in one Yjs undo transaction.
 
 Hover shows declaration signatures and documentation. F12 and Ctrl/Cmd-click
 navigate to program declarations or open SDK headers in a read-only Pierre view.
+Ctrl/Cmd-click navigates only for a press released in place on an identifier, so
+dragging to select text with Ctrl held does not report a missing definition.
 
 Formatting uses `@wasm-fmt/clang-format` in a separate worker, loaded on the first
 format request. It honors the nearest program `.clang-format`, falling back to

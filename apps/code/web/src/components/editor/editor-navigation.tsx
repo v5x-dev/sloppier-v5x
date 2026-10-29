@@ -17,6 +17,7 @@ import { positionAt, RequestCancelled } from "@/lib/language-service"
 import { DefinitionContext, useLanguageService } from "./language-session"
 import { toast } from "@workspace/ui/components/toast"
 import { hoverPosition, type HoverAnchor } from "@/lib/hover-position"
+import { isClickGesture, type Point } from "@/lib/click-gesture"
 
 import {
   Dialog,
@@ -237,6 +238,7 @@ export function useEditorNavigation(
     let hover: AbortController | undefined
     let definition: AbortController | undefined
     let hoveredWord: { start: number; end: number; text: string } | undefined
+    let pressed: Point | undefined
     let disposed = false
     const cancelHover = () => {
       clearTimeout(timer)
@@ -372,10 +374,23 @@ export function useEditorNavigation(
           })
       }, 500)
     }
+    const pointerdown = (event: PointerEvent) => {
+      pressed = { x: event.clientX, y: event.clientY }
+    }
     const click = (event: MouseEvent) => {
+      const start = pressed
+      pressed = undefined
       if (!(event.ctrlKey || event.metaKey) || event.button !== 0) return
-      const offset = pointerOffset(event, host, binding.document.getText())
-      if (offset === null) return
+      // Dragging to select text also ends in a click; only a press released
+      // where it started navigates.
+      if (
+        !start ||
+        !isClickGesture(start, { x: event.clientX, y: event.clientY })
+      )
+        return
+      const text = binding.document.getText()
+      const offset = pointerOffset(event, host, text)
+      if (offset === null || !/\w/.test(text[offset] ?? "")) return
       event.preventDefault()
       event.stopPropagation()
       void go(offset)
@@ -396,6 +411,7 @@ export function useEditorNavigation(
     host.addEventListener("keydown", keydown, true)
     host.addEventListener("mousemove", move)
     host.addEventListener("mouseleave", leave)
+    host.addEventListener("pointerdown", pointerdown, true)
     host.addEventListener("click", click, true)
     host.addEventListener("input", dismiss, true)
     const scroll = (event: Event) => {
@@ -415,6 +431,7 @@ export function useEditorNavigation(
       host.removeEventListener("keydown", keydown, true)
       host.removeEventListener("mousemove", move)
       host.removeEventListener("mouseleave", leave)
+      host.removeEventListener("pointerdown", pointerdown, true)
       host.removeEventListener("click", click, true)
       host.removeEventListener("input", dismiss, true)
       window.removeEventListener("scroll", scroll, true)
