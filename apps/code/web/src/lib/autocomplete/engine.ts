@@ -97,7 +97,7 @@ const snippets: CompletionItem[] = [
   },
 ]
 
-type FileIndex = { text: string; index: SourceIndex }
+type FileIndex = { text: string; index: SourceIndex; outline: SourceIndex }
 type Context = {
   path: string
   text: string
@@ -148,10 +148,19 @@ export class AutocompleteEngine {
   }
   setFile(path: string, text: string) {
     if (this.files.get(path)?.text !== text)
-      this.files.set(path, { text, index: indexSource(path, text) })
+      this.files.set(path, {
+        text,
+        index: indexSource(path, text),
+        outline: indexSource(path, text, true),
+      })
   }
   removeFile(path: string) {
     this.files.delete(path)
+  }
+  programSymbols() {
+    return [...this.files.values()].flatMap((file) =>
+      file.outline.symbols.filter((symbol) => symbol.start === undefined)
+    )
   }
   getFile(path: string) {
     return this.files.get(path)?.text

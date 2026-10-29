@@ -119,7 +119,11 @@ function variable(tokens: Token[]) {
 }
 
 /** A tolerant declaration index for incomplete C/C++. It does not execute macros. */
-export function indexSource(path: string, text: string) {
+export function indexSource(
+  path: string,
+  text: string,
+  includePrivate = false
+) {
   const lineStarts = [0]
   for (let i = 0; i < text.length; i++)
     if (text[i] === "\n") lineStarts.push(i + 1)
@@ -254,7 +258,7 @@ export function indexSource(path: string, text: string) {
             ["true", "false", "nullptr"].includes(p[0]?.value)
         )
         if (!constructorInit && (open > 1 || record)) {
-          if (access === "public")
+          if (includePrivate || access === "public")
             add(
               name,
               scope,
@@ -279,7 +283,7 @@ export function indexSource(path: string, text: string) {
         }
         const declaration = part.slice(0, open)
         const v = variable(declaration)
-        if (v && access === "public")
+        if (v && (includePrivate || access === "public"))
           add(v.name, scope, record ? 5 : 6, v.type, local)
         return
       }
@@ -289,7 +293,7 @@ export function indexSource(path: string, text: string) {
         const v = variable(piece)
         if (v) {
           type = v.type
-          if (access === "public")
+          if (includePrivate || access === "public")
             add(v.name, scope, record ? 5 : 6, type, {
               ...local,
               ...(/^auto[&*]*$/.test(type)
@@ -300,7 +304,7 @@ export function indexSource(path: string, text: string) {
           i > 0 &&
           type &&
           piece[0]?.kind === "word" &&
-          access === "public"
+          (includePrivate || access === "public")
         )
           add(piece[0], scope, record ? 5 : 6, type, local)
       }
@@ -344,7 +348,7 @@ export function indexSource(path: string, text: string) {
             name?.kind === "word"
               ? `${scope ? scope + "::" : ""}${joinTokens(head.slice(nameAt, head.findIndex((t) => t.value === ":") < 0 ? undefined : head.findIndex((t) => t.value === ":")))}`
               : scope
-          if (name && access === "public")
+          if (name && (includePrivate || access === "public"))
             add(
               name,
               scope,

@@ -42,10 +42,27 @@ export class LanguageService {
   private snapshot = new Map<string, string>()
   private documents = new Map<string, OpenDocument>()
   private listeners = new Set<() => void>()
+  private symbolListeners = new Set<() => void>()
+  private symbolVersion = 0
+  getSymbolVersion = () => this.symbolVersion
+  subscribeSymbols = (listener: () => void) => {
+    this.symbolListeners.add(listener)
+    return () => {
+      this.symbolListeners.delete(listener)
+    }
+  }
+  private symbolsChanged() {
+    this.symbolVersion++
+    for (const listener of this.symbolListeners) listener()
+  }
+  programSymbols() {
+    return this.engine?.programSymbols() ?? []
+  }
   private readyListeners = new Set<(ready: boolean) => void>()
   private status: LanguageStatus = "stopped"
   private generation = 0
   private sourceGeneration = 0
+  sourceLoading = false
   private formatter = new SourceFormatter()
   private lastError: string | null = null
   constructor(
@@ -83,12 +100,14 @@ export class LanguageService {
         : String(error)
       : null
     for (const listener of this.listeners) listener()
+    this.symbolsChanged()
     if (wasReady !== this.isReady)
       for (const listener of this.readyListeners) listener(this.isReady)
   }
   async start() {
     const generation = ++this.generation
     const revision = ++this.sourceGeneration
+    this.sourceLoading = true
     this.setStatus("starting")
     // API suggestions and open buffers become usable before repository reads finish.
     const source = Promise.resolve()
@@ -108,17 +127,30 @@ export class LanguageService {
       const result = await source
       if (generation !== this.generation || revision !== this.sourceGeneration)
         return
+      this.sourceLoading = false
       if (result.snapshot) this.installSource(result.snapshot)
       else this.setStatus("ready", result.error)
     } catch (error) {
-      if (generation === this.generation) this.setStatus("error", error)
+      if (generation === this.generation) {
+        this.sourceLoading = false
+        this.setStatus("error", error)
+      }
     }
   }
   async refreshSource() {
     const generation = this.generation
     const revision = ++this.sourceGeneration
-    const source = await this.prepareSource()
+    this.sourceLoading = true
+    this.symbolsChanged()
+    const source = await this.prepareSource().catch((error: unknown) => {
+      if (revision === this.sourceGeneration) {
+        this.sourceLoading = false
+        this.setStatus(this.status, error)
+      }
+      throw error
+    })
     if (generation === this.generation && revision === this.sourceGeneration) {
+      this.sourceLoading = false
       this.installSource(source)
       if (this.isReady && this.lastError) this.setStatus("ready")
     }
@@ -137,11 +169,15 @@ export class LanguageService {
     }
     for (const [path, document] of this.documents)
       this.engine?.setFile(path, document.text.toString())
+    this.symbolsChanged()
   }
   updateFile(path: string, text: string) {
     if (!isLanguageFile(path) && !/(^|\/)\.clang-format$/.test(path)) return
     this.snapshot.set(path, text)
-    if (!this.documents.has(path)) this.engine?.setFile(path, text)
+    if (!this.documents.has(path) && this.engine?.getFile(path) !== text) {
+      this.engine?.setFile(path, text)
+      this.symbolsChanged()
+    }
   }
   stop() {
     this.generation++
@@ -164,11 +200,13 @@ export class LanguageService {
       observe: () => {
         document.version++
         this.engine?.setFile(path, text.toString())
+        this.symbolsChanged()
       },
     }
     this.documents.set(path, document)
     text.observe(document.observe)
     this.engine?.setFile(path, text.toString())
+    this.symbolsChanged()
     return () => {
       if (this.documents.get(path) !== document) return
       if (this.snapshot.has(path)) this.snapshot.set(path, text.toString())
