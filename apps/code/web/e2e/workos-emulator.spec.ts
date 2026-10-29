@@ -44,3 +44,37 @@ test("signs in through AuthKit and restores the session after reload", async ({
       .getByRole("button", { name: "New pros program" })
   ).toBeVisible()
 })
+
+test("opens a disposable Program after WorkOS sign-in and reload", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.PLAYWRIGHT_WORKOS_EDITOR !== "1",
+    "Requires disposable Code Storage-backed Program provisioning"
+  )
+  test.setTimeout(120_000)
+  await page.goto("/")
+  await page.locator('input[name="email"]').fill("playwright@example.test")
+  await page.getByRole("button", { name: "Continue" }).click()
+  const create = page
+    .getByRole("region", { name: "Create program" })
+    .getByRole("button", { name: "New pros program" })
+  await expect(create).toBeVisible()
+  await create.click()
+  const dialog = page.getByRole("dialog", { name: "New program" })
+  await dialog.getByLabel("Name").fill("Playwright auth startup check")
+  await dialog.getByRole("button", { name: "Create program" }).click()
+  await expect(page.getByRole("button", { name: "New file" })).toBeVisible({
+    timeout: 90_000,
+  })
+  await expect(page.getByRole("tabpanel").getByRole("textbox")).toBeVisible({
+    timeout: 30_000,
+  })
+  await page.reload()
+  await expect(page.getByRole("button", { name: "New file" })).toBeVisible({
+    timeout: 30_000,
+  })
+  await expect(page.getByRole("tabpanel").getByRole("textbox")).toBeVisible({
+    timeout: 30_000,
+  })
+})

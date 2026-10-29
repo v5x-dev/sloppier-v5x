@@ -112,3 +112,36 @@ the `CONVEX_E2E_URL` repository variable with that deployment’s URL. The job
 checks both the key’s target and that the URL differs from production before
 pushing backend functions. Fork pull requests skip this job because GitHub
 does not supply repository secrets to them.
+
+### Load benchmarks
+
+From `apps/code/web`, run `bun run benchmark:load` to measure how long it takes
+for visible page controls to become ready in Chromium. Each scenario uses five
+fresh browser contexts by default; page-load scenarios also reload each context.
+The output reports individual samples, median, minimum, 90th percentile, and
+maximum in milliseconds. Program loading reports both file-tree readiness and
+the first visible editor. Set `PLAYWRIGHT_BENCHMARK_RUNS` to change the sample
+count (1–100). Set `PLAYWRIGHT_CPU_THROTTLE` to a Chromium CPU slowdown factor
+from 1 to 20 for repeatable constrained-CPU comparisons; this does not reproduce
+a particular device or network. Measure a production build for representative
+numbers: run `bunx vite build`, serve it with `bunx vite preview`, and set
+`PLAYWRIGHT_BASE_URL` to that server. The development server compiles modules on
+demand, which inflates the first visit. Reloads reuse the browser context. These
+are local elapsed times, not production performance targets or controlled network
+measurements.
+
+The default scenarios cover the not-found and incomplete callback pages. To
+include the Programs dashboard, provide `PLAYWRIGHT_AUTH_STATE`, the usual
+`.auth/state.json`, or a `PLAYWRIGHT_DEMO_USER`. To include the Program editor,
+also set
+`PLAYWRIGHT_PROGRAM_ID`; alternatively use `PLAYWRIGHT_DEMO_USER` and the demo
+server as described above. The suite measures opening the Program from the
+dashboard, as well as opening a search result, typing a one-line edit and
+undoing it. Use a disposable Program. Set `PLAYWRIGHT_BASE_URL` to measure an
+existing server. Use a dedicated test account and keep its session private.
+
+To check Program provisioning and editor reload through the WorkOS emulator,
+run `PLAYWRIGHT_WORKOS_EDITOR=1 bun run test:e2e:workos` from `apps/code/web`.
+This optional check creates a disposable Program in the emulator user's
+workspace and requires the dedicated development deployment to have Code
+Storage configured.

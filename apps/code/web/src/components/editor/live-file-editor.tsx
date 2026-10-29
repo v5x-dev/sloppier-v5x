@@ -37,6 +37,9 @@ const createEditor: EditorFactory<undefined, { name: string }> = (
 
 type Props = {
   programId: Id<"programs">
+  takeLiveOpen: (
+    path: string
+  ) => Promise<Id<"crdtDocuments"> | null> | undefined
   path: string
   active: boolean
   onFormatChange: FormatChange
@@ -50,6 +53,7 @@ type Props = {
 
 export function LiveFileEditor({
   programId,
+  takeLiveOpen,
   path,
   active,
   diagnosticTarget,
@@ -84,6 +88,7 @@ export function LiveFileEditor({
     if (!user || !host.current) return
     const session = createLiveFileSession({
       client,
+      initialOpen: takeLiveOpen(path),
       programId,
       path,
       user,

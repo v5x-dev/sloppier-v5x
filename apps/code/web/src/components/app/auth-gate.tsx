@@ -6,7 +6,13 @@ import { useConvexAuth, useMutation } from "convex/react"
 import { useEffect, useRef, type ReactNode } from "react"
 import { errorMessage } from "@/lib/errors"
 
-export function AuthGate({ children }: { children: ReactNode }) {
+export function AuthGate({
+  children,
+  renderWhileLoading = false,
+}: {
+  children: ReactNode
+  renderWhileLoading?: boolean
+}) {
   const { isLoading, isAuthenticated } = useConvexAuth()
   const { signIn } = useAuth()
   const redirectStarted = useRef(false)
@@ -30,7 +36,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     )
   }, [ensurePersonalWorkspace, isAuthenticated])
 
-  if (isLoading || !isAuthenticated) {
+  if ((!renderWhileLoading && isLoading) || (!isLoading && !isAuthenticated)) {
     return (
       <div className="flex min-h-svh items-center justify-center">
         <Spinner className="size-5 text-muted-foreground" />

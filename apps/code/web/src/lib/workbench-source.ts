@@ -16,6 +16,7 @@ type Actions = {
     Name in
       | "listFiles"
       | "readFile"
+      | "openLiveFile"
       | "commitFiles"
       | "restoreHistoryFile"
       | "restoreHistoryCommit"
@@ -59,9 +60,11 @@ export class WorkbenchSource {
   private draftListeners = new Set<() => void>()
   private draftVersion = 0
   private reads = new Map<string, object>()
+  private liveOpens = new Map<string, Promise<Id<"crdtDocuments"> | null>>()
   private operationBusy = false
   private initialOpen = false
   private pathRequest = 0
+  private prefetchedPaths: Promise<void> | null = null
   private replacementActions = new Map<string, ReplacementAction>()
   private replacementListeners = new Set<() => void>()
   readonly scrollPositions = new Map<string, number>()
@@ -193,15 +196,17 @@ export class WorkbenchSource {
           `${this.programId}:tabs`
         )
       : null
-    // The active tab can be read while the repository listing is in flight.
-    // Do not open it until the listing confirms that it still exists.
+    // Read a saved active tab, or the common starter entry point, while the
+    // listing is in flight. Only open it after the listing chooses that path.
     const speculativePath =
       saved &&
       Array.isArray(saved.openPaths) &&
       typeof saved.activePath === "string" &&
       saved.openPaths.includes(saved.activePath)
         ? saved.activePath
-        : null
+        : !this.initialOpen && (!saved || !Array.isArray(saved.openPaths))
+          ? "src/main.cpp"
+          : null
     if (speculativePath) void this.loadFile(speculativePath)
     try {
       const all: string[] = []
@@ -216,8 +221,15 @@ export class WorkbenchSource {
       } while (cursor)
       if (request !== this.pathRequest) return
       const paths = all.filter((path) => !path.startsWith(".v5x/")).sort()
-      if (speculativePath && !paths.includes(speculativePath)) {
+      const guessedEntry =
+        !this.initialOpen && (!saved || !Array.isArray(saved.openPaths))
+      if (
+        speculativePath &&
+        (!paths.includes(speculativePath) ||
+          (guessedEntry && pickEntryFile(paths) !== speculativePath))
+      ) {
         this.reads.delete(speculativePath)
+
         this.committed.delete(speculativePath)
         const loaded = { ...this.state.loaded }
         const readError = { ...this.state.readError }
@@ -236,20 +248,50 @@ export class WorkbenchSource {
             ? saved.activePath
             : (openPaths.at(-1) ?? null)
           this.update({ openPaths, activePath })
-          for (const path of openPaths) void this.loadFile(path)
+          for (const path of openPaths) {
+            this.prefetchLiveFile(path)
+            void this.loadFile(path)
+          }
         } else {
           const entry = pickEntryFile(paths)
           if (entry) this.openFile(entry)
         }
       }
     } catch (error) {
-      this.update({ listError: errorMessage(error) })
+      if (request === this.pathRequest) {
+        if (speculativePath) this.discardSpeculativeRead(speculativePath)
+        this.update({ listError: errorMessage(error) })
+      }
     }
+  }
+
+  private discardSpeculativeRead(path: string) {
+    this.reads.delete(path)
+    this.committed.delete(path)
+    const loaded = { ...this.state.loaded }
+    const readError = { ...this.state.readError }
+    delete loaded[path]
+    delete readError[path]
+    this.update({ loaded, readError })
+  }
+
+  // Start the authorized listing while the Program metadata query is pending.
+  // The workbench consumes it on first mount; later head changes still refresh.
+  prefetchPaths = () => {
+    if (!this.prefetchedPaths) this.prefetchedPaths = this.loadPaths()
   }
 
   refreshRepository = async () => {
     const refresh = this.initialOpen
-    await this.loadPaths()
+    const prefetched = this.prefetchedPaths
+    this.prefetchedPaths = null
+    if (prefetched) {
+      await prefetched
+      // A Program may still have been provisioning when the prefetch ran.
+      if (this.state.listError) await this.loadPaths()
+    } else {
+      await this.loadPaths()
+    }
     if (!refresh || this.state.listError) return
     // Re-read the saved baseline, keeping live drafts and editor identities.
     await Promise.all(
@@ -259,13 +301,29 @@ export class WorkbenchSource {
     )
   }
 
+  private prefetchLiveFile(path: string) {
+    if (!this.state.paths?.includes(path) || this.liveOpens.has(path)) return
+    // Failure is retried by the editor, and must not hide read-only previews.
+    const opening = this.actions
+      .openLiveFile({ programId: this.programId, path })
+      .catch(() => null)
+    this.liveOpens.set(path, opening)
+  }
+  takeLiveOpen = (path: string) => {
+    const opening = this.liveOpens.get(path)
+    this.liveOpens.delete(path)
+    return opening
+  }
+
   openFile = (path: string) => {
+    const wasOpen = this.state.openPaths.includes(path)
     this.update({
       openPaths: this.state.openPaths.includes(path)
         ? this.state.openPaths
         : [...this.state.openPaths, path],
       activePath: path,
     })
+    if (!wasOpen || !this.state.loaded[path]) this.prefetchLiveFile(path)
     void this.loadFile(path)
   }
   private async loadFile(path: string, refresh = false) {
@@ -320,6 +378,8 @@ export class WorkbenchSource {
   closeTab = (path: string) => {
     if (this.state.liveSync[path] === false)
       throw new Error("Keep it open until its live changes are saved.")
+    this.liveOpens.delete(path)
+
     const index = this.state.openPaths.indexOf(path)
     const remaining = this.state.openPaths.filter((entry) => entry !== path)
     this.update({
@@ -380,6 +440,8 @@ export class WorkbenchSource {
       })
       // Dispose every old editor identity and discard pending reads and baselines.
       this.reads.clear()
+      this.liveOpens.clear()
+
       this.committed.clear()
       this.drafts.clear()
       this.scrollPositions.clear()
@@ -418,6 +480,8 @@ export class WorkbenchSource {
         path,
       })
       this.reads.delete(path)
+      this.liveOpens.delete(path)
+
       this.committed.set(path, result.contents)
       this.sourceChanged({
         loaded: {
@@ -504,6 +568,8 @@ export class WorkbenchSource {
         )
       // Ignore outstanding reads addressed to the previous path identity.
       this.reads.clear()
+      this.liveOpens.clear()
+
       const loaded = remapRecord(this.state.loaded)
       for (const [path, value] of Object.entries(loaded))
         if (value)

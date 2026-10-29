@@ -68,12 +68,37 @@ test.describe("program editor", () => {
     await expect(input).toBeHidden()
   })
 
+  test("opens search by shortcut and preserves its query after reopening", async ({
+    page,
+  }) => {
+    await page.keyboard.press("Control+Shift+f")
+    const input = page.getByRole("textbox", { name: "Search text" })
+    await expect(input).toBeFocused()
+    await input.fill(searchTerm)
+    await page.getByRole("button", { name: "Close search" }).click()
+    await expect(input).toBeHidden()
+    await page.getByRole("button", { name: "Search program" }).click()
+    await expect(input).toHaveValue(searchTerm)
+  })
+
+  test("opens history and a commit diff", async ({ page }) => {
+    await page.getByRole("button", { name: "Program history" }).click()
+    const history = page.getByRole("dialog", { name: "Program history" })
+    await expect(history).toBeVisible()
+    await expect(history.getByText("Loading commits…")).toBeHidden()
+    await history.getByRole("button", { name: /Create pros program/ }).click()
+    await expect(page.getByLabel("Commit file diff")).toBeVisible()
+  })
+
   test("edits a file and undoes the change", async ({ page }) => {
     await page.getByRole("button", { name: "Search program" }).click()
     await page.getByRole("textbox", { name: "Search text" }).fill(searchTerm)
     const match = page.locator("[data-search-result]").first()
     await expect(match).toBeVisible()
     await match.click()
+    await expect(
+      page.getByRole("textbox", { name: "Search text" })
+    ).toBeHidden()
     const editor = page.getByRole("tabpanel").getByRole("textbox")
     await expect(editor).toBeVisible()
     await editor.click()

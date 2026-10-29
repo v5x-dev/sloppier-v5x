@@ -17,6 +17,7 @@ function setup() {
       paths: ["src/main.cpp", "include/robot.h"],
       hasMore: false,
     })),
+    openLiveFile: vi.fn(async () => "document" as Id<"crdtDocuments">),
     readFile: vi.fn(async () => ({
       bytes: new TextEncoder().encode("original").buffer,
       contentRange: null,
@@ -45,6 +46,104 @@ async function opened() {
 }
 
 describe("workbench source", () => {
+  it("reuses the in-flight initial listing when the workbench mounts", async () => {
+    const { source, actions } = setup()
+    const pending = deferred<{ paths: string[]; hasMore: boolean }>()
+    actions.listFiles.mockReturnValueOnce(pending.promise)
+    source.prefetchPaths()
+    const refresh = source.refreshRepository()
+    expect(actions.listFiles).toHaveBeenCalledTimes(1)
+    pending.resolve({ paths: ["src/main.cpp"], hasMore: false })
+    await refresh
+    expect(source.getSnapshot().paths).toEqual(["src/main.cpp"])
+    await source.refreshRepository()
+    expect(actions.listFiles).toHaveBeenCalledTimes(2)
+  })
+
+  it("retries a failed prefetch when the workbench becomes ready", async () => {
+    const { source, actions } = setup()
+    actions.listFiles.mockRejectedValueOnce(new Error("Not ready"))
+    source.prefetchPaths()
+    await source.refreshRepository()
+    expect(actions.listFiles).toHaveBeenCalledTimes(2)
+    expect(source.getSnapshot().listError).toBeNull()
+    expect(source.getSnapshot().paths).toContain("src/main.cpp")
+  })
+
+  it("retries a speculative read after provisioning prevented the first listing", async () => {
+    const { source, actions } = setup()
+    const staleRead = deferred<{
+      bytes: ArrayBuffer
+      contentRange: null
+      contentType: string
+    }>()
+    actions.listFiles.mockRejectedValueOnce(new Error("Repository not ready"))
+    actions.readFile.mockReturnValueOnce(staleRead.promise)
+    source.prefetchPaths()
+    await source.refreshRepository()
+    staleRead.reject(new Error("Repository not ready"))
+    await Promise.resolve()
+    expect(source.getSnapshot().listError).toBeNull()
+    expect(source.getSnapshot().readError["src/main.cpp"]).toBeUndefined()
+    expect(source.getSnapshot().loaded["src/main.cpp"]?.contents).toBe(
+      "original"
+    )
+    expect(actions.readFile).toHaveBeenCalledTimes(2)
+  })
+
+  it("ignores a stale listing failure after a newer listing succeeds", async () => {
+    const { source, actions } = setup()
+    const pending = deferred<{ paths: string[]; hasMore: boolean }>()
+    actions.listFiles.mockReturnValueOnce(pending.promise)
+    const first = source.loadPaths()
+    await source.loadPaths()
+    pending.reject(new Error("stale"))
+    await first
+    expect(source.getSnapshot().listError).toBeNull()
+  })
+
+  it("opens the live document alongside the initial source read", async () => {
+    const { source, actions } = setup()
+    const read = deferred<{
+      bytes: ArrayBuffer
+      contentRange: null
+      contentType: string
+    }>()
+    const live = deferred<Id<"crdtDocuments">>()
+    actions.readFile.mockReturnValueOnce(read.promise)
+    actions.openLiveFile.mockReturnValueOnce(live.promise)
+    await source.loadPaths()
+    expect(actions.readFile).toHaveBeenCalledOnce()
+    expect(actions.openLiveFile).toHaveBeenCalledWith({
+      programId: "program",
+      path: "src/main.cpp",
+    })
+    const prefetched = source.takeLiveOpen("src/main.cpp")
+    expect(prefetched).toBeDefined()
+    live.resolve("doc" as Id<"crdtDocuments">)
+    expect(await prefetched).toBe("doc")
+    read.resolve({
+      bytes: new TextEncoder().encode("source").buffer,
+      contentRange: null,
+      contentType: "text/plain",
+    })
+    await Promise.resolve()
+  })
+
+  it("does not reopen a live document when activating an already-open tab", async () => {
+    const { source, actions } = await opened()
+    source.takeLiveOpen("src/main.cpp")
+    source.openFile("src/main.cpp")
+    expect(actions.openLiveFile).toHaveBeenCalledTimes(1)
+  })
+
+  it("discards a prefetched live document when its tab closes", async () => {
+    const { source } = setup()
+    await source.loadPaths()
+    source.closeTab("src/main.cpp")
+    expect(source.takeLiveOpen("src/main.cpp")).toBeUndefined()
+  })
+
   it("opens replacement files in the background and waits for their live editor", async () => {
     const { source } = await opened()
     const active = source.getSnapshot().activePath
@@ -320,6 +419,54 @@ describe("workbench source", () => {
 })
 
 describe("persisted workbench tabs", () => {
+  it("reads the starter entry while listing and opens only the chosen path", async () => {
+    vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} })
+    try {
+      const { source, actions } = setup()
+      const listing = deferred<{ paths: string[]; hasMore: boolean }>()
+      actions.listFiles.mockReturnValueOnce(listing.promise)
+      const loading = source.loadPaths()
+      expect(actions.readFile).toHaveBeenCalledWith({
+        programId: "program",
+        path: "src/main.cpp",
+        length: 512 * 1024,
+      })
+      expect(source.getSnapshot().openPaths).toEqual([])
+      listing.resolve({ paths: ["src/main.cpp"], hasMore: false })
+      await loading
+      expect(source.getSnapshot().activePath).toBe("src/main.cpp")
+      expect(actions.readFile).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it("discards a late speculative read when a different entry is selected", async () => {
+    vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} })
+    try {
+      const { source, actions } = setup()
+      const read = deferred<{
+        bytes: ArrayBuffer
+        contentRange: null
+        contentType: string
+      }>()
+      actions.readFile.mockReturnValueOnce(read.promise)
+      actions.listFiles.mockResolvedValueOnce({
+        paths: ["other/main.c", "src/main.cpp"],
+        hasMore: false,
+      })
+      await source.loadPaths()
+      expect(source.getSnapshot().activePath).toBe("other/main.c")
+      read.reject(new Error("stale speculative read"))
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(source.getSnapshot().readError["src/main.cpp"]).toBeUndefined()
+      expect(source.getSnapshot().loaded["src/main.cpp"]).toBeUndefined()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it("reads the active tab while listing files and discards a removed tab", async () => {
     vi.stubGlobal("localStorage", {
       getItem: () =>
