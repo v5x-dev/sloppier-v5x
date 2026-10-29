@@ -17,7 +17,8 @@
     "generate-autocomplete": "python3 ../../../infra/autocomplete/generate.py",
     "test:e2e": "playwright test",
     "test:e2e:sign-in": "node scripts/e2e-sign-in.mjs",
-    "test:e2e:workos": "node scripts/e2e-workos.mjs"
+    "test:e2e:workos": "node scripts/e2e-workos.mjs",
+    "benchmark:load": "playwright test --config playwright.benchmark.config.ts"
   },
   "dependencies": {
     "@convex-dev/workos": "^0.0.3",

@@ -7,8 +7,24 @@ type DemoAccount = { id: string; name: string; token: string }
 export function demoAccount(): DemoAccount | undefined {
   if (!import.meta.env.DEV || !import.meta.env.VITE_CODE_DEMO_ACCOUNTS) return
   if (typeof window === "undefined") return
-  const accounts = JSON.parse(import.meta.env.VITE_CODE_DEMO_ACCOUNTS) as DemoAccount[]
-  return accounts.find((account) => account.id === new URLSearchParams(window.location.search).get("demoUser"))
+  const accounts = JSON.parse(
+    import.meta.env.VITE_CODE_DEMO_ACCOUNTS
+  ) as DemoAccount[]
+  const params = new URLSearchParams(window.location.search)
+  let id = params.get("demoUser")
+  try {
+    const key = "v5x:demo-user"
+    if (params.has("demoUser")) {
+      if (accounts.some((account) => account.id === id))
+        sessionStorage.setItem(key, id!)
+      else sessionStorage.removeItem(key)
+    } else {
+      id = sessionStorage.getItem(key)
+    }
+  } catch {
+    // The explicit URL still works when session storage is unavailable.
+  }
+  return accounts.find((account) => account.id === id)
 }
 
 export function useAuth() {

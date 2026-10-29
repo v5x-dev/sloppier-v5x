@@ -40,6 +40,7 @@ type LiveEditor = {
 type SessionOptions = {
   client: Pick<ConvexReactClient, "watchQuery" | "action" | "mutation">
   programId: Id<"programs">
+  initialOpen?: Promise<Id<"crdtDocuments"> | null>
   path: string
   user: {
     id: string
@@ -83,6 +84,7 @@ function presenceSessionId(userId: string, programId: string, path: string) {
 /** Owns one document's replay, local recovery, synchronization and presence. */
 export function createLiveFileSession({
   client,
+  initialOpen,
   programId,
   path,
   user,
@@ -133,6 +135,7 @@ export function createLiveFileSession({
   let replaced = false
   const isStopped = () => disposed || replaced
   let caughtUp = false
+  let cacheReady = false
   let sending = false
   let inFlight: { updateId: string; bytes: ArrayBuffer } | undefined
   let sessionToken: string | undefined
@@ -148,7 +151,8 @@ export function createLiveFileSession({
   }
   const report = () => {
     if (isDisposed()) return
-    const dirty = replaced || !caughtUp || sending || hasChanges(doc, server)
+    const dirty =
+      replaced || !caughtUp || !cacheReady || sending || hasChanges(doc, server)
     callbacks.onSyncChange(!dirty)
     callbacks.onStatus(
       dirty
@@ -190,6 +194,7 @@ export function createLiveFileSession({
       disposed ||
       replaced ||
       !caughtUp ||
+      !cacheReady ||
       sending ||
       (!inFlight && !hasChanges(doc, server))
     )
@@ -348,7 +353,7 @@ export function createLiveFileSession({
         }
         if (!caughtUp) {
           caughtUp = true
-          mountEditor()
+          if (cacheReady) mountEditor()
         }
         report()
         void flush()
@@ -360,7 +365,7 @@ export function createLiveFileSession({
     )
   }
   function mountEditor() {
-    if (isDisposed() || collaboration) return
+    if (isStopped() || collaboration) return
     collaboration = callbacks.mount(doc, awareness)
     changed()
   }
@@ -369,14 +374,25 @@ export function createLiveFileSession({
     if (starting || isDisposed()) return
     starting = true
     try {
-      documentId = await client.action(api.codeStorage.openLiveFile, args)
+      documentId =
+        (await initialOpen) ??
+        (await client.action(api.codeStorage.openLiveFile, args))
+      initialOpen = undefined
       if (isDisposed()) return
       cache ??= createCache(`v5x:${userId}:${documentId}`, doc)
+      // Replay from the server and recover local changes concurrently. Yjs
+      // updates commute, but editing and sending wait for both to finish.
+      watchUpdates()
       await cache.whenSynced
-      if (isDisposed()) return
+      if (isStopped()) return
+      cacheReady = true
+      if (caughtUp) {
+        mountEditor()
+        report()
+        void flush()
+      }
       storagePending.add("initial-source")
       watchStorage()
-      watchUpdates()
       void heartbeat()
       stopPresence = subscribe(
         api.presence.listAwareness,
@@ -424,6 +440,7 @@ export function createLiveFileSession({
         showError
       )
     } catch (failure) {
+      stopUpdates?.()
       showError(failure)
     } finally {
       starting = false
@@ -432,7 +449,7 @@ export function createLiveFileSession({
   const retry = () => {
     if (isDisposed() || replaced) return
     callbacks.onError(null)
-    if (!caughtUp) {
+    if (!caughtUp || !cacheReady) {
       void start()
       return
     }
@@ -455,7 +472,8 @@ export function createLiveFileSession({
   }, 10_000)
   return {
     retry,
-    hasPendingChanges: () => replaced || !caughtUp || hasChanges(doc, server),
+    hasPendingChanges: () =>
+      replaced || !caughtUp || !cacheReady || hasChanges(doc, server),
     setBrowserActive(active: boolean) {
       if (awareness.getLocalState()?.active !== active)
         awareness.setLocalStateField("active", active)

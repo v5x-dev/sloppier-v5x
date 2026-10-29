@@ -18,7 +18,12 @@ function deferred<T>() {
   })
   return { promise, resolve, reject }
 }
-function setup(hydration = Promise.resolve(), pageCount = 1) {
+function setup(
+  hydration = Promise.resolve(),
+  pageCount = 1,
+  onCache?: (doc: Y.Doc) => void,
+  initialOpen?: Options["initialOpen"]
+) {
   const remote = new Y.Doc()
   remote.getText("source").insert(0, "robot")
   const initial = Y.encodeStateAsUpdate(remote).buffer as ArrayBuffer
@@ -114,11 +119,15 @@ function setup(hydration = Promise.resolve(), pageCount = 1) {
   }
   const session = createLiveFileSession({
     client: client as unknown as Options["client"],
+    initialOpen,
     programId: "program" as Id<"programs">,
     path: "src/main.cpp",
     user: { id: "alice", email: "alice@example.com" },
     callbacks,
-    createCache: () => cache,
+    createCache: (_name, doc) => {
+      onCache?.(doc)
+      return cache
+    },
   })
   return {
     session,
@@ -276,6 +285,26 @@ describe("presence session", () => {
 })
 
 describe("live file session", () => {
+  it("uses the prefetched document and retries an unsuccessful prefetch", async () => {
+    const existing = setup(
+      Promise.resolve(),
+      1,
+      undefined,
+      Promise.resolve("document" as Id<"crdtDocuments">)
+    )
+    const failed = setup(Promise.resolve(), 1, undefined, Promise.resolve(null))
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      expect(existing.client.action).not.toHaveBeenCalled()
+      expect(existing.callbacks.mount).toHaveBeenCalledOnce()
+      expect(failed.client.action).toHaveBeenCalledOnce()
+      expect(failed.callbacks.mount).toHaveBeenCalledOnce()
+    } finally {
+      existing.session.dispose()
+      failed.session.dispose()
+    }
+  })
+
   it("replays every page before mounting and advances the subscription cursor", async () => {
     const s = setup(Promise.resolve(), 2)
     try {
@@ -298,6 +327,9 @@ describe("live file session", () => {
     try {
       await vi.advanceTimersByTimeAsync(0)
       expect(s.callbacks.mount).not.toHaveBeenCalled()
+      expect(
+        s.watches.some((watch) => watch.name === "crdt:updatesSince")
+      ).toBe(true)
       expect(s.session.hasPendingChanges()).toBe(true)
       hydration.resolve()
       await vi.advanceTimersByTimeAsync(0)
@@ -313,7 +345,28 @@ describe("live file session", () => {
       s.session.dispose()
     }
   })
-  it("closing during hydration prevents subscriptions, presence and editor attachment", async () => {
+  it("merges recovered local changes after remote replay before sending or mounting", async () => {
+    const hydration = deferred<void>()
+    let cached: Y.Doc | undefined
+    const s = setup(hydration.promise, 1, (doc) => {
+      cached = doc
+    })
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      cached!.getText("source").insert(0, "offline ")
+      await vi.advanceTimersByTimeAsync(500)
+      expect(s.callbacks.mount).not.toHaveBeenCalled()
+      expect(s.append).not.toHaveBeenCalled()
+      hydration.resolve()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.text().toString()).toBe("offline robot")
+      expect(s.append).toHaveBeenCalledOnce()
+    } finally {
+      s.session.dispose()
+    }
+  })
+
+  it("closing during hydration cleans up replay and prevents presence and editor attachment", async () => {
     const hydration = deferred<void>()
     const s = setup(hydration.promise)
     await vi.advanceTimersByTimeAsync(0)
@@ -321,7 +374,10 @@ describe("live file session", () => {
     hydration.resolve()
     await vi.advanceTimersByTimeAsync(20_000)
     expect(s.callbacks.mount).not.toHaveBeenCalled()
-    expect(s.client.watchQuery).not.toHaveBeenCalled()
+    expect(
+      s.watches.filter((watch) => watch.name === "crdt:updatesSince")
+    ).toHaveLength(2)
+    expect(s.watches.every((watch) => !watch.active)).toBe(true)
     expect(s.client.mutation).not.toHaveBeenCalled()
     expect(s.cache.destroy).toHaveBeenCalledOnce()
   })
