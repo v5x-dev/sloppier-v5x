@@ -77,7 +77,7 @@ The editor's Upload popover checks for uncommitted changes when Upload is presse
 
 For monolithic programs uploaded directly to a Brain, v5x records the Program ID, source revision, and installed binary's size and CRC on the Brain after a successful transfer. Before starting a Builder, Upload checks that record against the selected slot's current binary metadata. If both match, it reports that the version is already installed and does not build, upload, or start the program. Missing or older records cause a normal upload. This check does not yet skip controller or hot/cold uploads. Physical Brain verification is still required.
 
-The Upload popover lists all eight slots. Each row shows the `[program] name=` value from the slot's `slot_N.ini`, read through the Brain's user directory, and one status: Current revision, Different revision, Other program, Not tracked by v5x, or Empty. The list refreshes when the popover opens, after an upload, and from its refresh button.
+The Upload popover shows all eight slots as a button group. A bar along each slot's bottom edge gives its status: green for the current revision, amber for a different revision of the open Program, gray for another program, and dashed gray for a binary v5x does not track. Empty slots have no bar. Arrow keys move the selection. The row below the slots shows the open Program beside the selected slot's `[program] name=` value from `slot_N.ini`, read through the Brain's user directory, and its recorded revision. Each slot's status text is in its accessible name. The slots refresh when the popover opens, after an upload, and from its refresh button.
 
 ## Compiler problems
 

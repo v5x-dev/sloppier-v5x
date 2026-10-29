@@ -8,10 +8,12 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react"
 import {
   ArrowClockwiseIcon,
+  ArrowRightIcon,
   ArrowUpIcon,
   BluetoothIcon,
   CheckCircleIcon,
@@ -31,6 +33,7 @@ import {
   type ProgramData,
 } from "@workspace/serial"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import {
   InputOTP,
@@ -40,14 +43,15 @@ import {
 import {
   Popover,
   PopoverContent,
-  PopoverDescription,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { Progress } from "@workspace/ui/components/progress"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { Switch } from "@workspace/ui/components/switch"
 import { toast } from "@workspace/ui/components/toast"
+import { cn } from "@workspace/ui/lib/utils"
 import { errorMessage } from "@/lib/errors"
 import { isInstalled, recordInstalled } from "@/lib/brain-revision"
 import {
@@ -71,6 +75,39 @@ const slotMatchLabel: Record<BrainSlotMatch, string | null> = {
   "other-revision": "Different revision",
   "other-program": "Other program",
   untracked: "Not tracked by v5x",
+}
+
+// Status is shown as a bar along the bottom of each slot and as the border of the
+// program-to-slot row. Text labels remain in each slot's accessible name.
+const slotLineClass: Record<BrainSlotMatch, string | null> = {
+  empty: null,
+  current: "bg-success",
+  "other-revision": "bg-primary",
+  "other-program": "bg-muted-foreground",
+  untracked:
+    "bg-[repeating-linear-gradient(90deg,var(--muted-foreground)_0_4px,transparent_4px_7px)]",
+}
+
+const slotBorderClass: Record<BrainSlotMatch, string> = {
+  empty: "border-border",
+  current: "border-success",
+  "other-revision": "border-primary",
+  "other-program": "border-muted-foreground",
+  untracked: "border-muted-foreground",
+}
+
+function shortRevision(sha: string | undefined) {
+  return sha ? sha.slice(0, 7) : ""
+}
+
+function describeSlot(
+  number: number,
+  reading: BrainSlotReading | undefined,
+  match: BrainSlotMatch | null
+) {
+  const status =
+    match === "empty" ? "Empty" : match ? slotMatchLabel[match] : null
+  return [`Slot ${number}`, reading?.name, status].filter(Boolean).join(", ")
 }
 
 export function ProgramUpload({
@@ -98,6 +135,7 @@ export function ProgramUpload({
   const device = useRef<Device | null>(null)
   const mounted = useRef(true)
   const busyRef = useRef(false)
+  const slotButtons = useRef<(HTMLButtonElement | null)[]>([])
   const consoleQueue = useRef<Promise<unknown>>(Promise.resolve())
   const [consoleConnection, setConsoleConnection] = useState<Connection | null>(
     null
@@ -184,6 +222,27 @@ export function ProgramUpload({
     }
   }, [consoleIO])
 
+  function selectSlot(number: number) {
+    setSlot(number)
+    setSuccess(false)
+  }
+  // Arrow keys move the selection through the slots, as in a radio group.
+  function moveSlot(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) {
+    const direction =
+      event.key === "ArrowRight" || event.key === "ArrowDown"
+        ? 1
+        : event.key === "ArrowLeft" || event.key === "ArrowUp"
+          ? -1
+          : 0
+    if (!direction) return
+    event.preventDefault()
+    const next = (index + direction + BRAIN_SLOT_COUNT) % BRAIN_SLOT_COUNT
+    selectSlot(next + 1)
+    slotButtons.current[next]?.focus()
+  }
   async function operation(action: () => Promise<void>, notify = false) {
     if (busyRef.current) return
     busyRef.current = true
@@ -394,6 +453,24 @@ export function ProgramUpload({
     return () => window.removeEventListener("keydown", onKeyDown, true)
   }, [])
 
+  const selected = slots?.find((item) => item.slot === slot)
+  const selectedMatch = selected
+    ? matchBrainSlot(selected, { programId, revision: currentSha })
+    : null
+  const selectedName =
+    selectedMatch === "empty"
+      ? "Empty"
+      : selected
+        ? (selected.name ?? "Unnamed program")
+        : "—"
+  const uploadButtonText =
+    selected?.binary && selectedMatch !== "current"
+      ? selected.name
+        ? `Replace ${selected.name} in slot ${slot}`
+        : `Replace slot ${slot}`
+      : `Upload to slot ${slot}`
+  const showStatus = busy || success || dirty || Boolean(error)
+
   return (
     <ActionGroup label="V5 Brain">
       <Popover open={connectOpen} onOpenChange={setConnectOpen}>
@@ -558,19 +635,11 @@ export function ProgramUpload({
           className="w-80 max-w-[calc(100vw-2rem)] gap-4 p-4"
         >
           <PopoverHeader>
-            <div className="mb-1 flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <CpuIcon className="size-4 text-muted-foreground" />
               <PopoverTitle>Upload to V5 Brain</PopoverTitle>
             </div>
-            <PopoverDescription>
-              Commit, build, and send your program to the robot.
-            </PopoverDescription>
           </PopoverHeader>
-          <p className="text-xs text-muted-foreground">
-            {paired
-              ? `${connected} connected`
-              : "Connect your V5 Brain using the Connect button."}
-          </p>
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span
@@ -591,10 +660,10 @@ export function ProgramUpload({
                 />
               </Button>
             </div>
-            <div
+            <ButtonGroup
               role="radiogroup"
               aria-labelledby={`${id}-slots`}
-              className="grid gap-1"
+              className="w-full"
             >
               {Array.from({ length: BRAIN_SLOT_COUNT }, (_, index) => {
                 const number = index + 1
@@ -602,78 +671,88 @@ export function ProgramUpload({
                 const match = reading
                   ? matchBrainSlot(reading, { programId, revision: currentSha })
                   : null
-                const label = match ? slotMatchLabel[match] : null
-                const named =
-                  match !== null && match !== "empty" && Boolean(reading?.name)
-                const nameLine =
-                  match === "empty"
-                    ? "Empty"
-                    : reading
-                      ? (reading.name ?? "Unnamed program")
-                      : slotsLoading
-                        ? "Reading…"
-                        : "—"
+                const selectedSlot = slot === number
                 return (
-                  <label
+                  <Button
                     key={number}
-                    className="flex items-center gap-2.5 rounded-lg border px-2.5 py-1.5 text-xs has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                    ref={(element) => {
+                      slotButtons.current[index] = element
+                    }}
+                    variant="outline"
+                    size="icon"
+                    role="radio"
+                    aria-checked={selectedSlot}
+                    aria-label={describeSlot(number, reading, match)}
+                    tabIndex={selectedSlot ? 0 : -1}
+                    data-pressed={selectedSlot || undefined}
+                    disabled={busy}
+                    onClick={() => selectSlot(number)}
+                    onKeyDown={(event) => moveSlot(event, index)}
+                    className={cn(
+                      "aspect-square h-auto! w-auto! flex-1 overflow-hidden",
+                      match === "empty" && "text-muted-foreground"
+                    )}
                   >
-                    <input
-                      type="radio"
-                      name={`${id}-slot`}
-                      value={number}
-                      className="size-3.5 accent-primary"
-                      checked={slot === number}
-                      disabled={busy}
-                      onChange={() => {
-                        setSlot(number)
-                        setSuccess(false)
-                      }}
-                    />
-                    <span className="w-12 shrink-0 font-medium tabular-nums">
-                      Slot {number}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col">
+                    {number}
+                    {match && slotLineClass[match] && (
                       <span
-                        className={
-                          named ? "truncate" : "truncate text-muted-foreground"
-                        }
-                      >
-                        {nameLine}
-                      </span>
-                      {label && (
-                        <span
-                          className={
-                            match === "current"
-                              ? "text-success"
-                              : "text-muted-foreground"
-                          }
-                        >
-                          {label}
-                        </span>
-                      )}
-                    </span>
-                  </label>
+                        aria-hidden
+                        className={cn(
+                          "absolute inset-x-0 bottom-0 h-[3px]",
+                          slotLineClass[match]
+                        )}
+                      />
+                    )}
+                  </Button>
                 )
               })}
-            </div>
+            </ButtonGroup>
             {slotsError && (
               <p role="alert" className="text-xs text-destructive">
                 {slotsError}
               </p>
             )}
           </div>
-          <label className="flex items-center gap-2 text-xs">
-            <input
-              type="checkbox"
-              className="size-3.5 accent-primary"
+          <div
+            className={cn(
+              "flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5",
+              selectedMatch ? slotBorderClass[selectedMatch] : "border-border"
+            )}
+          >
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate">{name}</span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {shortRevision(currentSha)}
+              </span>
+            </div>
+            <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate">{selectedName}</span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {selectedMatch === "empty"
+                  ? ""
+                  : shortRevision(selected?.record?.sha)}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor={`${id}-run`} className="text-sm">
+              Run after upload
+            </label>
+            <Switch
+              id={`${id}-run`}
               checked={run}
               disabled={busy}
-              onChange={(event) => setRun(event.target.checked)}
+              onCheckedChange={(checked) => setRun(checked)}
             />
-            Run after upload
-          </label>
-          <div className="space-y-2 text-xs leading-relaxed">
+          </div>
+          {/* Idle status is screen-reader-only: out of the flow, so no gap above Upload. */}
+          <div
+            className={cn(
+              "space-y-2 text-xs leading-relaxed",
+              !showStatus && "sr-only"
+            )}
+          >
             {dirty && (
               <p className="text-muted-foreground">
                 Your changes will be committed and built before uploading.
@@ -712,7 +791,7 @@ export function ProgramUpload({
               ? progress !== null
                 ? "Uploading…"
                 : "Preparing upload…"
-              : `Upload to slot ${slot}`}
+              : uploadButtonText}
           </Button>
         </PopoverContent>
       </Popover>
