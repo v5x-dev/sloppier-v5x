@@ -24,6 +24,8 @@ import {
 import {
   CaretDownIcon,
   CaretUpIcon,
+  EyeIcon,
+  EyeSlashIcon,
   PathIcon,
   XIcon,
 } from "@phosphor-icons/react"
@@ -87,6 +89,7 @@ export function ProgramPathPreview({
   const [elapsed, setElapsed] = useState(0)
   const [imageError, setImageError] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(true)
+  const [robotVisible, setRobotVisible] = useState(true)
   const optionsId = useId()
   const panel = useRef<HTMLElement>(null)
   // Null keeps the default bottom-right anchor until the panel is first dragged.
@@ -256,6 +259,19 @@ export function ProgramPathPreview({
             >
               <span className="text-sm font-medium">Auton paths</span>
               <div className="flex items-center">
+                <ActionTooltip
+                  label={robotVisible ? "Hide robot" : "Show robot"}
+                >
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label={robotVisible ? "Hide robot" : "Show robot"}
+                    aria-pressed={robotVisible}
+                    onClick={() => setRobotVisible(!robotVisible)}
+                  >
+                    {robotVisible ? <EyeIcon /> : <EyeSlashIcon />}
+                  </Button>
+                </ActionTooltip>
                 <Button
                   size="icon-xs"
                   variant="ghost"
@@ -462,7 +478,7 @@ export function ProgramPathPreview({
                           </g>
                         )
                     )}
-                    {robot && (
+                    {robotVisible && robot && (
                       <g
                         transform={`translate(${project(robot.x, robot.y).replace(",", " ")}) rotate(${robot.heading})`}
                       >
