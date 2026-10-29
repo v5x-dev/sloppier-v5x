@@ -62,7 +62,9 @@ export function ProgramPathPreview({
   template,
   paths,
   drafts,
+  cursor,
 }: {
+  cursor: { path: string; line: number } | null
   programId: Id<"programs">
   revision?: string
   template: AutonTemplate
@@ -499,6 +501,25 @@ export function ProgramPathPreview({
                           strokeWidth="0.5"
                         />
                       </g>
+                    )}
+                    {route.points.map(
+                      (point, index) =>
+                        !point.interpolated &&
+                        cursor &&
+                        point.source?.file === cursor.path &&
+                        point.source.line === cursor.line && (
+                          <g
+                            key={`selected-${index}`}
+                            transform={`translate(${project(point.x, point.y).replace(",", " ")})`}
+                          >
+                            <circle
+                              r="1.1"
+                              fill="var(--chart-4)"
+                              stroke="white"
+                              strokeWidth="0.3"
+                            />
+                          </g>
+                        )
                     )}
                   </svg>
                 </div>

@@ -20,6 +20,14 @@ describe("EZ-Template path previews", () => {
       ]),
       "ez-template"
     )
+    expect(routes[0].points[1].source).toEqual({
+      file: "src/helpers.cpp",
+      line: 1,
+    })
+    expect(routes[0].points[2].source).toEqual({
+      file: "src/autons.cpp",
+      line: 1,
+    })
     expect(routes[0].points.at(-1)).toMatchObject({
       x: -12,
       y: 24,
@@ -31,7 +39,12 @@ describe("EZ-Template path previews", () => {
       chassis.odom_xyt_set(-24_in, -48_in, 0_deg);
       chassis.pid_odom_set({{{0_in, 24_in, 45_deg}, fwd, 100}, {{12_in, 24_in}, fwd, 100}}, true);
     }`)
-    expect(route.points[0]).toEqual({ x: -24, y: -48, heading: 0, start: true })
+    expect(route.points[0]).toMatchObject({
+      x: -24,
+      y: -48,
+      heading: 0,
+      start: true,
+    })
     expect(route.points.at(-1)).toMatchObject({ x: 12, y: 24, heading: 90 })
     expect(route.warnings).toContain(
       "pid_odom_set pose is approximated with an instant heading response."
@@ -241,8 +254,13 @@ describe("JAR-Template path previews", () => {
     const [route] = parseJar(
       "void red() { chassis.set_coordinates(-24, -48, 0); chassis.set_heading(45); chassis.drive_distance(12); }"
     )
-    expect(route.points[0]).toEqual({ x: -24, y: -48, heading: 0, start: true })
-    expect(route.points[1]).toEqual({
+    expect(route.points[0]).toMatchObject({
+      x: -24,
+      y: -48,
+      heading: 0,
+      start: true,
+    })
+    expect(route.points[1]).toMatchObject({
       x: -24,
       y: -48,
       heading: 45,

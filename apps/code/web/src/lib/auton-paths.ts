@@ -4,6 +4,7 @@ export type PathPoint = {
   heading: number
   start?: boolean
   interpolated?: boolean
+  source?: { file: string; line: number }
 }
 export type AutonPath = {
   id: string
@@ -108,7 +109,12 @@ export function parseAutonPaths(
   // JAR's boomerang tuning is set in constants; fall back to the template's usual values.
   const boomerangLead = assignedNumber(files, "boomerang_lead") ?? 0.5
   const boomerangSetback = assignedNumber(files, "boomerang_setback") ?? 0
-  const functions: { name: string; file: string; body: string }[] = []
+  const functions: {
+    name: string
+    file: string
+    body: string
+    startLine: number
+  }[] = []
   for (const [file, source] of files) {
     const code = clean(source)
     const pattern = /\bvoid\s+(\w+)\s*\(\s*(?:void)?\s*\)\s*\{/g
@@ -117,6 +123,7 @@ export function parseAutonPaths(
       functions.push({
         name: match[1],
         file,
+        startLine: code.slice(0, start + 1).split("\n").length,
         body: code.slice(start + 1, endOf(code, start, "{", "}")),
       })
     }
@@ -455,7 +462,8 @@ export function parseAutonPaths(
         }
       }
 
-      function walk(body: string, stack: string[]) {
+      function walk(current: (typeof functions)[number], stack: string[]) {
+        const { body } = current
         if (/\b(if|for|while|switch)\s*\(/.test(body))
           warnings.add("Branches and loops are shown once in source order.")
         const calls = /\b(\w+)\s*\(/g
@@ -470,17 +478,29 @@ export function parseAutonPaths(
           if (helper.length === 1 && !args.trim()) {
             if (stack.includes(name))
               warnings.add("Recursive helper calls are skipped.")
-            else walk(helper[0].body, [...stack, name])
+            else walk(helper[0], [...stack, name])
             continue
           }
           if (!names.test(name)) continue
           const values = args.split(",").map(resolveNumber)
+          const previousLength = points.length
+          const previousStart = points[0]
           if (template === "jar") jarCall(name, args, values)
           else ezCall(name, args, values)
+          const source = {
+            file: current.file,
+            line:
+              current.startLine +
+              body.slice(0, match.index).split("\n").length -
+              1,
+          }
+          if (points[0] !== previousStart) points[0].source = source
+          for (const point of points.slice(previousLength))
+            point.source = source
         }
         if (budget <= 0) warnings.add("Preview command limit reached.")
       }
-      walk(fn.body, [fn.name])
+      walk(fn, [fn.name])
       return {
         id: `${fn.file}:${fn.name}`,
         name: fn.name,

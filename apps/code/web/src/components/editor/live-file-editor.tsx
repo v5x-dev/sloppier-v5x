@@ -45,6 +45,7 @@ type Props = {
   onPeopleChange: (people: LivePerson[]) => void
   onSyncChange: (synced: boolean) => void
   onReplacementAction: (path: string, action: ReplacementAction | null) => void
+  onCursorLine: (path: string, line: number) => void
 }
 
 export function LiveFileEditor({
@@ -57,6 +58,7 @@ export function LiveFileEditor({
   onSyncChange,
   onPeopleChange,
   onReplacementAction,
+  onCursorLine,
 }: Props) {
   const client = useConvex()
   const connection = useConvexConnectionState()
@@ -193,6 +195,8 @@ export function LiveFileEditor({
           <PierreFile
             key={binding.shared.clientID}
             binding={binding}
+            active={active}
+            onCursorLine={onCursorLine}
             onFormatChange={onFormatChange}
             diagnosticTarget={active ? diagnosticTarget : undefined}
             path={path}
@@ -209,11 +213,15 @@ function PierreFile({
   diagnosticTarget,
   onFormatChange,
   binding,
+  active,
+  onCursorLine,
   path,
   programId,
   onReplacementAction,
 }: {
   binding: PierreCollaboration
+  active: boolean
+  onCursorLine: (path: string, line: number) => void
   onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   path: string
@@ -230,6 +238,18 @@ function PierreFile({
     const editor = binding.editor
     const viewport = completion.wrapper.current?.closest('[role="tabpanel"]')
     if (!editor || !viewport || viewport.getClientRects().length === 0) return
+    const caretSelection = editor.getViewState().selections?.[0]
+    if (active && caretSelection) {
+      const position =
+        caretSelection.direction === -1
+          ? caretSelection.start
+          : caretSelection.end
+      const offset = binding.document.offsetAt(position)
+      onCursorLine(
+        path,
+        binding.document.getText().slice(0, offset).split("\n").length
+      )
+    }
     const code = [...(completion.wrapper.current?.querySelectorAll("*") ?? [])]
       .map((node) => node.shadowRoot?.querySelector<HTMLElement>("[data-code]"))
       .find(Boolean)
