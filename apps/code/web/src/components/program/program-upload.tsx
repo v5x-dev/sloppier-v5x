@@ -454,7 +454,7 @@ export function ProgramUpload({
       return
     event.preventDefault()
     if (!paired) {
-      toast.add({ type: "error", title: uploadLabel })
+      setConnectOpen(true)
       return
     }
     upload(true)
@@ -614,32 +614,30 @@ export function ProgramUpload({
       </Popover>
       {buildAction}
       <Popover
-        open={open && brainReady}
+        open={open}
         onOpenChange={(nextOpen) => {
           setOpen(nextOpen)
           if (nextOpen) void refreshSlots()
         }}
       >
-        {brainReady && (
-          <ActionTooltip label={uploadLabel} shortcut={shortcutKeys("⇧", "B")}>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Upload to V5 Brain"
-                  aria-busy={busy}
-                />
-              }
-            >
-              {busy ? (
-                <Spinner className="text-primary" />
-              ) : (
-                <UploadSimpleIcon className="text-primary" />
-              )}
-            </PopoverTrigger>
-          </ActionTooltip>
-        )}
+        <ActionTooltip label={uploadLabel} shortcut={shortcutKeys("⇧", "B")}>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Upload to V5 Brain"
+                aria-busy={busy}
+              />
+            }
+          >
+            {busy ? (
+              <Spinner className="text-primary" />
+            ) : (
+              <UploadSimpleIcon className="text-primary" />
+            )}
+          </PopoverTrigger>
+        </ActionTooltip>
         <PopoverContent
           side="top"
           align="end"
@@ -652,159 +650,183 @@ export function ProgramUpload({
               <PopoverTitle>Upload to V5 Brain</PopoverTitle>
             </div>
           </PopoverHeader>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span
-                id={`${id}-slots`}
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Brain slots
-              </span>
+          {!brainReady ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Connect your V5 Brain before uploading your Program.
+              </p>
               <Button
-                variant="ghost"
-                size="icon-xs"
-                aria-label="Refresh Brain slots"
-                disabled={slotsLoading}
-                onClick={() => void refreshSlots()}
+                className="w-full"
+                onClick={() => {
+                  setOpen(false)
+                  setConnectOpen(true)
+                }}
               >
-                <ArrowClockwiseIcon
-                  className={slotsLoading ? "animate-spin" : undefined}
-                />
+                Connect V5 Brain
               </Button>
             </div>
-            <ButtonGroup
-              role="radiogroup"
-              aria-labelledby={`${id}-slots`}
-              className="w-full"
-            >
-              {Array.from({ length: BRAIN_SLOT_COUNT }, (_, index) => {
-                const number = index + 1
-                const reading = slots?.find((item) => item.slot === number)
-                const match = reading
-                  ? matchBrainSlot(reading, { programId, revision: currentSha })
-                  : null
-                const selectedSlot = slot === number
-                return (
-                  <Button
-                    key={number}
-                    ref={(element) => {
-                      slotButtons.current[index] = element
-                    }}
-                    variant="outline"
-                    size="icon"
-                    role="radio"
-                    aria-checked={selectedSlot}
-                    aria-label={describeSlot(number, reading, match)}
-                    tabIndex={selectedSlot ? 0 : -1}
-                    data-pressed={selectedSlot || undefined}
-                    disabled={busy}
-                    onClick={() => selectSlot(number)}
-                    onKeyDown={(event) => moveSlot(event, index)}
-                    className={cn(
-                      "aspect-square h-auto! w-auto! flex-1 overflow-hidden",
-                      match === "empty" && "text-muted-foreground"
-                    )}
+          ) : (
+            <>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span
+                    id={`${id}-slots`}
+                    className="text-xs font-medium text-muted-foreground"
                   >
-                    {number}
-                    {match && slotLineClass[match] && (
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "absolute inset-x-0 bottom-0 h-[3px]",
-                          slotLineClass[match]
-                        )}
-                      />
-                    )}
+                    Brain slots
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="Refresh Brain slots"
+                    disabled={slotsLoading}
+                    onClick={() => void refreshSlots()}
+                  >
+                    <ArrowClockwiseIcon
+                      className={slotsLoading ? "animate-spin" : undefined}
+                    />
                   </Button>
-                )
-              })}
-            </ButtonGroup>
-            {slotsError && (
-              <p role="alert" className="text-xs text-destructive">
-                {slotsError}
-              </p>
-            )}
-          </div>
-          <div
-            className={cn(
-              "flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5",
-              selectedMatch ? slotBorderClass[selectedMatch] : "border-border"
-            )}
-          >
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate">{name}</span>
-              <span className="font-mono text-xs text-muted-foreground">
-                {shortRevision(currentSha)}
-              </span>
-            </div>
-            <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate">{selectedName}</span>
-              <span className="font-mono text-xs text-muted-foreground">
-                {selectedMatch === "empty"
-                  ? ""
-                  : shortRevision(selected?.record?.sha)}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor={`${id}-run`} className="text-sm">
-              Run after upload
-            </label>
-            <Switch
-              id={`${id}-run`}
-              checked={run}
-              disabled={busy}
-              onCheckedChange={(checked) => setRun(checked)}
-            />
-          </div>
-          {/* Idle status is screen-reader-only: out of the flow, so no gap above Upload. */}
-          <div
-            className={cn(
-              "space-y-2 text-xs leading-relaxed",
-              !showStatus && "sr-only"
-            )}
-          >
-            {dirty && (
-              <p className="text-muted-foreground">
-                Your changes will be committed and built before uploading.
-              </p>
-            )}
-            <div
-              role="status"
-              aria-live="polite"
-              className="flex items-center gap-2"
-            >
-              {busy && <Spinner className="size-3.5 shrink-0" />}
-              {success && <CheckCircleIcon className="size-4 shrink-0" />}
-              {message}
-            </div>
-            {progress !== null && (
-              <Progress
-                aria-label="File upload progress"
+                </div>
+                <ButtonGroup
+                  role="radiogroup"
+                  aria-labelledby={`${id}-slots`}
+                  className="w-full"
+                >
+                  {Array.from({ length: BRAIN_SLOT_COUNT }, (_, index) => {
+                    const number = index + 1
+                    const reading = slots?.find((item) => item.slot === number)
+                    const match = reading
+                      ? matchBrainSlot(reading, {
+                          programId,
+                          revision: currentSha,
+                        })
+                      : null
+                    const selectedSlot = slot === number
+                    return (
+                      <Button
+                        key={number}
+                        ref={(element) => {
+                          slotButtons.current[index] = element
+                        }}
+                        variant="outline"
+                        size="icon"
+                        role="radio"
+                        aria-checked={selectedSlot}
+                        aria-label={describeSlot(number, reading, match)}
+                        tabIndex={selectedSlot ? 0 : -1}
+                        data-pressed={selectedSlot || undefined}
+                        disabled={busy}
+                        onClick={() => selectSlot(number)}
+                        onKeyDown={(event) => moveSlot(event, index)}
+                        className={cn(
+                          "aspect-square h-auto! w-auto! flex-1 overflow-hidden",
+                          match === "empty" && "text-muted-foreground"
+                        )}
+                      >
+                        {number}
+                        {match && slotLineClass[match] && (
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "absolute inset-x-0 bottom-0 h-[3px]",
+                              slotLineClass[match]
+                            )}
+                          />
+                        )}
+                      </Button>
+                    )
+                  })}
+                </ButtonGroup>
+                {slotsError && (
+                  <p role="alert" className="text-xs text-destructive">
+                    {slotsError}
+                  </p>
+                )}
+              </div>
+              <div
+                className={cn(
+                  "flex items-center justify-between gap-2 rounded-lg border bg-card px-3 py-2.5",
+                  selectedMatch
+                    ? slotBorderClass[selectedMatch]
+                    : "border-border"
+                )}
+              >
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate">{name}</span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {shortRevision(currentSha)}
+                  </span>
+                </div>
+                <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate">{selectedName}</span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {selectedMatch === "empty"
+                      ? ""
+                      : shortRevision(selected?.record?.sha)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor={`${id}-run`} className="text-sm">
+                  Run after upload
+                </label>
+                <Switch
+                  id={`${id}-run`}
+                  checked={run}
+                  disabled={busy}
+                  onCheckedChange={(checked) => setRun(checked)}
+                />
+              </div>
+              {/* Idle status is screen-reader-only: out of the flow, so no gap above Upload. */}
+              <div
+                className={cn(
+                  "space-y-2 text-xs leading-relaxed",
+                  !showStatus && "sr-only"
+                )}
+              >
+                {dirty && (
+                  <p className="text-muted-foreground">
+                    Your changes will be saved before uploading.
+                  </p>
+                )}
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-center gap-2"
+                >
+                  {busy && <Spinner className="size-3.5 shrink-0" />}
+                  {success && <CheckCircleIcon className="size-4 shrink-0" />}
+                  {message}
+                </div>
+                {progress !== null && (
+                  <Progress
+                    aria-label="File upload progress"
+                    className="w-full"
+                    value={progress}
+                    max={100}
+                  />
+                )}
+                {error && (
+                  <p role="alert" className="text-destructive">
+                    {error}
+                  </p>
+                )}
+              </div>
+              <Button
+                disabled={busy || !paired}
+                onClick={() => upload()}
                 className="w-full"
-                value={progress}
-                max={100}
-              />
-            )}
-            {error && (
-              <p role="alert" className="text-destructive">
-                {error}
-              </p>
-            )}
-          </div>
-          <Button
-            disabled={busy || !paired}
-            onClick={() => upload()}
-            className="w-full"
-          >
-            {busy ? <Spinner /> : <ArrowUpIcon />}
-            {busy
-              ? progress !== null
-                ? "Uploading…"
-                : "Preparing upload…"
-              : uploadButtonText}
-          </Button>
+              >
+                {busy ? <Spinner /> : <ArrowUpIcon />}
+                {busy
+                  ? progress !== null
+                    ? "Uploading…"
+                    : "Preparing upload…"
+                  : uploadButtonText}
+              </Button>
+            </>
+          )}
         </PopoverContent>
       </Popover>
       <ProgramConsole
