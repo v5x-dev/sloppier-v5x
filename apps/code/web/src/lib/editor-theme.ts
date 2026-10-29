@@ -1,5 +1,5 @@
 import { registerCustomTheme } from "@pierre/diffs"
-import { birdsOfParadiseTheme } from "@workspace/ui/lib/birds-of-paradise-theme"
+import { birdsOfParadiseTheme } from "@v5x/ui/lib/birds-of-paradise-theme"
 
 const themeName = "v5x-birds-of-paradise"
 registerCustomTheme(themeName, async () => birdsOfParadiseTheme, "zed")

@@ -1,4 +1,4 @@
-import type { ProgramData } from "@workspace/serial"
+import type { ProgramData } from "@v5x/serial"
 
 /** PROS hot/cold packages must be uploaded together; never guess between outputs. */
 export function selectUploadProgram(

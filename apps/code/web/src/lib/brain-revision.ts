@@ -5,7 +5,7 @@ import {
   uploadFile,
   NackError,
   type Connection,
-} from "@workspace/serial"
+} from "@v5x/serial"
 
 export const RECORD_MAX_SIZE = 1024
 

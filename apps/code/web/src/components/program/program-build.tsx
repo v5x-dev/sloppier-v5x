@@ -20,14 +20,14 @@ import {
   type BuildDiagnostic,
 } from "@/lib/build-diagnostics"
 import { useProgramConnection } from "./program-connection"
-import { Button } from "@workspace/ui/components/button"
-import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@v5x/ui/components/button"
+import { Badge } from "@v5x/ui/components/badge"
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@workspace/ui/components/tabs"
+} from "@v5x/ui/components/tabs"
 import {
   Sheet,
   SheetContent,
@@ -35,9 +35,9 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-} from "@workspace/ui/components/sheet"
-import { Spinner } from "@workspace/ui/components/spinner"
-import { toast } from "@workspace/ui/components/toast"
+} from "@v5x/ui/components/sheet"
+import { Spinner } from "@v5x/ui/components/spinner"
+import { toast } from "@v5x/ui/components/toast"
 import { errorMessage } from "@/lib/errors"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 

@@ -9,7 +9,7 @@ import * as Y from "yjs"
 import { PierreCollaboration } from "../src/lib/pierre-collaboration"
 import { source } from "../src/lib/live-document"
 import { replacementEdits } from "../src/lib/search-replacement"
-import { searchText } from "@workspace/backend/search"
+import { searchText } from "@v5x/backend/search"
 
 const cleanup: Array<() => void> = []
 afterEach(() => {

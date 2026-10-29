@@ -4,9 +4,9 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@workspace/ui/components/collapsible"
-import { Input } from "@workspace/ui/components/input"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
+} from "@v5x/ui/components/collapsible"
+import { Input } from "@v5x/ui/components/input"
+import { ScrollArea } from "@v5x/ui/components/scroll-area"
 import "@vscode/codicons/dist/codicon.css"
 import {
   DefinitionContext,

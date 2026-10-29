@@ -1,4 +1,4 @@
-import type { SearchMatch } from "@workspace/backend/search"
+import type { SearchMatch } from "@v5x/backend/search"
 
 export type ReplacementAction = (
   matches: SearchMatch[],

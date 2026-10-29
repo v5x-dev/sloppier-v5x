@@ -6,8 +6,8 @@ import {
   IMPORT_MAX_BYTES,
   IMPORT_BATCH_BYTES,
   IMPORT_BATCH_FILES,
-} from "@workspace/backend/imports"
-import type { Doc } from "@workspace/backend/dataModel"
+} from "@v5x/backend/imports"
+import type { Doc } from "@v5x/backend/dataModel"
 
 type Template = Doc<"programs">["template"]
 export type FolderFile = { path: string; file: File }

@@ -40,9 +40,9 @@ import {
 } from "@phosphor-icons/react"
 import { File } from "@pierre/diffs/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { api } from "@workspace/backend/api"
-import type { Doc, Id } from "@workspace/backend/dataModel"
-import { Button } from "@workspace/ui/components/button"
+import { api } from "@v5x/backend/api"
+import type { Doc, Id } from "@v5x/backend/dataModel"
+import { Button } from "@v5x/ui/components/button"
 import {
   Dialog,
   DialogClose,
@@ -51,7 +51,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@workspace/ui/components/dialog"
+} from "@v5x/ui/components/dialog"
 import {
   Empty,
   EmptyContent,
@@ -59,9 +59,9 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@workspace/ui/components/empty"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
+} from "@v5x/ui/components/empty"
+import { Field, FieldLabel } from "@v5x/ui/components/field"
+import { Input } from "@v5x/ui/components/input"
 import {
   Sidebar,
   SidebarContent,
@@ -71,17 +71,17 @@ import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar,
-} from "@workspace/ui/components/sidebar"
-import { cn } from "@workspace/ui/lib/utils"
-import { Spinner } from "@workspace/ui/components/spinner"
+} from "@v5x/ui/components/sidebar"
+import { cn } from "@v5x/ui/lib/utils"
+import { Spinner } from "@v5x/ui/components/spinner"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@workspace/ui/components/tabs"
-import { toast } from "@workspace/ui/components/toast"
-import { TooltipProvider } from "@workspace/ui/components/tooltip"
+} from "@v5x/ui/components/tabs"
+import { toast } from "@v5x/ui/components/toast"
+import { TooltipProvider } from "@v5x/ui/components/tooltip"
 import { useAction, useMutation, useQuery } from "convex/react"
 import {
   useCallback,
@@ -100,7 +100,7 @@ import {
   AvatarFallback,
   AvatarGroup,
   AvatarImage,
-} from "@workspace/ui/components/avatar"
+} from "@v5x/ui/components/avatar"
 import {
   LiveFileEditor,
   type LivePerson,

@@ -1,7 +1,7 @@
 import * as React from "react"
 import type { LiveTokenizer } from "@pierre/highlights"
 
-import { loadHighlighter } from "@workspace/ui/lib/highlighter"
+import { loadHighlighter } from "@v5x/ui/lib/highlighter"
 
 type LoadedHighlighter = NonNullable<Awaited<ReturnType<typeof loadHighlighter>>>
 type Loaded = {

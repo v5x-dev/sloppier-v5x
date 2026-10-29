@@ -2,14 +2,14 @@ import { UploadSimpleIcon } from "@phosphor-icons/react"
 import { useState } from "react"
 import { useMutation } from "convex/react"
 import { useNavigate } from "@tanstack/react-router"
-import { api } from "@workspace/backend/api"
-import type { Doc, Id } from "@workspace/backend/dataModel"
+import { api } from "@v5x/backend/api"
+import type { Doc, Id } from "@v5x/backend/dataModel"
 import {
   StarterTile,
   starterTileClassName,
   starterTileStyle,
 } from "@/components/program/starter-tile"
-import { Button } from "@workspace/ui/components/button"
+import { Button } from "@v5x/ui/components/button"
 import {
   Dialog,
   DialogContent,
@@ -18,17 +18,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@workspace/ui/components/dialog"
-import { Input } from "@workspace/ui/components/input"
-import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Spinner } from "@workspace/ui/components/spinner"
+} from "@v5x/ui/components/dialog"
+import { Input } from "@v5x/ui/components/input"
+import { Field, FieldLabel } from "@v5x/ui/components/field"
+import { Spinner } from "@v5x/ui/components/spinner"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
+} from "@v5x/ui/components/select"
 import {
   folderBatches,
   planFolder,

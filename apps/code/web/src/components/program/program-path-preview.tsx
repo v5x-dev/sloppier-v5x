@@ -10,24 +10,24 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react"
 import { useAction } from "convex/react"
-import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+import { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
+import { Button } from "@v5x/ui/components/button"
+import { Input } from "@v5x/ui/components/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@workspace/ui/components/select"
+} from "@v5x/ui/components/select"
 import {
   CaretDownIcon,
   CaretUpIcon,
   PathIcon,
   XIcon,
 } from "@phosphor-icons/react"
-import { cn } from "@workspace/ui/lib/utils"
+import { cn } from "@v5x/ui/lib/utils"
 import { parseAutonPaths, type AutonTemplate } from "@/lib/auton-paths"
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
