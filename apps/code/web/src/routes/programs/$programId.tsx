@@ -198,17 +198,9 @@ function ProgramBootShape() {
       </Sidebar>
       <SidebarInset className="min-h-0 min-w-0 pt-2">
         <div className="flex min-h-0 min-w-0 flex-1">
-          <Empty className="flex-1">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <FileDashedIcon />
-              </EmptyMedia>
-              <EmptyTitle>Pick a file</EmptyTitle>
-              <EmptyDescription>
-                Choose a file from the tree to start editing.
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <div className="flex flex-1 items-center justify-center">
+            <Spinner className="text-muted-foreground" />
+          </div>
         </div>
         <ActionsBar activePath={null} leftAction={null}>
           {null}
@@ -676,7 +668,12 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                   </TabsContent>
                 ))}
               </>
-              {openPaths.length === 0 && (
+              {openPaths.length === 0 && paths === null && !listError && (
+                <div className="flex flex-1 items-center justify-center">
+                  <Spinner className="text-muted-foreground" />
+                </div>
+              )}
+              {openPaths.length === 0 && (paths !== null || listError) && (
                 <Empty className="flex-1">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
