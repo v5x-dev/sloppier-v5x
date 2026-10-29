@@ -117,6 +117,7 @@ Preserve Cloudflare bindings when changing deployment commands (`--keep-vars`).
 Check frontend build variables, Worker runtime bindings, Convex deployment, and
 WorkOS configuration together. Verify CI/deployment status for the exact commit
 before saying it is live; distinguish a local fix, pushed code, and deployment.
+When watching CI checks, skip the cleanup check.
 
 ## Working and checking changes
 
