@@ -20,6 +20,7 @@ import { MAX_SOURCE_BYTES, source } from "@/lib/live-document"
 import { createLiveFileSession } from "@/lib/live-file-session"
 import type { LivePerson } from "@/lib/live-file-session"
 import { useEditorCompletion } from "./editor-completion"
+import { useEditorBrackets } from "./editor-brackets"
 import { useLanguageService } from "./language-session"
 import {
   replacementEdits,
@@ -292,6 +293,7 @@ function PierreFile({
   }, [binding, diagnosticTarget])
   useEditorFormatting(binding, path, onFormatChange)
   const completion = useEditorCompletion(binding, path)
+  useEditorBrackets(binding, completion.wrapper)
   const navigation = useEditorNavigation(binding, path, completion.wrapper)
   const file = useRef({
     name: path,
