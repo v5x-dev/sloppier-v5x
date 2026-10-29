@@ -284,6 +284,9 @@ function ProvisioningState({ program }: { program: Doc<"programs"> }) {
 
 function Workbench({ program }: { program: Doc<"programs"> }) {
   const [showSymbols, setShowSymbols] = useState(false)
+  const [cursor, setCursor] = useState<{ path: string; line: number } | null>(
+    null
+  )
   const binaries = useProgramBinaries()
   const { request: buildRequest } = useProgramConnection()
   const buildManifest = useAction(api.codeStorage.buildManifest)
@@ -646,6 +649,14 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                             : undefined
                         }
                         active={path === activePath}
+                        onCursorLine={(cursorPath, line) =>
+                          setCursor((current) =>
+                            current?.path === cursorPath &&
+                            current.line === line
+                              ? current
+                              : { path: cursorPath, line }
+                          )
+                        }
                         onPeopleChange={(people) =>
                           source.setPeople(path, people)
                         }
@@ -785,6 +796,7 @@ function Workbench({ program }: { program: Doc<"programs"> }) {
                 template={program.template}
                 paths={paths}
                 drafts={source}
+                cursor={cursor?.path === activePath ? cursor : null}
               />
             )}
           </ActionsBar>
@@ -908,6 +920,7 @@ function FileEditor({
   scrollPositions,
   onChange,
   onReplacementAction,
+  onCursorLine,
 }: {
   programId: Id<"programs">
   path: string
@@ -920,6 +933,7 @@ function FileEditor({
   scrollPositions: Map<string, number>
   onChange: (text: string) => void
   onReplacementAction: WorkbenchSource["setReplacementAction"]
+  onCursorLine: (path: string, line: number) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -962,6 +976,7 @@ function FileEditor({
           onSyncChange={onSyncChange}
           onPeopleChange={onPeopleChange}
           onReplacementAction={onReplacementAction}
+          onCursorLine={onCursorLine}
         />
       )}
     </div>
