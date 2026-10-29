@@ -24,6 +24,7 @@ import {
 import {
   CaretDownIcon,
   CaretUpIcon,
+  DownloadSimpleIcon,
   EyeIcon,
   EyeSlashIcon,
   PathIcon,
@@ -32,12 +33,14 @@ import {
 import { cn } from "@v5x/ui/lib/utils"
 import { parseAutonPaths, type AutonTemplate } from "@/lib/auton-paths"
 import { pathPoseAt } from "@/lib/path-animation"
+import { exportPathGif } from "@/lib/export-path-gif"
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
 
 const fields = ["H2H", "Skills"].map((setup) => ({
   label: `Override · ${setup}`,
   image: `https://field-rendering.jerryio.com/renders/V5RC-Override-${setup}-TopDown-TileColor66_71@0.1+500px.png`,
+  exportImage: `/fields/override-${setup.toLowerCase()}-uniform.png`,
 }))
 const extent = 3690 / 25.4
 const project = (x: number, y: number) =>
@@ -89,6 +92,8 @@ export function ProgramPathPreview({
   const [robotWidth, setRobotWidth] = useState(12)
   const [robotLength, setRobotLength] = useState(12)
   const [elapsed, setElapsed] = useState(0)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
   const [imageError, setImageError] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(true)
   const [robotVisible, setRobotVisible] = useState(true)
@@ -261,6 +266,39 @@ export function ProgramPathPreview({
             >
               <span className="text-sm font-medium">Auton paths</span>
               <div className="flex items-center">
+                <ActionTooltip label="Export path GIF">
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label="Export path GIF"
+                    disabled={!route || exporting || imageError}
+                    onClick={() => {
+                      if (!route || !panel.current) return
+                      const styles = getComputedStyle(panel.current)
+                      setExporting(true)
+                      setExportError(null)
+                      void exportPathGif({
+                        route,
+                        fieldImage: fields[Number(field)].exportImage,
+                        robotWidth,
+                        robotLength,
+                        robotVisible,
+                        primary: styles.getPropertyValue("--primary").trim(),
+                        startColor: styles.getPropertyValue("--chart-3").trim(),
+                        foreground: styles
+                          .getPropertyValue("--foreground")
+                          .trim(),
+                        background: styles
+                          .getPropertyValue("--background")
+                          .trim(),
+                      })
+                        .catch((reason) => setExportError(errorMessage(reason)))
+                        .finally(() => setExporting(false))
+                    }}
+                  >
+                    <DownloadSimpleIcon />
+                  </Button>
+                </ActionTooltip>
                 <ActionTooltip
                   label={robotVisible ? "Hide robot" : "Show robot"}
                 >
@@ -404,6 +442,16 @@ export function ProgramPathPreview({
                   ))}
                 </div>
               </div>
+            )}
+            {exporting && (
+              <p role="status" className="text-xs text-muted-foreground">
+                Exporting GIF…
+              </p>
+            )}
+            {exportError && (
+              <p role="alert" className="text-xs text-destructive">
+                Could not export GIF: {exportError}
+              </p>
             )}
             {error && (
               <div className="text-xs text-destructive">

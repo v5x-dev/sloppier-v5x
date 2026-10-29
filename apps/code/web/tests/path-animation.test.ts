@@ -1,7 +1,26 @@
 import { describe, expect, it } from "vitest"
-import { pathPoseAt } from "../src/lib/path-animation"
+import { pathDuration, pathPoseAt } from "../src/lib/path-animation"
 
 describe("path playback", () => {
+  it("uses the slower of movement and turning for each segment", () => {
+    expect(
+      pathDuration([
+        { x: 0, y: 0, heading: 0 },
+        { x: 18, y: 0, heading: 180 },
+      ])
+    ).toBe(2)
+  })
+
+  it("sums segment time and skips pose resets", () => {
+    const points = [
+      { x: 0, y: 0, heading: 0 },
+      { x: 18, y: 0, heading: 0 },
+      { x: 50, y: 50, heading: 90, start: true },
+      { x: 68, y: 50, heading: 90 },
+    ]
+    expect(pathDuration(points)).toBe(2)
+  })
+
   it("interpolates movement and shortest turns, then loops", () => {
     const points = [
       { x: 0, y: 0, heading: 350 },

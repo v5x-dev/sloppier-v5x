@@ -1,12 +1,8 @@
 import type { PathPoint } from "./auton-paths"
 
 // Approximate playback time from the geometry; the parser does not model motor speed.
-export function pathPoseAt(
-  points: PathPoint[],
-  elapsed: number
-): PathPoint | undefined {
-  if (!points.length) return undefined
-  const steps = points.slice(1).map((point, index) => {
+function pathSteps(points: PathPoint[]) {
+  return points.slice(1).map((point, index) => {
     const previous = points[index]
     const angle =
       ((((point.heading - previous.heading) % 360) + 540) % 360) - 180
@@ -18,6 +14,18 @@ export function pathPoseAt(
         )
     return { previous, point, angle, duration }
   })
+}
+
+export function pathDuration(points: PathPoint[]) {
+  return pathSteps(points).reduce((sum, step) => sum + step.duration, 0)
+}
+
+export function pathPoseAt(
+  points: PathPoint[],
+  elapsed: number
+): PathPoint | undefined {
+  if (!points.length) return undefined
+  const steps = pathSteps(points)
   const total = steps.reduce((sum, step) => sum + step.duration, 0)
   if (!total) return points[0]
   let time = ((elapsed % total) + total) % total
