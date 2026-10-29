@@ -188,6 +188,21 @@ export class WorkbenchSource {
   loadPaths = async () => {
     const request = ++this.pathRequest
     this.update({ listError: null })
+    const saved = !this.initialOpen
+      ? readEditorState<{ openPaths: string[]; activePath: string | null }>(
+          `${this.programId}:tabs`
+        )
+      : null
+    // The active tab can be read while the repository listing is in flight.
+    // Do not open it until the listing confirms that it still exists.
+    const speculativePath =
+      saved &&
+      Array.isArray(saved.openPaths) &&
+      typeof saved.activePath === "string" &&
+      saved.openPaths.includes(saved.activePath)
+        ? saved.activePath
+        : null
+    if (speculativePath) void this.loadFile(speculativePath)
     try {
       const all: string[] = []
       let cursor: string | undefined
@@ -201,13 +216,18 @@ export class WorkbenchSource {
       } while (cursor)
       if (request !== this.pathRequest) return
       const paths = all.filter((path) => !path.startsWith(".v5x/")).sort()
+      if (speculativePath && !paths.includes(speculativePath)) {
+        this.reads.delete(speculativePath)
+        this.committed.delete(speculativePath)
+        const loaded = { ...this.state.loaded }
+        const readError = { ...this.state.readError }
+        delete loaded[speculativePath]
+        delete readError[speculativePath]
+        this.update({ loaded, readError })
+      }
       this.update({ paths })
       if (!this.initialOpen) {
         this.initialOpen = true
-        const saved = readEditorState<{
-          openPaths: string[]
-          activePath: string | null
-        }>(`${this.programId}:tabs`)
         if (saved && Array.isArray(saved.openPaths)) {
           const openPaths = [
             ...new Set(saved.openPaths.filter((path) => paths.includes(path))),

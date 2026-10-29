@@ -320,6 +320,33 @@ describe("workbench source", () => {
 })
 
 describe("persisted workbench tabs", () => {
+  it("reads the active tab while listing files and discards a removed tab", async () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () =>
+        JSON.stringify({
+          openPaths: ["removed.cpp"],
+          activePath: "removed.cpp",
+        }),
+      setItem: () => {},
+    })
+    try {
+      const { source, actions } = setup()
+      const listing = deferred<{ paths: string[]; hasMore: boolean }>()
+      actions.listFiles.mockReturnValueOnce(listing.promise)
+      const loading = source.loadPaths()
+      expect(actions.readFile).toHaveBeenCalledWith({
+        programId: "program",
+        path: "removed.cpp",
+        length: 512 * 1024,
+      })
+      listing.resolve({ paths: ["src/main.cpp"], hasMore: false })
+      await loading
+      expect(source.getSnapshot().openPaths).toEqual([])
+      expect(source.getSnapshot().loaded["removed.cpp"]).toBeUndefined()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
   it("restores tab order, active file, and an intentionally empty workbench", async () => {
     const values = new Map<string, string>()
     vi.stubGlobal("localStorage", {
