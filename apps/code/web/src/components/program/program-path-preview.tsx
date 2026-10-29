@@ -29,6 +29,7 @@ import {
 } from "@phosphor-icons/react"
 import { cn } from "@v5x/ui/lib/utils"
 import { parseAutonPaths, type AutonTemplate } from "@/lib/auton-paths"
+import { pathPoseAt } from "@/lib/path-animation"
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
 
@@ -81,6 +82,9 @@ export function ProgramPathPreview({
   const [selected, setSelected] = useState("")
   const [field, setField] = useState("0")
   const [trackWidth, setTrackWidth] = useState(12)
+  const [robotWidth, setRobotWidth] = useState(12)
+  const [robotLength, setRobotLength] = useState(12)
+  const [elapsed, setElapsed] = useState(0)
   const [imageError, setImageError] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(true)
   const optionsId = useId()
@@ -198,6 +202,18 @@ export function ProgramPathPreview({
     return parseAutonPaths(source, template, trackWidth)
   }, [files, drafts, paths, template, draftVersion, trackWidth])
   const route = routes.find((item) => item.id === selected) ?? routes.at(0)
+  useEffect(() => {
+    if (!open || !route) return
+    let frame: number
+    const started = performance.now()
+    const tick = (now: number) => {
+      setElapsed((now - started) / 1000)
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [open, route])
+  const robot = route && pathPoseAt(route.points, elapsed)
   const segments: string[][] = []
   for (const point of route?.points ?? []) {
     if (point.start || !segments.length) segments.push([])
@@ -324,25 +340,51 @@ export function ProgramPathPreview({
                     </label>
                   )}
                 </div>
-                <label className="flex items-center justify-between gap-2 text-xs">
-                  <span className="text-muted-foreground">
-                    Track width (in)
-                  </span>
-                  <Input
-                    aria-label="Track width in inches"
-                    type="number"
-                    min="1"
-                    max="36"
-                    step="0.25"
-                    value={trackWidth}
-                    className="w-20"
-                    onChange={(event) => {
-                      const value = event.target.valueAsNumber
-                      if (Number.isFinite(value) && value >= 1 && value <= 36)
-                        setTrackWidth(value)
-                    }}
-                  />
-                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      [
+                        "Track",
+                        "Track width in inches",
+                        trackWidth,
+                        setTrackWidth,
+                      ],
+                      [
+                        "Width",
+                        "Drive base width in inches",
+                        robotWidth,
+                        setRobotWidth,
+                      ],
+                      [
+                        "Length",
+                        "Drive base length in inches",
+                        robotLength,
+                        setRobotLength,
+                      ],
+                    ] as const
+                  ).map(([label, accessibleLabel, value, setValue]) => (
+                    <label
+                      key={label}
+                      className="flex min-w-0 flex-col gap-1 text-xs"
+                    >
+                      <span className="text-muted-foreground">{label}</span>
+                      <Input
+                        aria-label={accessibleLabel}
+                        type="number"
+                        min="1"
+                        max="36"
+                        step="0.25"
+                        value={value}
+                        className="w-full min-w-0"
+                        onChange={(event) => {
+                          const next = event.target.valueAsNumber
+                          if (Number.isFinite(next) && next >= 1 && next <= 36)
+                            setValue(next)
+                        }}
+                      />
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
             {error && (
@@ -419,6 +461,28 @@ export function ProgramPathPreview({
                             />
                           </g>
                         )
+                    )}
+                    {robot && (
+                      <g
+                        transform={`translate(${project(robot.x, robot.y).replace(",", " ")}) rotate(${robot.heading})`}
+                      >
+                        <rect
+                          x={(-robotWidth / extent) * 50}
+                          y={(-robotLength / extent) * 50}
+                          width={(robotWidth / extent) * 100}
+                          height={(robotLength / extent) * 100}
+                          fill="var(--primary)"
+                          fillOpacity="0.4"
+                          stroke="var(--primary)"
+                          strokeWidth="0.6"
+                        />
+                        <path
+                          d="M -1 -2 L 0 -3 L 1 -2"
+                          fill="none"
+                          stroke="var(--foreground)"
+                          strokeWidth="0.5"
+                        />
+                      </g>
                     )}
                   </svg>
                 </div>
