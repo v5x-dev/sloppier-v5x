@@ -36,7 +36,12 @@ import { pathPoseAt } from "@/lib/path-animation"
 import { exportPathGif } from "@/lib/export-path-gif"
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
-import { readAutonRoute, writeAutonRoute } from "@/lib/editor-persistence"
+import {
+  readAutonDimension,
+  readAutonRoute,
+  writeAutonDimension,
+  writeAutonRoute,
+} from "@/lib/editor-persistence"
 
 const fields = ["H2H", "Skills"].map((setup) => ({
   label: `Override · ${setup}`,
@@ -95,6 +100,11 @@ export function ProgramPathPreview({
   const [trackWidth, setTrackWidth] = useState(12)
   const [robotWidth, setRobotWidth] = useState(12)
   const [robotLength, setRobotLength] = useState(12)
+  useEffect(() => {
+    setTrackWidth(readAutonDimension(programId, "trackWidth"))
+    setRobotWidth(readAutonDimension(programId, "robotWidth"))
+    setRobotLength(readAutonDimension(programId, "robotLength"))
+  }, [programId])
   const [elapsed, setElapsed] = useState(0)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
@@ -369,42 +379,53 @@ export function ProgramPathPreview({
                         "Track width in inches",
                         trackWidth,
                         setTrackWidth,
+                        "trackWidth",
                       ],
                       [
                         "Width",
                         "Drive base width in inches",
                         robotWidth,
                         setRobotWidth,
+                        "robotWidth",
                       ],
                       [
                         "Length",
                         "Drive base length in inches",
                         robotLength,
                         setRobotLength,
+                        "robotLength",
                       ],
                     ] as const
-                  ).map(([label, accessibleLabel, value, setValue]) => (
-                    <label
-                      key={label}
-                      className="flex min-w-0 flex-col gap-1 text-xs"
-                    >
-                      <span className="text-muted-foreground">{label}</span>
-                      <Input
-                        aria-label={accessibleLabel}
-                        type="number"
-                        min="1"
-                        max="36"
-                        step="0.25"
-                        value={value}
-                        className="w-full min-w-0"
-                        onChange={(event) => {
-                          const next = event.target.valueAsNumber
-                          if (Number.isFinite(next) && next >= 1 && next <= 36)
-                            setValue(next)
-                        }}
-                      />
-                    </label>
-                  ))}
+                  ).map(
+                    ([label, accessibleLabel, value, setValue, dimension]) => (
+                      <label
+                        key={label}
+                        className="flex min-w-0 flex-col gap-1 text-xs"
+                      >
+                        <span className="text-muted-foreground">{label}</span>
+                        <Input
+                          aria-label={accessibleLabel}
+                          type="number"
+                          min="1"
+                          max="36"
+                          step="0.25"
+                          value={value}
+                          className="w-full min-w-0"
+                          onChange={(event) => {
+                            const next = event.target.valueAsNumber
+                            if (
+                              Number.isFinite(next) &&
+                              next >= 1 &&
+                              next <= 36
+                            ) {
+                              setValue(next)
+                              writeAutonDimension(programId, dimension, next)
+                            }
+                          }}
+                        />
+                      </label>
+                    )
+                  )}
                 </div>
               </div>
             )}

@@ -26,6 +26,29 @@ export function writeAutonRoute(programId: string, routeId: string) {
   writeEditorState(`${programId}:auton-route`, routeId)
 }
 
+export type AutonDimension = "trackWidth" | "robotWidth" | "robotLength"
+
+export function readAutonDimension(
+  programId: string,
+  dimension: AutonDimension
+): number {
+  const value = readEditorState<unknown>(`${programId}:auton-${dimension}`)
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 1 &&
+    value <= 36
+    ? value
+    : 12
+}
+
+export function writeAutonDimension(
+  programId: string,
+  dimension: AutonDimension,
+  value: number
+) {
+  writeEditorState(`${programId}:auton-${dimension}`, value)
+}
+
 export type FileView = {
   selections: {
     start: number
