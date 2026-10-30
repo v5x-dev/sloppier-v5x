@@ -105,6 +105,29 @@
   }
 }
 
+/* Soft keys retain the product's secondary colors with a lighter, subtler
+   bevel and shadow than the neutral recipe. */
+.tactile-soft {
+  --tactile-bg: var(--secondary);
+  --tactile-border: var(--border);
+  --tactile-bg-hover: color-mix(in oklab, var(--secondary), var(--foreground) 4%);
+  --tactile-bg-active: color-mix(in oklab, var(--secondary), var(--foreground) 4%);
+  --tactile-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--secondary), white 18%),
+    0 1px 2px rgb(0 0 0 / 0.06);
+  --tactile-shadow-hover:
+    inset 0 1px 0 color-mix(in oklab, var(--secondary), white 24%),
+    0 2px 4px rgb(0 0 0 / 0.08);
+  --tactile-shadow-active:
+    inset 0 2px 4px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04);
+  &:hover:not(:disabled),
+  &:active:not(:disabled),
+  &[aria-expanded="true"],
+  &[data-pressed] {
+    --tactile-border: var(--input);
+  }
+}
+
 /* The "tactile" recipe: a colored key standing on a ledge of its own color. */
 @utility tactile-primary {
   --tactile-bg: var(--primary);

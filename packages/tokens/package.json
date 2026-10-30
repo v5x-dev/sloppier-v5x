@@ -5,10 +5,7 @@
   "type": "module",
   "exports": {
     "./code/web.css": "./src/code/web.css",
-    "./code/mobile.css": "./src/code/mobile.css"
-  },
-  "scripts": {
-    "generate": "node scripts/generate-code-mobile.mjs",
-    "typecheck": "node scripts/generate-code-mobile.mjs --check"
+    "./film/web.css": "./src/film/web.css",
+    "./design/web.css": "./src/design/web.css"
   }
 }
