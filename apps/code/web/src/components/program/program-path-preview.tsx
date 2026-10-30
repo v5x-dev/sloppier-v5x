@@ -276,7 +276,11 @@ export function ProgramPathPreview({
                   aria-controls={optionsId}
                   onClick={() => setOptionsOpen(!optionsOpen)}
                 >
-                  {optionsOpen ? <CaretUpIcon /> : <CaretDownIcon />}
+                  {optionsOpen ? (
+                    <CaretUpIcon className="text-muted-foreground" />
+                  ) : (
+                    <CaretDownIcon className="text-muted-foreground" />
+                  )}
                 </Button>
                 <Button
                   size="icon-xs"
