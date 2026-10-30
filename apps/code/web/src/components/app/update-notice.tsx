@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { ArrowClockwiseIcon, InfoIcon } from "@phosphor-icons/react"
 import { Button } from "@v5x/ui/components/button"
+import release from "virtual:code-release"
 import {
   Toast,
   ToastClose,
@@ -13,7 +14,6 @@ import {
   useToastManager,
 } from "@v5x/ui/components/toast"
 
-declare const __CODE_RELEASE__: string
 const updates = createToastManager()
 
 function UpdateToast() {
@@ -63,7 +63,7 @@ export function UpdateNotice() {
           data !== null &&
           "release" in data &&
           typeof data.release === "string" &&
-          data.release !== __CODE_RELEASE__
+          data.release !== release
         ) {
           notified = true
           updates.add({
