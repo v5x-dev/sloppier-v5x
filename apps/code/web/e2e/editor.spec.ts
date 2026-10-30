@@ -108,4 +108,31 @@ test.describe("program editor", () => {
     await page.keyboard.press("Control+z")
     await expect(page.getByRole("button", { name: /Commit/ })).toBeHidden()
   })
+
+  test("keeps new lines visible when editing at the bottom", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: "Search program" }).click()
+    await page.getByRole("textbox", { name: "Search text" }).fill(searchTerm)
+    await page.locator("[data-search-result]").first().click()
+    const panel = page.getByRole("tabpanel")
+    const editor = panel.getByRole("textbox")
+    await expect(editor).toBeVisible()
+    await editor.click()
+    await page.keyboard.press("Control+End")
+    for (let i = 0; i < 40; i++) await page.keyboard.press("Enter")
+    await expect
+      .poll(() =>
+        panel.evaluate(
+          (element) =>
+            element.scrollHeight - element.clientHeight - element.scrollTop
+        )
+      )
+      .toBeLessThanOrEqual(1)
+    for (let i = 0; i < 40; i++) {
+      if (!(await page.getByRole("button", { name: /Commit/ }).isVisible()))
+        break
+      await page.keyboard.press("Control+z")
+    }
+  })
 })

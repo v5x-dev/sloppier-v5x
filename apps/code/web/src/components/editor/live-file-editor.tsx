@@ -239,6 +239,14 @@ function PierreFile({
   )
   const viewKey = `${programId}:file:${path}`
   const viewRestored = useRef(false)
+  const bottomScrollFrame = useRef<number | null>(null)
+  useEffect(
+    () => () => {
+      if (bottomScrollFrame.current !== null)
+        cancelAnimationFrame(bottomScrollFrame.current)
+    },
+    []
+  )
   const saveView = () => {
     const editor = binding.editor
     const viewport = completion.wrapper.current?.closest('[role="tabpanel"]')
@@ -410,8 +418,36 @@ function PierreFile({
             },
           }}
           onEditChange={(event) => {
+            const viewport =
+              completion.wrapper.current?.closest<HTMLElement>(
+                '[role="tabpanel"]'
+              )
+            const followBottom =
+              active &&
+              !binding.document.applyingRemote &&
+              event.changes.some((change) => change.text.includes("\n")) &&
+              viewport &&
+              viewport.scrollHeight -
+                viewport.clientHeight -
+                viewport.scrollTop <=
+                1
             binding.localChange(event)
             completion.onLocalChange(event)
+            if (followBottom) {
+              if (bottomScrollFrame.current !== null)
+                cancelAnimationFrame(bottomScrollFrame.current)
+              const previousTop = viewport.scrollTop
+              bottomScrollFrame.current = requestAnimationFrame(() => {
+                bottomScrollFrame.current = requestAnimationFrame(() => {
+                  bottomScrollFrame.current = null
+                  if (
+                    viewport.isConnected &&
+                    viewport.scrollTop === previousTop
+                  )
+                    viewport.scrollTop = viewport.scrollHeight
+                })
+              })
+            }
           }}
           onEditComplete={() => "accept"}
         />
