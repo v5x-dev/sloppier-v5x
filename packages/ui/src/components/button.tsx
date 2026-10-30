@@ -9,7 +9,7 @@ const buttonVariants = cva(
       variant: {
         default: "tactile text-primary-foreground tactile-primary",
         outline: "tactile text-foreground tactile-neutral",
-        secondary: "tactile text-secondary-foreground tactile-neutral",
+        secondary: "tactile text-secondary-foreground tactile-soft",
         ghost: "tactile-ghost text-muted-foreground hover:text-foreground",
         destructive:
           "tactile text-destructive tactile-destructive focus-visible:outline-destructive",
