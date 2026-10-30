@@ -253,6 +253,7 @@ export function indexSource(
         const constructorInit = arguments_.some(
           (p) =>
             p[0]?.kind === "literal" ||
+            (["-", "+"].includes(p[0]?.value) && p[1]?.kind === "literal") ||
             p.some((t) => t.value === "{") ||
             /^[A-Z_][A-Z_0-9]*$/.test(p.at(-1)?.value ?? "") ||
             ["true", "false", "nullptr"].includes(p[0]?.value)
