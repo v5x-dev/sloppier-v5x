@@ -17,6 +17,15 @@ export function writeEditorState(key: string, value: unknown) {
   }
 }
 
+export function readAutonRoute(programId: string): string {
+  const saved = readEditorState<unknown>(`${programId}:auton-route`)
+  return typeof saved === "string" ? saved : ""
+}
+
+export function writeAutonRoute(programId: string, routeId: string) {
+  writeEditorState(`${programId}:auton-route`, routeId)
+}
+
 export type FileView = {
   selections: {
     start: number
