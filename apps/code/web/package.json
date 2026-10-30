@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:sign-in": "node scripts/e2e-sign-in.mjs",
     "test:e2e:workos": "node scripts/e2e-workos.mjs",
+    "demo:visual": "node scripts/visual-demo.mjs",
     "benchmark:load": "playwright test --config playwright.benchmark.config.ts"
   },
   "dependencies": {
