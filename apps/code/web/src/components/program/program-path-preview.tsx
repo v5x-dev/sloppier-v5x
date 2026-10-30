@@ -36,6 +36,7 @@ import { pathPoseAt } from "@/lib/path-animation"
 import { exportPathGif } from "@/lib/export-path-gif"
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
+import { readAutonRoute, writeAutonRoute } from "@/lib/editor-persistence"
 
 const fields = ["H2H", "Skills"].map((setup) => ({
   label: `Override · ${setup}`,
@@ -87,6 +88,9 @@ export function ProgramPathPreview({
   )
   const [retry, setRetry] = useState(0)
   const [selected, setSelected] = useState("")
+  useEffect(() => {
+    setSelected(readAutonRoute(programId))
+  }, [programId])
   const [field, setField] = useState("0")
   const [trackWidth, setTrackWidth] = useState(12)
   const [robotWidth, setRobotWidth] = useState(12)
@@ -334,7 +338,10 @@ export function ProgramPathPreview({
                           label: item.name,
                         }))}
                         onValueChange={(value) => {
-                          if (value !== null) setSelected(value)
+                          if (value !== null) {
+                            setSelected(value)
+                            writeAutonRoute(programId, value)
+                          }
                         }}
                       >
                         <SelectTrigger
