@@ -85,6 +85,29 @@ PLAYWRIGHT_PROGRAM_ID=<program-id> PLAYWRIGHT_DEMO_USER=<demo-user> \
 Stop the demo process afterward. This verifies signed Convex authentication and
 membership, but does not test the WorkOS sign-in callback.
 
+### Quick visual review
+
+To prepare one real Code web session for screenshots, run this from
+`apps/code/web`:
+
+```sh
+bun run demo:visual
+```
+
+It creates an EZ-Template Program, starts Code web on an available loopback
+port, waits for the server to answer, and prints dashboard and Program URLs for
+the Luna demo identity. Pass `pros`, `jar`, or `vexcode` to choose another
+template. Set `CODE_DEMO_PORT` only when a fixed port is required; the server
+fails instead of silently switching ports if that port is occupied.
+
+Use the printed URLs to capture the dashboard, new-Program dialog, editor, and
+Program history in separate browser tabs. Share this single running demo among
+parallel read-only reviewers; do not start a second demo against the same
+development deployment. Save screenshots outside tracked source, for example
+under `/tmp/v5x-code-states/`. Press Ctrl+C when the captures are complete; the
+server, temporary credentials, and demo auth settings are cleaned up.
+The demo workspace and Program remain on the development deployment.
+
 ### Automated WorkOS sign-in
 
 `bun run test:e2e:workos` follows the WorkOS emulator workflow: it starts a

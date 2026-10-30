@@ -1,6 +1,6 @@
 import { startDemoSession } from "./demo-session.mjs"
 
-startDemoSession({
+await startDemoSession({
   names: ["Alice", "Ben", "Clara", "Diego"],
   programName: "Four editors live demo",
   template: "pros",

@@ -62,20 +62,67 @@ jobs:
         working-directory: apps/code/web
         run: bun run test:e2e:workos
 
-  deploy:
-    needs: e2e-workos
-    if: >-
-      always() && (needs.e2e-workos.result == 'success' ||
-      (needs.e2e-workos.result == 'skipped' && github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.fork == true))
+  quality-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
     env:
       VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
       VITE_WORKOS_CLIENT_ID: ${{ vars.VITE_WORKOS_CLIENT_ID }}
       VITE_WORKOS_REDIRECT_URI: ${{ vars.VITE_WORKOS_REDIRECT_URI }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint Code web dependency graph
+        run: bunx turbo run lint --filter=@v5x/code-web
+      - name: Typecheck Code web dependency graph
+        run: bunx turbo run typecheck --filter=@v5x/code-web
+      - name: Test Code web dependency graph
+        run: bunx turbo run test --filter=@v5x/code-web
+      - name: Build web
+        run: |
+          : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
+          : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"
+          : "${VITE_WORKOS_REDIRECT_URI:?Missing VITE_WORKOS_REDIRECT_URI}"
+          bun run build
+        working-directory: apps/code/web
+
+  deploy:
+    needs: [e2e-workos, quality-pr]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      E2E_RESULT: ${{ needs.e2e-workos.result }}
+      QUALITY_RESULT: ${{ needs.quality-pr.result }}
+      EVENT_NAME: ${{ github.event_name }}
+      IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+    steps:
+      - name: Require the validation jobs to pass
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            if [ "$QUALITY_RESULT" != "success" ]; then
+              echo "Code web quality checks did not pass: $QUALITY_RESULT" >&2
+              exit 1
+            fi
+            if [ "$E2E_RESULT" = "success" ]; then exit 0; fi
+            if [ "$IS_FORK" = "true" ] && [ "$E2E_RESULT" = "skipped" ]; then exit 0; fi
+            echo "WorkOS end-to-end checks did not pass: $E2E_RESULT" >&2
+            exit 1
+          fi
+          if [ "$E2E_RESULT" != "success" ] || [ "$QUALITY_RESULT" != "skipped" ]; then
+            echo "Validation jobs did not pass (e2e=$E2E_RESULT, PR quality=$QUALITY_RESULT)" >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request'
         with:
           fetch-depth: 0
       - name: Check for backend changes
@@ -97,20 +144,27 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-node@v4
+        if: github.event_name != 'pull_request'
         with:
           node-version: 22
       - uses: oven-sh/setup-bun@v2
+        if: github.event_name != 'pull_request'
         with:
           bun-version: 1.4.4
       - name: Install dependencies
+        if: github.event_name != 'pull_request'
         run: bun install --frozen-lockfile
       - name: Lint workspace
+        if: github.event_name != 'pull_request'
         run: bun run lint
       - name: Typecheck workspace
+        if: github.event_name != 'pull_request'
         run: bun run typecheck
       - name: Test workspace
+        if: github.event_name != 'pull_request'
         run: bun run test
       - name: Build web
+        if: github.event_name != 'pull_request'
         run: |
           : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
           : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"

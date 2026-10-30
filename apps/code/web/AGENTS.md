@@ -30,3 +30,16 @@ the button and keyboard entry points, progress, completion, and the repeated
 upload result; include errors where relevant. Verify the saved recording shows
 those states before presenting it. If setup fails, investigate the documented
 demo environment and browser diagnostics before concluding it is blocked.
+
+For quick visual review, run `bun run demo:visual` from this app. It prints a
+dashboard URL and a seeded Program URL after the local server is ready. For
+parallel screenshot checks, start this demo once and give each read-only
+reviewer one state and one separate browser tab. Useful states are the Programs
+dashboard, the new-Program dialog, the Program editor, and Program history.
+Have each reviewer save and inspect a screenshot of the requested state outside
+tracked source, then report its path and any missing or loading UI. Do not have
+parallel reviewers start separate demo sessions on the shared development
+deployment or make simultaneous edits to the fixture Program.
+
+When using `agent-browser`, use a distinct named session per reviewer rather
+than the default shared session.

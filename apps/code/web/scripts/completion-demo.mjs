@@ -4,7 +4,7 @@
 import { startDemoSession } from "./demo-session.mjs"
 
 const template = process.argv[2] ?? "pros"
-startDemoSession({
+await startDemoSession({
   names: ["Alice"],
   programName: `Autocomplete check (${template})`,
   template,
