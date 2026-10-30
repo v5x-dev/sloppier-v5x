@@ -4,6 +4,7 @@ export type PathPoint = {
   heading: number
   start?: boolean
   interpolated?: boolean
+  wait?: boolean
   source?: { file: string; line: number }
 }
 export type AutonPath = {
@@ -481,11 +482,14 @@ export function parseAutonPaths(
             else walk(helper[0], [...stack, name])
             continue
           }
-          if (!names.test(name)) continue
+          const isDelay =
+            name === "delay" && /\bpros::\s*$/.test(body.slice(0, match.index))
+          if (!names.test(name) && !isDelay) continue
           const values = args.split(",").map(resolveNumber)
           const previousLength = points.length
           const previousStart = points[0]
-          if (template === "jar") jarCall(name, args, values)
+          if (isDelay) points.push({ ...pose, start: false, wait: true })
+          else if (template === "jar") jarCall(name, args, values)
           else ezCall(name, args, values)
           const source = {
             file: current.file,

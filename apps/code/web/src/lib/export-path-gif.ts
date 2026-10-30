@@ -80,13 +80,21 @@ export async function exportPathGif(options: {
       ctx.rotate((robot.heading * Math.PI) / 180)
       const width = coordinate(options.robotWidth)
       const length = coordinate(options.robotLength)
-      ctx.fillStyle = options.primary
+      ctx.fillStyle = robot.wait ? options.startColor : options.primary
       ctx.globalAlpha = 0.4
       ctx.fillRect(-width / 2, -length / 2, width, length)
       ctx.globalAlpha = 1
-      ctx.strokeStyle = options.primary
+      ctx.strokeStyle = robot.wait ? options.startColor : options.primary
       ctx.lineWidth = size * 0.006
       ctx.strokeRect(-width / 2, -length / 2, width, length)
+      if (robot.wait) {
+        ctx.strokeStyle = options.startColor
+        ctx.lineWidth = size * 0.006
+        ctx.beginPath()
+        const angle = ((duration * frame) / frames) * Math.PI * 4
+        ctx.arc(0, 0, size * 0.015, angle, angle + Math.PI * 1.4)
+        ctx.stroke()
+      }
       ctx.strokeStyle = options.foreground
       ctx.lineWidth = size * 0.005
       ctx.beginPath()

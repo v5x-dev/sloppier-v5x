@@ -6,12 +6,14 @@ function pathSteps(points: PathPoint[]) {
     const previous = points[index]
     const angle =
       ((((point.heading - previous.heading) % 360) + 540) % 360) - 180
-    const duration = point.start
-      ? 0
-      : Math.max(
-          Math.hypot(point.x - previous.x, point.y - previous.y) / 18,
-          Math.abs(angle) / 90
-        )
+    const duration = point.wait
+      ? 0.5
+      : point.start
+        ? 0
+        : Math.max(
+            Math.hypot(point.x - previous.x, point.y - previous.y) / 18,
+            Math.abs(angle) / 90
+          )
     return { previous, point, angle, duration }
   })
 }
@@ -37,6 +39,7 @@ export function pathPoseAt(
         x: step.previous.x + (step.point.x - step.previous.x) * fraction,
         y: step.previous.y + (step.point.y - step.previous.y) * fraction,
         heading: step.previous.heading + step.angle * fraction,
+        wait: step.point.wait,
       }
     }
     time -= step.duration

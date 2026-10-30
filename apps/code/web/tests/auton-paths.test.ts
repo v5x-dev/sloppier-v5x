@@ -322,3 +322,18 @@ describe("JAR-Template path previews", () => {
     ).toEqual([])
   })
 })
+
+it("includes PROS delays in source order", () => {
+  const [route] = parse(`void test_auto() {
+    chassis.pid_drive_set(12, 100);
+    pros::delay(500);
+    other.delay(3);
+    pros::delay(variable);
+    chassis.pid_drive_set(-4, 100);
+  }`)
+  expect(
+    route.points
+      .filter((point) => point.wait)
+      .map((point) => point.source?.line)
+  ).toEqual([3, 5])
+})

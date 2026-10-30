@@ -495,11 +495,27 @@ export function ProgramPathPreview({
                           y={(-robotLength / extent) * 50}
                           width={(robotWidth / extent) * 100}
                           height={(robotLength / extent) * 100}
-                          fill="var(--primary)"
+                          fill={
+                            robot.wait ? "var(--chart-3)" : "var(--primary)"
+                          }
                           fillOpacity="0.4"
-                          stroke="var(--primary)"
+                          stroke={
+                            robot.wait ? "var(--chart-3)" : "var(--primary)"
+                          }
                           strokeWidth="0.6"
                         />
+                        {robot.wait && (
+                          <circle
+                            cx="0"
+                            cy="0"
+                            r="1.5"
+                            fill="none"
+                            stroke="var(--chart-3)"
+                            strokeWidth="0.6"
+                            strokeDasharray="5 4"
+                            transform={`rotate(${elapsed * 720})`}
+                          />
+                        )}
                         <path
                           d="M -1 -2 L 0 -3 L 1 -2"
                           fill="none"
