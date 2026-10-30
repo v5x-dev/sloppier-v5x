@@ -48,6 +48,7 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   CaretLeftIcon,
   FileDashedIcon,
+  FileCodeIcon,
   GitCommitIcon,
   ListMagnifyingGlassIcon,
   TextAlignLeftIcon,
@@ -94,6 +95,7 @@ import {
   TabsTrigger,
 } from "@v5x/ui/components/tabs"
 import { toast } from "@v5x/ui/components/toast"
+import { createPortal } from "react-dom"
 
 import {
   Fragment,
@@ -161,6 +163,10 @@ export function Workbench({
   }, [])
   // The file being dragged and the editor group zone it would drop into.
   const [drag, setDrag] = useState<DragSource | null>(null)
+  const [treeDragPosition, setTreeDragPosition] = useState<{
+    x: number
+    y: number
+  } | null>(null)
   const [dropHighlight, setDropHighlight] = useState<DropHighlight | null>(null)
   const [cursor, setCursor] = useState<{ path: string; line: number } | null>(
     null
@@ -207,7 +213,8 @@ export function Workbench({
         dragging = true
         setDrag({ path, groupId: null })
       }
-      if (dragging)
+      if (dragging) {
+        setTreeDragPosition({ x: e.clientX, y: e.clientY })
         setDropHighlight(
           dropAt(
             e.clientX,
@@ -217,10 +224,12 @@ export function Workbench({
             splitsOnDrop(e)
           )
         )
+      }
     }
     const finish = (e: PointerEvent) => {
       stop()
       setDrag(null)
+      setTreeDragPosition(null)
       setDropHighlight(null)
       if (!dragging) return
       const drop = dropAt(
@@ -235,6 +244,7 @@ export function Workbench({
     const cancel = () => {
       stop()
       setDrag(null)
+      setTreeDragPosition(null)
       setDropHighlight(null)
     }
     const stop = () => {
@@ -905,8 +915,24 @@ export function Workbench({
                 {renderNode(layout.root, [])}
               </div>
               <DragOverlay dropAnimation={null}>
-                {drag && <TabChip path={drag.path} />}
+                {drag?.groupId && <TabChip path={drag.path} />}
               </DragOverlay>
+              {drag?.groupId === null &&
+                treeDragPosition &&
+                typeof document !== "undefined" &&
+                createPortal(
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none fixed z-50"
+                    style={{
+                      left: treeDragPosition.x + 14,
+                      top: treeDragPosition.y + 14,
+                    }}
+                  >
+                    <TabChip path={drag.path} />
+                  </div>,
+                  document.body
+                )}
             </DndContext>
           </div>
           <ActionsBar
@@ -1203,9 +1229,20 @@ function dropAt(
 }
 
 function TabChip({ path }: { path: string }) {
+  const segments = path.split("/")
+  const name = segments.pop() ?? path
+  const directory = segments.join("/")
   return (
-    <span className="inline-flex h-7 items-center rounded-lg bg-secondary px-3 text-sm text-foreground shadow-overlay">
-      {path.split("/").at(-1)}
+    <span className="inline-flex max-w-80 items-center gap-2 rounded-lg border border-border bg-popover px-3 py-2 text-popover-foreground shadow-overlay">
+      <FileCodeIcon className="size-4 shrink-0 text-primary" />
+      <span className="min-w-0 leading-tight">
+        <span className="block truncate text-sm font-medium">{name}</span>
+        {directory && (
+          <span className="block truncate text-xs text-muted-foreground">
+            {directory}/
+          </span>
+        )}
+      </span>
     </span>
   )
 }
