@@ -16,6 +16,7 @@ import type { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { positionAt, RequestCancelled } from "@/lib/language-service"
 import { DefinitionContext, useLanguageService } from "./language-session"
 import { toast } from "@v5x/ui/components/toast"
+import { ScrollArea } from "@v5x/ui/components/scroll-area"
 import { hoverPosition, type HoverAnchor } from "@/lib/hover-position"
 import { isClickGesture, type Point } from "@/lib/click-gesture"
 
@@ -39,13 +40,15 @@ function HoverCard({
   onLeave: () => void
 }) {
   const content = useRef<HTMLDivElement>(null)
+  const [contentHeight, setContentHeight] = useState(360)
   const [position, setPosition] = useState(() =>
     hoverPosition(popup.anchor, 360, window.innerWidth, window.innerHeight)
   )
   useLayoutEffect(() => {
     const node = content.current
     if (!node) return
-    const measure = () =>
+    const measure = () => {
+      setContentHeight(node.getBoundingClientRect().height)
       setPosition(
         hoverPosition(
           popup.anchor,
@@ -54,6 +57,7 @@ function HoverCard({
           window.innerHeight
         )
       )
+    }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(node)
@@ -64,18 +68,21 @@ function HoverCard({
     }
   }, [popup])
   return (
-    <div
+    <ScrollArea
       role="tooltip"
       data-language-hover
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className="pointer-events-auto fixed z-50 overflow-auto rounded-lg bg-popover text-popover-foreground shadow-xl ring-1 shadow-black/25 ring-foreground/15"
-      style={position}
+      className="pointer-events-auto fixed z-50 rounded-lg bg-popover text-popover-foreground shadow-xl ring-1 shadow-black/25 ring-foreground/15"
+      style={{
+        ...position,
+        height: Math.min(contentHeight, position.maxHeight),
+      }}
     >
       <div ref={content} className="flow-root">
         <HoverDocumentation contents={popup.contents} />
       </div>
-    </div>
+    </ScrollArea>
   )
 }
 
