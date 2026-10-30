@@ -266,52 +266,6 @@ export function ProgramPathPreview({
             >
               <span className="text-sm font-medium">Auton paths</span>
               <div className="flex items-center">
-                <ActionTooltip label="Export path GIF">
-                  <Button
-                    size="icon-xs"
-                    variant="ghost"
-                    aria-label="Export path GIF"
-                    disabled={!route || exporting || imageError}
-                    onClick={() => {
-                      if (!route || !panel.current) return
-                      const styles = getComputedStyle(panel.current)
-                      setExporting(true)
-                      setExportError(null)
-                      void exportPathGif({
-                        route,
-                        fieldImage: fields[Number(field)].exportImage,
-                        robotWidth,
-                        robotLength,
-                        robotVisible,
-                        primary: styles.getPropertyValue("--primary").trim(),
-                        startColor: styles.getPropertyValue("--chart-3").trim(),
-                        foreground: styles
-                          .getPropertyValue("--foreground")
-                          .trim(),
-                        background: styles
-                          .getPropertyValue("--background")
-                          .trim(),
-                      })
-                        .catch((reason) => setExportError(errorMessage(reason)))
-                        .finally(() => setExporting(false))
-                    }}
-                  >
-                    <DownloadSimpleIcon />
-                  </Button>
-                </ActionTooltip>
-                <ActionTooltip
-                  label={robotVisible ? "Hide robot" : "Show robot"}
-                >
-                  <Button
-                    size="icon-xs"
-                    variant="ghost"
-                    aria-label={robotVisible ? "Hide robot" : "Show robot"}
-                    aria-pressed={robotVisible}
-                    onClick={() => setRobotVisible(!robotVisible)}
-                  >
-                    {robotVisible ? <EyeIcon /> : <EyeSlashIcon />}
-                  </Button>
-                </ActionTooltip>
                 <Button
                   size="icon-xs"
                   variant="ghost"
@@ -584,14 +538,64 @@ export function ProgramPathPreview({
                 ))}
               </>
             ) : null}
-            <a
-              href="https://field-rendering.jerryio.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0 text-[10px] text-muted-foreground underline"
-            >
-              Field renders by JerryIO · CC BY 4.0
-            </a>
+            <div className="flex shrink-0 items-center justify-between gap-2">
+              <a
+                href="https://field-rendering.jerryio.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 text-[10px] text-muted-foreground underline"
+              >
+                Field renders by JerryIO · CC BY 4.0
+              </a>
+              <div className="flex items-center">
+                <ActionTooltip label="Export path GIF">
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label="Export path GIF"
+                    disabled={!route || exporting || imageError}
+                    onClick={() => {
+                      if (!route || !panel.current) return
+                      const styles = getComputedStyle(panel.current)
+                      setExporting(true)
+                      setExportError(null)
+                      void exportPathGif({
+                        route,
+                        fieldImage: fields[Number(field)].exportImage,
+                        robotWidth,
+                        robotLength,
+                        robotVisible,
+                        primary: styles.getPropertyValue("--primary").trim(),
+                        startColor: styles.getPropertyValue("--chart-3").trim(),
+                        foreground: styles
+                          .getPropertyValue("--foreground")
+                          .trim(),
+                        background: styles
+                          .getPropertyValue("--background")
+                          .trim(),
+                      })
+                        .catch((reason) => setExportError(errorMessage(reason)))
+                        .finally(() => setExporting(false))
+                    }}
+                  >
+                    <DownloadSimpleIcon />
+                  </Button>
+                </ActionTooltip>
+                <ActionTooltip
+                  label={robotVisible ? "Hide robot" : "Show robot"}
+                >
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label={robotVisible ? "Hide robot" : "Show robot"}
+                    aria-pressed={robotVisible}
+                    onClick={() => setRobotVisible(!robotVisible)}
+                  >
+                    {robotVisible ? <EyeIcon /> : <EyeSlashIcon />}
+                  </Button>
+                </ActionTooltip>
+              </div>
+            </div>
           </section>,
           document.body
         )}
