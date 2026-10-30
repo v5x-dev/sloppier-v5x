@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { useProgramConnection } from "@/components/program/program-connection"
-import { readBuildBinaries } from "@/lib/build-binaries"
 import { errorMessage } from "@/lib/errors"
 
 // This map belongs to the client explorer, never to repository drafts or commits.
@@ -27,6 +26,8 @@ export function useProgramBinaries() {
           undefined,
           controller.signal
         )
+        const { readBuildBinaries } = await import("@/lib/build-binaries")
+        controller.signal.throwIfAborted()
         const entries = readBuildBinaries(
           new Uint8Array(await response.arrayBuffer())
         )

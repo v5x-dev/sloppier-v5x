@@ -16,9 +16,7 @@ import { editorThemeOptions } from "@/lib/editor-theme"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
 import { File } from "@pierre/diffs/react"
 import { ActionsBar } from "@/components/program/program-actions-bar"
-import { ProgramSymbols } from "@/components/program/program-symbols"
 import type { FormatChange } from "@/components/editor/editor-formatting"
-import { ProgramPathPreview } from "@/components/program/program-path-preview"
 import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
@@ -100,6 +98,8 @@ import { makefileIcons } from "@/lib/makefile-icons"
 
 import {
   Fragment,
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useEffectEvent,
@@ -121,10 +121,28 @@ import { LanguageSession } from "@/components/editor/language-session"
 import { commitFormattedSource } from "@/lib/commit-formatted-source"
 import { errorMessage } from "@/lib/errors"
 import { useProgramConnection } from "@/components/program/program-connection"
-import { ProgramBuild } from "@/components/program/program-build"
-import { ProgramUpload } from "@/components/program/program-upload"
 import { useProgramBinaries } from "@/hooks/use-program-binaries"
 import { prepareUploadBuild, waitForSourceSync } from "@/lib/build-program"
+
+const loadProgramBuild = () => import("@/components/program/program-build")
+const ProgramBuild = lazy(() =>
+  loadProgramBuild().then((module) => ({ default: module.ProgramBuild }))
+)
+const ProgramUpload = lazy(() =>
+  import("@/components/program/program-upload").then((module) => ({
+    default: module.ProgramUpload,
+  }))
+)
+const ProgramSymbols = lazy(() =>
+  import("@/components/program/program-symbols").then((module) => ({
+    default: module.ProgramSymbols,
+  }))
+)
+const ProgramPathPreview = lazy(() =>
+  import("@/components/program/program-path-preview").then((module) => ({
+    default: module.ProgramPathPreview,
+  }))
+)
 
 // Reserved for live-editing CRDT blobs; not user source.
 
@@ -153,6 +171,9 @@ export function Workbench({
 }) {
   const [showSymbols, setShowSymbols] = useState(false)
   const editorArea = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    void loadProgramBuild().catch(() => {})
+  }, [])
   // dnd-kit's move events carry no modifier keys, so the latest pointer's are kept here.
   const dragModifiers = useRef({ altKey: false, shiftKey: false })
   useEffect(() => {
@@ -794,7 +815,17 @@ export function Workbench({
             <span className="truncate text-xs font-medium">{program.name}</span>
           </SidebarHeader>
           <SidebarContent className="overflow-hidden">
-            {showSymbols && <ProgramSymbols />}
+            {showSymbols && (
+              <Suspense
+                fallback={
+                  <div className="flex min-h-0 flex-1 items-center justify-center">
+                    <Spinner className="text-muted-foreground" />
+                  </div>
+                }
+              >
+                <ProgramSymbols />
+              </Suspense>
+            )}
             <div
               className={cn(
                 "flex min-h-0 flex-1 flex-col",
@@ -996,55 +1027,67 @@ export function Workbench({
               </ActionGroup>
             }
           >
-            <ProgramUpload
-              currentSha={program.repositoryHeadSha}
-              buildAction={
-                <ProgramBuild
-                  programId={program._id}
-                  dirty={dirtyPaths.length > 0}
-                  paths={paths ?? []}
-                  currentSha={program.repositoryHeadSha}
-                  onDiagnostic={(path, diagnostic) => {
-                    setDiagnosticTarget((current) => ({
-                      path,
-                      line: diagnostic.line,
-                      column: diagnostic.column,
-                      request: (current?.request ?? 0) + 1,
-                    }))
-                    openFile(path)
-                  }}
-                />
-              }
-              name={program.name}
-              programId={program._id}
-              dirty={dirtyPaths.length > 0}
-              prepareProgram={(signal, onStage, isInstalled) =>
-                prepareUploadBuild({
-                  commitChanges: async (commitSignal) => {
-                    await waitForSourceSync(source.isSynced, commitSignal)
-                    await commitFormatted(
-                      "Save changes before upload",
-                      commitSignal
-                    )
-                  },
-                  prepareSource,
-                  request: buildRequest,
-                  signal,
-                  onStage,
-                  isInstalled,
-                })
-              }
-            />
+            <Suspense
+              fallback={<Spinner className="mx-3 text-muted-foreground" />}
+            >
+              <ProgramUpload
+                currentSha={program.repositoryHeadSha}
+                buildAction={
+                  <Suspense
+                    fallback={<span className="size-8" aria-hidden="true" />}
+                  >
+                    <ProgramBuild
+                      programId={program._id}
+                      dirty={dirtyPaths.length > 0}
+                      paths={paths ?? []}
+                      currentSha={program.repositoryHeadSha}
+                      onDiagnostic={(path, diagnostic) => {
+                        setDiagnosticTarget((current) => ({
+                          path,
+                          line: diagnostic.line,
+                          column: diagnostic.column,
+                          request: (current?.request ?? 0) + 1,
+                        }))
+                        openFile(path)
+                      }}
+                    />
+                  </Suspense>
+                }
+                name={program.name}
+                programId={program._id}
+                dirty={dirtyPaths.length > 0}
+                prepareProgram={(signal, onStage, isInstalled) =>
+                  prepareUploadBuild({
+                    commitChanges: async (commitSignal) => {
+                      await waitForSourceSync(source.isSynced, commitSignal)
+                      await commitFormatted(
+                        "Save changes before upload",
+                        commitSignal
+                      )
+                    },
+                    prepareSource,
+                    request: buildRequest,
+                    signal,
+                    onStage,
+                    isInstalled,
+                  })
+                }
+              />
+            </Suspense>
             {(program.template === "ez-template" ||
               program.template === "jar") && (
-              <ProgramPathPreview
-                programId={program._id}
-                revision={program.repositoryHeadSha}
-                template={program.template}
-                paths={paths}
-                drafts={source}
-                cursor={cursor?.path === activePath ? cursor : null}
-              />
+              <Suspense
+                fallback={<span className="size-8" aria-hidden="true" />}
+              >
+                <ProgramPathPreview
+                  programId={program._id}
+                  revision={program.repositoryHeadSha}
+                  template={program.template}
+                  paths={paths}
+                  drafts={source}
+                  cursor={cursor?.path === activePath ? cursor : null}
+                />
+              </Suspense>
             )}
           </ActionsBar>
         </SidebarInset>

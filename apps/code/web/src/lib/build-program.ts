@@ -1,5 +1,3 @@
-import { zipSync } from "fflate"
-import { readBuildBinaries } from "./build-binaries"
 import { selectUploadProgram } from "./upload-binaries"
 
 export type BuildSource = { sha: string; files: Record<string, Uint8Array> }
@@ -21,6 +19,7 @@ export async function uploadSource(
   source: BuildSource,
   signal?: AbortSignal
 ) {
+  const { zipSync } = await import("fflate")
   const snapshot = zipSync(source.files)
   const id = crypto.randomUUID()
   for (let offset = 0; offset < snapshot.length; offset += 512 * 1024) {
@@ -123,6 +122,8 @@ export async function prepareUploadBuild(options: {
   onStage("Downloading build binaries…")
   const artifactId = current.artifactId
   const response = await request("/artifact", undefined, signal)
+  const { readBuildBinaries } = await import("./build-binaries")
+  signal.throwIfAborted()
   const files = readBuildBinaries(new Uint8Array(await response.arrayBuffer()))
   current = await status()
   if (current.artifactId !== artifactId || !matches(current, source.sha))

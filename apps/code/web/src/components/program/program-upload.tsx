@@ -56,11 +56,9 @@ import { Switch } from "@v5x/ui/components/switch"
 import { toast } from "@v5x/ui/components/toast"
 import { cn } from "@v5x/ui/lib/utils"
 import { errorMessage } from "@/lib/errors"
-import { isInstalled, recordInstalled } from "@/lib/brain-revision"
 import {
   BRAIN_SLOT_COUNT,
   matchBrainSlot,
-  readBrainSlots,
   type BrainSlotMatch,
   type BrainSlotReading,
 } from "@/lib/brain-slots"
@@ -215,6 +213,7 @@ export function ProgramUpload({
     setSlotsError(null)
     try {
       await consoleIO(async (connection) => {
+        const { readBrainSlots } = await import("@/lib/brain-slots-reader")
         const readings = await readBrainSlots(connection)
         if (mounted.current && device.current?.connection === connection)
           setSlots(readings)
@@ -358,6 +357,7 @@ export function ProgramUpload({
             if (mounted.current) setMessage(stage)
           },
           async (sha) => {
+            const { isInstalled } = await import("@/lib/brain-revision")
             revision = sha
             setMessage("Checking the program on your Brain…")
             return isInstalled(selected.connection, targetSlot, programId, sha)
@@ -397,6 +397,7 @@ export function ProgramUpload({
           selected.connection.type !== "controller"
         ) {
           try {
+            const { recordInstalled } = await import("@/lib/brain-revision")
             await recordInstalled(
               selected.connection,
               targetSlot,
