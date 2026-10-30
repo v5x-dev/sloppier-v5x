@@ -9,12 +9,18 @@ import tailwindcss from "@tailwindcss/vite"
 const release = randomUUID()
 
 const config = defineConfig({
-  define: { __CODE_RELEASE__: JSON.stringify(release) },
   resolve: { tsconfigPaths: true },
   plugins: [
     {
       name: "code-release-marker",
-      apply: "build",
+      resolveId(id) {
+        if (id === "virtual:code-release") return "\0virtual:code-release"
+      },
+      load(id) {
+        if (id === "\0virtual:code-release") {
+          return `export default ${JSON.stringify(release)}`
+        }
+      },
       generateBundle() {
         if (this.environment.name === "client") {
           this.emitFile({
