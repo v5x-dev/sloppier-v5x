@@ -58,6 +58,7 @@ type Props = {
   readBytes: (path: string, saved?: boolean) => Promise<ArrayBuffer>
   apply: (update: ExplorerUpdate) => Promise<void>
   onOpen: (path: string) => void
+  onFilePointerDown?: (path: string, event: React.PointerEvent) => void
 }
 
 type Prompt = {
@@ -642,6 +643,19 @@ export function RepositoryExplorer(props: Props) {
       </div>
       <div
         className="min-h-0 flex-1"
+        onPointerDownCapture={(event) => {
+          if (event.button !== 0) return
+          const row = event.nativeEvent
+            .composedPath()
+            .find(
+              (entry): entry is HTMLElement =>
+                entry instanceof HTMLElement &&
+                entry.dataset.itemType === "file"
+            )
+          const path = row?.dataset.itemPath
+          if (path && props.paths.includes(path))
+            props.onFilePointerDown?.(path, event)
+        }}
         onContextMenu={(event) => {
           if (event.defaultPrevented || busy) return
           event.preventDefault()

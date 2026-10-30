@@ -4,6 +4,7 @@ import * as Y from "yjs"
 import { Awareness, encodeAwarenessUpdate } from "y-protocols/awareness"
 import {
   createLiveFileSession,
+  joinLiveFile,
   type LivePerson,
 } from "../src/lib/live-file-session"
 import type { Id } from "@v5x/backend/dataModel"
@@ -123,14 +124,15 @@ function setup(
     programId: "program" as Id<"programs">,
     path: "src/main.cpp",
     user: { id: "alice", email: "alice@example.com" },
-    callbacks,
     createCache: (_name, doc) => {
       onCache?.(doc)
       return cache
     },
   })
+  const member = session.join(callbacks)
   return {
     session,
+    member,
     client,
     callbacks,
     cache,
@@ -170,6 +172,26 @@ function heartbeatSessionId(s: ReturnType<typeof setup>) {
   return (heartbeat?.[1] as { sessionId?: string } | undefined)?.sessionId
 }
 
+/** A second open editor of the same file: its own editor, sharing the session's document. */
+function secondView() {
+  const editor = {
+    renderCarets: vi.fn(),
+    publishSelection: vi.fn(),
+    destroy: vi.fn(),
+  }
+  const view = {
+    onChange: vi.fn(),
+    onPeopleChange: vi.fn(),
+    onSyncChange: vi.fn(),
+    onStatus: vi.fn(),
+    onError: vi.fn(),
+    onReplaced: vi.fn(),
+    isFocused: () => false,
+    mount: vi.fn(() => editor),
+  }
+  return { view, editor }
+}
+
 describe("presence session", () => {
   it("shares tab activity and keeps a person active while any of their tabs is active", async () => {
     const s = setup()
@@ -183,7 +205,7 @@ describe("presence session", () => {
       ]
       s.session.setBrowserActive(true)
       expect(local[1].getLocalState()?.active).toBe(true)
-      s.session.setActive(false)
+      s.member.setActive(false)
       expect(local[1].getLocalState()?.active).toBe(true)
       s.session.setBrowserActive(false)
       expect(local[1].getLocalState()?.active).toBe(false)
@@ -262,12 +284,20 @@ describe("presence session", () => {
   it("reuses one session per tab, user and file, so a reloaded page replaces its previous caret", async () => {
     vi.stubGlobal("sessionStorage", memoryStorage())
     const previousPage = setup()
-    const reloadedPage = setup()
     try {
       await vi.advanceTimersByTimeAsync(0)
       const id = heartbeatSessionId(previousPage)
       expect(id).toBeDefined()
-      expect(heartbeatSessionId(reloadedPage)).toBe(id)
+      // A reload tears down the previous page before the new one starts.
+      previousPage.session.dispose()
+    } finally {
+      previousPage.session.dispose()
+    }
+    const reloadedPage = setup()
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      const id = heartbeatSessionId(reloadedPage)
+      expect(id).toBeDefined()
       vi.stubGlobal("sessionStorage", memoryStorage())
       const otherTab = setup()
       try {
@@ -277,8 +307,28 @@ describe("presence session", () => {
         otherTab.session.dispose()
       }
     } finally {
-      previousPage.session.dispose()
       reloadedPage.session.dispose()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it("gives each open copy of a file in one tab its own presence session", async () => {
+    vi.stubGlobal("sessionStorage", memoryStorage())
+    const first = setup()
+    const copy = setup()
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      const firstId = heartbeatSessionId(first)
+      const copyId = heartbeatSessionId(copy)
+      expect(firstId).toBeDefined()
+      expect(copyId).toBeDefined()
+      expect(copyId).not.toBe(firstId)
+      // Closing one copy must not remove the other copy's presence.
+      copy.session.dispose()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(heartbeatSessionId(first)).toBe(firstId)
+    } finally {
+      first.session.dispose()
       vi.unstubAllGlobals()
     }
   })
@@ -463,5 +513,76 @@ describe("live file session", () => {
     expect(s.watches.every((watch) => !watch.active)).toBe(true)
     expect(s.editor.destroy).toHaveBeenCalledOnce()
     expect(s.disconnect).toHaveBeenCalledOnce()
+  })
+})
+
+describe("shared live file", () => {
+  it("mounts every joined view on one document with one undo manager", async () => {
+    const s = setup()
+    const second = secondView()
+    s.session.join(second.view)
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      expect(s.callbacks.mount).toHaveBeenCalledOnce()
+      expect(second.view.mount).toHaveBeenCalledOnce()
+      const [firstDoc, , firstUndo] = s.callbacks.mount.mock
+        .calls[0] as unknown as [unknown, unknown, unknown]
+      const [secondDoc, , secondUndo] = second.view.mount.mock
+        .calls[0] as unknown as [unknown, unknown, unknown]
+      expect(secondDoc).toBe(firstDoc)
+      expect(secondUndo).toBe(firstUndo)
+      expect(second.view.onSyncChange).toHaveBeenCalled()
+    } finally {
+      s.session.dispose()
+    }
+  })
+
+  it("detaches only the editor that leaves", async () => {
+    const s = setup()
+    const second = secondView()
+    const member = s.session.join(second.view)
+    try {
+      await vi.advanceTimersByTimeAsync(0)
+      member.leave()
+      expect(second.editor.destroy).toHaveBeenCalledOnce()
+      expect(s.editor.destroy).not.toHaveBeenCalled()
+      s.callbacks.onChange.mockClear()
+      second.view.onChange.mockClear()
+      s.text().insert(0, "!")
+      await vi.advanceTimersByTimeAsync(300)
+      expect(s.callbacks.onChange).toHaveBeenCalled()
+    } finally {
+      s.session.dispose()
+    }
+  })
+
+  it("keeps one session per file while views overlap, and drops it after a grace period", async () => {
+    const s = setup()
+    const options = {
+      client: s.client as unknown as Options["client"],
+      programId: "program" as Id<"programs">,
+      path: "src/main.cpp",
+      user: { id: "grace-user", email: "grace@example.com" },
+      createCache: () => s.cache,
+    }
+    const first = joinLiveFile({ ...options, view: s.callbacks })
+    const second = joinLiveFile({ ...options, view: secondView().view })
+    try {
+      expect(second.session).toBe(first.session)
+      first.release()
+      second.release()
+      // A tab that moves between groups remounts its editor in the same tick, so
+      // the session is still there when the new editor joins.
+      const moved = joinLiveFile({ ...options, view: secondView().view })
+      expect(moved.session).toBe(first.session)
+      moved.release()
+      await vi.advanceTimersByTimeAsync(1000)
+      const reopened = joinLiveFile({ ...options, view: secondView().view })
+      expect(reopened.session).not.toBe(first.session)
+      reopened.release()
+      await vi.advanceTimersByTimeAsync(1000)
+    } finally {
+      s.session.dispose()
+    }
   })
 })
