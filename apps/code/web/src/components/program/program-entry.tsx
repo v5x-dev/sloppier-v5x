@@ -138,7 +138,7 @@ function ProgramBootShape() {
             <Spinner className="text-muted-foreground" />
           </div>
         </div>
-        <ActionsBar activePath={null} leftAction={null}>
+        <ActionsBar leftAction={null}>
           {null}
         </ActionsBar>
       </SidebarInset>

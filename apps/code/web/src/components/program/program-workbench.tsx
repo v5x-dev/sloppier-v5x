@@ -554,7 +554,6 @@ export function Workbench({
             </Tabs>
           </div>
           <ActionsBar
-            activePath={activePath}
             leftAction={
               <ActionGroup label="Editor tools">
                 {activePath && formatActions[activePath] && (
