@@ -1,5 +1,6 @@
 import { ConvexProviderWithAuthKit } from "@convex-dev/workos"
 import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react"
+import { UpdateNotice } from "@/components/app/update-notice"
 import { Toaster } from "@v5x/ui/components/toast"
 import { useRouter } from "@tanstack/react-router"
 import { demoAccount, useDemoConvexAuth } from "@/lib/auth"
@@ -25,7 +26,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
     )
   }
 
-  const content = <Toaster>{children}</Toaster>
+  const content = (
+    <Toaster>
+      {children}
+      <UpdateNotice />
+    </Toaster>
+  )
 
   return (
     <AuthKitProvider
