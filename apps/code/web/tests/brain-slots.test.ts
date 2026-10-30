@@ -3,9 +3,9 @@ import type { Connection } from "@v5x/serial"
 import {
   matchBrainSlot,
   parseProgramName,
-  readBrainSlots,
   type BrainSlotReading,
 } from "../src/lib/brain-slots"
+import { readBrainSlots } from "../src/lib/brain-slots-reader"
 
 vi.mock("@v5x/serial", () => ({
   directoryFileCount: () => ({ command: "count" }),
