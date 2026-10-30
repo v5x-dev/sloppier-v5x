@@ -104,3 +104,16 @@ jobs:
           if [ "$status" = 404 ]; then exit 0; fi
           if [ "$status" != 200 ]; then echo "Cloudflare Worker lookup failed: HTTP $status" >&2; exit 1; fi
           bunx wrangler delete "code-v5x-pr-${PR_NUMBER}" --config wrangler.preview.jsonc --force
+
+  cleanup-convex:
+    if: github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - name: Delete Convex preview if it exists
+        env:
+          CONVEX_MANAGEMENT_TOKEN: ${{ secrets.CONVEX_MANAGEMENT_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 scripts/delete-convex-pr-preview.py

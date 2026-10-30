@@ -51,8 +51,9 @@ same-repository pull requests targeting `main` to
 `https://pr-<number>.code-preview.v5x.dev`. Each PR uses a separate Cloudflare
 Worker and a Convex preview deployment named `code-pr-<number>`. GitHub shows
 the URL as a deployment on the PR. New commits update the same deployment and
-retain its data while it exists. Closing a PR deletes its Worker; Convex
-automatically expires its preview deployment (currently five days on Free and
+retain its data while it exists. Closing a PR deletes its Worker; merging a PR
+also deletes its Convex preview deployment and its data. Convex otherwise
+automatically expires preview deployments (currently five days on Free and
 Starter, 14 days on Professional and higher). An expired deployment is created
 again on the next push, with an empty database. Fork PRs do not receive secrets
 or previews. Only allow trusted contributors to push branches in this repository:
@@ -63,6 +64,9 @@ Before enabling the workflow, configure:
 - GitHub repository secret `CONVEX_PREVIEW_DEPLOY_KEY`: a **project preview**
   deploy key, never a production or development key. See [Convex preview
   deployments](https://docs.convex.dev/production/hosting/preview-deployments).
+- GitHub repository secret `CONVEX_MANAGEMENT_TOKEN`: a team access token for
+  looking up and deleting merged PR preview deployments. This token can manage
+  team resources and must be protected accordingly.
 - GitHub repository secret `CLOUDFLARE_PREVIEW_API_TOKEN`: a token able to
   deploy and delete Workers and manage their custom domains in the account and
   `v5x.dev` zone. Use a dedicated token with the narrowest available scope.
