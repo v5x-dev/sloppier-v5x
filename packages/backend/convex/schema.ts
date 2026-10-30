@@ -105,6 +105,25 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId"]),
 
+  programDiagnostics: defineTable({
+    programId: v.id("programs"),
+    revision: v.string(),
+    startedAt: v.number(),
+    diagnostics: v.array(
+      v.object({
+        path: v.string(),
+        line: v.number(),
+        column: v.optional(v.number()),
+        severity: v.union(
+          v.literal("error"),
+          v.literal("warning"),
+          v.literal("note")
+        ),
+        message: v.string(),
+      })
+    ),
+  }).index("by_program", ["programId"]),
+
   programUploads: defineTable({
     programId: v.id("programs"),
     revision: v.string(),
