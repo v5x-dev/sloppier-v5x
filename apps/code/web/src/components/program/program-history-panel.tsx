@@ -24,6 +24,7 @@ import {
   PopoverDescription,
 } from "@v5x/ui/components/popover"
 import { Spinner } from "@v5x/ui/components/spinner"
+import { ScrollArea } from "@v5x/ui/components/scroll-area"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { errorMessage } from "@/lib/errors"
 
@@ -292,7 +293,7 @@ export function ProgramHistoryPanel({
           </Button>
         </PopoverHeader>
         {!commit ? (
-          <div className="max-h-[60svh] overflow-auto">
+          <ScrollArea className="max-h-[60svh] [&_[data-slot=scroll-area-viewport]]:max-h-[60svh]">
             {error && (
               <p role="alert" className="p-3 text-xs text-destructive">
                 {error}
@@ -443,7 +444,7 @@ export function ProgramHistoryPanel({
                 </Button>
               </div>
             )}
-          </div>
+          </ScrollArea>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-x-2 border-b px-3 py-2 text-xs text-muted-foreground">
@@ -466,7 +467,7 @@ export function ProgramHistoryPanel({
               </p>
             )}
             <div className="flex h-[min(55svh,32rem)] min-h-0 flex-col sm:flex-row">
-              <div className="max-h-28 shrink-0 overflow-auto border-b sm:max-h-none sm:w-44 sm:border-r sm:border-b-0">
+              <ScrollArea className="max-h-28 shrink-0 border-b sm:max-h-none sm:w-44 sm:border-r sm:border-b-0 [&_[data-slot=scroll-area-viewport]]:max-h-28 sm:[&_[data-slot=scroll-area-viewport]]:max-h-none">
                 {!files && !detailError && (
                   <div className="p-4">
                     <Spinner />
@@ -500,10 +501,11 @@ export function ProgramHistoryPanel({
                     </span>
                   </button>
                 ))}
-              </div>
-              <div
-                className="min-h-0 min-w-0 flex-1 overflow-auto bg-background"
+              </ScrollArea>
+              <ScrollArea
+                className="min-h-0 min-w-0 flex-1 bg-background"
                 aria-label="Commit file diff"
+                horizontal
               >
                 {file && !diff && !detailError && (
                   <div className="flex items-center gap-2 p-4 text-xs text-muted-foreground">
@@ -528,7 +530,7 @@ export function ProgramHistoryPanel({
                     {diff.raw}
                   </pre>
                 )}
-              </div>
+              </ScrollArea>
             </div>
             <div className="space-y-2 border-t p-3">
               <form
