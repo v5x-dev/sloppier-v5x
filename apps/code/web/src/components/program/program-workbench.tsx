@@ -48,7 +48,6 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   CaretLeftIcon,
   FileDashedIcon,
-  FileCodeIcon,
   GitCommitIcon,
   ListMagnifyingGlassIcon,
   TextAlignLeftIcon,
@@ -96,6 +95,8 @@ import {
 } from "@v5x/ui/components/tabs"
 import { toast } from "@v5x/ui/components/toast"
 import { createPortal } from "react-dom"
+import { FileTree, useFileTree } from "@pierre/trees/react"
+import { makefileIcons } from "@/lib/makefile-icons"
 
 import {
   Fragment,
@@ -915,7 +916,7 @@ export function Workbench({
                 {renderNode(layout.root, [])}
               </div>
               <DragOverlay dropAnimation={null}>
-                {drag?.groupId && <TabChip path={drag.path} />}
+                {drag?.groupId && <TabChip key={drag.path} path={drag.path} />}
               </DragOverlay>
               {drag?.groupId === null &&
                 treeDragPosition &&
@@ -929,7 +930,7 @@ export function Workbench({
                       top: treeDragPosition.y + 14,
                     }}
                   >
-                    <TabChip path={drag.path} />
+                    <TabChip key={drag.path} path={drag.path} />
                   </div>,
                   document.body
                 )}
@@ -1229,21 +1230,35 @@ function dropAt(
 }
 
 function TabChip({ path }: { path: string }) {
-  const segments = path.split("/")
-  const name = segments.pop() ?? path
-  const directory = segments.join("/")
+  const name = path.split("/").at(-1) ?? path
+  const { model } = useFileTree({
+    paths: [name],
+    initialSelectedPaths: [name],
+    density: "compact",
+    icons: makefileIcons,
+    unsafeCSS: `[data-type="item"][data-item-selected="true"]:before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      border-radius: var(--trees-border-radius);
+      outline: var(--trees-focus-ring-width) solid var(--trees-selected-focused-border-color);
+      outline-offset: var(--trees-focus-ring-offset);
+    }`,
+  })
   return (
-    <span className="inline-flex max-w-80 items-center gap-2 rounded-lg border border-border bg-popover px-3 py-2 text-popover-foreground shadow-overlay">
-      <FileCodeIcon className="size-4 shrink-0 text-primary" />
-      <span className="min-w-0 leading-tight">
-        <span className="block truncate text-sm font-medium">{name}</span>
-        {directory && (
-          <span className="block truncate text-xs text-muted-foreground">
-            {directory}/
-          </span>
-        )}
-      </span>
-    </span>
+    <div
+      aria-hidden="true"
+      className="pointer-events-none w-48 overflow-hidden rounded-md shadow-overlay"
+    >
+      <FileTree
+        model={model}
+        style={
+          {
+            ...treeStyle,
+            height: "24px",
+            "--trees-bg-override": "transparent",
+          } as React.CSSProperties
+        }
+      />
+    </div>
   )
 }
 
