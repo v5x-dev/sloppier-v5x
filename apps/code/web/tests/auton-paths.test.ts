@@ -61,6 +61,21 @@ describe("EZ-Template path previews", () => {
     expect(route.points.at(-1)!.x).toBeCloseTo(12)
     expect(route.warnings).toEqual([])
   })
+  it("handles scalar odometry distances like drive distances", () => {
+    const [odom] = parse(`void red() {
+      chassis.pid_turn_set(90_deg, speed);
+      chassis.pid_odom_set(10_in, speed);
+      chassis.pid_odom_set(-2_ft, speed);
+    }`)
+    const [drive] = parse(`void red() {
+      chassis.pid_turn_set(90_deg, speed);
+      chassis.pid_drive_set(10_in, speed);
+      chassis.pid_drive_set(-2_ft, speed);
+    }`)
+    expect(odom.points).toEqual(drive.points)
+    expect(odom.points.at(-1)!.x).toBeCloseTo(-14)
+    expect(odom.warnings).toEqual([])
+  })
   it("resolves waypoint constants and reports unresolved headings", () => {
     const [route] = parse(`const int X = 12;
       void red() { chassis.pid_odom_set({{{X, 24}, fwd, 110}, {{0, 0, angle}, rev, 110}}); }`)
