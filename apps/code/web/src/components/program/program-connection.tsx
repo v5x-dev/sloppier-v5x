@@ -10,6 +10,10 @@ import {
 import { useAction, useMutation, useQuery, useConvex } from "convex/react"
 import { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
+import {
+  diagnosticRevision,
+  parseBuildDiagnostics,
+} from "@/lib/build-diagnostics"
 import { errorMessage } from "@/lib/errors"
 
 type Connection = { baseUrl: string; token: string; expiresAt: string }
@@ -43,6 +47,10 @@ export function ProgramConnection({
   programId: Id<"programs">
   children: ReactNode
 }) {
+  const saveDiagnostics = useMutation(api.diagnostics.save)
+  const buildStarted = useRef<number | null>(null)
+  const savedBuild = useRef<number | null>(null)
+  const submittedRevision = useRef<string | null>(null)
   const connect = useAction(api.buildConnection.connect)
   const start = useMutation(api.builds.start)
   const convex = useConvex()
@@ -125,6 +133,11 @@ export function ProgramConnection({
       })
       if (!response.ok)
         throw new Error(`Builder request failed (${response.status}).`)
+      if (path === "/build") {
+        buildStarted.current = Date.now()
+        submittedRevision.current =
+          (body as { commit?: string } | undefined)?.commit ?? null
+      }
       return response
     },
     [connect, convex, programId, start]
@@ -140,6 +153,31 @@ export function ProgramConnection({
         const response = await request("/status", undefined, controller.signal)
         const next = (await response.json()) as Status
         if (!isAborted()) {
+          if (next.building && next.startedAt)
+            buildStarted.current = next.startedAt
+          const revision =
+            diagnosticRevision(next.logs) ?? submittedRevision.current
+          if (
+            !next.building &&
+            revision &&
+            buildStarted.current !== null &&
+            savedBuild.current !== buildStarted.current
+          ) {
+            const startedAt = buildStarted.current
+            savedBuild.current = startedAt
+            void saveDiagnostics({
+              programId,
+              revision,
+              startedAt,
+              diagnostics: parseBuildDiagnostics(next.logs).slice(0, 2000),
+            }).catch((err) => {
+              savedBuild.current = null
+              if (!isAborted())
+                setError(
+                  `Could not save compiler problems: ${errorMessage(err)}`
+                )
+            })
+          }
           setStatus(next)
           setError(null)
         }
@@ -154,7 +192,7 @@ export function ProgramConnection({
       controller.abort()
       clearTimeout(timer)
     }
-  }, [connection, request])
+  }, [connection, request, programId, saveDiagnostics])
   return (
     <Context
       value={{

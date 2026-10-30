@@ -15,6 +15,7 @@ import type * as builds from "../builds.js";
 import type * as checkpoints from "../checkpoints.js";
 import type * as codeStorage from "../codeStorage.js";
 import type * as crdt from "../crdt.js";
+import type * as diagnostics from "../diagnostics.js";
 import type * as files from "../files.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_buildDependencies from "../lib/buildDependencies.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   checkpoints: typeof checkpoints;
   codeStorage: typeof codeStorage;
   crdt: typeof crdt;
+  diagnostics: typeof diagnostics;
   files: typeof files;
   "lib/auth": typeof lib_auth;
   "lib/buildDependencies": typeof lib_buildDependencies;

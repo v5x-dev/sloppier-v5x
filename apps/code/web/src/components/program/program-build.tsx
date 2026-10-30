@@ -13,11 +13,13 @@ import {
 } from "@phosphor-icons/react"
 import {
   diagnosticRevision,
-  diagnosticsAreStale,
   parseBuildDiagnostics,
   resolveDiagnosticPath,
   type BuildDiagnostic,
 } from "@/lib/build-diagnostics"
+import { useQuery } from "convex/react"
+import { api } from "@v5x/backend/api"
+import type { Id } from "@v5x/backend/dataModel"
 import { useProgramConnection } from "./program-connection"
 import { Button } from "@v5x/ui/components/button"
 import { Badge } from "@v5x/ui/components/badge"
@@ -38,11 +40,13 @@ import {
 import { Spinner } from "@v5x/ui/components/spinner"
 
 export function ProgramBuild({
+  programId,
   dirty,
   paths,
   currentSha,
   onDiagnostic,
 }: {
+  programId: Id<"programs">
   dirty: boolean
   paths: readonly string[]
   currentSha?: string
@@ -67,7 +71,11 @@ export function ProgramBuild({
     null
   )
   const logs = state?.logs ?? ""
-  const diagnostics = useMemo(() => parseBuildDiagnostics(logs), [logs])
+  const saved = useQuery(api.diagnostics.get, { programId })
+  const liveDiagnostics = useMemo(() => parseBuildDiagnostics(logs), [logs])
+  const liveRevision = diagnosticRevision(logs)
+  const useLive = Boolean(state?.building || (liveRevision && !saved))
+  const diagnostics = useLive ? liveDiagnostics : (saved?.diagnostics ?? [])
   const groups = useMemo(() => {
     const grouped = new Map<string, BuildDiagnostic[]>()
     for (const diagnostic of diagnostics) {
@@ -83,8 +91,9 @@ export function ProgramBuild({
   const warnings = diagnostics.filter(
     (item) => item.severity === "warning"
   ).length
-  const stale = diagnosticsAreStale(logs, currentSha, dirty)
-  const revision = diagnosticRevision(logs)
+  const revision = useLive ? liveRevision : saved?.revision
+  const stale =
+    dirty || Boolean(revision && currentSha && revision !== currentSha)
   const building = Boolean(state?.building)
   const startedAt = state?.startedAt
   const elapsedSeconds =

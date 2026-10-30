@@ -617,6 +617,7 @@ export function Workbench({
               currentSha={program.repositoryHeadSha}
               buildAction={
                 <ProgramBuild
+                  programId={program._id}
                   dirty={dirtyPaths.length > 0}
                   paths={paths ?? []}
                   currentSha={program.repositoryHeadSha}
