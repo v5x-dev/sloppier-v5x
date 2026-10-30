@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest"
 import { pathDuration, pathPoseAt } from "../src/lib/path-animation"
 
 describe("path playback", () => {
+  it("holds a wait for 500 ms", () => {
+    const points = [
+      { x: 0, y: 0, heading: 0 },
+      { x: 18, y: 0, heading: 0 },
+      { x: 18, y: 0, heading: 0, wait: true },
+      { x: 36, y: 0, heading: 0 },
+    ]
+    expect(pathDuration(points)).toBeCloseTo(2.5)
+    expect(pathPoseAt(points, 1.1)).toMatchObject({ x: 18, wait: true })
+    expect(pathPoseAt(points, 1.6)?.x).toBeCloseTo(19.8)
+  })
+
   it("uses the slower of movement and turning for each segment", () => {
     expect(
       pathDuration([
