@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import { WorkbenchSource } from "../src/lib/workbench-source"
+import { groupsOf } from "../src/lib/editor-groups"
 import type { Id } from "@v5x/backend/dataModel"
 
 function deferred<T>() {
@@ -140,7 +141,7 @@ describe("workbench source", () => {
   it("discards a prefetched live document when its tab closes", async () => {
     const { source } = setup()
     await source.loadPaths()
-    source.closeTab("src/main.cpp")
+    source.closeTab(source.getSnapshot().layout.activeGroupId, "src/main.cpp")
     expect(source.takeLiveOpen("src/main.cpp")).toBeUndefined()
   })
 
@@ -287,7 +288,10 @@ describe("workbench source", () => {
     const { source, actions } = await opened()
     source.setDraft("src/main.cpp", "draft")
     source.setSynced("src/main.cpp", false)
-    expect(() => source.closeTab("src/main.cpp")).toThrow("Keep it open")
+    const groupId = source.getSnapshot().layout.activeGroupId
+    expect(() => source.closeTab(groupId, "src/main.cpp")).toThrow(
+      "Keep it open"
+    )
     await expect(source.commit()).rejects.toThrow("syncing")
     await expect(source.restoreCommit("sha")).rejects.toThrow("Commit and sync")
     expect(actions.restoreHistoryCommit).not.toHaveBeenCalled()
@@ -503,7 +507,12 @@ describe("persisted workbench tabs", () => {
     try {
       const { source } = await opened()
       source.openFile("include/robot.h")
-      source.reorderTabs("include/robot.h", "src/main.cpp")
+      const groupId = source.getSnapshot().layout.activeGroupId
+      source.placeTab("include/robot.h", groupId, {
+        kind: "tabs",
+        groupId,
+        index: 0,
+      })
       source.openFile("src/main.cpp")
       const restored = setup()
       await restored.source.loadPaths()
@@ -513,11 +522,83 @@ describe("persisted workbench tabs", () => {
       ])
       expect(restored.source.getSnapshot().activePath).toBe("src/main.cpp")
       expect(restored.actions.readFile).toHaveBeenCalledTimes(2)
-      restored.source.closeTab("src/main.cpp")
-      restored.source.closeTab("include/robot.h")
+      restored.source.closeTab(groupId, "src/main.cpp")
+      restored.source.closeTab(groupId, "include/robot.h")
       const empty = setup()
       await empty.source.loadPaths()
       expect(empty.source.getSnapshot().openPaths).toEqual([])
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})
+
+describe("editor groups", () => {
+  it("keeps a split file in every group through an explorer move", async () => {
+    const { source } = await opened()
+    const [left] = groupsOf(source.getSnapshot().layout)
+    source.placeTab("src/main.cpp", null, {
+      kind: "split",
+      groupId: left.id,
+      side: "right",
+    })
+    await source.applyExplorerUpdate({
+      message: "Move",
+      changes: [
+        { operation: "delete", path: "src/main.cpp" },
+        { operation: "put", path: "code/main.cpp", contents: "original" },
+      ],
+      moves: [{ from: "src", to: "code" }],
+    })
+    const { layout, activePath } = source.getSnapshot()
+    expect(groupsOf(layout).map((group) => group.paths)).toEqual([
+      ["code/main.cpp"],
+      ["code/main.cpp"],
+    ])
+    expect(activePath).toBe("code/main.cpp")
+  })
+
+  it("closes a split copy without closing the file while another group shows it", async () => {
+    const { source } = await opened()
+    const [left] = groupsOf(source.getSnapshot().layout)
+    source.placeTab("src/main.cpp", null, {
+      kind: "split",
+      groupId: left.id,
+      side: "right",
+    })
+    const right = groupsOf(source.getSnapshot().layout)[1]
+    source.setDraft("src/main.cpp", "draft")
+    source.setSynced("src/main.cpp", false)
+    expect(() => source.closeTab(right.id, "src/main.cpp")).not.toThrow()
+    expect(() => source.closeTab(left.id, "src/main.cpp")).toThrow(
+      "Keep it open"
+    )
+  })
+
+  it("restores split groups in order with the active group", async () => {
+    const values = new Map<string, string>()
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
+    try {
+      const { source } = await opened()
+      const [left] = groupsOf(source.getSnapshot().layout)
+      source.placeTab("include/robot.h", null, {
+        kind: "split",
+        groupId: left.id,
+        side: "left",
+      })
+      const restored = setup()
+      await restored.source.loadPaths()
+      const { layout } = restored.source.getSnapshot()
+      expect(groupsOf(layout).map((group) => group.paths)).toEqual([
+        ["include/robot.h"],
+        ["src/main.cpp"],
+      ])
+      expect(layout.activeGroupId).toBe(
+        source.getSnapshot().layout.activeGroupId
+      )
     } finally {
       vi.unstubAllGlobals()
     }

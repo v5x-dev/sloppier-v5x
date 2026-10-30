@@ -10,7 +10,10 @@ import type { Awareness } from "y-protocols/awareness"
 import * as Y from "yjs"
 import { MAX_SOURCE_BYTES, source } from "./live-document"
 
-export const LOCAL_EDIT = Symbol("pierre-local-edit")
+/** The undo manager for a live document. Each view adds its own origin to it. */
+export function createLocalUndoManager(shared: Y.Doc) {
+  return new Y.UndoManager(source(shared), { trackedOrigins: new Set() })
+}
 
 // Pierre keeps its rendering, commands, selection mapping, and syntax support.
 // Its public TextDocument undo hooks delegate to Yjs so remote edits never enter
@@ -112,7 +115,8 @@ export function yDeltaToEdits(
 
 export function applyLocalChanges(
   shared: Y.Doc,
-  changes: readonly ResolvedTextEdit[]
+  changes: readonly ResolvedTextEdit[],
+  origin: symbol
 ) {
   shared.transact(() => {
     for (const change of [...changes].sort((a, b) => b.start - a.start)) {
@@ -120,13 +124,17 @@ export function applyLocalChanges(
         source(shared).delete(change.start, change.end - change.start)
       if (change.text) source(shared).insert(change.start, change.text)
     }
-  }, LOCAL_EDIT)
+  }, origin)
 }
 
 export class PierreCollaboration {
   readonly undo: Y.UndoManager
   readonly document: CollaborativeTextDocument
   editor?: Editor<"file", undefined, { name: string }>
+  // Views of one live document share its undo manager. Each view tags its edits
+  // with its own origin, so the other views still receive them.
+  readonly origin = Symbol("pierre-local-edit")
+  private readonly ownsUndo: boolean
   private readonly observe: (
     event: Y.YTextEvent,
     transaction: Y.Transaction
@@ -135,11 +143,12 @@ export class PierreCollaboration {
     readonly shared: Y.Doc,
     readonly awareness: Awareness,
     path: string,
-    onLimit: () => void
+    onLimit: () => void,
+    undo?: Y.UndoManager
   ) {
-    this.undo = new Y.UndoManager(source(shared), {
-      trackedOrigins: new Set([LOCAL_EDIT]),
-    })
+    this.ownsUndo = !undo
+    this.undo = undo ?? createLocalUndoManager(shared)
+    this.undo.trackedOrigins.add(this.origin)
     this.document = new CollaborativeTextDocument(
       path,
       shared,
@@ -147,7 +156,7 @@ export class PierreCollaboration {
       onLimit
     )
     this.observe = (event, transaction) => {
-      if (transaction.origin === LOCAL_EDIT || !this.editor) return
+      if (transaction.origin === this.origin || !this.editor) return
       const edits = yDeltaToEdits(this.document, event.delta)
       if (!edits.length) return
       this.document.applyingRemote = true
@@ -189,7 +198,7 @@ export class PierreCollaboration {
   }
   localChange(event: EditorChangeEvent<"file", undefined, { name: string }>) {
     if (this.document.applyingRemote) return
-    applyLocalChanges(this.shared, event.changes)
+    applyLocalChanges(this.shared, event.changes, this.origin)
     this.document.clearHistory()
   }
   publishSelection(focused: boolean) {
@@ -259,7 +268,8 @@ export class PierreCollaboration {
   }
   destroy() {
     source(this.shared).unobserve(this.observe)
-    this.undo.destroy()
+    this.undo.trackedOrigins.delete(this.origin)
+    if (this.ownsUndo) this.undo.destroy()
     this.editor = undefined
   }
 }

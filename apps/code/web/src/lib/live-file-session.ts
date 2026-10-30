@@ -14,6 +14,7 @@ import {
   removeAwarenessStates,
 } from "y-protocols/awareness"
 import * as Y from "yjs"
+import { createLocalUndoManager } from "./pierre-collaboration"
 import {
   applyRemote,
   hasChanges,
@@ -31,10 +32,28 @@ export type LivePerson = {
   active: boolean
 }
 
-type LiveEditor = {
+export type LiveEditor = {
   renderCarets: () => void
   publishSelection: (active: boolean) => void
   destroy: () => void
+}
+
+/** What one open editor needs from a live document. */
+export type LiveFileView = {
+  onChange: (text: string) => void
+  onSyncChange: (synced: boolean) => void
+  onPeopleChange: (people: LivePerson[]) => void
+  onStatus: (status: string) => void
+  onError: (error: string | null) => void
+  onReplaced: () => void
+  isFocused: () => boolean
+  /** Binds an editor to the shared document; `undo` is shared by every view. */
+  mount: (doc: Y.Doc, awareness: Awareness, undo: Y.UndoManager) => LiveEditor
+}
+
+export type LiveFileMember = {
+  setActive: (active: boolean) => void
+  leave: () => void
 }
 
 type SessionOptions = {
@@ -49,35 +68,57 @@ type SessionOptions = {
     email?: string
     profilePictureUrl?: string | null
   }
-  callbacks: {
-    onChange: (text: string) => void
-    onSyncChange: (synced: boolean) => void
-    onPeopleChange: (people: LivePerson[]) => void
-    onStatus: (status: string) => void
-    onError: (error: string | null) => void
-    onReplaced: () => void
-    isFocused: () => boolean
-    mount: (doc: Y.Doc, awareness: Awareness) => LiveEditor
-  }
+  /** Opens the language service on the shared text once the document mounts. */
+  openLanguage?: (text: Y.Text) => (() => void) | undefined
   createCache?: (
     name: string,
     doc: Y.Doc
   ) => { whenSynced: Promise<unknown>; destroy: () => Promise<unknown> }
 }
 
-// Presence is kept per tab, user and file. A reload reuses the id, so the new
-// page replaces its previous session and never shows that page's caret.
-function presenceSessionId(userId: string, programId: string, path: string) {
+// Presence is kept per tab, user and file. A reload reuses the first id, so the
+// new page replaces its previous session and never shows that page's caret.
+// Another editor of the same file in this tab (a split copy) gets its own id, so
+// one copy leaving never removes the other copy's presence.
+const presenceInUse = new Map<string, Set<string>>()
+
+function claimPresenceSession(userId: string, programId: string, path: string) {
   const key = `v5x:presence:${userId}:${programId}:${path}`
+  const inUse = presenceInUse.get(key) ?? new Set<string>()
+  presenceInUse.set(key, inUse)
+  let sessionId = savedPresenceId(key)
+  if (!sessionId || inUse.has(sessionId)) {
+    sessionId = crypto.randomUUID()
+    if (inUse.size === 0) rememberPresenceId(key, sessionId)
+  }
+  inUse.add(sessionId)
+  const id = sessionId
+  return {
+    sessionId: id,
+    /** Every presence session this tab holds for the file, including this one. */
+    owned: inUse,
+    release: () => {
+      inUse.delete(id)
+      if (inUse.size === 0) presenceInUse.delete(key)
+    },
+  }
+}
+
+function savedPresenceId(key: string) {
   try {
     const saved = sessionStorage.getItem(key)
-    if (saved && saved.length >= 8 && saved.length <= 128) return saved
-    const created = crypto.randomUUID()
-    sessionStorage.setItem(key, created)
-    return created
+    return saved && saved.length >= 8 && saved.length <= 128 ? saved : null
   } catch {
     // Storage can be unavailable, for example in private or sandboxed contexts.
-    return crypto.randomUUID()
+    return null
+  }
+}
+
+function rememberPresenceId(key: string, sessionId: string) {
+  try {
+    sessionStorage.setItem(key, sessionId)
+  } catch {
+    // The id still works for this page; a reload then starts a new session.
   }
 }
 
@@ -88,14 +129,44 @@ export function createLiveFileSession({
   programId,
   path,
   user,
-  callbacks,
+  openLanguage,
   createCache = (name, doc) => new IndexeddbPersistence(name, doc),
 }: SessionOptions) {
   const userId = user.id
   const doc = new Y.Doc()
   const server = new Y.Doc()
   const awareness = new Awareness(doc)
-  const sessionId = presenceSessionId(userId, programId, path)
+  const undo = createLocalUndoManager(doc)
+  // Every open editor of this file in this tab joins the session. Each member's
+  // editor is bound to the one document, and events fan out to all members.
+  type Member = { view: LiveFileView; editor?: LiveEditor }
+  const members = new Set<Member>()
+  let selectionOwner: Member | undefined
+  const callbacks = {
+    onChange: (text: string) => {
+      for (const member of members) member.view.onChange(text)
+    },
+    onSyncChange: (synced: boolean) => {
+      for (const member of members) member.view.onSyncChange(synced)
+    },
+    onPeopleChange: (people: LivePerson[]) => {
+      for (const member of members) member.view.onPeopleChange(people)
+    },
+    onStatus: (status: string) => {
+      for (const member of members) member.view.onStatus(status)
+    },
+    onError: (error: string | null) => {
+      for (const member of members) member.view.onError(error)
+    },
+    onReplaced: () => {
+      for (const member of members) member.view.onReplaced()
+    },
+  }
+  const {
+    sessionId,
+    owned: ownPresence,
+    release: releasePresence,
+  } = claimPresenceSession(userId, programId, path)
   function subscribe<TQuery extends FunctionReference<"query">>(
     query: TQuery,
     queryArgs: FunctionArgs<TQuery>,
@@ -126,7 +197,8 @@ export function createLiveFileSession({
   let cache: ReturnType<NonNullable<SessionOptions["createCache"]>> | undefined
   let disposed = false
   const isDisposed = () => disposed
-  let collaboration: LiveEditor | undefined
+  let stopLanguage: (() => void) | undefined
+  let mounted = false
   let stopUpdates: (() => void) | undefined
   let stopStorage: (() => void) | undefined
   let stopPresence: (() => void) | undefined
@@ -250,7 +322,7 @@ export function createLiveFileSession({
   }
   const awarenessChanged = (_: unknown, origin: unknown) => {
     if (isDisposed()) return
-    collaboration?.renderCarets()
+    for (const member of members) member.editor?.renderCarets()
     const people = new Map<string, LivePerson>()
     for (const [clientId, state] of awareness.getStates()) {
       const person = state.user
@@ -365,9 +437,15 @@ export function createLiveFileSession({
     )
   }
   function mountEditor() {
-    if (isStopped() || collaboration) return
-    collaboration = callbacks.mount(doc, awareness)
+    if (isStopped() || mounted) return
+    mounted = true
+    stopLanguage ??= openLanguage?.(source(doc))
+    for (const member of members) attachMember(member)
     changed()
+  }
+  function attachMember(member: Member) {
+    if (!mounted || isStopped() || member.editor) return
+    member.editor = member.view.mount(doc, awareness, undo)
   }
   let starting = false
   async function start() {
@@ -407,7 +485,8 @@ export function createLiveFileSession({
             }
           }
           for (const session of sessions) {
-            if (session.sessionId === sessionId) continue
+            // Copies of this file in the same tab are not remote collaborators.
+            if (ownPresence.has(session.sessionId)) continue
             try {
               const before = new Set(awareness.getStates().keys())
               applyAwarenessUpdate(
@@ -464,7 +543,17 @@ export function createLiveFileSession({
   }
   void start()
   const selectionTimer = setInterval(() => {
-    collaboration?.publishSelection(callbacks.isFocused())
+    const focused = [...members].find(
+      (member) => member.editor && member.view.isFocused()
+    )
+    if (focused) {
+      selectionOwner = focused
+      focused.editor?.publishSelection(true)
+    } else if (selectionOwner) {
+      const previous = selectionOwner
+      selectionOwner = undefined
+      previous.editor?.publishSelection(false)
+    }
   }, 120)
   const timer = setInterval(() => {
     void heartbeat()
@@ -478,12 +567,32 @@ export function createLiveFileSession({
       if (awareness.getLocalState()?.active !== active)
         awareness.setLocalStateField("active", active)
     },
-    setActive(active: boolean) {
-      if (!active) awareness.setLocalStateField("cursor", null)
+    join(view: LiveFileView): LiveFileMember {
+      const member: Member = { view }
+      members.add(member)
+      attachMember(member)
+      return {
+        setActive(active: boolean) {
+          if (!active && selectionOwner === member) {
+            selectionOwner = undefined
+            awareness.setLocalStateField("cursor", null)
+          }
+        },
+        leave() {
+          members.delete(member)
+          if (selectionOwner === member) {
+            selectionOwner = undefined
+            awareness.setLocalStateField("cursor", null)
+          }
+          member.editor?.destroy()
+          member.editor = undefined
+        },
+      }
     },
     dispose() {
       if (disposed) return
       disposed = true
+      releasePresence()
       callbacks.onPeopleChange([])
       clearInterval(timer)
       clearInterval(selectionTimer)
@@ -492,7 +601,10 @@ export function createLiveFileSession({
       stopUpdates?.()
       stopStorage?.()
       stopPresence?.()
-      collaboration?.destroy()
+      for (const member of members) member.editor?.destroy()
+      members.clear()
+      stopLanguage?.()
+      undo.destroy()
       awareness.destroy()
       if (sessionToken)
         void client
@@ -502,6 +614,51 @@ export function createLiveFileSession({
       void cache?.destroy()
       doc.destroy()
       server.destroy()
+    },
+  }
+}
+
+export type LiveFileSession = ReturnType<typeof createLiveFileSession>
+
+// Every open editor of a file in this tab shares one session, so their undo
+// history, sync, and presence stay together. A tab that moves to another group
+// remounts its editor in the same tick, so a session lingers briefly after its
+// last editor leaves instead of reloading the document.
+const RELEASE_GRACE_MS = 1000
+type SharedLiveFile = {
+  session: LiveFileSession
+  members: number
+  timer?: ReturnType<typeof setTimeout>
+}
+const sharedLiveFiles = new Map<string, SharedLiveFile>()
+
+export function joinLiveFile(options: SessionOptions & { view: LiveFileView }) {
+  const { view, ...sessionOptions } = options
+  const key = `${sessionOptions.user.id}:${sessionOptions.programId}:${sessionOptions.path}`
+  let shared = sharedLiveFiles.get(key)
+  if (!shared) {
+    shared = { session: createLiveFileSession(sessionOptions), members: 0 }
+    sharedLiveFiles.set(key, shared)
+  }
+  const entry = shared
+  clearTimeout(entry.timer)
+  entry.members++
+  const member = entry.session.join(view)
+  let released = false
+  return {
+    session: entry.session,
+    setActive: member.setActive,
+    release() {
+      if (released) return
+      released = true
+      member.leave()
+      entry.members--
+      if (entry.members > 0) return
+      entry.timer = setTimeout(() => {
+        if (entry.members > 0) return
+        if (sharedLiveFiles.get(key) === entry) sharedLiveFiles.delete(key)
+        entry.session.dispose()
+      }, RELEASE_GRACE_MS)
     },
   }
 }

@@ -1,4 +1,23 @@
 import { readEditorState, writeEditorState } from "./editor-persistence"
+import {
+  activateGroup as activateLayoutGroup,
+  activateTab as activateLayoutTab,
+  activePathOf,
+  addTab,
+  closeTab as closeLayoutTab,
+  createLayout,
+  equalizeSplit as equalizeLayoutSplit,
+  groupsOf,
+  layoutPaths,
+  placeTab as placeLayoutTab,
+  readLayout,
+  remapPaths,
+  resizeSash as resizeLayoutSash,
+  retainPaths,
+  splitGroup as splitLayoutGroup,
+  type DropTarget,
+  type EditorLayout,
+} from "./editor-groups"
 import type { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
 import type { FunctionArgs, FunctionReturnType } from "convex/server"
@@ -31,7 +50,11 @@ export type LoadedFile = {
 type State = {
   paths: string[] | null
   listError: string | null
+  /** Editor groups; the source of truth for open tabs. */
+  layout: EditorLayout
+  /** Unique paths open in any group, derived from `layout`. */
   openPaths: string[]
+  /** The active group's active tab, derived from `layout`. */
   activePath: string | null
   loaded: Partial<Record<string, LoadedFile>>
   readError: Partial<Record<string, string>>
@@ -46,6 +69,7 @@ export class WorkbenchSource {
   private state: State = {
     paths: null,
     listError: null,
+    layout: createLayout(),
     openPaths: [],
     activePath: null,
     loaded: {},
@@ -93,12 +117,15 @@ export class WorkbenchSource {
   isSynced = () => Object.values(this.state.liveSync).every(Boolean)
 
   private update(patch: Partial<State>) {
+    if (patch.layout) {
+      patch = {
+        ...patch,
+        openPaths: layoutPaths(patch.layout),
+        activePath: activePathOf(patch.layout),
+      }
+      writeEditorState(`${this.programId}:editor-groups`, patch.layout)
+    }
     this.state = { ...this.state, ...patch }
-    if ("openPaths" in patch || "activePath" in patch)
-      writeEditorState(`${this.programId}:tabs`, {
-        openPaths: this.state.openPaths,
-        activePath: this.state.activePath,
-      })
     for (const listener of this.listeners) listener()
   }
   private sourceChanged(patch: Partial<State> = {}) {
@@ -135,7 +162,14 @@ export class WorkbenchSource {
     if (!this.state.paths?.includes(path))
       throw new Error(`${path} no longer exists.`)
     if (!this.state.openPaths.includes(path))
-      this.update({ openPaths: [...this.state.openPaths, path] })
+      this.update({
+        layout: addTab(
+          this.state.layout,
+          this.state.layout.activeGroupId,
+          path,
+          { activate: false }
+        ),
+      })
     void this.loadFile(path)
     const action = await new Promise<ReplacementAction>((resolve, reject) => {
       const finish = (error?: string, ready?: ReplacementAction) => {
@@ -188,23 +222,37 @@ export class WorkbenchSource {
       this.update({ filePeople: { ...this.state.filePeople, [path]: people } })
   }
 
+  /** Reads the saved editor groups, migrating the single tab strip saved before groups existed. */
+  private readSavedLayout(): EditorLayout | null {
+    const layout = readLayout(
+      readEditorState<unknown>(`${this.programId}:editor-groups`)
+    )
+    if (layout) return layout
+    const legacy = readEditorState<{
+      openPaths?: unknown
+      activePath?: unknown
+    }>(`${this.programId}:tabs`)
+    if (!legacy || !Array.isArray(legacy.openPaths)) return null
+    const openPaths = legacy.openPaths.filter(
+      (path): path is string => typeof path === "string"
+    )
+    return createLayout(
+      openPaths,
+      typeof legacy.activePath === "string" ? legacy.activePath : null
+    )
+  }
+
   loadPaths = async () => {
     const request = ++this.pathRequest
     this.update({ listError: null })
-    const saved = !this.initialOpen
-      ? readEditorState<{ openPaths: string[]; activePath: string | null }>(
-          `${this.programId}:tabs`
-        )
-      : null
+    const saved = !this.initialOpen ? this.readSavedLayout() : null
     // Read a saved active tab, or the common starter entry point, while the
     // listing is in flight. Only open it after the listing chooses that path.
+    const savedActive = saved ? activePathOf(saved) : null
     const speculativePath =
-      saved &&
-      Array.isArray(saved.openPaths) &&
-      typeof saved.activePath === "string" &&
-      saved.openPaths.includes(saved.activePath)
-        ? saved.activePath
-        : !this.initialOpen && (!saved || !Array.isArray(saved.openPaths))
+      saved && savedActive && layoutPaths(saved).includes(savedActive)
+        ? savedActive
+        : !this.initialOpen && !saved
           ? "src/main.cpp"
           : null
     if (speculativePath) void this.loadFile(speculativePath)
@@ -221,8 +269,7 @@ export class WorkbenchSource {
       } while (cursor)
       if (request !== this.pathRequest) return
       const paths = all.filter((path) => !path.startsWith(".v5x/")).sort()
-      const guessedEntry =
-        !this.initialOpen && (!saved || !Array.isArray(saved.openPaths))
+      const guessedEntry = !this.initialOpen && !saved
       if (
         speculativePath &&
         (!paths.includes(speculativePath) ||
@@ -240,15 +287,10 @@ export class WorkbenchSource {
       this.update({ paths })
       if (!this.initialOpen) {
         this.initialOpen = true
-        if (saved && Array.isArray(saved.openPaths)) {
-          const openPaths = [
-            ...new Set(saved.openPaths.filter((path) => paths.includes(path))),
-          ]
-          const activePath = openPaths.includes(saved.activePath ?? "")
-            ? saved.activePath
-            : (openPaths.at(-1) ?? null)
-          this.update({ openPaths, activePath })
-          for (const path of openPaths) {
+        if (saved) {
+          const layout = retainPaths(saved, (path) => paths.includes(path))
+          this.update({ layout })
+          for (const path of layoutPaths(layout)) {
             this.prefetchLiveFile(path)
             void this.loadFile(path)
           }
@@ -315,16 +357,45 @@ export class WorkbenchSource {
     return opening
   }
 
+  /** Opens a file in the active group, or activates its tab there. */
   openFile = (path: string) => {
-    const wasOpen = this.state.openPaths.includes(path)
-    this.update({
-      openPaths: this.state.openPaths.includes(path)
-        ? this.state.openPaths
-        : [...this.state.openPaths, path],
-      activePath: path,
+    this.placeTab(path, null, {
+      kind: "group",
+      groupId: this.state.layout.activeGroupId,
     })
+  }
+  /** Moves a tab from `from` (null for files opened from the explorer) to a drop target. */
+  placeTab = (path: string, from: string | null, target: DropTarget) => {
+    const wasOpen = this.state.openPaths.includes(path)
+    const layout = placeLayoutTab(this.state.layout, path, from, target)
+    if (layout === this.state.layout) return
+    this.update({ layout })
     if (!wasOpen || !this.state.loaded[path]) this.prefetchLiveFile(path)
     void this.loadFile(path)
+  }
+  activateTab = (groupId: string, path: string) => {
+    const layout = activateLayoutTab(this.state.layout, groupId, path)
+    if (layout !== this.state.layout) this.update({ layout })
+  }
+  activateGroup = (groupId: string) => {
+    const layout = activateLayoutGroup(this.state.layout, groupId)
+    if (layout !== this.state.layout) this.update({ layout })
+  }
+  splitGroup = (groupId: string) => {
+    const layout = splitLayoutGroup(this.state.layout, groupId)
+    if (layout !== this.state.layout) this.update({ layout })
+  }
+  /**
+   * Moves a sash between two children of the split at `path`. `position` is the
+   * sash's share of that split.
+   */
+  resizeSash = (path: number[], index: number, position: number) => {
+    this.update({
+      layout: resizeLayoutSash(this.state.layout, path, index, position),
+    })
+  }
+  equalizeSplit = (path: number[]) => {
+    this.update({ layout: equalizeLayoutSplit(this.state.layout, path) })
   }
   private async loadFile(path: string, refresh = false) {
     if (
@@ -375,28 +446,17 @@ export class WorkbenchSource {
     }
   }
 
-  closeTab = (path: string) => {
-    if (this.state.liveSync[path] === false)
-      throw new Error("Keep it open until its live changes are saved.")
-    this.liveOpens.delete(path)
-
-    const index = this.state.openPaths.indexOf(path)
-    const remaining = this.state.openPaths.filter((entry) => entry !== path)
-    this.update({
-      openPaths: remaining,
-      activePath:
-        this.state.activePath === path
-          ? (remaining.at(index) ?? remaining.at(-1) ?? null)
-          : this.state.activePath,
-    })
-  }
-  reorderTabs = (fromPath: string, toPath: string) => {
-    const paths = [...this.state.openPaths]
-    const from = paths.indexOf(fromPath),
-      to = paths.indexOf(toPath)
-    if (from < 0 || to < 0) return
-    paths.splice(to, 0, paths.splice(from, 1)[0])
-    this.update({ openPaths: paths })
+  /** Closes one tab. The file's live document closes with its last tab. */
+  closeTab = (groupId: string, path: string) => {
+    const openIn = groupsOf(this.state.layout).filter((group) =>
+      group.paths.includes(path)
+    ).length
+    if (openIn === 1) {
+      if (this.state.liveSync[path] === false)
+        throw new Error("Keep it open until its live changes are saved.")
+      this.liveOpens.delete(path)
+    }
+    this.update({ layout: closeLayoutTab(this.state.layout, groupId, path) })
   }
 
   commit = async (message?: string) => {
@@ -456,16 +516,11 @@ export class WorkbenchSource {
         throw new Error(
           "Commit restored. Reload the program to load its files."
         )
-      const openPaths = this.state.openPaths.filter((path) =>
-        this.state.paths?.includes(path)
+      const layout = retainPaths(this.state.layout, (path) =>
+        Boolean(this.state.paths?.includes(path))
       )
-      this.update({
-        openPaths,
-        activePath: openPaths.includes(this.state.activePath ?? "")
-          ? this.state.activePath
-          : (openPaths[0] ?? null),
-      })
-      await Promise.all(openPaths.map((path) => this.loadFile(path)))
+      this.update({ layout })
+      await Promise.all(layoutPaths(layout).map((path) => this.loadFile(path)))
       return null
     })
   }
@@ -577,13 +632,9 @@ export class WorkbenchSource {
             ...value,
             contents: this.drafts.get(path) ?? value.contents,
           }
-      const openPaths = this.state.openPaths
-        .filter((path) => !removed.has(path))
-        .map(remap)
-      const activePath =
-        this.state.activePath && !removed.has(this.state.activePath)
-          ? remap(this.state.activePath)
-          : (openPaths.at(-1) ?? null)
+      const layout = remapPaths(this.state.layout, (path) =>
+        removed.has(path) ? null : remap(path)
+      )
       const paths = new Set(this.state.paths ?? [])
       for (const change of update.changes) {
         if (change.operation === "delete") paths.delete(change.path)
@@ -591,13 +642,13 @@ export class WorkbenchSource {
       }
       this.sourceChanged({
         loaded,
-        openPaths,
-        activePath,
+        layout,
         paths: [...paths].sort(),
         liveSync: remapRecord(this.state.liveSync),
         readError: remapRecord(this.state.readError),
         filePeople: remapRecord(this.state.filePeople),
       })
+      const activePath = activePathOf(layout)
       if (activePath) void this.loadFile(activePath)
     })
   }

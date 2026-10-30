@@ -16,9 +16,12 @@ import { Spinner } from "@v5x/ui/components/spinner"
 import { Editor, type EditorFactory } from "@pierre/diffs/edit"
 import { EditProvider, File } from "@pierre/diffs/react"
 import { PierreCollaboration } from "@/lib/pierre-collaboration"
-import { MAX_SOURCE_BYTES, source } from "@/lib/live-document"
-import { createLiveFileSession } from "@/lib/live-file-session"
-import type { LivePerson } from "@/lib/live-file-session"
+import { MAX_SOURCE_BYTES } from "@/lib/live-document"
+import {
+  joinLiveFile,
+  type LiveFileView,
+  type LivePerson,
+} from "@/lib/live-file-session"
 import { useEditorCompletion } from "./editor-completion"
 import { useEditorBrackets } from "./editor-brackets"
 import { useLanguageService } from "./language-session"
@@ -37,6 +40,8 @@ const createEditor: EditorFactory<undefined, { name: string }> = (
 
 type Props = {
   programId: Id<"programs">
+  /** Identifies this open tab, so each copy of a file keeps its own cursor and scroll. */
+  viewId: string
   takeLiveOpen: (
     path: string
   ) => Promise<Id<"crdtDocuments"> | null> | undefined
@@ -53,6 +58,7 @@ type Props = {
 
 export function LiveFileEditor({
   programId,
+  viewId,
   takeLiveOpen,
   path,
   active,
@@ -77,68 +83,57 @@ export function LiveFileEditor({
   const [status, setStatus] = useState("Opening live document…")
   const [error, setError] = useState<string | null>(null)
   const retry = useRef(() => {})
-  const sessionRef = useRef<ReturnType<typeof createLiveFileSession> | null>(
-    null
-  )
+  const joinRef = useRef<ReturnType<typeof joinLiveFile> | null>(null)
   const [binding, setBinding] = useState<PierreCollaboration | null>(null)
   const activeRef = useRef(active)
   activeRef.current = active
 
   useEffect(() => {
     if (!user || !host.current) return
-    const session = createLiveFileSession({
+    const view: LiveFileView = {
+      onChange: (text) => callbacks.current.onChange(text),
+      onSyncChange: (synced) => callbacks.current.onSyncChange(synced),
+      onPeopleChange: (people) => callbacks.current.onPeopleChange(people),
+      onStatus: setStatus,
+      onError: setError,
+      onReplaced: () => {
+        onReplacementAction(path, null)
+        host.current?.setAttribute("inert", "")
+      },
+      isFocused: () =>
+        activeRef.current &&
+        document.visibilityState === "visible" &&
+        document.hasFocus() &&
+        Boolean(host.current?.contains(document.activeElement)),
+      mount: (doc, awareness, undo) => {
+        const collaboration = new PierreCollaboration(
+          doc,
+          awareness,
+          path,
+          () =>
+            setError(
+              "Live files can contain up to 256 KiB of text. This edit exceeds that limit."
+            ),
+          undo
+        )
+        setBinding(collaboration)
+        setReady(true)
+        return collaboration
+      },
+    }
+    const join = joinLiveFile({
       client,
       initialOpen: takeLiveOpen(path),
       programId,
       path,
       user,
-      callbacks: {
-        onChange: (text) => callbacks.current.onChange(text),
-        onSyncChange: (synced) => callbacks.current.onSyncChange(synced),
-        onPeopleChange: (people) => callbacks.current.onPeopleChange(people),
-        onStatus: setStatus,
-        onError: setError,
-        onReplaced: () => {
-          onReplacementAction(path, null)
-          host.current?.setAttribute("inert", "")
-        },
-        isFocused: () =>
-          activeRef.current &&
-          document.visibilityState === "visible" &&
-          document.hasFocus() &&
-          Boolean(host.current?.contains(document.activeElement)),
-        mount: (doc, awareness) => {
-          const collaboration = new PierreCollaboration(
-            doc,
-            awareness,
-            path,
-            () =>
-              setError(
-                "Live files can contain up to 256 KiB of text. This edit exceeds that limit."
-              )
-          )
-          const stopLanguage = languageRef.current?.openDocument(
-            path,
-            source(doc)
-          )
-          setBinding(collaboration)
-          setReady(true)
-          return {
-            renderCarets: () => collaboration.renderCarets(),
-            publishSelection: (focused) =>
-              collaboration.publishSelection(focused),
-            destroy: () => {
-              stopLanguage?.()
-              collaboration.destroy()
-            },
-          }
-        },
-      },
+      openLanguage: (text) => languageRef.current?.openDocument(path, text),
+      view,
     })
-    sessionRef.current = session
-    retry.current = session.retry
+    joinRef.current = join
+    retry.current = join.session.retry
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (session.hasPendingChanges()) {
+      if (join.session.hasPendingChanges()) {
         event.preventDefault()
         event.returnValue = ""
       }
@@ -146,18 +141,18 @@ export function LiveFileEditor({
     window.addEventListener("beforeunload", beforeUnload)
     return () => {
       window.removeEventListener("beforeunload", beforeUnload)
-      session.dispose()
-      sessionRef.current = null
+      join.release()
+      joinRef.current = null
     }
   }, [client, path, programId, user?.id])
 
   useEffect(() => {
-    sessionRef.current?.setActive(active)
+    joinRef.current?.setActive(active)
   }, [active, client, path, programId, user?.id])
 
   useEffect(() => {
     const updateActivity = () => {
-      sessionRef.current?.setBrowserActive(
+      joinRef.current?.session.setBrowserActive(
         document.visibilityState === "visible" && document.hasFocus()
       )
     }
@@ -206,6 +201,7 @@ export function LiveFileEditor({
             diagnosticTarget={active ? diagnosticTarget : undefined}
             path={path}
             programId={programId}
+            viewId={viewId}
             onReplacementAction={onReplacementAction}
           />
         )}
@@ -222,8 +218,10 @@ function PierreFile({
   onCursorLine,
   path,
   programId,
+  viewId,
   onReplacementAction,
 }: {
+  viewId: string
   binding: PierreCollaboration
   active: boolean
   onCursorLine: (path: string, line: number) => void
@@ -237,7 +235,12 @@ function PierreFile({
     () => () => onReplacementAction(path, null),
     [path, onReplacementAction]
   )
+  // A copy opened from a split starts from the file's last view state, and then
+  // keeps its own cursor and scroll under its tab's key.
   const viewKey = `${programId}:file:${path}`
+  const instanceKey = `${viewKey}:${viewId}`
+  const readViewState = () =>
+    readEditorState<FileView>(instanceKey) ?? readEditorState<FileView>(viewKey)
   const viewRestored = useRef(false)
   const bottomScrollFrame = useRef<number | null>(null)
   useEffect(
@@ -267,7 +270,7 @@ function PierreFile({
       .map((node) => node.shadowRoot?.querySelector<HTMLElement>("[data-code]"))
       .find(Boolean)
     if (!viewRestored.current) {
-      const saved = readEditorState<FileView>(viewKey)
+      const saved = readViewState()
       if (saved && !targetRef.current) {
         viewport.scrollTop = Number.isFinite(saved.top) ? saved.top : 0
         viewport.scrollLeft = Number.isFinite(saved.left) ? saved.left : 0
@@ -276,16 +279,19 @@ function PierreFile({
       viewRestored.current = true
       return
     }
-    writeEditorState(viewKey, {
+    const state: FileView = {
       selections: (editor.getViewState().selections ?? []).map((selection) => ({
         start: binding.document.offsetAt(selection.start),
         end: binding.document.offsetAt(selection.end),
-        direction: selection.direction,
+        // Saved as words, so restores read the direction the editor had.
+        direction: selection.direction === -1 ? "backward" : "forward",
       })),
       top: viewport.scrollTop,
       left: viewport.scrollLeft,
       codeLeft: code?.scrollLeft ?? 0,
-    })
+    }
+    writeEditorState(instanceKey, state)
+    writeEditorState(viewKey, state)
   }
   // Listeners bind once; the effect event reads the current binding and view refs.
   const saveViewState = useEffectEvent(saveView)
@@ -370,7 +376,7 @@ function PierreFile({
                 }
               })
               if (!viewRestored.current) {
-                const saved = readEditorState<FileView>(viewKey)
+                const saved = readViewState()
                 if (saved && Array.isArray(saved.selections)) {
                   const length = binding.document.getText().length
                   const position = (offset: number) =>
@@ -430,7 +436,7 @@ function PierreFile({
               viewport.scrollHeight -
                 viewport.clientHeight -
                 viewport.scrollTop <=
-                1
+                24
             binding.localChange(event)
             completion.onLocalChange(event)
             if (followBottom) {
@@ -442,7 +448,11 @@ function PierreFile({
                   bottomScrollFrame.current = null
                   if (
                     viewport.isConnected &&
-                    viewport.scrollTop === previousTop
+                    viewport.scrollTop >= previousTop &&
+                    viewport.scrollHeight -
+                      viewport.clientHeight -
+                      viewport.scrollTop <=
+                      48
                   )
                     viewport.scrollTop = viewport.scrollHeight
                 })
