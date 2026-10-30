@@ -543,14 +543,25 @@ export function ProgramPathPreview({
               </>
             ) : null}
             <div className="flex shrink-0 items-center justify-between gap-2">
-              <a
-                href="https://field-rendering.jerryio.com/"
-                target="_blank"
-                rel="noreferrer"
-                className="shrink-0 text-[10px] text-muted-foreground underline"
-              >
-                Field renders by JerryIO · CC BY 4.0
-              </a>
+              <span className="shrink-0 text-[10px] text-muted-foreground">
+                <a
+                  href="https://field-rendering.jerryio.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  JerryIO
+                </a>{" "}
+                ·{" "}
+                <a
+                  href="https://creativecommons.org/licenses/by/4.0/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  CC BY 4.0
+                </a>
+              </span>
               <div className="flex items-center">
                 <ActionTooltip label="Export path GIF">
                   <Button
