@@ -72,6 +72,26 @@ Web Serial and Web Bluetooth require browser support, permission, and a secure c
 
 ## Checks
 
+The test-only `FakeTransport` in `tests/serial.test.ts` supplies scripted VEX
+protocol replies to a real `Connection`. Its program upload tests exercise file
+transfer and controller channel behavior. Run them with:
+
+```sh
+bun run --cwd packages/serial test
+```
+
+Code web also has in-memory fake Brains in
+`apps/code/web/tests/brain-slots.test.ts` and `brain-revision.test.ts`. They
+mock serial operations to test slot reading and installed revision matching:
+
+```sh
+bun run --cwd apps/code/web test -- brain-slots brain-revision
+```
+
+These fixtures are scoped to unit tests. They do not provide a Web Serial device
+or a complete Brain for the editor's connection, Builder, and upload flow, so
+they cannot be used to capture upload progress in the running app.
+
 ```sh
 bun run --cwd packages/serial typecheck
 bun run --cwd packages/serial test

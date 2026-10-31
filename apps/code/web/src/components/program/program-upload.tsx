@@ -486,6 +486,13 @@ export function ProgramUpload({
 
   return (
     <ActionGroup label="V5 Brain">
+      {progress !== null && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 left-0 h-px bg-primary"
+          style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+        />
+      )}
       <Popover open={connectOpen} onOpenChange={setConnectOpen}>
         <ActionTooltip label={connectTitle}>
           <PopoverTrigger
@@ -502,7 +509,7 @@ export function ProgramUpload({
                 className={brainReady ? "text-success" : "text-primary"}
               />
             ) : (
-              <PlugIcon className="text-primary" />
+              <PlugIcon />
             )}
           </PopoverTrigger>
         </ActionTooltip>
@@ -633,9 +640,9 @@ export function ProgramUpload({
             }
           >
             {busy ? (
-              <Spinner className="text-primary" />
+              <Spinner />
             ) : (
-              <UploadSimpleIcon className="text-primary" />
+              <UploadSimpleIcon />
             )}
           </PopoverTrigger>
         </ActionTooltip>
