@@ -13,6 +13,8 @@ import {
   fixedString,
   varU16,
   systemVersion,
+  keyValueLoad,
+  keyValueSave,
   userData,
   fileTransferInitialize,
   FileTransferOperation,
@@ -116,6 +118,20 @@ describe("wire compatibility", () => {
     expect(crc16(bytes)).toBe(0)
     const wide = cdc2(0x13, new Uint8Array(128)).bytes
     expect([...wide.slice(6, 8)]).toEqual([0x80, 0x80])
+  })
+  it("encodes Brain team number reads and writes as NUL-terminated key-value commands", () => {
+    const encoder = new TextEncoder()
+    const read = keyValueLoad("teamnumber").bytes
+    const write = keyValueSave("teamnumber", "1234A").bytes
+    expect(read[5]).toBe(0x2e)
+    expect([...read.slice(7, -2)]).toEqual([...encoder.encode("teamnumber"), 0])
+    expect(write[5]).toBe(0x2f)
+    expect([...write.slice(7, -2)]).toEqual([
+      ...encoder.encode("teamnumber"),
+      0,
+      ...encoder.encode("1234A"),
+      0,
+    ])
   })
   it("pads file names and FIFO writes to upstream field capacities", () => {
     const command = fileTransferInitialize({
