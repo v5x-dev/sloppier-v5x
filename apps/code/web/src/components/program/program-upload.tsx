@@ -29,6 +29,8 @@ import {
   FileExitAction,
   requestBluetooth,
   requestSerial,
+  keyValueLoad,
+  keyValueSave,
   systemVersion,
   uploadProgram,
   type BluetoothConnection,
@@ -38,6 +40,7 @@ import {
 import { Button } from "@v5x/ui/components/button"
 import { ButtonGroup } from "@v5x/ui/components/button-group"
 import { Field, FieldLabel } from "@v5x/ui/components/field"
+import { Input } from "@v5x/ui/components/input"
 import {
   InputOTP,
   InputOTPGroup,
@@ -160,6 +163,9 @@ export function ProgramUpload({
   const [paired, setPaired] = useState(false)
   const [connected, setConnected] = useState<"USB" | "Bluetooth" | null>(null)
   const [pin, setPin] = useState("")
+  const [teamNumber, setTeamNumber] = useState("")
+  const [savedTeamNumber, setSavedTeamNumber] = useState<string | null>(null)
+  const [teamMessage, setTeamMessage] = useState<string | null>(null)
   const [slot, setSlot] = useState(1)
   const [run, setRun] = useState(true)
   const [message, setMessage] = useState<string | null>(null)
@@ -197,6 +203,9 @@ export function ProgramUpload({
       setConsoleConnection(null)
       setConnected(null)
       setPaired(false)
+      setTeamNumber("")
+      setSavedTeamNumber(null)
+      setTeamMessage(null)
       setSlots(null)
       setSlotsError(null)
       setError(disconnectError.message)
@@ -279,6 +288,9 @@ export function ProgramUpload({
     setConsoleConnection(null)
     setPaired(false)
     setPin("")
+    setTeamNumber("")
+    setSavedTeamNumber(null)
+    setTeamMessage(null)
     setMessage(null)
     setSlots(null)
     setSlotsError(null)
@@ -303,7 +315,10 @@ export function ProgramUpload({
         const authenticated =
           !selected.bluetooth || (await selected.bluetooth.isPaired())
         if (!authenticated) await selected.bluetooth!.requestPairing()
-        else await verifyBrain(selected.connection)
+        else {
+          await verifyBrain(selected.connection)
+          await loadTeamNumber(selected.connection)
+        }
         setConnected(kind)
         setPaired(authenticated)
         if (authenticated) setConsoleConnection(selected.connection)
@@ -323,6 +338,37 @@ export function ProgramUpload({
     if (![0x10, 0x11, 0x14].includes(info.productType))
       throw new Error("Select a V5 Brain or V5 controller.")
   }
+  async function loadTeamNumber(connection: Connection) {
+    try {
+      const data = await connection.request(keyValueLoad("teamnumber"))
+      const end = data.indexOf(0)
+      const value = new TextDecoder().decode(
+        end < 0 ? data : data.slice(0, end)
+      )
+      if (mounted.current) {
+        setTeamNumber(value)
+        setSavedTeamNumber(value)
+        setTeamMessage(null)
+      }
+    } catch {
+      if (mounted.current)
+        setTeamMessage(
+          "Could not read the team number. You can still set it below."
+        )
+    }
+  }
+  function saveTeamNumber() {
+    void operation(async () => {
+      const connection = device.current?.connection
+      if (!connection || !paired) return
+      setTeamMessage(null)
+      await connection.request(keyValueSave("teamnumber", teamNumber))
+      if (mounted.current) {
+        setSavedTeamNumber(teamNumber)
+        setTeamMessage("Team number saved to Brain.")
+      }
+    })
+  }
   function pair() {
     void operation(async () => {
       const selected = device.current
@@ -331,6 +377,7 @@ export function ProgramUpload({
         Uint8Array.from(pin, (digit) => Number(digit))
       )
       await verifyBrain(selected.connection)
+      await loadTeamNumber(selected.connection)
       setPaired(true)
       setConsoleConnection(selected.connection)
       setPin("")
@@ -608,6 +655,49 @@ export function ProgramUpload({
             </form>
           )}
 
+          {connected && paired && (
+            <form
+              className="flex flex-col gap-2"
+              onSubmit={(event) => {
+                event.preventDefault()
+                saveTeamNumber()
+              }}
+            >
+              <div className="flex items-end gap-2">
+                <Field>
+                  <FieldLabel htmlFor={`${id}-team-number`}>
+                    Team number
+                  </FieldLabel>
+                  <Input
+                    id={`${id}-team-number`}
+                    value={teamNumber}
+                    maxLength={7}
+                    autoComplete="off"
+                    disabled={busy}
+                    onChange={(event) => {
+                      setTeamNumber(event.target.value)
+                      setTeamMessage(null)
+                    }}
+                  />
+                </Field>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={
+                    busy ||
+                    teamNumber === savedTeamNumber ||
+                    !/^[\x20-\x7e]{0,7}$/.test(teamNumber)
+                  }
+                >
+                  Save
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {teamMessage ?? "Up to 7 characters."}
+              </p>
+            </form>
+          )}
+
           {error && (
             <p role="alert" className="text-xs text-destructive">
               {error}
@@ -639,11 +729,7 @@ export function ProgramUpload({
               />
             }
           >
-            {busy ? (
-              <Spinner />
-            ) : (
-              <UploadSimpleIcon />
-            )}
+            {busy ? <Spinner /> : <UploadSimpleIcon />}
           </PopoverTrigger>
         </ActionTooltip>
         <PopoverContent
