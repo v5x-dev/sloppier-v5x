@@ -665,7 +665,10 @@ export function ProgramUpload({
             >
               <div className="flex items-end gap-2">
                 <Field>
-                  <FieldLabel htmlFor={`${id}-team-number`}>
+                  <FieldLabel
+                    htmlFor={`${id}-team-number`}
+                    className="text-xs font-medium text-muted-foreground"
+                  >
                     Team number
                   </FieldLabel>
                   <Input
@@ -692,9 +695,9 @@ export function ProgramUpload({
                   Save
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {teamMessage ?? "Up to 7 characters."}
-              </p>
+              {teamMessage && (
+                <p className="text-xs text-muted-foreground">{teamMessage}</p>
+              )}
             </form>
           )}
 
