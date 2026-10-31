@@ -104,6 +104,9 @@ jobs:
       QUALITY_RESULT: ${{ needs.quality-pr.result }}
       EVENT_NAME: ${{ github.event_name }}
       IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+      VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+      VITE_WORKOS_CLIENT_ID: ${{ vars.VITE_WORKOS_CLIENT_ID }}
+      VITE_WORKOS_REDIRECT_URI: ${{ vars.VITE_WORKOS_REDIRECT_URI }}
     steps:
       - name: Require the validation jobs to pass
         run: |
