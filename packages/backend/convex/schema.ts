@@ -84,6 +84,9 @@ export default defineSchema({
   programs: defineTable({
     archivedAt: v.optional(v.number()),
     importId: v.optional(v.id("programImports")),
+    duplicateSource: v.optional(
+      v.object({ repositoryId: v.string(), sha: v.string() })
+    ),
     workspaceId: v.id("workspaces"),
     name: v.string(),
     template: v.union(

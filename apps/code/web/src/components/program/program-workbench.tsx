@@ -353,6 +353,7 @@ export function Workbench({
                 )}
                 <ProgramHistory
                   programId={program._id}
+                  programName={program.name}
                   revision={program.repositoryHeadSha}
                   canRestore={dirtyPaths.length === 0 && allSynced}
                   onRestore={restoreCommit}

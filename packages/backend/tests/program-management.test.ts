@@ -156,3 +156,41 @@ describe("repository provisioning recovery", () => {
     ).toBe("ready")
   })
 })
+
+describe("duplicate provisioning", () => {
+  it("copies ownership and template into a separate repository and checks membership", async () => {
+    const { t, programId, workspaceId } = await setup()
+    const sha = "a".repeat(40)
+    await expect(
+      t.mutation(internal.programs.createDuplicate, {
+        sourceId: programId,
+        userId: "outsider",
+        name: "Copy",
+        sha,
+      })
+    ).rejects.toThrow("access")
+    await expect(
+      t.mutation(internal.programs.createDuplicate, {
+        sourceId: programId,
+        userId: "owner",
+        name: " ",
+        sha,
+      })
+    ).rejects.toThrow("1–80")
+    const id = await t.mutation(internal.programs.createDuplicate, {
+      sourceId: programId,
+      userId: "owner",
+      name: "  Experiment  ",
+      sha,
+    })
+    const copy = await t.run((ctx) => ctx.db.get(id))
+    expect(copy).toMatchObject({
+      workspaceId,
+      name: "Experiment",
+      template: "pros",
+      repositoryId: `programs/${id}`,
+      repositoryStatus: "provisioning",
+      duplicateSource: { repositoryId: "programs/test", sha },
+    })
+  })
+})

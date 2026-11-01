@@ -10,6 +10,7 @@ const HistoryPanel = lazy(() =>
 )
 export function ProgramHistory(props: {
   programId: Id<"programs">
+  programName: string
   revision?: string
   canRestore: boolean
   onRestore: (sha: string) => Promise<string | null>

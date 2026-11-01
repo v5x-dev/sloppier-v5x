@@ -1,3 +1,4 @@
+import { DuplicateProgramDialog } from "@/components/program/duplicate-program-dialog"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { format, formatDistanceToNow } from "date-fns"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -36,12 +37,14 @@ type ChangedFile = FunctionReturnType<
 
 export function ProgramHistoryPanel({
   programId,
+  programName,
   revision,
   canRestore,
   onRestore,
   initiallyOpen = false,
 }: {
   programId: Id<"programs">
+  programName: string
   revision?: string
   canRestore: boolean
   onRestore: (sha: string) => Promise<string | null>
@@ -68,6 +71,7 @@ export function ProgramHistoryPanel({
   const [detailError, setDetailError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [refresh, setRefresh] = useState(0)
+  const [duplicateOpen, setDuplicateOpen] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const [restoring, setRestoring] = useState(false)
   const restoreBusy = useRef(false)
@@ -533,6 +537,22 @@ export function ProgramHistoryPanel({
               </ScrollArea>
             </div>
             <div className="space-y-2 border-t p-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDuplicateOpen(true)}
+              >
+                Duplicate from this commit
+              </Button>
+              {duplicateOpen && (
+                <DuplicateProgramDialog
+                  programId={programId}
+                  programName={programName}
+                  sha={commit.sha}
+                  open={duplicateOpen}
+                  onOpenChange={setDuplicateOpen}
+                />
+              )}
               <form
                 className="flex gap-2"
                 onSubmit={(event) => {

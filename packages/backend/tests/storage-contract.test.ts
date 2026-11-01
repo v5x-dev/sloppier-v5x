@@ -12,6 +12,7 @@ test("keeps the deployed Code Storage API facade stable", () => {
       "buildManifest",
       "commitFiles",
       "createCheckpoint",
+      "duplicateProgram",
       "fileHistory",
       "history",
       "historyDiff",

@@ -24,6 +24,6 @@ export const {
 export const { openLiveFile, persistCrdtUpdate, persistProgramUpdates } =
   liveActions()
 
-export const { provisionProgram } = provisionActions()
+export const { provisionProgram, duplicateProgram } = provisionActions()
 
 export const { searchProgram } = searchActions()

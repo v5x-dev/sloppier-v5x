@@ -1,3 +1,4 @@
+import { DuplicateProgramDialog } from "@/components/program/duplicate-program-dialog"
 import {
   ArchiveBoxIcon,
   CaretUpDownIcon,
@@ -527,6 +528,7 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
   const rename = useMutation(api.programs.rename)
   const setArchived = useMutation(api.programs.setArchived)
   const [open, setOpen] = useState(false)
+  const [duplicateOpen, setDuplicateOpen] = useState(false)
   const [name, setName] = useState(program.name)
   const [pending, setPending] = useState(false)
   async function save(action: () => Promise<unknown>) {
@@ -562,6 +564,12 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem
+            disabled={program.repositoryStatus !== "ready"}
+            onClick={() => setDuplicateOpen(true)}
+          >
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuItem
             onClick={() => {
               setName(program.name)
               setOpen(true)
@@ -583,6 +591,14 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {duplicateOpen && (
+        <DuplicateProgramDialog
+          programId={program._id}
+          programName={program.name}
+          open={duplicateOpen}
+          onOpenChange={setDuplicateOpen}
+        />
+      )}
       <Dialog
         open={open}
         onOpenChange={(value) => {

@@ -319,6 +319,24 @@ export async function createLocalFixture({ builderURL } = {}) {
         if (logs.includes("Convex functions ready")) ready = true
       })
     await waitFor(`http://127.0.0.1:${port}/version`, child)
+    // The HTTP server can start before Convex writes its local deployment
+    // selection. CLI commands need both, especially on a fresh CI runner.
+    const selectionFile = resolve(dir, ".env.local")
+    const selectionDeadline = Date.now() + 120_000
+    while (
+      Date.now() < selectionDeadline &&
+      child.exitCode === null &&
+      (!existsSync(selectionFile) ||
+        !readEnv(readFileSync(selectionFile, "utf8")).CONVEX_DEPLOYMENT)
+    )
+      await delay(100)
+    if (
+      !existsSync(selectionFile) ||
+      !readEnv(readFileSync(selectionFile, "utf8")).CONVEX_DEPLOYMENT
+    )
+      throw new Error(
+        `Local Convex did not write its deployment selection:\n${logs}`
+      )
     const envFile = resolve(dir, "storage.env")
     const initial = {
       ...credentials,
@@ -329,9 +347,9 @@ export async function createLocalFixture({ builderURL } = {}) {
             SMOL_BUILD_CHECKPOINT: "",
           }
         : {}),
-      WORKOS_CLIENT_ID: "",
-      CODE_DEMO_ISSUER: "",
-      CODE_DEMO_JWKS: "",
+      WORKOS_CLIENT_ID: "client_test",
+      CODE_DEMO_ISSUER: "http://127.0.0.1",
+      CODE_DEMO_JWKS: Buffer.from('{"keys":[]}').toString("base64"),
     }
     writeFileSync(
       envFile,
@@ -341,6 +359,10 @@ export async function createLocalFixture({ builderURL } = {}) {
       { mode: 0o600 }
     )
     cli(["env", "set", "--force", "--from-file", envFile])
+    // If the first deployment raced the environment setup, retry it now that
+    // all auth variables exist. This edits only the disposable backend copy.
+    const authConfig = resolve(dir, "convex", "auth.config.ts")
+    writeFileSync(authConfig, `${readFileSync(authConfig, "utf8")}\n`)
     const deadline = Date.now() + 120_000
     while (!ready && Date.now() < deadline && child.exitCode === null)
       await delay(100)
