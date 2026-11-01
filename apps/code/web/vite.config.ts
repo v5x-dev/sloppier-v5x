@@ -10,6 +10,7 @@ const release = randomUUID()
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
+  cacheDir: process.env.CODE_TEST_CACHE_DIR ?? "node_modules/.vite",
   plugins: [
     {
       name: "code-release-marker",
@@ -42,6 +43,9 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  // Discover the formatter before the first edit. Optimizing this worker-only
+  // dependency on demand otherwise reloads the page and drops a connected Brain.
+  optimizeDeps: { include: ["@wasm-fmt/clang-format/vite"] },
   worker: { format: "es" },
   build: {
     // Keep font files as separate requests. An inlined font rides along in the

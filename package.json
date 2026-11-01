@@ -5,10 +5,14 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev --ui=tui",
-    "lint": "turbo lint",
-    "test": "turbo test",
+    "lint": "bun run check:boundaries && turbo lint",
+    "test": "bun run test:tooling && turbo test",
     "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "test:tooling": "node --test scripts/tests/*.test.mjs",
+    "format:check": "prettier --check \"apps/*/*/src/**/*.{ts,tsx}\" \"apps/*/*/tests/**/*.ts\" \"apps/*/*/e2e/**/*.{ts,mjs}\" \"apps/*/*/scripts/*.mjs\" \"packages/*/src/**/*.{ts,tsx}\" \"packages/backend/convex/**/*.ts\" \"packages/backend/tests/**/*.ts\" \"scripts/**/*.mjs\"",
+    "doctor": "node scripts/doctor.mjs"
   },
   "devDependencies": {
     "prettier": "^3.9.10",

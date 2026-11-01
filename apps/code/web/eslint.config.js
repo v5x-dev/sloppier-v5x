@@ -16,6 +16,16 @@ export default [
     },
   },
   {
-    ignores: ["eslint.config.js", ".prettierrc", ".cache/**", "public/sw.js"],
+    ignores: [
+      "eslint.config.js",
+      ".prettierrc",
+      ".cache/**",
+      "public/sw.js",
+      "test-results/**",
+      "playwright-report/**",
+      ".auth/**",
+      ".wrangler/**",
+      "dist/**",
+    ],
   },
 ]

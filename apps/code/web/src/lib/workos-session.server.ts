@@ -1,3 +1,5 @@
+import "@tanstack/react-start/server-only"
+
 const refreshCookie = "__Host-code-refresh"
 const markerCookie = "workos-has-session"
 const cookieOptions = "Path=/; Secure; SameSite=Lax"

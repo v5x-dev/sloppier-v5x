@@ -14,11 +14,7 @@ import { Link, createFileRoute } from "@tanstack/react-router"
 import { useAuth } from "@/lib/auth"
 import { api } from "@v5x/backend/api"
 import type { Doc, Id } from "@v5x/backend/dataModel"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@v5x/ui/components/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@v5x/ui/components/avatar"
 import { Button } from "@v5x/ui/components/button"
 import {
   DropdownMenu,

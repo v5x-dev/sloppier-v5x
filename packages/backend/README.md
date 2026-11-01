@@ -8,8 +8,8 @@ Convex regenerate the local function and component references.
 
 ## Production releases
 
-The [production workflow](../../.github/workflows/deploy-production.yml) runs web
-lint, web/backend/serial typechecks and tests, and a production web build on pull
+The [production workflow](../../.github/workflows/deploy-production.yml) runs available workspace
+lint, typechecks and tests, and a production web build on pull
 requests to `main`. Pushes to `main` and manual runs on `main` also deploy Convex
 first, then publish the built Cloudflare Worker. A failed check, build, or backend
 deployment prevents the Worker deployment. Releases run serially without
@@ -17,20 +17,20 @@ automatically cancelling an in-progress deployment.
 
 Configure these GitHub Actions repository settings:
 
-- Secrets: `CONVEX_DEPLOY_KEY`, a production deployment key from the Convex
-  dashboard, `CONVEX_E2E_DEPLOY_KEY`, a development key for a dedicated test
-  deployment, and `CLOUDFLARE_API_TOKEN`.
+- Secrets: `CONVEX_DEPLOY_KEY` for production, `CLOUDFLARE_API_TOKEN`, and
+  `CONVEX_E2E_DEPLOY_KEY`, a development key used only to read test Pierre
+  credentials for the isolated browser runners.
 - Variables: `CLOUDFLARE_ACCOUNT_ID`, `VITE_CONVEX_URL`,
-  `VITE_WORKOS_CLIENT_ID`, `VITE_WORKOS_REDIRECT_URI`, and `CONVEX_E2E_URL`
-  for the dedicated test deployment.
+  `VITE_WORKOS_CLIENT_ID`, and `VITE_WORKOS_REDIRECT_URI`.
 
-The WorkOS end-to-end job deploys backend functions to the dedicated test
-deployment and runs before release. Initialize `WORKOS_CLIENT_ID`,
-`CODE_DEMO_ISSUER`, and `CODE_DEMO_JWKS` as empty environment variables on that
-test deployment before the first backend push. It is serialized across workflow runs and
-skipped for fork pull requests, which cannot access repository secrets. The
-production job is allowed to run for those pull requests, but the emulator
-check is unavailable there.
+The browser job runs WorkOS authentication, Program editing and committing,
+collaboration, and simulated Builder/Brain checks on temporary local Convex
+backends. It does not deploy to the credential-source deployment or change its
+auth settings. Configure `PIERRE_ORG` and `PIERRE_PRIVATE_KEY` on the development
+credential source with a test storage account. Runs allocate their own ports and
+databases and clean up their repositories. Fork PRs skip secret-dependent browser
+checks; lint, formatting, typechecks, unit tests, and build still run.
+See [Code web testing](../../apps/code/web/README.md).
 
 The workflow rejects non-production Convex keys and verifies that the key's
 deployment URL matches `VITE_CONVEX_URL` before pushing backend changes. Convex
@@ -203,6 +203,6 @@ Run `bun run test` in this package for fast `convex-test` checks of backend
 business rules and membership, including live-edit access after a member is
 removed. These tests use an in-memory backend and do not verify hosted service
 configuration. The Code web Playwright emulator suite adds a browser smoke test
-against a dedicated hosted development deployment; see the root README for its
+against a temporary local deployment; see the Code web README for its
 setup and limitations. It does not replace production-like preview testing of
 the deployed frontend and its external services.

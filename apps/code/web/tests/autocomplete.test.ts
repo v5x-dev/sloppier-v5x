@@ -93,17 +93,22 @@ describe("local SDK completion", () => {
     )
   })
   it("completes a motor initialized with a negative port as a variable", () => {
-    const files = { "include/subsystems.hpp": "inline pros::Motor endstage(-5);" }
-    const completion = setup('void opcontrol() { end| }', ez, files)
+    const files = {
+      "include/subsystems.hpp": "inline pros::Motor endstage(-5);",
+    }
+    const completion = setup("void opcontrol() { end| }", ez, files)
       .items()
       .find((item) => item.label === "endstage")
     expect(completion?.kind).toBe(6)
     expect(completion?.insertText).toBe("endstage")
     expect(
-      setup('void opcontrol() { endstage.| }', ez, files).labels()
+      setup("void opcontrol() { endstage.| }", ez, files).labels()
     ).toContain("move_velocity")
-    expect(setup("void run(int port); void opcontrol() { ru| }", ez)
-      .items().find((item) => item.label === "run")?.insertText).toBe("run($0)")
+    expect(
+      setup("void run(int port); void opcontrol() { ru| }", ez)
+        .items()
+        .find((item) => item.label === "run")?.insertText
+    ).toBe("run($0)")
   })
   it("completes PROS device types after the inline declaration specifier", () => {
     expect(setup("inline pros::|", pros).labels()).toContain("Motor")

@@ -4,10 +4,7 @@ import {
   planFolder,
   selectedFolder,
 } from "../src/lib/folder-import"
-import {
-  IMPORT_BATCH_BYTES,
-  IMPORT_MAX_BYTES,
-} from "@v5x/backend/imports"
+import { IMPORT_BATCH_BYTES, IMPORT_MAX_BYTES } from "@v5x/backend/imports"
 
 function file(path: string, contents: string | Uint8Array = "// source") {
   const value = new File(

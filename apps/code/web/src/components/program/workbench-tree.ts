@@ -1,0 +1,15 @@
+export const treeStyle = {
+  "--trees-bg-override": "var(--sidebar)",
+  "--trees-padding-inline-override": "0px",
+  "--trees-fg-override": "var(--sidebar-foreground)",
+  "--trees-fg-muted-override": "var(--muted-foreground)",
+  "--trees-bg-muted-override": "var(--sidebar-accent)",
+  "--trees-selected-bg-override": "var(--sidebar-accent)",
+  "--trees-selected-fg-override": "var(--sidebar-accent-foreground)",
+  "--trees-border-color-override": "var(--sidebar-border)",
+  "--trees-accent-override": "var(--primary)",
+  "--trees-focus-ring-color-override": "var(--ring)",
+  "--trees-git-modified-color-override": "var(--primary)",
+  "--trees-font-family-override": "var(--font-serif)",
+  height: "100%",
+} as React.CSSProperties

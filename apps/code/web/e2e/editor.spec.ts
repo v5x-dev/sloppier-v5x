@@ -115,6 +115,9 @@ test.describe("program editor", () => {
     await page.getByRole("button", { name: "Search program" }).click()
     await page.getByRole("textbox", { name: "Search text" }).fill(searchTerm)
     await page.locator("[data-search-result]").first().click()
+    await expect(
+      page.getByRole("textbox", { name: "Search text" })
+    ).toBeHidden()
     const panel = page.getByRole("tabpanel")
     const editor = panel.getByRole("textbox")
     await expect(editor).toBeVisible()
@@ -134,5 +137,29 @@ test.describe("program editor", () => {
         break
       await page.keyboard.press("Control+z")
     }
+  })
+
+  test("keeps split editor groups after reload and closes only the selected copy", async ({
+    page,
+  }) => {
+    await expect(page.getByRole("tabpanel").getByRole("textbox")).toBeVisible()
+    await page
+      .getByRole("button", { name: "Split editor", exact: true })
+      .click()
+    await expect(page.getByRole("tablist", { name: "Open files" })).toHaveCount(
+      2
+    )
+    await page.reload()
+    await expect(page.getByRole("tablist", { name: "Open files" })).toHaveCount(
+      2
+    )
+    await page
+      .getByRole("button", { name: "Close src/main.cpp", exact: true })
+      .last()
+      .click()
+    await expect(page.getByRole("tablist", { name: "Open files" })).toHaveCount(
+      1
+    )
+    await expect(page.getByRole("tabpanel").getByRole("textbox")).toBeVisible()
   })
 })

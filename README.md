@@ -1,170 +1,52 @@
-# code (by v5x)
+# v5x
 
-code (by v5x) uses TanStack Start and shadcn/ui.
+v5x is a suite for VEX V5 teams. Code provides collaborative Program editing,
+builds through Builder, and upload to a Brain. Design and Film are works in
+progress; their app layout is reserved but their workflows are not defined yet.
 
-## Worktree setup
+| Location           | Responsibility                                        |
+| ------------------ | ----------------------------------------------------- |
+| `apps/code/web`    | Code web, TanStack Start and React                    |
+| `packages/backend` | Shared Convex data, authorization, and business rules |
+| `packages/ui`      | Shared DOM components, typography, and web tokens     |
+| `packages/serial`  | VEX device transport and protocol                     |
+| `packages/tokens`  | Product styling tokens                                |
+| `infra`            | Builder and autocomplete generation tooling           |
 
-Run `bash scripts/setup-worktree.sh` in a worktree, or configure it as a
-T3 Code project script with **Run on worktree create** enabled. It links
-`.env.local` files from the main checkout without replacing existing files and
-installs dependencies using the committed Bun lockfile. The links share the
-original files, so changes to their contents affect the main checkout too.
+Start with [the glossary](GLOSSARY.md), [Code's architecture map](docs/code-architecture.md),
+and [Code web setup and browser testing](apps/code/web/README.md).
+Backend environment and release setup live in [its README](packages/backend/README.md).
 
-## Adding components
+## Setup and checks
 
-To add components to your app, run the following command at the root of your `web` app:
+Use Bun 1.4.4 and the committed lockfile. Node 22 or 24 is required for local
+Convex Node actions. Run `bun install --frozen-lockfile`, then `bun run doctor`
+to check the local runtime and environment selection without changing cloud state.
 
-```bash
-pnpm dlx shadcn@latest add button -c apps/code/web
-```
+Run `bash scripts/setup-worktree.sh` in a worktree, or use it as T3 Code's
+worktree-create script. It copies `.env.local` files from the main checkout,
+replaces existing shared symlinks with independent copies, preserves existing
+regular files, and installs dependencies. Environment copies still point to the
+same deployment; isolated browser runners use their own local backend instead.
 
-This will place the ui components in the `packages/ui/src/components` directory.
-
-## Using components
-
-To use the components in your app, import them from the `ui` package.
-
-```tsx
-import { Button } from "@v5x/ui/components/button";
-```
-
-## Code web end-to-end tests
-
-The Playwright suite runs separately from the Vitest unit tests. Configure the
-Code web app's local environment with `VITE_CONVEX_URL`,
-`VITE_WORKOS_CLIENT_ID`, and the appropriate WorkOS redirect URI, as for normal
-development. The sign-in test reaches the configured WorkOS sign-in page; it
-does not sign in or modify account data.
-
-From `apps/code/web`, install the Chromium browser once and run the suite:
+From the root:
 
 ```sh
-bunx playwright install chromium
-bun run test:e2e
+bun run lint          # import boundaries plus available package lint tasks
+bun run format:check  # non-writing check of maintained source and scripts
+bun run typecheck    # available workspace typechecks
+bun run test         # tooling regressions plus available package unit tests
 ```
 
-By default Playwright starts a dedicated development server on port 4173. Set
-`PLAYWRIGHT_BASE_URL` to test an already running app instead; that server must
-be configured for the same authentication flow. Failure traces are saved in
-`test-results/`. Run `bunx playwright show-trace <trace.zip>` to inspect one.
+Turborepo coordinates package tasks; a package without a task is skipped.
+Browser integration tests run separately from Code web. See its README for
+`test:e2e:workos`, `test:e2e:editor`, and visual checks.
 
-The signed-in dashboard and editor tests require a dedicated test account and
-workspace. Start the app on port 4173 with the same environment used by the
-suite, then run the interactive sign-in helper in another terminal:
+## Shared web components
 
-```sh
-bun run dev -- --host 127.0.0.1 --port 4173 --strictPort
-# In another terminal, sign in in the opened browser:
-bun run test:e2e:sign-in
-PLAYWRIGHT_PROGRAM_ID=<test-program-id> bun run test:e2e
-```
-
-The helper waits for the authenticated Programs dashboard before saving the
-session in `.auth/state.json`, including IndexedDB. The dashboard tests use it
-automatically; the editor tests also require a ready test Program containing
-`#include` (or set `PLAYWRIGHT_EDITOR_SEARCH` to text present in its source).
-Set `PLAYWRIGHT_AUTH_STATE` to use a different state file. Signed-in tests are
-skipped when the state or Program ID is missing. Session state contains
-credentials: keep it private and use a disposable test account. Sessions may
-expire; run the helper again if authentication fails. The editor tests search, open, and edit a file, then undo the edit. Use a
-disposable Program: an interrupted test can leave a live edit behind.
-
-For development-only testing without a WorkOS account, the existing demo
-session can create a signed test identity and Program on the configured dev
-Convex deployment. See [live editing](docs/live-editing.md) for its effects on
-the deployment and cleanup. Run `node apps/code/web/scripts/completion-demo.mjs`
-from the repository root, then use the Program ID and `demoUser` in the printed
-URL from `apps/code/web`:
-
-```sh
-PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 \
-PLAYWRIGHT_PROGRAM_ID=<program-id> PLAYWRIGHT_DEMO_USER=<demo-user> \
-  bunx playwright test e2e/editor.spec.ts
-```
-
-Stop the demo process afterward. This verifies signed Convex authentication and
-membership, but does not test the WorkOS sign-in callback.
-
-### Quick visual review
-
-To prepare one real Code web session for screenshots, run this from
-`apps/code/web`:
-
-```sh
-bun run demo:visual
-```
-
-It creates an EZ-Template Program, starts Code web on an available loopback
-port, waits for the server to answer, and prints dashboard and Program URLs for
-the Luna demo identity. Pass `pros`, `jar`, or `vexcode` to choose another
-template. Set `CODE_DEMO_PORT` only when a fixed port is required; the server
-fails instead of silently switching ports if that port is occupied.
-
-Use the printed URLs to capture the dashboard, new-Program dialog, editor, and
-Program history in separate browser tabs. Share this single running demo among
-parallel read-only reviewers; do not start a second demo against the same
-development deployment. Save screenshots outside tracked source, for example
-under `/tmp/v5x-code-states/`. Press Ctrl+C when the captures are complete; the
-server, temporary credentials, and demo auth settings are cleaned up.
-The demo workspace and Program remain on the development deployment.
-
-### Automated WorkOS sign-in
-
-`bun run test:e2e:workos` follows the WorkOS emulator workflow: it starts a
-loopback-only emulator with a seeded user, signs in through AuthKit, checks that
-Convex grants access to the workspace, and checks the session after reload. The
-emulator and its test signing key are never used by production builds.
-
-This command needs a **dedicated development Convex deployment** selected in
-`packages/backend/.env.local`, CLI access to it, deployed backend functions, and
-the Chromium browser installed. It temporarily sets `CODE_DEMO_ISSUER` and
-`CODE_DEMO_JWKS` to trust the emulator's public key and clears them on exit; it
-refuses to overwrite an existing demo provider. It creates a personal workspace
-for the seeded identity. Run it only on an isolated test deployment; concurrent
-runs against the same deployment conflict. If the process is forcibly killed,
-clear both variables before using that deployment again. Ports 4100 and 4173
-must be available. AuthKit uses the local emulator, but Convex and its configured
-services are still required. Backend profile refresh may call WorkOS when the
-token lacks a verified email claim. This does not verify a real hosted
-WorkOS deployment or the production cookie proxy.
-
-The production workflow runs this test in a separate, serialized job against a
-dedicated development deployment before deploying. Configure the
-`CONVEX_E2E_DEPLOY_KEY` repository secret with a development deployment key and
-the `CONVEX_E2E_URL` repository variable with that deployment’s URL. The job
-checks both the key’s target and that the URL differs from production before
-pushing backend functions. Fork pull requests skip this job because GitHub
-does not supply repository secrets to them.
-
-### Load benchmarks
-
-From `apps/code/web`, run `bun run benchmark:load` to measure how long it takes
-for visible page controls to become ready in Chromium. Each scenario uses five
-fresh browser contexts by default; page-load scenarios also reload each context.
-The output reports individual samples, median, minimum, 90th percentile, and
-maximum in milliseconds. Program loading reports both file-tree readiness and
-the first visible editor. Set `PLAYWRIGHT_BENCHMARK_RUNS` to change the sample
-count (1–100). Set `PLAYWRIGHT_CPU_THROTTLE` to a Chromium CPU slowdown factor
-from 1 to 20 for repeatable constrained-CPU comparisons; this does not reproduce
-a particular device or network. Measure a production build for representative
-numbers: run `bunx vite build`, serve it with `bunx vite preview`, and set
-`PLAYWRIGHT_BASE_URL` to that server. The development server compiles modules on
-demand, which inflates the first visit. Reloads reuse the browser context. These
-are local elapsed times, not production performance targets or controlled network
-measurements.
-
-The default scenarios cover the not-found and incomplete callback pages. To
-include the Programs dashboard, provide `PLAYWRIGHT_AUTH_STATE`, the usual
-`.auth/state.json`, or a `PLAYWRIGHT_DEMO_USER`. To include the Program editor,
-also set
-`PLAYWRIGHT_PROGRAM_ID`; alternatively use `PLAYWRIGHT_DEMO_USER` and the demo
-server as described above. The suite measures opening the Program from the
-dashboard, as well as opening a search result, typing a one-line edit and
-undoing it. Use a disposable Program. Set `PLAYWRIGHT_BASE_URL` to measure an
-existing server. Use a dedicated test account and keep its session private.
-
-To check Program provisioning and editor reload through the WorkOS emulator,
-run `PLAYWRIGHT_WORKOS_EDITOR=1 bun run test:e2e:workos` from `apps/code/web`.
-This optional check creates a disposable Program in the emulator user's
-workspace and requires the dedicated development deployment to have Code
-Storage configured.
+From the root, add components with `bunx shadcn@latest add button -c apps/code/web`.
+Import through package exports, for example
+`import { Button } from "@v5x/ui/components/button"`. Packages cannot import
+apps, apps cannot import another app, and cross-package source imports must use
+workspace exports. `bun run check:boundaries` enforces these rules and rejects
+server modules imported by client components, hooks, and libraries.

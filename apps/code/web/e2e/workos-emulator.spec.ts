@@ -45,7 +45,7 @@ test("signs in through AuthKit and restores the session after reload", async ({
   ).toBeVisible()
 })
 
-test("opens a disposable Program after WorkOS sign-in and reload", async ({
+test("edits and commits a disposable Program after WorkOS sign-in", async ({
   page,
 }) => {
   test.skip(
@@ -70,6 +70,16 @@ test("opens a disposable Program after WorkOS sign-in and reload", async ({
   await expect(page.getByRole("tabpanel").getByRole("textbox")).toBeVisible({
     timeout: 30_000,
   })
+  const editor = page.getByRole("tabpanel").getByRole("textbox")
+  await editor.click()
+  await page.keyboard.press("Control+End")
+  await page.keyboard.type(" // playwright-commit-check")
+  await expect(page.getByRole("button", { name: /Commit/ })).toBeVisible()
+  await page.getByRole("button", { name: /Commit/ }).click()
+  const commit = page.getByRole("dialog", { name: "Commit changes" })
+  await commit.getByLabel("Message").fill("Playwright editor smoke test")
+  await commit.getByRole("button", { name: "Commit", exact: true }).click()
+  await expect(commit).toBeHidden({ timeout: 30_000 })
   await page.reload()
   await expect(page.getByRole("button", { name: "New file" })).toBeVisible({
     timeout: 30_000,
@@ -77,4 +87,7 @@ test("opens a disposable Program after WorkOS sign-in and reload", async ({
   await expect(page.getByRole("tabpanel").getByRole("textbox")).toBeVisible({
     timeout: 30_000,
   })
+  await expect(page.getByRole("tabpanel").getByRole("textbox")).toContainText(
+    "playwright-commit-check"
+  )
 })
