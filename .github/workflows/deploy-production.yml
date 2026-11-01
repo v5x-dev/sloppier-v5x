@@ -24,6 +24,8 @@ jobs:
     timeout-minutes: 20
     env:
       CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_E2E_DEPLOY_KEY }}
+      PIERRE_ORG: ${{ secrets.CODE_TEST_PIERRE_ORG }}
+      PIERRE_PRIVATE_KEY: ${{ secrets.CODE_TEST_PIERRE_PRIVATE_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,6 +41,7 @@ jobs:
         working-directory: apps/code/web
       - name: Validate test credential source
         run: |
+          if [ -n "$PIERRE_ORG" ] && [ -n "$PIERRE_PRIVATE_KEY" ]; then exit 0; fi
           case "$CONVEX_DEPLOY_KEY" in
             dev:*) ;;
             *) echo "CONVEX_E2E_DEPLOY_KEY must select a development credential source" >&2; exit 1 ;;

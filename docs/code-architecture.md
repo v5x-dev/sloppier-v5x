@@ -74,6 +74,6 @@ bundler rejects client reachability. Frozen Bun installs use pinned TanStack
 versions; update that family together and verify the lockfile and browser paths.
 
 CI runs workspace lint/boundaries, formatting, typechecks, unit tests, and the web
-build. The secret-dependent browser job creates local Convex databases and reads
-only test storage credentials from a dev deployment. No hosted backend push is
+build. The secret-dependent browser job creates local Convex databases and uses
+dedicated test storage secrets, with a read-only dev deployment fallback. No hosted backend push is
 needed for tests. Production and backend deployments remain separately validated.

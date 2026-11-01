@@ -18,16 +18,17 @@ automatically cancelling an in-progress deployment.
 Configure these GitHub Actions repository settings:
 
 - Secrets: `CONVEX_DEPLOY_KEY` for production, `CLOUDFLARE_API_TOKEN`, and
-  `CONVEX_E2E_DEPLOY_KEY`, a development key used only to read test Pierre
-  credentials for the isolated browser runners.
+  `CODE_TEST_PIERRE_ORG` / `CODE_TEST_PIERRE_PRIVATE_KEY` for isolated browser
+  runners. Use a test storage account. Alternatively, `CONVEX_E2E_DEPLOY_KEY`
+  can select a development deployment from which to read those credentials.
 - Variables: `CLOUDFLARE_ACCOUNT_ID`, `VITE_CONVEX_URL`,
   `VITE_WORKOS_CLIENT_ID`, and `VITE_WORKOS_REDIRECT_URI`.
 
 The browser job runs WorkOS authentication, Program editing and committing,
 collaboration, and simulated Builder/Brain checks on temporary local Convex
 backends. It does not deploy to the credential-source deployment or change its
-auth settings. Configure `PIERRE_ORG` and `PIERRE_PRIVATE_KEY` on the development
-credential source with a test storage account. Runs allocate their own ports and
+auth settings. If using the deployment fallback, configure `PIERRE_ORG` and
+`PIERRE_PRIVATE_KEY` there with a test storage account. Runs allocate their own ports and
 databases and clean up their repositories. Fork PRs skip secret-dependent browser
 checks; lint, formatting, typechecks, unit tests, and build still run.
 See [Code web testing](../../apps/code/web/README.md).
