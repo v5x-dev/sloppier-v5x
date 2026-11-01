@@ -194,7 +194,11 @@ export function Workbench({
     null
   )
   const binaries = useProgramBinaries()
-  const { request: buildRequest } = useProgramConnection()
+  const { request: buildRequest, status: buildStatus } = useProgramConnection()
+  const [uploadProgress, setUploadProgress] = useState<{
+    label: string
+    value: number | null
+  } | null>(null)
   const {
     paths,
     listError,
@@ -968,6 +972,12 @@ export function Workbench({
             </DndContext>
           </div>
           <ActionsBar
+            progress={
+              uploadProgress ??
+              (buildStatus?.building
+                ? { label: "Building Program", value: null }
+                : null)
+            }
             leftAction={
               <ActionGroup label="Editor tools">
                 {activePath && formatActions[activePath] && (
@@ -1031,6 +1041,7 @@ export function Workbench({
               fallback={<Spinner className="mx-3 text-muted-foreground" />}
             >
               <ProgramUpload
+                onActivityChange={setUploadProgress}
                 currentSha={program.repositoryHeadSha}
                 buildAction={
                   <Suspense
