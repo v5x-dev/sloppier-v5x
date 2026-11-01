@@ -1,122 +1,88 @@
-// Runs against an explicitly configured development deployment; never production.
-import { spawn, execFileSync } from "node:child_process"
-import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { resolve } from "node:path"
-import { setTimeout as delay } from "node:timers/promises"
+// Exercises the real app against isolated local Convex and WorkOS processes.
+import { writeFileSync } from "node:fs"
+import { basename, resolve } from "node:path"
+import {
+  app,
+  availablePort,
+  createLocalFixture,
+  waitFor,
+} from "./local-fixture.mjs"
 
-const app = resolve(import.meta.dirname, "..")
-const backend = resolve(app, "../../../packages/backend")
-const backendEnv = readFileSync(resolve(backend, ".env.local"), "utf8")
-const deployment = backendEnv.match(/^CONVEX_DEPLOYMENT=(.*)$/m)?.[1]
-const convexURL = backendEnv.match(/^CONVEX_URL=(.*)$/m)?.[1]
-if (!deployment?.startsWith("dev:") || !convexURL)
-  throw new Error("A dedicated development Convex deployment is required")
-const cli = (args, options = {}) =>
-  execFileSync("bunx", ["convex", ...args], {
-    cwd: backend,
-    encoding: "utf8",
-    ...options,
-  })
-for (const key of ["CODE_DEMO_ISSUER", "CODE_DEMO_JWKS"]) {
-  let value = ""
-  try {
-    value = cli(["env", "get", key], {
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim()
-  } catch {
-    /* unset */
-  }
-  if (value)
-    throw new Error(
-      `${key} is already configured; refusing to replace another session`
-    )
-}
-const emulator = spawn(
-  "bunx",
-  [
+const fixture = await createLocalFixture()
+let test
+const interrupt = () => test?.kill("SIGTERM")
+process.once("SIGINT", interrupt)
+process.once("SIGTERM", interrupt)
+try {
+  const emulatorPort = await availablePort(),
+    webPort = await availablePort()
+  const emulatorURL = `http://localhost:${emulatorPort}`
+  const webURL = `http://127.0.0.1:${webPort}`
+  const emulator = fixture.start("bunx", [
     "workos-emulate",
     "--port",
-    "4100",
+    String(emulatorPort),
     "--interactive",
     "--seed",
     "e2e/fixtures/workos-emulate.yaml",
-  ],
-  { cwd: app, stdio: "inherit" }
-)
-let configured = false
-let result = 1
-let interrupted = false
-const interrupt = () => {
-  interrupted = true
-  emulator.kill("SIGTERM")
-}
-process.on("SIGINT", interrupt)
-process.on("SIGTERM", interrupt)
-try {
-  let ready = false
-  for (let i = 0; i < 100 && !interrupted; i++) {
-    if (emulator.exitCode !== null)
-      throw new Error("WorkOS emulator exited before becoming ready")
-    try {
-      ready = (await fetch("http://localhost:4100/health")).ok
-    } catch {
-      /* still starting */
-    }
-    if (ready) break
-    await delay(100)
-  }
-  if (!ready) throw new Error("WorkOS emulator did not become ready")
-  const response = await fetch("http://localhost:4100/sso/jwks/client_test")
+  ])
+  await waitFor(`${emulatorURL}/health`, emulator)
+  const response = await fetch(`${emulatorURL}/sso/jwks/client_test`)
   if (!response.ok) throw new Error("Could not read emulator signing keys")
-  const jwks = Buffer.from(await response.text()).toString("base64")
-  const dir = mkdtempSync(resolve(tmpdir(), "v5x-e2e-"))
-  try {
-    const file = resolve(dir, "convex.env")
-    writeFileSync(
-      file,
-      `CODE_DEMO_ISSUER=http://localhost:4100/user_management/client_test\nCODE_DEMO_JWKS=${jwks}\n`,
-      { mode: 0o600 }
-    )
-    configured = true
-    cli(["env", "set", "--force", "--from-file", file], { stdio: "inherit" })
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-  const test = spawn(
+  const file = resolve(fixture.dir, "auth.env")
+  writeFileSync(
+    file,
+    `CODE_DEMO_ISSUER=${emulatorURL}/user_management/client_test\nCODE_DEMO_JWKS=${Buffer.from(await response.text()).toString("base64")}\n`,
+    { mode: 0o600 }
+  )
+  fixture.cli(["env", "set", "--force", "--from-file", file])
+  const web = fixture.start(
     "bunx",
-    ["playwright", "test", "e2e/workos-emulator.spec.ts"],
+    [
+      "vite",
+      "dev",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      String(webPort),
+      "--strictPort",
+    ],
     {
       cwd: app,
-      stdio: "inherit",
       env: {
         ...process.env,
-        PLAYWRIGHT_BASE_URL: "",
-        PLAYWRIGHT_WORKOS_EMULATOR: "1",
-        VITE_CONVEX_URL: convexURL,
+        VITE_CODE_DEMO_ACCOUNTS: "",
+        CODE_TEST_CACHE_DIR: resolve(fixture.dir, "vite-cache"),
+        VITE_CONVEX_URL: fixture.convexURL,
         VITE_WORKOS_CLIENT_ID: "client_test",
-        VITE_WORKOS_EMULATOR_URL: "http://localhost:4100",
-        VITE_WORKOS_REDIRECT_URI: "http://127.0.0.1:4173/callback",
+        VITE_WORKOS_EMULATOR_URL: emulatorURL,
+        VITE_WORKOS_REDIRECT_URI: `${webURL}/callback`,
       },
     }
   )
-  result = await new Promise((resolveResult) => {
-    test.on("error", () => resolveResult(1))
-    test.on("exit", (code) => resolveResult(code ?? 1))
+  await waitFor(webURL, web)
+  test = fixture.start(
+    "bunx",
+    [
+      "playwright",
+      "test",
+      "e2e/workos-emulator.spec.ts",
+      "--output",
+      resolve(app, "test-results", basename(fixture.dir), "workos"),
+    ],
+    {
+      env: {
+        ...process.env,
+        PLAYWRIGHT_BASE_URL: webURL,
+        PLAYWRIGHT_WORKOS_EMULATOR: "1",
+        PLAYWRIGHT_WORKOS_EDITOR: "1",
+      },
+    }
+  )
+  process.exitCode = await new Promise((yes) => {
+    test.once("error", () => yes(1))
+    test.once("exit", (code) => yes(code ?? 1))
   })
 } finally {
-  emulator.kill("SIGTERM")
-  if (configured) {
-    for (const key of ["CODE_DEMO_ISSUER", "CODE_DEMO_JWKS"]) {
-      try {
-        cli(["env", "set", key, ""], { stdio: "inherit" })
-      } catch {
-        result = 1
-        console.error(
-          `Could not clear ${key}; remove it from the development deployment`
-        )
-      }
-    }
-  }
+  await fixture.stop()
 }
-process.exitCode = result

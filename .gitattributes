@@ -1,0 +1,3 @@
+apps/code/web/src/lib/autocomplete/data/*.json linguist-generated=true
+**/_generated/* linguist-generated=true
+**/routeTree.gen.ts linguist-generated=true

@@ -28,3 +28,6 @@ test-results/
 
 # Playwright authentication state
 .auth/
+
+# Public setup templates
+!**/.env.example

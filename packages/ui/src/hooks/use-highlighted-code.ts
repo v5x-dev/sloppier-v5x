@@ -3,7 +3,9 @@ import type { LiveTokenizer } from "@pierre/highlights"
 
 import { loadHighlighter } from "@v5x/ui/lib/highlighter"
 
-type LoadedHighlighter = NonNullable<Awaited<ReturnType<typeof loadHighlighter>>>
+type LoadedHighlighter = NonNullable<
+  Awaited<ReturnType<typeof loadHighlighter>>
+>
 type Loaded = {
   language: string
   highlighter: LoadedHighlighter | null
@@ -35,9 +37,10 @@ export function useHighlightedCode(value: string, language: string) {
   }, [language])
 
   const active = loaded?.language === language ? loaded : null
-  const current = React.useRef<{ tokenizer: LiveTokenizer | null; code: string }>(
-    { tokenizer: null, code: "" }
-  )
+  const current = React.useRef<{
+    tokenizer: LiveTokenizer | null
+    code: string
+  }>({ tokenizer: null, code: "" })
 
   return React.useMemo(() => {
     if (!active?.highlighter || !active.tokenizer) {

@@ -4,4 +4,4 @@ users:
     password: test-password
     email_verified: true
 jwtTemplate:
-  content: '{"aud":"code-collaboration-demo","email":"{{ user.email }}","email_verified":true}'
+  content: '{"aud":"code-collaboration-demo","email":"{{ user.email }}","email_verified":true,"emailVerified":true}'

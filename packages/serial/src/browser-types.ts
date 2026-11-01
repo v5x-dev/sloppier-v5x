@@ -25,9 +25,7 @@ export interface BluetoothDeviceLike extends EventTarget {
   readonly gatt?: {
     readonly connected: boolean
     connect(): Promise<{
-      getPrimaryService(
-        uuid: string
-      ): Promise<{
+      getPrimaryService(uuid: string): Promise<{
         getCharacteristic(uuid: string): Promise<CharacteristicLike>
       }>
     }>

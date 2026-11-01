@@ -149,8 +149,8 @@ setup, authentication, or deployment changes, read `packages/backend/README.md`.
 Run the affected packages' available typechecks, lint, and relevant tests. Changes
 to shared packages also need checks for affected consumers. Add regression tests
 for changed business rules, authorization, and bug fixes. Report checks run and
-anything that could not be verified. The root task list does not currently
-include a test command; use the affected package's test script.
+anything that could not be verified. The root test task runs packages that provide a test script; use the affected
+package's test script when a narrower check is appropriate.
 
 Regenerate derived files with their owning tools, including Convex `_generated`
 files and TanStack's `routeTree.gen.ts`. Keep edits and formatting scoped to the

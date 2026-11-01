@@ -5,7 +5,14 @@ import { Toast as ToastPrimitive } from "@base-ui/react/toast"
 import { cn } from "cn"
 
 import { Button } from "@v5x/ui/components/button"
-import { XIcon, CheckCircleIcon, InfoIcon, WarningIcon, WarningCircleIcon, SpinnerIcon } from "@phosphor-icons/react"
+import {
+  XIcon,
+  CheckCircleIcon,
+  InfoIcon,
+  WarningIcon,
+  WarningCircleIcon,
+  SpinnerIcon,
+} from "@phosphor-icons/react"
 
 const toast = ToastPrimitive.createToastManager()
 
@@ -30,7 +37,11 @@ function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
   )
 }
 
-function Toast({ className, swipeDirection = ["up", "right"], ...props }: ToastPrimitive.Root.Props) {
+function Toast({
+  className,
+  swipeDirection = ["up", "right"],
+  ...props
+}: ToastPrimitive.Root.Props) {
   return (
     <ToastPrimitive.Root
       data-slot="toast"
@@ -129,9 +140,7 @@ function ToastClose({
       )}
       {...props}
     >
-      {children ?? (
-        <XIcon aria-hidden="true" />
-      )}
+      {children ?? <XIcon aria-hidden="true" />}
     </ToastPrimitive.Close>
   )
 }
@@ -140,27 +149,19 @@ function ToastIcon({ type }: { type: string | undefined }) {
   let icon: React.ReactNode = null
 
   if (type === "success") {
-    icon = (
-      <CheckCircleIcon className="text-success" aria-hidden="true" />
-    )
+    icon = <CheckCircleIcon className="text-success" aria-hidden="true" />
   }
 
   if (type === "info") {
-    icon = (
-      <InfoIcon className="text-muted-foreground" aria-hidden="true" />
-    )
+    icon = <InfoIcon className="text-muted-foreground" aria-hidden="true" />
   }
 
   if (type === "warning") {
-    icon = (
-      <WarningIcon className="text-primary" aria-hidden="true" />
-    )
+    icon = <WarningIcon className="text-primary" aria-hidden="true" />
   }
 
   if (type === "error") {
-    icon = (
-      <WarningCircleIcon className="text-destructive" aria-hidden="true" />
-    )
+    icon = <WarningCircleIcon className="text-destructive" aria-hidden="true" />
   }
 
   if (type === "loading") {

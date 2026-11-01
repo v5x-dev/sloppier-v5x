@@ -19,7 +19,8 @@
     "test:e2e:sign-in": "node scripts/e2e-sign-in.mjs",
     "test:e2e:workos": "node scripts/e2e-workos.mjs",
     "demo:visual": "node scripts/visual-demo.mjs",
-    "benchmark:load": "playwright test --config playwright.benchmark.config.ts"
+    "benchmark:load": "playwright test --config playwright.benchmark.config.ts",
+    "test:e2e:editor": "node scripts/e2e-editor.mjs"
   },
   "dependencies": {
     "@convex-dev/workos": "^0.0.3",
@@ -31,10 +32,10 @@
     "@pierre/diffs": "1.6.1",
     "@pierre/trees": "1.0.0-beta.6",
     "@tailwindcss/vite": "^4",
-    "@tanstack/react-devtools": "latest",
-    "@tanstack/react-router": "latest",
-    "@tanstack/react-router-devtools": "latest",
-    "@tanstack/react-start": "latest",
+    "@tanstack/react-devtools": "0.10.13",
+    "@tanstack/react-router": "1.170.46",
+    "@tanstack/react-router-devtools": "1.167.2",
+    "@tanstack/react-start": "1.169.4",
     "@vscode/codicons": "0.0.45",
     "@wasm-fmt/clang-format": "^23.1.1",
     "@workos-inc/authkit-react": "^0.16.3",
@@ -56,8 +57,8 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.65.0",
     "@playwright/test": "^1.64.1",
-    "@tanstack/devtools-vite": "latest",
-    "@tanstack/eslint-config": "latest",
+    "@tanstack/devtools-vite": "0.8.5",
+    "@tanstack/eslint-config": "0.4.0",
     "@tanstack/router-cli": "^1.167.41",
     "@types/node": "^22",
     "@types/react": "^19",

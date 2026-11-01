@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { demoAccount } from "../src/lib/auth"
 
-const accounts = JSON.stringify([{ id: "alice", name: "Alice", token: "signed-token" }])
+const accounts = JSON.stringify([
+  { id: "alice", name: "Alice", token: "signed-token" },
+])
 afterEach(() => {
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()

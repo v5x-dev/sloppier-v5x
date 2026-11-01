@@ -7,7 +7,9 @@ const protectedPages = [
 ]
 
 for (const { name, path } of protectedPages) {
-  test(`an unauthenticated visitor is sent to WorkOS from the ${name}`, async ({ page }) => {
+  test(`an unauthenticated visitor is sent to WorkOS from the ${name}`, async ({
+    page,
+  }) => {
     await page.goto(path)
     await expect(page).toHaveURL(/workos|authkit/i)
   })
@@ -23,6 +25,7 @@ test("an incomplete callback offers a retry", async ({ page }) => {
 test("unknown pages show a not-found message", async ({ page }) => {
   await page.goto("/this-page-does-not-exist")
   await expect(page.getByRole("heading", { name: "404" })).toBeVisible()
-  await expect(page.getByText("The requested page could not be found.")).toBeVisible()
+  await expect(
+    page.getByText("The requested page could not be found.")
+  ).toBeVisible()
 })
-
