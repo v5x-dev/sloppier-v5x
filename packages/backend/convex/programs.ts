@@ -124,6 +124,44 @@ export const create = mutation({
   },
 })
 
+export const createDuplicate = internalMutation({
+  args: {
+    sourceId: v.id("programs"),
+    userId: v.string(),
+    name: v.string(),
+    sha: v.string(),
+  },
+  handler: async (ctx, { sourceId, userId, name, sha }) => {
+    const source = await ctx.db.get(sourceId)
+    if (!source || source.repositoryStatus !== "ready")
+      throw new ConvexError("Program repository is not ready.")
+    const membership = await ctx.db
+      .query("workspaceMembers")
+      .withIndex("by_workspace_user", (q) =>
+        q.eq("workspaceId", source.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!membership)
+      throw new ConvexError("You do not have access to this program.")
+    name = name.trim()
+    if (!name || name.length > 80)
+      throw new ConvexError("Program name must contain 1–80 characters.")
+    const programId = await ctx.db.insert("programs", {
+      workspaceId: source.workspaceId,
+      name,
+      template: source.template,
+      repositoryId: "pending",
+      repositoryStatus: "provisioning",
+      createdBy: userId,
+      createdAt: Date.now(),
+      duplicateSource: { repositoryId: source.repositoryId, sha },
+    })
+    await ctx.db.patch(programId, { repositoryId: `programs/${programId}` })
+    await scheduleProvisioning(ctx, programId)
+    return programId
+  },
+})
+
 export const retryProvisioning = mutation({
   args: { programId: v.id("programs") },
   handler: async (ctx, { programId }) => {
