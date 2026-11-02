@@ -11,3 +11,5 @@ pnpm-lock.yaml
 **/_generated/
 **/routeTree.gen.ts
 **/autocomplete/data/
+
+**/uniwind-types.d.ts

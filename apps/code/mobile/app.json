@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "v5x Code",
+    "slug": "v5x-code",
+    "version": "0.0.1",
+    "scheme": "v5x-code",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.v5x.code"
+    },
+    "android": {
+      "package": "dev.v5x.code"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
