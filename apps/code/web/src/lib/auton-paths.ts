@@ -366,7 +366,7 @@ export function parseAutonPaths(
             side,
             target,
             name === "pid_swing_relative_set",
-            behavior,
+            behavior ?? "raw",
             ratio
           )
         } else if (

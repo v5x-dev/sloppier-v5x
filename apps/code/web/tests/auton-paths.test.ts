@@ -209,6 +209,26 @@ describe("EZ-Template path previews", () => {
     expect(route.points.at(-1)!.y).toBeCloseTo(24)
     expect(route.warnings).toEqual([])
   })
+  it.each([
+    ["LEFT", -180, -6],
+    ["RIGHT", 180, -6],
+  ])("shows a backward %s half swing", (side, angle, midpointY) => {
+    const [route] = parse(
+      `void red() { chassis.pid_swing_set(ez::${side}_SWING, ${angle}_deg, 100); chassis.pid_drive_set(12_in, 100); }`
+    )
+    const midpoint = route.points.find((point) => point.heading === angle / 2)!
+    expect(midpoint.y).toBeCloseTo(midpointY)
+    expect(route.points.at(-2)!.heading).toBe(angle)
+    expect(route.points.at(-1)!.y).toBeCloseTo(-12)
+  })
+  it("uses the raw target for swings after an earlier heading", () => {
+    const [route] = parse(
+      "void red() { chassis.drive_angle_set(90); chassis.pid_swing_set(ez::LEFT_SWING, -180_deg, 100); }"
+    )
+    expect(route.points.at(-1)!.heading).toBe(-180)
+    expect(route.points.some((point) => point.heading === 0)).toBe(true)
+    expect(route.warnings).toEqual([])
+  })
   it("supports relative swings after a heading reset", () => {
     const [route] = parse(
       "void red() { chassis.drive_angle_set(90); chassis.pid_swing_relative_set(ez::LEFT_SWING, 90, 100); }"
