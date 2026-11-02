@@ -12,6 +12,12 @@ export type AutonPath = {
   name: string
   file: string
   points: PathPoint[]
+  actions: {
+    x: number
+    y: number
+    command: string
+    source: { file: string; line: number }
+  }[]
   warnings: string[]
 }
 export type AutonTemplate = "ez-template" | "jar"
@@ -160,6 +166,7 @@ export function parseAutonPaths(
     .map((fn) => {
       let pose: PathPoint = { ...entry }
       const points = [pose]
+      const actions: AutonPath["actions"] = []
       // Until the robot moves, a pose reset replaces the starting point.
       let moved = false
       const warnings = new Set<string>()
@@ -591,6 +598,29 @@ export function parseAutonPaths(
           }
           const isDelay =
             name === "delay" && /\bpros::\s*$/.test(body.slice(0, match.index))
+          const receiver = body
+            .slice(0, match.index)
+            .match(/\b([\w]+)\s*\.\s*$/)?.[1]
+          if (
+            receiver &&
+            receiver !== "chassis" &&
+            /^(move|move_velocity|move_absolute|move_relative|set_value|set_voltage|brake)$/.test(
+              name
+            )
+          ) {
+            actions.push({
+              x: pose.x,
+              y: pose.y,
+              command: `${receiver}.${name}(${args.trim()})`,
+              source: {
+                file: current.file,
+                line:
+                  current.startLine +
+                  body.slice(0, match.index).split("\n").length -
+                  1,
+              },
+            })
+          }
           const isDirectDrive =
             template === "ez-template" &&
             name === "drive_set" &&
@@ -627,6 +657,7 @@ export function parseAutonPaths(
         name: fn.name,
         file: fn.file,
         points,
+        actions,
         warnings: [...warnings],
       }
     })
