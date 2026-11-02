@@ -56,7 +56,8 @@ export function CommitDialog({
           <DialogHeader>
             <DialogTitle>Commit changes</DialogTitle>
             <DialogDescription>
-              Saves to the program&apos;s <code>main</code> branch.
+              Your edits are already saved live. A commit records this version
+              in the Program&apos;s history.
             </DialogDescription>
           </DialogHeader>
           <ul className="flex max-h-40 flex-col gap-1 overflow-auto text-xs text-muted-foreground">

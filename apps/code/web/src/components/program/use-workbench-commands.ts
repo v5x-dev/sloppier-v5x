@@ -123,17 +123,11 @@ export function useWorkbenchCommands({
       : null
     if (activeGroup && next) activateTab(activeGroup.id, next)
   }
-  // Ctrl/Cmd+1 to 8 focus that group. Ctrl/Cmd+9 focuses the last tab of the active group.
-  const groupDigits = [
-    "Mod+1",
-    "Mod+2",
-    "Mod+3",
-    "Mod+4",
-    "Mod+5",
-    "Mod+6",
-    "Mod+7",
-    "Mod+8",
-  ] as const
+  // Mod+K, then 1 to 8 focuses that group, and Mod+K, then 9 focuses the last tab.
+  // Chords, because browsers reserve Ctrl+1 to 9 for switching tabs.
+  const groupDigits = (["1", "2", "3", "4", "5", "6", "7", "8"] as const).map(
+    (digit) => ["Mod+K", digit] as const
+  )
   useHotkeys(
     [
       ...groupDigits.map((hotkey, index) => ({

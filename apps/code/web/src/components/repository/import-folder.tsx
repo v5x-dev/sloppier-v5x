@@ -226,8 +226,8 @@ export function ImportFolder({
                 </p>
               </Field>
               <p className="text-xs text-muted-foreground">
-                SDK and firmware dependencies use the versions provided by this
-                editor's build service.
+                SDK and firmware dependencies use the versions provided by the
+                Builder.
               </p>
             </>
           )}
@@ -271,7 +271,7 @@ export function ImportFolder({
           {busy && (
             <p role="status" className="text-sm text-muted-foreground">
               {uploaded === plan?.included.length
-                ? "Creating repository…"
+                ? "Creating Program…"
                 : `Uploading ${uploaded} of ${plan?.included.length ?? 0} files…`}
             </p>
           )}

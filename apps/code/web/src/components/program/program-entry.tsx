@@ -154,10 +154,10 @@ function ProvisioningState({ program }: { program: Doc<"programs"> }) {
           <EmptyMedia variant="icon">
             <WarningCircleIcon />
           </EmptyMedia>
-          <EmptyTitle>Repository setup failed</EmptyTitle>
+          <EmptyTitle>Program setup failed</EmptyTitle>
           <EmptyDescription>
             {program.repositoryError ??
-              "Code Storage could not import the template."}
+              "The starter files could not be copied. Try again."}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -193,10 +193,10 @@ function ProvisioningState({ program }: { program: Doc<"programs"> }) {
         <EmptyMedia variant="icon">
           <Spinner />
         </EmptyMedia>
-        <EmptyTitle>Setting up the repository</EmptyTitle>
+        <EmptyTitle>Setting up your Program</EmptyTitle>
         <EmptyDescription>
-          Copying the starter files into Code Storage. This page opens the
-          editor when it finishes.
+          Copying the starter files. This page opens the editor when it
+          finishes.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

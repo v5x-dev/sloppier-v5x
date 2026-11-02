@@ -1,6 +1,6 @@
 # code (by v5x) Mobile
 
-An empty Expo app for Code, using Expo Router and Expo UI.
+An Expo app for Code, using Expo Router. It currently shows a landing screen; native sign-in is not implemented yet, so the Sign in control is disabled.
 
 From this directory, run `bun run android` or `bun run ios` to build and install a development client locally. Native build tools and a device or simulator are required. After installing the client, run `bun run dev` to start Metro. The `development` EAS build profile can also create an internal development build after the project is configured with EAS.
 

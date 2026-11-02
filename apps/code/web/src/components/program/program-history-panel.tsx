@@ -278,7 +278,7 @@ export function ProgramHistoryPanel({
               {commit ? "Commit changes" : "Program history"}
             </PopoverTitle>
             <PopoverDescription className="truncate text-xs">
-              {commit ? commit.message : "Saved versions on main"}
+              {commit ? commit.message : "Saved versions"}
             </PopoverDescription>
           </div>
           {commit && (
@@ -619,7 +619,7 @@ export function ProgramHistoryPanel({
                   <p className="text-xs text-muted-foreground">
                     {!canRestore
                       ? "Commit and sync current edits before restoring."
-                      : "Restore all program files without rewriting history."}
+                      : "Restores every file to this version. History is kept, and the restore becomes a new version."}
                   </p>
                   <Button
                     size="sm"

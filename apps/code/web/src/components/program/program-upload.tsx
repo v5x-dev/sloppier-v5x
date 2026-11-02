@@ -428,7 +428,7 @@ export function ProgramUpload({
             setSuccess(true)
             setMessage(resultMessage)
           }
-          if (fromKeyboard) toast.add({ type: "success", title: resultMessage })
+          toast.add({ type: "success", title: resultMessage })
           return
         }
         await verifyBrain(selected.connection)
@@ -484,7 +484,7 @@ export function ProgramUpload({
           setMessage(uploaded)
           setProgress(null)
         }
-        if (fromKeyboard) toast.add({ type: "success", title: uploaded })
+        toast.add({ type: "success", title: uploaded })
       } catch (err) {
         if (!preparing) await disconnect().catch(() => {})
         throw err
@@ -729,7 +729,12 @@ export function ProgramUpload({
           if (nextOpen) void refreshSlots()
         }}
       >
-        <ActionTooltip label={uploadLabel} shortcut={shortcutKeys("⇧", "B")}>
+        <ActionTooltip
+          label={
+            busy && progress !== null ? `Uploading ${progress}%` : uploadLabel
+          }
+          shortcut={shortcutKeys("⇧", "B")}
+        >
           <PopoverTrigger
             render={
               <Button
@@ -740,7 +745,15 @@ export function ProgramUpload({
               />
             }
           >
-            {busy ? <Spinner /> : <UploadSimpleIcon />}
+            {busy ? (
+              progress !== null ? (
+                <UploadRing value={progress} />
+              ) : (
+                <Spinner />
+              )
+            ) : (
+              <UploadSimpleIcon />
+            )}
           </PopoverTrigger>
         </ActionTooltip>
         <PopoverContent
@@ -942,5 +955,36 @@ export function ProgramUpload({
         onSlotChange={setSlot}
       />
     </ActionGroup>
+  )
+}
+
+// A ring around the upload icon. The percentage is in the tooltip, so the bar shows no text.
+function UploadRing({ value }: { value: number }) {
+  const radius = 8
+  const length = 2 * Math.PI * radius
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true" className="size-5 -rotate-90">
+      <circle
+        cx="10"
+        cy="10"
+        r={radius}
+        fill="none"
+        strokeWidth="2"
+        className="stroke-border"
+      />
+      <circle
+        cx="10"
+        cy="10"
+        r={radius}
+        fill="none"
+        strokeWidth="2"
+        strokeLinecap="round"
+        className="stroke-primary transition-[stroke-dashoffset]"
+        strokeDasharray={length}
+        strokeDashoffset={
+          length * (1 - Math.min(100, Math.max(0, value)) / 100)
+        }
+      />
+    </svg>
   )
 }

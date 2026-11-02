@@ -88,7 +88,7 @@ export function BrainHealth({
     >
       <details className="group">
         <summary className="flex cursor-pointer list-none items-center gap-2 py-1 text-xs font-medium group-open:border-b group-open:pb-2 [&::-webkit-details-marker]:hidden">
-          Info
+          Brain
           {health && (
             <span className="flex items-center gap-1 font-normal text-muted-foreground">
               <BatteryIcon
@@ -105,6 +105,11 @@ export function BrainHealth({
               <span>
                 <span className="sr-only">VEXos version </span>
                 {health.firmware ?? "Unavailable"}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <span className="sr-only">Connected smart ports </span>
+                {devices.length} ports
               </span>
             </span>
           )}

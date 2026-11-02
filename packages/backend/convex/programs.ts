@@ -278,7 +278,10 @@ export const recordRepositoryHead = internalMutation({
   handler: async (ctx, { programId, headSha }) => {
     const program = await ctx.db.get(programId)
     if (program?.repositoryStatus === "ready") {
-      await ctx.db.patch(programId, { repositoryHeadSha: headSha })
+      await ctx.db.patch(programId, {
+        repositoryHeadSha: headSha,
+        lastActivityAt: Date.now(),
+      })
     }
   },
 })

@@ -103,6 +103,11 @@ export function ProgramBuild({
       ? null
       : Math.max(0, Math.floor((now - connectingStartedAt) / 1000))
   const succeeded = !building && logs.trimEnd().endsWith("Build succeeded.")
+  const buildLabel = building
+    ? "Building Program"
+    : diagnostics.length
+      ? `Build output, ${errors} errors, ${warnings} warnings`
+      : "Build output"
   // Runs the status-row clock: connecting time starts when the builder drops out of ready.
   useEffect(() => {
     if (ready) setConnectingStartedAt(null)
@@ -117,27 +122,27 @@ export function ProgramBuild({
   }, [logs, open, tab])
   return (
     <>
-      {revision && diagnostics.length > 0 && (
-        <ActionTooltip
-          label={`View build problems, ${errors} errors, ${warnings} warnings`}
+      {/* Always reachable, so a clean or running build still has its output. */}
+      <ActionTooltip label={buildLabel}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={buildLabel}
+          aria-busy={building}
+          onClick={() => {
+            setTab(diagnostics.length ? "problems" : "output")
+            setOpen(true)
+          }}
         >
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`View build problems, ${errors} errors, ${warnings} warnings`}
-            onClick={() => {
-              setTab("problems")
-              setOpen(true)
-            }}
-          >
-            {errors ? (
-              <WarningCircleIcon className="text-destructive" />
-            ) : (
-              <FileCodeIcon />
-            )}
-          </Button>
-        </ActionTooltip>
-      )}
+          {building ? (
+            <Spinner />
+          ) : errors ? (
+            <WarningCircleIcon className="text-destructive" />
+          ) : (
+            <HammerIcon />
+          )}
+        </Button>
+      </ActionTooltip>
       <Sheet
         open={open}
         onOpenChange={setOpen}
@@ -174,7 +179,7 @@ export function ProgramBuild({
                     </>
                   ) : !ready && machineStatus === "starting" ? (
                     <>
-                      <span>Connecting to the build service…</span>
+                      <span>Connecting to the Builder…</span>
                       {connectingSeconds !== null && (
                         <span className="shrink-0 font-mono text-muted-foreground tabular-nums">
                           {connectingSeconds}s
@@ -304,7 +309,7 @@ export function ProgramBuild({
                                 title={
                                   target
                                     ? `Open ${target}:${diagnostic.line}`
-                                    : "This file is outside the editable repository. See Build output for context."
+                                    : "This file is outside the editable Program. See Build output for context."
                                 }
                                 className="group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset disabled:cursor-default disabled:hover:bg-transparent"
                                 onClick={() => {
@@ -389,7 +394,10 @@ export function ProgramBuild({
                 aria-live="off"
                 className="h-full overflow-auto p-4 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap"
               >
-                {logs || "Waiting for build output…"}
+                {logs ||
+                  (building
+                    ? "Waiting for build output…"
+                    : "No build output. Upload your Program to build it. Output is not kept after a reload.")}
               </pre>
             </TabsContent>
           </Tabs>

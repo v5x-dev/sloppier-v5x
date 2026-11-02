@@ -24,6 +24,7 @@ import type { FunctionArgs, FunctionReturnType } from "convex/server"
 import { containsPath, type ExplorerUpdate } from "./explorer"
 import { errorMessage } from "./errors"
 import type { LivePerson } from "./live-file-session"
+import type { LiveSaveStatus } from "./live-save-status"
 import type { SearchMatch } from "@v5x/backend/search"
 import type { ReplacementAction } from "./search-replacement"
 
@@ -60,6 +61,7 @@ type State = {
   readError: Partial<Record<string, string>>
   dirtyPaths: string[]
   liveSync: Record<string, boolean>
+  liveStatus: Partial<Record<string, LiveSaveStatus>>
   filePeople: Record<string, LivePerson[]>
 }
 const MAX_READ_BYTES = 512 * 1024
@@ -76,6 +78,7 @@ export class WorkbenchSource {
     readError: {},
     dirtyPaths: [],
     liveSync: {},
+    liveStatus: {},
     filePeople: {},
   }
   private committed = new Map<string, string>()
@@ -215,6 +218,11 @@ export class WorkbenchSource {
     if (this.state.paths && !this.state.paths.includes(path)) return
     if (this.state.liveSync[path] !== synced)
       this.update({ liveSync: { ...this.state.liveSync, [path]: synced } })
+  }
+  setLiveStatus = (path: string, status: LiveSaveStatus) => {
+    if (this.state.paths && !this.state.paths.includes(path)) return
+    if (this.state.liveStatus[path] !== status)
+      this.update({ liveStatus: { ...this.state.liveStatus, [path]: status } })
   }
   setPeople = (path: string, people: LivePerson[]) => {
     if (this.state.paths && !this.state.paths.includes(path)) return

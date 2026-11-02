@@ -42,8 +42,8 @@ export default function Index() {
             Program your V5 Brain with your team
           </Text>
           <Text className="text-lg leading-7 text-muted-foreground">
-            Sign in to open your workspaces, edit Programs together, and upload
-            them to your Brain.
+            Mobile sign-in is coming soon. Use the web app to edit Programs
+            together and upload them to your Brain.
           </Text>
         </View>
 
@@ -60,9 +60,12 @@ export default function Index() {
       </ScrollView>
 
       <View className="gap-3">
+        {/* Inert until native sign-in exists. Disabled, so it does not look tappable. */}
         <Pressable
           accessibilityRole="button"
-          className="h-14 items-center justify-center rounded-xl bg-primary active:bg-primary/90"
+          accessibilityState={{ disabled: true }}
+          disabled
+          className="h-14 items-center justify-center rounded-xl bg-primary opacity-50"
         >
           <Text className="text-base text-primary-foreground">Sign in</Text>
         </Pressable>

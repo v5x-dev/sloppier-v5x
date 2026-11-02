@@ -251,6 +251,7 @@ function AppHeader({
   const [managingTeam, setManagingTeam] = useState(false)
   const [viewingInvitations, setViewingInvitations] = useState(false)
   const syncProfile = useAction(api.workspaces.syncProfile)
+  const pendingCount = useQuery(api.workspaces.pendingInvitations)?.length ?? 0
   useEffect(() => {
     // Profile refresh is optional for browsing. The invitation dialog shows
     // verification errors and offers a retry before accepting any invitation.
@@ -345,13 +346,23 @@ function AppHeader({
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger
-            aria-label="Account menu"
-            className="ml-auto rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label={
+              pendingCount
+                ? `Account menu, ${pendingCount} invitations waiting`
+                : "Account menu"
+            }
+            className="relative ml-auto rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <Avatar className="size-8 ring-1 ring-border">
               <AvatarImage src={user?.profilePictureUrl ?? undefined} alt="" />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
+            {pendingCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-primary ring-2 ring-background"
+              />
+            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuGroup>
@@ -363,6 +374,11 @@ function AppHeader({
               <DropdownMenuItem onClick={() => setViewingInvitations(true)}>
                 <EnvelopeSimpleIcon />
                 Invitations
+                {pendingCount > 0 && (
+                  <span className="ml-auto text-xs font-medium text-primary tabular-nums">
+                    {pendingCount} waiting
+                  </span>
+                )}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => signOut()}>
                 <SignOutIcon />
@@ -436,7 +452,11 @@ function ProgramList({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <NewProgramDialog workspaceId={workspaceId} />
+          <NewProgramDialog
+            workspaceId={workspaceId}
+            initialTemplate="vexcode"
+            buttonLabel="New program"
+          />
         </EmptyContent>
       </Empty>
     )
@@ -453,22 +473,26 @@ function ProgramList({
         Boolean(program.archivedAt) === archived &&
         program.name.toLowerCase().includes(query.toLowerCase())
     )
-    .sort((a, b) => b.createdAt - a.createdAt)
+    .sort((a, b) => activityTime(b) - activityTime(a))
   return (
     <div className="flex flex-col gap-6">
       {visible.length === 0 && (
         <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
-          No matching {archived ? "archived" : "active"} programs.
+          {query.trim()
+            ? `No matching ${archived ? "archived" : "active"} programs.`
+            : archived
+              ? "No archived programs."
+              : "No active programs."}
         </p>
       )}
       {groups.map((label, index) => {
         const entries = visible.filter(
-          ({ createdAt }) =>
-            (createdAt >= today
+          (program) =>
+            (activityTime(program) >= today
               ? 0
-              : createdAt >= yesterday
+              : activityTime(program) >= yesterday
                 ? 1
-                : createdAt >= week
+                : activityTime(program) >= week
                   ? 2
                   : 3) === index
         )
@@ -506,8 +530,8 @@ function ProgramList({
                       </Link>
                     </ItemTitle>
                     <ItemDescription className="font-documentation text-xs">
-                      Created{" "}
-                      {formatDistanceToNow(program.createdAt, {
+                      {program.lastActivityAt ? "Edited" : "Created"}{" "}
+                      {formatDistanceToNow(activityTime(program), {
                         addSuffix: true,
                       })}
                     </ItemDescription>
@@ -524,6 +548,11 @@ function ProgramList({
       })}
     </div>
   )
+}
+
+// Most recent commit, or creation for Programs that have not been committed since this field existed.
+function activityTime(program: Doc<"programs">) {
+  return program.lastActivityAt ?? program.createdAt
 }
 
 function ProgramActions({ program }: { program: Doc<"programs"> }) {
@@ -570,6 +599,11 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
             onClick={() => setDuplicateOpen(true)}
           >
             Duplicate
+            {program.repositoryStatus !== "ready" && (
+              <span className="ml-auto pl-4 text-xs text-muted-foreground">
+                After setup
+              </span>
+            )}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
@@ -658,10 +692,13 @@ function NewProgramDialog({
   workspaceId,
   initialTemplate = "pros",
   tile = false,
+  buttonLabel,
 }: {
   workspaceId: Id<"workspaces">
   initialTemplate?: Template
   tile?: boolean
+  /** Renders a labeled button in place of the icon, for empty states. */
+  buttonLabel?: string
 }) {
   const templates = useQuery(api.programs.listTemplates)
   const createProgram = useMutation(api.programs.create)
@@ -730,8 +767,16 @@ function NewProgramDialog({
       <DialogTrigger
         render={
           <Button
-            aria-label={`New ${initialTemplate} program`}
-            title={`New ${initialTemplate} program`}
+            aria-label={
+              buttonLabel
+                ? undefined
+                : `New ${templateLabels[initialTemplate]} program`
+            }
+            title={
+              buttonLabel
+                ? undefined
+                : `New ${templateLabels[initialTemplate]} program`
+            }
             className={tile ? starterTileClassName : undefined}
             style={
               tile
@@ -739,7 +784,7 @@ function NewProgramDialog({
                 : undefined
             }
             variant={tile ? "outline" : "default"}
-            size={tile ? "default" : "icon"}
+            size={tile || buttonLabel ? "default" : "icon"}
           />
         }
       >
@@ -754,6 +799,11 @@ function NewProgramDialog({
             }
             label={templateLabels[initialTemplate]}
           />
+        ) : buttonLabel ? (
+          <>
+            <PlusIcon data-icon="inline-start" />
+            {buttonLabel}
+          </>
         ) : (
           <PlusIcon />
         )}

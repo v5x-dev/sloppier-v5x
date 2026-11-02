@@ -127,7 +127,7 @@ export function SortableFileTab({
           <span
             className="size-1.5 rounded-full bg-current"
             role="img"
-            aria-label="Unsaved changes"
+            aria-label="Uncommitted changes"
           />
         )}
       </TabsTrigger>
@@ -135,7 +135,7 @@ export function SortableFileTab({
         variant="ghost"
         size="icon-xs"
         aria-label={`Close ${path}`}
-        className="absolute right-1 size-5 text-muted-foreground"
+        className="absolute right-1 text-muted-foreground"
         onClick={onClose}
       >
         <XIcon />

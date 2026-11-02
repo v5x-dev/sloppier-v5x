@@ -113,7 +113,7 @@ export function ProgramConnection({
               }
               await new Promise((resolve) => setTimeout(resolve, 500))
             }
-            throw new Error("Builder startup timed out.")
+            throw new Error("The Builder didn't start in time. Try again.")
           })().finally(() => {
             starting.current = null
           })
@@ -132,7 +132,9 @@ export function ProgramConnection({
           : AbortSignal.timeout(30_000),
       })
       if (!response.ok)
-        throw new Error(`Builder request failed (${response.status}).`)
+        throw new Error(
+          `The Builder didn't respond (${response.status}). Try again.`
+        )
       if (path === "/build") {
         buildStarted.current = Date.now()
         submittedRevision.current =

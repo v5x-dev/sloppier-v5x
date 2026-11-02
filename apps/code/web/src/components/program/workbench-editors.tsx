@@ -36,6 +36,7 @@ import { Fragment, useSyncExternalStore } from "react"
 
 import type { DragSource, DropHighlight } from "./workbench-drop"
 import { FileEditor } from "./workbench-file-editor"
+import { LiveStatusIcon } from "./live-status-icon"
 import { SortableFileTab, SortableTabsList, tabId } from "./workbench-tabs"
 
 export function WorkbenchEditors({
@@ -55,12 +56,20 @@ export function WorkbenchEditors({
   dropHighlight: DropHighlight | null
   drag: DragSource | null
 }) {
-  const { paths, listError, layout, openPaths, loaded, readError, dirtyPaths } =
-    useSyncExternalStore(
-      source.subscribe,
-      source.getSnapshot,
-      source.getSnapshot
-    )
+  const {
+    paths,
+    listError,
+    layout,
+    openPaths,
+    loaded,
+    readError,
+    dirtyPaths,
+    liveStatus,
+  } = useSyncExternalStore(
+    source.subscribe,
+    source.getSnapshot,
+    source.getSnapshot
+  )
   const { activateTab, activateGroup, splitGroup, resizeSash, equalizeSplit } =
     source
   function closeTab(groupId: string, path: string) {
@@ -133,6 +142,11 @@ export function WorkbenchEditors({
                 </SortableTabsList>
               </SortableContext>
             </div>
+            <LiveStatusIcon
+              status={
+                group.activePath ? liveStatus[group.activePath] : undefined
+              }
+            />
             <ActionTooltip label="Split editor" shortcut={shortcutKeys("\\")}>
               <Button
                 variant="ghost"
@@ -196,6 +210,7 @@ export function WorkbenchEditors({
                   onCursorLine={onCursorLine}
                   onPeopleChange={(people) => source.setPeople(path, people)}
                   onSyncChange={(synced) => source.setSynced(path, synced)}
+                  onLiveStatus={(status) => source.setLiveStatus(path, status)}
                   loaded={loaded[path]}
                   takeLiveOpen={source.takeLiveOpen}
                   scrollPositions={source.scrollPositions}
