@@ -128,24 +128,6 @@ jobs:
         if: github.event_name != 'pull_request'
         with:
           fetch-depth: 0
-      - name: Check for backend changes
-        id: backend-changes
-        if: github.event_name == 'push'
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-          AFTER_SHA: ${{ github.sha }}
-        run: |
-          if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "$BEFORE_SHA" "$AFTER_SHA" -- packages/backend/; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            status=$?
-            if [ "$status" -ne 1 ]; then
-              exit "$status"
-            fi
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/setup-node@v4
         if: github.event_name != 'pull_request'
         with:
@@ -178,7 +160,7 @@ jobs:
           bun run build
         working-directory: apps/code/web
       - name: Deploy Convex backend
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || steps.backend-changes.outputs.changed == 'true')
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         working-directory: packages/backend
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
@@ -187,6 +169,9 @@ jobs:
             prod:*) ;;
             *) echo "CONVEX_DEPLOY_KEY must be a production deployment key" >&2; exit 1 ;;
           esac
+          # Convex looks for TypeScript in this package, while Bun hoists it.
+          mkdir -p node_modules
+          ln -sfn ../../../node_modules/typescript node_modules/typescript
           bun run deploy --typecheck enable \
             --cmd-url-env-var-name CONVEX_TARGET_URL \
             --cmd 'if [ "$CONVEX_TARGET_URL" != "$VITE_CONVEX_URL" ]; then echo "Convex deploy key does not match VITE_CONVEX_URL" >&2; exit 1; fi'
