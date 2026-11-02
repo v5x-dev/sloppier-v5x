@@ -643,40 +643,6 @@ export function ProgramPathPreview({
                       </Tooltip>
                     )
                   })}
-                  {route.actions.map((action, index) => {
-                    const atPose = route.actions
-                      .slice(0, index)
-                      .filter(
-                        (item) => item.x === action.x && item.y === action.y
-                      ).length
-                    return (
-                      <Tooltip key={`action-${index}`}>
-                        <TooltipTrigger
-                          delay={200}
-                          render={
-                            <button
-                              type="button"
-                              aria-label={`Open action ${action.command}`}
-                              className="absolute z-20 aspect-square w-[1.8%] min-w-0 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-background bg-chart-4 p-0 focus-visible:ring-2 focus-visible:ring-ring"
-                              style={{
-                                left: `${50 + (action.x / extent) * 100 + (atPose % 3) * 1.8 + 1.8}%`,
-                                top: `${50 - (action.y / extent) * 100 - Math.floor(atPose / 3) * 1.8 - 1.8}%`,
-                              }}
-                              onClick={() =>
-                                onSelectSource(
-                                  action.source.file,
-                                  action.source.line
-                                )
-                              }
-                            />
-                          }
-                        />
-                        <TooltipContent className="font-mono">
-                          {sourceText(action.source)}
-                        </TooltipContent>
-                      </Tooltip>
-                    )
-                  })}
                 </div>
                 {imageError && (
                   <p className="text-xs text-destructive">
