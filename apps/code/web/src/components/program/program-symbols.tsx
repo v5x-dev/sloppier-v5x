@@ -79,6 +79,7 @@ export function ProgramSymbols() {
     >
       <div className="px-3 pt-3 pb-3">
         <Input
+          autoFocus
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search symbols…"

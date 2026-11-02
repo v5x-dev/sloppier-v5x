@@ -1,26 +1,26 @@
 import type { FormatChange } from "@/components/editor/editor-formatting"
+import { adjacentTab, hotkeys } from "@/components/program/workbench-shortcuts"
 import {
   focusGroupEditor,
   neighborGroupId,
 } from "@/components/program/workbench-focus"
 import { groupsOf } from "@/lib/editor-groups"
 import { toast } from "@v5x/ui/components/toast"
+import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys"
 
 import { waitForSourceSync } from "@/lib/build-program"
 import { commitFormattedSource } from "@/lib/commit-formatted-source"
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 export function useWorkbenchCommands({
   source,
-  activePath,
   layout,
   dirtyPaths,
   headSha,
 }: {
   source: WorkbenchSource
-  activePath: string | null
   layout: ReturnType<WorkbenchSource["getSnapshot"]>["layout"]
   dirtyPaths: string[]
   headSha?: string
@@ -54,143 +54,124 @@ export function useWorkbenchCommands({
       signal
     )
   }
-  const formatFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
-    if (
-      !(event.ctrlKey || event.metaKey) ||
-      event.altKey ||
-      event.shiftKey ||
-      event.isComposing ||
-      event.key.toLowerCase() !== "p"
-    )
-      return
-    event.preventDefault()
-    event.stopPropagation()
-    if (!event.repeat && activePath) formatManually(activePath)
-  })
   const [commitOpen, setCommitOpen] = useState(false)
   const commitLabel = `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`
   const savePending = useRef(false)
+  // Commits started from the keyboard stop when the workbench unmounts.
+  const lifetime = useRef<AbortController | null>(null)
+  useEffect(() => {
+    const controller = new AbortController()
+    lifetime.current = controller
+    return () => controller.abort()
+  }, [])
   useEffect(() => {
     void source.refreshRepository()
   }, [source, headSha])
 
-  const saveFromKeyboard = useEffectEvent(
-    (event: KeyboardEvent, signal: AbortSignal) => {
-      if (
-        !(event.ctrlKey || event.metaKey) ||
-        event.altKey ||
-        event.shiftKey ||
-        event.isComposing ||
-        event.key.toLowerCase() !== "s"
-      )
-        return
-      event.preventDefault()
-      event.stopPropagation()
-      if (event.repeat || savePending.current) return
-      if (source.getSnapshot().dirtyPaths.length === 0) return
-      savePending.current = true
-      void (async () => {
-        try {
-          await waitForSourceSync(source.isSynced, signal)
-          signal.throwIfAborted()
-          await commitFormatted(undefined, signal)
-          if (!signal.aborted)
-            toast.add({ type: "success", title: "Changes committed" })
-        } catch (error) {
-          if (!signal.aborted)
-            toast.add({
-              type: "error",
-              title: "Could not commit",
-              description: errorMessage(error),
-            })
-        } finally {
-          savePending.current = false
-        }
-      })()
-    }
-  )
-
-  const splitFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
-    if (
-      !(event.ctrlKey || event.metaKey) ||
-      event.altKey ||
-      event.shiftKey ||
-      event.isComposing ||
-      event.key !== "\\"
-    )
-      return
-    event.preventDefault()
-    event.stopPropagation()
-    if (!event.repeat) splitGroup(layout.activeGroupId)
-  })
-
-  // VS Code's group focus chord: Ctrl/Cmd+K, then Ctrl/Cmd+Arrow moves focus to the
-  // neighboring group. The chord expires after a short pause.
-  const chordStartedAt = useRef(0)
-  const focusGroupFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
-    // Pressing the modifier itself between the chord's keys must not cancel the chord.
-    if (MODIFIER_KEYS.has(event.key)) return
-    if (
-      !(event.ctrlKey || event.metaKey) ||
-      event.altKey ||
-      event.shiftKey ||
-      event.isComposing
-    )
-      return
-    // Ctrl/Cmd+1 to 8 focus that group; Ctrl/Cmd+9 focuses the last tab of the active group.
-    if (/^[1-9]$/.test(event.key)) {
-      event.preventDefault()
-      event.stopPropagation()
-      const digit = Number(event.key)
-      if (digit === 9) {
-        const active = groupsOf(layout).find(
-          (group) => group.id === layout.activeGroupId
-        )
-        const last = active?.paths.at(-1)
-        if (active && last) activateTab(active.id, last)
-        requestAnimationFrame(() => focusGroupEditor(layout.activeGroupId))
-        return
+  const commitFromKeyboard = () => {
+    const signal = lifetime.current?.signal
+    if (!signal || savePending.current) return
+    if (source.getSnapshot().dirtyPaths.length === 0) return
+    savePending.current = true
+    void (async () => {
+      try {
+        await waitForSourceSync(source.isSynced, signal)
+        signal.throwIfAborted()
+        await commitFormatted(undefined, signal)
+        if (!signal.aborted)
+          toast.add({ type: "success", title: "Changes committed" })
+      } catch (error) {
+        if (!signal.aborted)
+          toast.add({
+            type: "error",
+            title: "Could not commit",
+            description: errorMessage(error),
+          })
+      } finally {
+        savePending.current = false
       }
-      const target = groupsOf(layout).at(digit - 1)
-      if (!target) return
-      activateGroup(target.id)
-      requestAnimationFrame(() => focusGroupEditor(target.id))
-      return
-    }
-    const chordOpen = Date.now() - chordStartedAt.current < CHORD_TIMEOUT_MS
-    if (!chordOpen) {
-      if (event.key.toLowerCase() !== "k") return
-      event.preventDefault()
-      event.stopPropagation()
-      chordStartedAt.current = Date.now()
-      return
-    }
-    chordStartedAt.current = 0
-    const direction = GROUP_FOCUS_KEYS[event.key]
-    if (!direction) return
-    event.preventDefault()
-    event.stopPropagation()
-    const next = neighborGroupId(layout.activeGroupId, direction)
-    if (!next) return
-    activateGroup(next)
-    focusGroupEditor(next)
+    })()
+  }
+
+  useHotkey(hotkeys.commitSource, commitFromKeyboard, { capture: true })
+  // Shift/Alt chords count as typing by default, so this one must also fire inside the editor.
+  useHotkey(
+    hotkeys.formatDocument,
+    () => {
+      const path = source.getSnapshot().activePath
+      if (path) formatManually(path)
+    },
+    { capture: true, ignoreInputs: false }
+  )
+  useHotkey(hotkeys.splitEditor, () => splitGroup(layout.activeGroupId), {
+    capture: true,
   })
 
-  // One capture listener serves the workbench shortcuts; each ignores keys it does not own.
-  useEffect(() => {
-    const controller = new AbortController()
-    const onKeyDown = (event: KeyboardEvent) => {
-      formatFromKeyboard(event)
-      saveFromKeyboard(event, controller.signal)
-      splitFromKeyboard(event)
-      focusGroupFromKeyboard(event)
-    }
-    window.addEventListener("keydown", onKeyDown, true)
-    return () => {
-      controller.abort()
-      window.removeEventListener("keydown", onKeyDown, true)
-    }
-  }, [])
+  const groups = groupsOf(layout)
+  const activeGroup = groups.find((group) => group.id === layout.activeGroupId)
+  const focusGroup = (groupId: string) => {
+    activateGroup(groupId)
+    requestAnimationFrame(() => focusGroupEditor(groupId))
+  }
+  const moveGroupFocus = (direction: "left" | "right" | "up" | "down") => {
+    const next = neighborGroupId(layout.activeGroupId, direction)
+    if (next) focusGroup(next)
+  }
+  const cycleTab = (step: 1 | -1) => {
+    const next = activeGroup
+      ? adjacentTab(activeGroup.paths, activeGroup.activePath, step)
+      : null
+    if (activeGroup && next) activateTab(activeGroup.id, next)
+  }
+  // Ctrl/Cmd+1 to 8 focus that group. Ctrl/Cmd+9 focuses the last tab of the active group.
+  const groupDigits = [
+    "Mod+1",
+    "Mod+2",
+    "Mod+3",
+    "Mod+4",
+    "Mod+5",
+    "Mod+6",
+    "Mod+7",
+    "Mod+8",
+  ] as const
+  useHotkeys(
+    [
+      ...groupDigits.map((hotkey, index) => ({
+        hotkey,
+        callback: () => {
+          const target = groups.at(index)
+          if (target) focusGroup(target.id)
+        },
+      })),
+      {
+        hotkey: hotkeys.focusLastTab,
+        callback: () => {
+          const last = activeGroup?.paths.at(-1)
+          if (activeGroup && last) activateTab(activeGroup.id, last)
+          requestAnimationFrame(() => focusGroupEditor(layout.activeGroupId))
+        },
+      },
+      {
+        hotkey: hotkeys.focusGroupLeft,
+        callback: () => moveGroupFocus("left"),
+      },
+      {
+        hotkey: hotkeys.focusGroupRight,
+        callback: () => moveGroupFocus("right"),
+      },
+      {
+        hotkey: hotkeys.focusGroupUp,
+        callback: () => moveGroupFocus("up"),
+      },
+      {
+        hotkey: hotkeys.focusGroupDown,
+        callback: () => moveGroupFocus("down"),
+      },
+      { hotkey: hotkeys.previousTab, callback: () => cycleTab(-1) },
+      { hotkey: hotkeys.nextTab, callback: () => cycleTab(1) },
+    ],
+    { capture: true }
+  )
 
   return {
     formatActions,
@@ -201,15 +182,4 @@ export function useWorkbenchCommands({
     setCommitOpen,
     commitLabel,
   }
-}
-
-const CHORD_TIMEOUT_MS = 2000
-const MODIFIER_KEYS = new Set(["Control", "Meta", "Alt", "Shift"])
-const GROUP_FOCUS_KEYS: Partial<
-  Record<string, "left" | "right" | "up" | "down">
-> = {
-  ArrowLeft: "left",
-  ArrowRight: "right",
-  ArrowUp: "up",
-  ArrowDown: "down",
 }

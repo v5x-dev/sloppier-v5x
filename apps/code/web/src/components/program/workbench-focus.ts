@@ -44,6 +44,14 @@ export function focusGroupEditor(groupId: string) {
   if (panel) findInShadowTree(panel, '[role="textbox"]')?.focus()
 }
 
+/** Focuses the file tree's selected row, or its first row, through the tree's shadow root. */
+export function focusExplorerTree() {
+  const row =
+    findInShadowTree(document, '[role="treeitem"][aria-selected="true"]') ??
+    findInShadowTree(document, '[role="treeitem"]')
+  row?.focus()
+}
+
 /** The first match in a tree, looking through the shadow roots of the editor's elements. */
 function findInShadowTree(
   root: ParentNode,

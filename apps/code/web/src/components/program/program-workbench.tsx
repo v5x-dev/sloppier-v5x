@@ -37,6 +37,7 @@ import { useWorkbenchCommands } from "./use-workbench-commands"
 import { useWorkbenchDrag } from "./use-workbench-drag"
 import { CommitDialog } from "./workbench-commit-dialog"
 import { WorkbenchEditors } from "./workbench-editors"
+import { WorkbenchHotkeys } from "./workbench-hotkeys"
 import { TabChip } from "./workbench-tabs"
 import { treeStyle } from "./workbench-tree"
 
@@ -133,7 +134,6 @@ export function Workbench({
     commitLabel,
   } = useWorkbenchCommands({
     source,
-    activePath,
     layout,
     dirtyPaths,
     headSha: program.repositoryHeadSha,
@@ -157,6 +157,24 @@ export function Workbench({
         return true
       }}
     >
+      <WorkbenchHotkeys
+        source={source}
+        paths={paths}
+        format={() => {
+          if (activePath) formatManually(activePath)
+        }}
+        showExplorer={() => setShowSymbols(false)}
+        showSymbols={() => setShowSymbols(true)}
+        onGoToLine={(line) => {
+          if (!activePath) return
+          setDiagnosticTarget((current) => ({
+            path: activePath,
+            line,
+            column: 1,
+            request: (current?.request ?? 0) + 1,
+          }))
+        }}
+      />
       <SidebarProvider
         className="h-svh min-h-0"
         style={
@@ -339,7 +357,7 @@ export function Workbench({
                 {activePath && formatActions[activePath] && (
                   <ActionTooltip
                     label="Format document"
-                    shortcut={shortcutKeys("P")}
+                    shortcut={["Shift", "Alt", "F"]}
                   >
                     <Button
                       variant="ghost"

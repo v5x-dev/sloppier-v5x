@@ -2,11 +2,13 @@ import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 import type { WorkbenchSource } from "@/lib/workbench-source"
 import { MagnifyingGlassIcon } from "@phosphor-icons/react"
+import { useHotkey } from "@tanstack/react-hotkeys"
 import type { Id } from "@v5x/backend/dataModel"
 import { Button } from "@v5x/ui/components/button"
 import { Sheet, SheetContent } from "@v5x/ui/components/sheet"
 import { Spinner } from "@v5x/ui/components/spinner"
-import { lazy, Suspense, useEffect, useRef, useState } from "react"
+import { lazy, Suspense, useRef, useState } from "react"
+import { hotkeys } from "./workbench-shortcuts"
 
 const loadSearch = () => import("@/components/program/program-search-panel")
 const SearchPanel = lazy(() =>
@@ -30,20 +32,7 @@ export function ProgramSearch(props: {
     setOpen(true)
     input.current?.focus()
   }
-  useEffect(() => {
-    const shortcut = (event: KeyboardEvent) => {
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.shiftKey &&
-        event.key.toLowerCase() === "f"
-      ) {
-        event.preventDefault()
-        openSearch()
-      }
-    }
-    window.addEventListener("keydown", shortcut)
-    return () => window.removeEventListener("keydown", shortcut)
-  }, [])
+  useHotkey(hotkeys.searchProgram, openSearch)
   return (
     <>
       <ActionTooltip label="Search program" shortcut={shortcutKeys("⇧", "F")}>
