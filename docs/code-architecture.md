@@ -3,7 +3,11 @@
 Code web uses TanStack Start routes in `apps/code/web/src/routes`. The Program
 route creates the workbench source and renders `components/program/program-workbench.tsx`.
 The workbench coordinates the editor, file tree, history, build, and upload UI.
-`use-workbench-commands.ts` owns formatting, commits, and keyboard commands;
+`use-workbench-commands.ts` owns formatting, commits, and editor-group keyboard
+commands. `workbench-shortcuts.ts` is the single keymap in TanStack Hotkeys syntax,
+and `workbench-hotkeys.tsx` owns the file and command palettes, the shortcut
+reference, go-to-line, and explorer, symbol, and tab-close shortcuts. Editor-native
+keys (find, replace, comment) come from Pierre's editor keymap.
 `use-workbench-drag.ts` owns tab and tree drag lifecycle; `workbench-editors.tsx`
 renders controlled editor groups, tabs, and file editors. All source and layout
 state stays in `WorkbenchSource`;

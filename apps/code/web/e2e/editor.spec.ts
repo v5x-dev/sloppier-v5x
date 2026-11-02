@@ -26,6 +26,30 @@ test.describe("program editor", () => {
     await expect(page.getByRole("button", { name: "New file" })).toBeVisible()
   })
 
+  test("opens files and commands with keyboard shortcuts", async ({ page }) => {
+    await page.keyboard.press("Control+p")
+    const fileSearch = page.getByRole("combobox", { name: "Find a file" })
+    await expect(fileSearch).toBeVisible()
+    await fileSearch.fill("main.cpp")
+    await fileSearch.press("Enter")
+    await expect(page.getByRole("tab", { selected: true })).toHaveAttribute(
+      "title",
+      /main\.cpp$/
+    )
+    await page.keyboard.press("Control+Shift+p")
+    const commandSearch = page.getByRole("combobox", { name: "Find a command" })
+    await expect(commandSearch).toBeVisible()
+    await commandSearch.fill("keyboard shortcuts")
+    await commandSearch.press("Enter")
+    await expect(
+      page.getByRole("dialog", { name: "Keyboard shortcuts" })
+    ).toBeVisible()
+    await page.keyboard.press("Escape")
+    await expect(
+      page.getByRole("dialog", { name: "Keyboard shortcuts" })
+    ).toBeHidden()
+  })
+
   test("searches source and opens a matching file", async ({ page }) => {
     await page.getByRole("button", { name: "Search program" }).click()
     await page.getByRole("textbox", { name: "Search text" }).fill(searchTerm)

@@ -3,10 +3,11 @@ import { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
 import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
+import { useHotkey } from "@tanstack/react-hotkeys"
+import { hotkeys } from "./workbench-shortcuts"
 import {
   useCallback,
   useEffect,
-  useEffectEvent,
   useId,
   useRef,
   useState,
@@ -505,28 +506,17 @@ export function ProgramUpload({
     : !paired
       ? "Pair your V5 Brain to upload"
       : "Upload to V5 Brain"
-  const uploadFromKeyboard = useEffectEvent((event: KeyboardEvent) => {
-    if (
-      !(event.ctrlKey || event.metaKey) ||
-      !event.shiftKey ||
-      event.altKey ||
-      event.isComposing ||
-      event.repeat ||
-      event.key.toLowerCase() !== "b"
-    )
-      return
-    event.preventDefault()
-    if (!paired) {
-      setConnectOpen(true)
-      return
-    }
-    upload(true)
-  })
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => uploadFromKeyboard(event)
-    window.addEventListener("keydown", onKeyDown, true)
-    return () => window.removeEventListener("keydown", onKeyDown, true)
-  }, [])
+  useHotkey(
+    hotkeys.uploadToBrain,
+    () => {
+      if (!paired) {
+        setConnectOpen(true)
+        return
+      }
+      upload(true)
+    },
+    { capture: true }
+  )
 
   const selected = slots?.find((item) => item.slot === slot)
   const selectedMatch = selected
