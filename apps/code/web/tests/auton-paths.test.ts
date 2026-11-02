@@ -25,13 +25,48 @@ describe("EZ-Template path previews", () => {
     expect(route.points[0]).toMatchObject({ x: -63.5, y: 0, heading: 90 })
     expect(route.points[1].x).toBeCloseTo(-55.5)
     expect(route.points[2]).toMatchObject({ heading: -90 })
-    expect(route.points.filter((point) => point.wait)).toHaveLength(1)
-    expect(route.warnings).toContain(
-      "Branches and loops are shown once in source order."
-    )
+    expect(route.points.filter((point) => point.wait)).toHaveLength(2)
     expect(route.warnings).toContain(
       "Direct drive motion cannot be estimated; subsequent positions may be inaccurate."
     )
+  })
+  it("expands nested counted loops and retains source locations", () => {
+    const [route] = parse(`void red() {
+      for (int i = 0; i < 2; ++i) {
+        for (int j = 1; j <= 2; j++) {
+          chassis.pid_drive_set(j, 100);
+        }
+        chassis.pid_turn_relative_set(90, 100);
+      }
+    }`)
+    expect(route.points).toHaveLength(7)
+    expect(route.points.at(-1)!.x).toBeCloseTo(3)
+    expect(route.points.at(-1)!.y).toBeCloseTo(3)
+    expect(
+      route.points.filter((point) => point.source?.line === 4)
+    ).toHaveLength(4)
+    expect(route.warnings).toEqual([])
+  })
+  it("handles zero iterations, descending loops, and single statements", () => {
+    const [route] = parseJar(`void red() {
+      for (int i = 0; i < 0; i++) chassis.drive_distance(100);
+      for (int i = 3; i > 0; i -= 1) chassis.drive_distance(i);
+    }`)
+    expect(route.points.at(-1)!.y).toBe(6)
+    expect(route.warnings).toEqual([])
+  })
+  it("warns for unknown loops and bounds non-terminating loops", () => {
+    const [unknown] = parse(
+      "void red() { for (int i = 0; i < count; i++) { chassis.pid_drive_set(1, 100); } }"
+    )
+    expect(unknown.points).toHaveLength(2)
+    expect(unknown.warnings).toContain(
+      "Unresolved loops are shown once in source order."
+    )
+    const [infinite] = parse(
+      "void red() { for (int i = 0; i >= 0; i++) { chassis.pid_drive_set(1, 100); } }"
+    )
+    expect(infinite.warnings).toContain("Preview command limit reached.")
   })
   it("discovers routines containing only direct drive commands", () => {
     const [route] = parse("void red() { chassis.drive_set(127, 127); }")

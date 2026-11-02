@@ -105,8 +105,12 @@ export function parseAutonPaths(
       )
     }
   }
+  const loopVariables = new Map<string, number>()
   const resolveNumber = (text: string) =>
-    number(text) ?? constants.get(text.trim()) ?? null
+    number(text) ??
+    loopVariables.get(text.trim()) ??
+    constants.get(text.trim()) ??
+    null
   // JAR's boomerang tuning is set in constants; fall back to the template's usual values.
   const boomerangLead = assignedNumber(files, "boomerang_lead") ?? 0.5
   const boomerangSetback = assignedNumber(files, "boomerang_setback") ?? 0
@@ -463,18 +467,121 @@ export function parseAutonPaths(
         }
       }
 
-      function walk(current: (typeof functions)[number], stack: string[]) {
+      function walk(
+        current: (typeof functions)[number],
+        stack: string[],
+        from = 0,
+        to = current.body.length
+      ) {
         const { body } = current
-        if (/\b(if|for|while|switch)\s*\(/.test(body))
-          warnings.add("Branches and loops are shown once in source order.")
         const calls = /\b(\w+)\s*\(/g
+        calls.lastIndex = from
         let match: RegExpExecArray | null
-        while ((match = calls.exec(body)) && budget-- > 0) {
+        while ((match = calls.exec(body)) && match.index < to && budget-- > 0) {
           const name = match[1]
           const start = match.index + match[0].length - 1
           const end = endOf(body, start, "(", ")")
           const args = body.slice(start + 1, end)
           calls.lastIndex = end + 1
+          if (name === "for") {
+            const bodyStart = body.slice(end + 1).search(/\S/) + end + 1
+            const braced = body[bodyStart] === "{"
+            const bodyEnd = braced
+              ? endOf(body, bodyStart, "{", "}")
+              : body.indexOf(";", bodyStart)
+            if (bodyEnd < bodyStart || bodyEnd >= to) {
+              warnings.add(
+                "Cannot resolve loop body; subsequent positions may be approximate."
+              )
+              continue
+            }
+            const parts = args.split(";")
+            const hasEarlyExit = /\b(?:break|continue|return)\b/.test(
+              body.slice(bodyStart, bodyEnd)
+            )
+            const init = parts[0]
+              ?.trim()
+              .match(
+                /^(?:(?:int|unsigned|long|short|size_t|auto)\s+)?(\w+)\s*=\s*(.+)$/
+              )
+            const condition = parts[1]
+              ?.trim()
+              .match(/^(\w+)\s*(<=|>=|<|>|!=|==)\s*(.+)$/)
+            const update = parts[2]?.trim()
+            const variable = init?.[1]
+            const initial = init ? resolveNumber(init[2]) : null
+            const limit = condition ? resolveNumber(condition[3]) : null
+            let step: number | null = null
+            if (variable && update) {
+              if (update === `${variable}++` || update === `++${variable}`)
+                step = 1
+              else if (update === `${variable}--` || update === `--${variable}`)
+                step = -1
+              else {
+                const change = update.match(/^(\w+)\s*([+-])=\s*(.+)$/)
+                const amount = change ? resolveNumber(change[3]) : null
+                if (change?.[1] === variable && amount !== null)
+                  step = (change[2] === "+" ? 1 : -1) * amount
+              }
+            }
+            const compare = (value: number) => {
+              switch (condition?.[2]) {
+                case "<":
+                  return value < limit!
+                case "<=":
+                  return value <= limit!
+                case ">":
+                  return value > limit!
+                case ">=":
+                  return value >= limit!
+                case "!=":
+                  return value !== limit!
+                case "==":
+                  return value === limit!
+                default:
+                  return false
+              }
+            }
+            if (
+              hasEarlyExit ||
+              !variable ||
+              initial === null ||
+              limit === null ||
+              condition?.[1] !== variable ||
+              step === null ||
+              step === 0
+            ) {
+              warnings.add("Unresolved loops are shown once in source order.")
+              walk(
+                current,
+                stack,
+                bodyStart + (braced ? 1 : 0),
+                bodyEnd + (braced ? 0 : 1)
+              )
+            } else {
+              const previous = loopVariables.get(variable)
+              let value = initial
+              while (compare(value) && budget > 0) {
+                budget--
+                loopVariables.set(variable, value)
+                walk(
+                  current,
+                  stack,
+                  bodyStart + (braced ? 1 : 0),
+                  bodyEnd + (braced ? 0 : 1)
+                )
+                value += step
+              }
+              if (previous === undefined) loopVariables.delete(variable)
+              else loopVariables.set(variable, previous)
+            }
+            calls.lastIndex = bodyEnd + 1
+            continue
+          }
+          if (/^(if|while|switch)$/.test(name))
+            warnings.add(
+              "Branches and unresolved loops are shown once in source order."
+            )
           const helper = functions.filter((item) => item.name === name)
           if (helper.length === 1 && !args.trim()) {
             if (stack.includes(name))
