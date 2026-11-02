@@ -13,6 +13,7 @@ import {
   fixedString,
   varU16,
   systemVersion,
+  deviceInventory,
   keyValueLoad,
   keyValueSave,
   userData,
@@ -174,6 +175,27 @@ describe("wire compatibility", () => {
 })
 
 describe("connection and file operations", () => {
+  it("decodes device inventory and rejects truncated replies", async () => {
+    const transport = new FakeTransport()
+    const connection = await Connection.open(transport)
+    transport.respond = () =>
+      transport.system(reply([1, 3, 250, 7, 2, 0x34, 0x12, 0x78, 0x56], 0x21))
+    expect(await connection.request(deviceInventory())).toEqual([
+      {
+        port: 3,
+        type: 250,
+        status: 7,
+        betaVersion: 2,
+        version: 0x1234,
+        bootVersion: 0x5678,
+      },
+    ])
+    transport.respond = () => transport.system(reply([1, 3], 0x21))
+    await expect(connection.request(deviceInventory())).rejects.toBeInstanceOf(
+      ProtocolError
+    )
+    await connection.close()
+  })
   it("matches command IDs and serializes concurrent handshakes", async () => {
     const transport = new FakeTransport()
     const connection = await Connection.open(transport)

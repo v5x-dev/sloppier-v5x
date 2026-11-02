@@ -68,6 +68,7 @@ import {
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 
 import { ProgramConsole } from "./program-console"
+import { BrainHealth } from "./brain-health"
 
 type Device = { connection: Connection; bluetooth?: BluetoothConnection }
 
@@ -571,17 +572,19 @@ export function ProgramUpload({
           side="top"
           align="end"
           sideOffset={12}
-          className="w-80 max-w-[calc(100vw-2rem)] gap-4 p-4"
+          className="max-h-[min(80vh,700px)] w-[360px] max-w-[calc(100vw-2rem)] gap-2.5 overflow-y-auto p-4"
         >
           <PopoverHeader>
             <PopoverTitle>Connect V5 Brain</PopoverTitle>
           </PopoverHeader>
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Connection
-            </span>
+          <div className="flex flex-col gap-1">
+            {!connected && (
+              <span className="text-xs font-medium text-muted-foreground">
+                Connection
+              </span>
+            )}
             {connected ? (
-              <div className="flex items-center justify-between rounded-lg border px-3 py-2 text-xs">
+              <div className="flex items-center justify-between rounded-lg bg-muted px-2 py-1 text-xs">
                 <span className="flex items-center gap-2">
                   {connected === "USB" ? <PlugIcon /> : <BluetoothIcon />}
                   {paired ? `${connected} connected` : "Pairing required"}
@@ -660,6 +663,14 @@ export function ProgramUpload({
                 Pair
               </Button>
             </form>
+          )}
+
+          {connected === "USB" && paired && consoleConnection && (
+            <BrainHealth
+              connection={consoleConnection}
+              io={consoleIO}
+              busy={busy}
+            />
           )}
 
           {connected && paired && (
