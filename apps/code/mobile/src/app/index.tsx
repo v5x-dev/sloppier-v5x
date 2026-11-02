@@ -5,7 +5,8 @@ import { Text } from "../components/text"
 const benefits = [
   {
     title: "Edit together",
-    description: "Work on Program source with your workspace as changes happen.",
+    description:
+      "Work on Program source with your workspace as changes happen.",
   },
   {
     title: "Build for V5",

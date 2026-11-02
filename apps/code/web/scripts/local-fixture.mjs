@@ -287,7 +287,7 @@ export async function createLocalFixture({ builderURL } = {}) {
       '{"compilerOptions":{"target":"ES2022","moduleResolution":"bundler","module":"ESNext","strict":true,"skipLibCheck":true}}\n'
     )
     symlinkSync(
-      resolve(backend, "node_modules"),
+      resolve(app, "../../../node_modules"),
       resolve(dir, "node_modules"),
       "dir"
     )

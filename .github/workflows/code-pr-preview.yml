@@ -54,6 +54,9 @@ jobs:
       - name: Deploy isolated Convex backend
         working-directory: packages/backend
         run: |
+          # Convex looks for TypeScript in this package, while Bun hoists it.
+          mkdir -p node_modules
+          ln -s "$GITHUB_WORKSPACE/node_modules/typescript" node_modules/typescript
           bunx convex deploy --preview-name "code-pr-${PR_NUMBER}" --typecheck enable --codegen disable \
             --cmd-url-env-var-name PREVIEW_CONVEX_URL \
             --cmd 'if [ "$PREVIEW_CONVEX_URL" = "$PRODUCTION_CONVEX_URL" ]; then echo "Preview must not use production Convex" >&2; exit 1; fi; printf "VITE_CONVEX_URL=%s\n" "$PREVIEW_CONVEX_URL" >> "$GITHUB_ENV"'
