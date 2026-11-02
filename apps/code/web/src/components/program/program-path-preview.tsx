@@ -526,7 +526,7 @@ export function ProgramPathPreview({
                             transform={`translate(${project(point.x, point.y).replace(",", " ")})`}
                           >
                             <circle
-                              r={point.start ? 1.8 : 0.9}
+                              r={0.9}
                               fill={
                                 point.start
                                   ? "var(--chart-3)"
@@ -534,9 +534,7 @@ export function ProgramPathPreview({
                               }
                               stroke="var(--background)"
                               strokeWidth="0.3"
-                            >
-                              <title>{`${index}: (${point.x.toFixed(1)}, ${point.y.toFixed(1)}) ${point.heading.toFixed(0)}°`}</title>
-                            </circle>
+                            />
                             <path
                               d="M 0 0 L 0 -3"
                               stroke="var(--foreground)"
@@ -595,7 +593,7 @@ export function ProgramPathPreview({
                             transform={`translate(${project(point.x, point.y).replace(",", " ")})`}
                           >
                             <circle
-                              r="1.1"
+                              r="0.9"
                               fill="var(--chart-4)"
                               stroke="white"
                               strokeWidth="0.3"
@@ -625,12 +623,12 @@ export function ProgramPathPreview({
                               type="button"
                               aria-label={`Open step ${index} in ${source.file} at line ${source.line}`}
                               className={cn(
-                                "absolute z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-ring",
+                                "absolute z-10 aspect-square w-[1.8%] min-w-0 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full p-0 focus-visible:ring-2 focus-visible:ring-ring",
                                 overlap > 0 &&
                                   "border border-background bg-primary"
                               )}
                               style={{
-                                left: `calc(${50 + (point.x / extent) * 100}% - ${overlap * 10}px)`,
+                                left: `${50 + (point.x / extent) * 100 - overlap * 1.8}%`,
                                 top: `${50 - (point.y / extent) * 100}%`,
                               }}
                               onClick={() =>
@@ -639,18 +637,8 @@ export function ProgramPathPreview({
                             />
                           }
                         />
-                        <TooltipContent className="flex-col items-start">
-                          <span>
-                            {sourceText(source) ||
-                              (point.wait ? "Wait" : "Motion")}
-                          </span>
-                          <span>
-                            ({point.x.toFixed(1)}, {point.y.toFixed(1)}) in ·{" "}
-                            {point.heading.toFixed(0)}°
-                          </span>
-                          <span>
-                            {source.file}:{source.line}
-                          </span>
+                        <TooltipContent className="font-mono">
+                          {sourceText(source)}
                         </TooltipContent>
                       </Tooltip>
                     )
@@ -669,10 +657,10 @@ export function ProgramPathPreview({
                             <button
                               type="button"
                               aria-label={`Open action ${action.command}`}
-                              className="absolute z-20 flex size-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-sm border border-background bg-chart-4 text-[8px] text-background focus-visible:ring-2 focus-visible:ring-ring"
+                              className="absolute z-20 aspect-square w-[1.8%] min-w-0 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-background bg-chart-4 p-0 focus-visible:ring-2 focus-visible:ring-ring"
                               style={{
-                                left: `calc(${50 + (action.x / extent) * 100}% + ${(atPose % 3) * 10 + 8}px)`,
-                                top: `calc(${50 - (action.y / extent) * 100}% - ${Math.floor(atPose / 3) * 10 + 8}px)`,
+                                left: `${50 + (action.x / extent) * 100 + (atPose % 3) * 1.8 + 1.8}%`,
+                                top: `${50 - (action.y / extent) * 100 - Math.floor(atPose / 3) * 1.8 - 1.8}%`,
                               }}
                               onClick={() =>
                                 onSelectSource(
@@ -680,16 +668,11 @@ export function ProgramPathPreview({
                                   action.source.line
                                 )
                               }
-                            >
-                              •
-                            </button>
+                            />
                           }
                         />
-                        <TooltipContent className="flex-col items-start">
-                          <span>{action.command}</span>
-                          <span>
-                            {action.source.file}:{action.source.line}
-                          </span>
+                        <TooltipContent className="font-mono">
+                          {sourceText(action.source)}
                         </TooltipContent>
                       </Tooltip>
                     )

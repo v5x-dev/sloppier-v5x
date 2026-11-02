@@ -58,7 +58,7 @@ export async function exportPathGif(options: {
       ctx.strokeStyle = options.background
       ctx.lineWidth = size * 0.003
       ctx.beginPath()
-      ctx.arc(0, 0, size * (point.start ? 0.018 : 0.009), 0, Math.PI * 2)
+      ctx.arc(0, 0, size * 0.009, 0, Math.PI * 2)
       ctx.fill()
       ctx.stroke()
       ctx.rotate((point.heading * Math.PI) / 180)
