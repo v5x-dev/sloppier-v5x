@@ -21,7 +21,7 @@ const templateCalls: Record<AutonTemplate, { motion: RegExp; names: RegExp }> =
   {
     "ez-template": {
       motion:
-        /\bpid_(?:drive|turn|turn_relative|swing|swing_relative|odom|odom_boomerang|odom_pure_pursuit)_set\s*\(/,
+        /\b(?:pid_(?:drive|turn|turn_relative|swing|swing_relative|odom|odom_boomerang|odom_pure_pursuit)_set|chassis\s*\.\s*drive_set)\s*\(/,
       names:
         /^(?:pid_(?:drive|turn|turn_relative|swing|swing_relative|odom|odom_boomerang|odom_pure_pursuit)_set|odom_xyt_set|odom_set|drive_angle_set)$/,
     },
@@ -484,6 +484,16 @@ export function parseAutonPaths(
           }
           const isDelay =
             name === "delay" && /\bpros::\s*$/.test(body.slice(0, match.index))
+          const isDirectDrive =
+            template === "ez-template" &&
+            name === "drive_set" &&
+            /\bchassis\s*\.\s*$/.test(body.slice(0, match.index))
+          if (isDirectDrive) {
+            warnings.add(
+              "Direct drive motion cannot be estimated; subsequent positions may be inaccurate."
+            )
+            continue
+          }
           if (!names.test(name) && !isDelay) continue
           const values = args.split(",").map(resolveNumber)
           const previousLength = points.length

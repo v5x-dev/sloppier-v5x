@@ -6,6 +6,40 @@ const parse = (code: string) =>
 const parseJar = (code: string) =>
   parseAutonPaths(new Map([["src/autons.cpp", code]]), "jar")
 describe("EZ-Template path previews", () => {
+  it("shows known PID moves and warns about timed direct drives in loops", () => {
+    const [route] = parse(`void skills_auto() {
+      chassis.odom_xyt_set(-63.5_in, 0_in, 90_deg);
+      intake.move(127);
+      endstage.move(127);
+      chassis.pid_drive_set(8_in, DRIVE_SPEED);
+      chassis.pid_wait_quick_chain();
+      chassis.pid_turn_set(-90_deg, TURN_SPEED);
+      chassis.pid_wait();
+      for (int i = 0; i < 2; i++) {
+        chassis.drive_set(DRIVE_SPEED, DRIVE_SPEED);
+        pros::delay(250);
+        chassis.drive_set(-DRIVE_SPEED, -DRIVE_SPEED);
+        pross::delay(250);
+      }
+    }`)
+    expect(route.points[0]).toMatchObject({ x: -63.5, y: 0, heading: 90 })
+    expect(route.points[1].x).toBeCloseTo(-55.5)
+    expect(route.points[2]).toMatchObject({ heading: -90 })
+    expect(route.points.filter((point) => point.wait)).toHaveLength(1)
+    expect(route.warnings).toContain(
+      "Branches and loops are shown once in source order."
+    )
+    expect(route.warnings).toContain(
+      "Direct drive motion cannot be estimated; subsequent positions may be inaccurate."
+    )
+  })
+  it("discovers routines containing only direct drive commands", () => {
+    const [route] = parse("void red() { chassis.drive_set(127, 127); }")
+    expect(route.points).toHaveLength(1)
+    expect(route.warnings).toContain(
+      "Direct drive motion cannot be estimated; subsequent positions may be inaccurate."
+    )
+  })
   it("expands helpers across files and uses clockwise headings from positive Y", () => {
     const routes = parseAutonPaths(
       new Map([
