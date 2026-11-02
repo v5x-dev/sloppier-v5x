@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest"
-import { hoverPosition } from "../src/lib/hover-position"
+import { hoverAnchor, hoverPosition } from "../src/lib/hover-position"
 
 describe("hover card placement", () => {
+  it("falls back to the pointer when the measured range is on another line", () => {
+    const rect = { left: 20, right: 80, top: 100, bottom: 120 } as DOMRect
+    expect(hoverAnchor([rect], 40, 200)).toEqual({
+      left: 40,
+      top: 190,
+      bottom: 210,
+    })
+    expect(hoverAnchor([rect], 40, 110)).toEqual({
+      left: 20,
+      top: 100,
+      bottom: 120,
+    })
+  })
   it("anchors above the symbol when the content fits", () => {
     expect(
       hoverPosition({ left: 100, top: 300, bottom: 320 }, 120, 1000, 800)

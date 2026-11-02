@@ -1,5 +1,23 @@
 export type HoverAnchor = { left: number; top: number; bottom: number }
 
+/** Ignore a range that does not actually contain the pointer. */
+export function hoverAnchor(
+  rects: ArrayLike<DOMRect>,
+  x: number,
+  y: number
+): HoverAnchor {
+  const rect = Array.from(rects).find(
+    (candidate) =>
+      x >= candidate.left &&
+      x <= candidate.right &&
+      y >= candidate.top &&
+      y <= candidate.bottom
+  )
+  return rect
+    ? { left: rect.left, top: rect.top, bottom: rect.bottom }
+    : { left: x, top: y - 10, bottom: y + 10 }
+}
+
 /** Prefer above the symbol, falling below when the card fits better there. */
 export function hoverPosition(
   anchor: HoverAnchor,

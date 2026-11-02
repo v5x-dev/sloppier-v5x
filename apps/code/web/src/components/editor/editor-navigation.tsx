@@ -17,7 +17,11 @@ import { positionAt, RequestCancelled } from "@/lib/language-service"
 import { DefinitionContext, useLanguageService } from "./language-session"
 import { toast } from "@v5x/ui/components/toast"
 import { ScrollArea } from "@v5x/ui/components/scroll-area"
-import { hoverPosition, type HoverAnchor } from "@/lib/hover-position"
+import {
+  hoverAnchor,
+  hoverPosition,
+  type HoverAnchor,
+} from "@/lib/hover-position"
 import { isClickGesture, type Point } from "@/lib/click-gesture"
 
 import {
@@ -114,24 +118,12 @@ function symbolAnchor(
       }
       if (started && end <= offset + length) {
         range.setEnd(node, end - offset)
-        const rects = [...range.getClientRects()]
-        const rect =
-          rects.find(
-            (candidate) =>
-              event.clientY >= candidate.top &&
-              event.clientY <= candidate.bottom
-          ) ?? rects.at(0)
-        if (rect) return { left: rect.left, top: rect.top, bottom: rect.bottom }
-        break
+        return hoverAnchor(range.getClientRects(), event.clientX, event.clientY)
       }
       offset += length
     }
   }
-  return {
-    left: event.clientX,
-    top: event.clientY - 10,
-    bottom: event.clientY + 10,
-  }
+  return hoverAnchor([], event.clientX, event.clientY)
 }
 
 /** Read-only toolchain source in the editor theme, scrolled to its definition line. */
