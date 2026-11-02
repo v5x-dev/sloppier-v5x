@@ -625,12 +625,12 @@ export function ProgramPathPreview({
                               type="button"
                               aria-label={`Open step ${index} in ${source.file} at line ${source.line}`}
                               className={cn(
-                                "absolute z-10 size-4 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-ring",
+                                "absolute z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-ring",
                                 overlap > 0 &&
-                                  "border-2 border-background bg-primary"
+                                  "border border-background bg-primary"
                               )}
                               style={{
-                                left: `calc(${50 + (point.x / extent) * 100}% - ${overlap * 16}px)`,
+                                left: `calc(${50 + (point.x / extent) * 100}% - ${overlap * 10}px)`,
                                 top: `${50 - (point.y / extent) * 100}%`,
                               }}
                               onClick={() =>
@@ -669,10 +669,10 @@ export function ProgramPathPreview({
                             <button
                               type="button"
                               aria-label={`Open action ${action.command}`}
-                              className="absolute z-20 flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-sm border border-background bg-chart-4 text-[10px] text-background focus-visible:ring-2 focus-visible:ring-ring"
+                              className="absolute z-20 flex size-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-sm border border-background bg-chart-4 text-[8px] text-background focus-visible:ring-2 focus-visible:ring-ring"
                               style={{
-                                left: `calc(${50 + (action.x / extent) * 100}% + ${(atPose % 3) * 16 + 12}px)`,
-                                top: `calc(${50 - (action.y / extent) * 100}% - ${Math.floor(atPose / 3) * 16 + 12}px)`,
+                                left: `calc(${50 + (action.x / extent) * 100}% + ${(atPose % 3) * 10 + 8}px)`,
+                                top: `calc(${50 - (action.y / extent) * 100}% - ${Math.floor(atPose / 3) * 10 + 8}px)`,
                               }}
                               onClick={() =>
                                 onSelectSource(
