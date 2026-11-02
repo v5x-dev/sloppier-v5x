@@ -81,6 +81,41 @@ export class FakeBrain {
         this.values.set(key, stringAt(payload, key.length + 1))
         break
       }
+      case 0x20:
+        out = Uint8Array.of(0, 0, 0, 0, 0xa0, 0, 0)
+        break
+      case 0x21:
+        out = Uint8Array.of(
+          3,
+          1,
+          2,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0,
+          3,
+          6,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0,
+          8,
+          7,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        )
+        break
+      case 0x22:
+        out = Uint8Array.of(0, 1, 1, 5, 0, 1, 1, 5, 0, 1, 1, 5, 0, 0, 5, 1, 1)
+        break
       case 0x27:
         out = Uint8Array.of(1, 0)
         break

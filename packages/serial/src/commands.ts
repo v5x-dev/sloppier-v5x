@@ -67,6 +67,23 @@ export const systemStatus = () =>
     }
   })
 export const deviceStatus = () => cdc2(0x21)
+/** Inventory reported by VEXos. Unknown device types and status values are preserved. */
+export const deviceInventory = () =>
+  cdc2(0x21, new Uint8Array(), (data) => {
+    if (!data.length || data.length !== 1 + data[0] * 8)
+      throw new ProtocolError("Invalid device inventory payload length")
+    return Array.from({ length: data[0] }, (_, index) => {
+      const offset = 1 + index * 8
+      return {
+        port: data[offset],
+        type: data[offset + 1],
+        status: data[offset + 2],
+        betaVersion: data[offset + 3],
+        version: readUint(data, offset + 4, 2),
+        bootVersion: readUint(data, offset + 6, 2),
+      }
+    })
+  })
 export const screenCapture = (layer?: number) =>
   cdc2(0x28, layer === undefined ? new Uint8Array() : uint(layer, 1))
 export const dashTouch = (x: number, y: number, pressed: boolean) =>
