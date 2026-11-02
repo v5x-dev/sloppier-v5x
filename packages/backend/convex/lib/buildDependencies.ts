@@ -5,6 +5,15 @@ import type { ProgramTemplate } from "./templateCatalog"
 export const buildDependencies: Partial<
   Record<ProgramTemplate, readonly string[]>
 > = {
+  rw: [
+    "firmware",
+    "include/api.h",
+    "include/pros",
+    "include/rw",
+    "include/okapi",
+    "include/liblvgl",
+    "common.mk",
+  ],
   pros: ["firmware", "include/api.h", "include/pros", "common.mk"],
   "ez-template": [
     "firmware",

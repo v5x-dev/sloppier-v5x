@@ -2,7 +2,7 @@
 import { loadTemplateFiles } from "../../packages/backend/convex/lib/templates"
 import { isBuildDependency } from "../../packages/backend/convex/lib/buildDependencies"
 
-const templates = ["pros", "ez-template"] as const
+const templates = ["pros", "ez-template", "rw"] as const
 const out: Record<string, Record<string, string>> = {}
 for (const template of templates) {
   const files = await loadTemplateFiles(template, "Prewarm")

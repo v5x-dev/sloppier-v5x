@@ -46,6 +46,8 @@ export async function loadTemplateFiles(
       return loadProsFiles(programName)
     case "ez-template":
       return loadEzTemplateFiles(programName)
+    case "rw":
+      return loadRwFiles(programName)
   }
 }
 
@@ -190,6 +192,48 @@ async function loadEzTemplateFiles(
     }
   }
 
+  return files.sort((a, b) => a.path.localeCompare(b.path))
+}
+
+// RW 4.1.0 is the upstream PROS package; it requires kernel 4.2.1 or newer.
+async function loadRwFiles(programName: string): Promise<TemplateFile[]> {
+  const [base, rw] = await Promise.all([
+    loadEzTemplateFiles(programName),
+    fetchZip(
+      "https://github.com/richardbwang/RW-Template/releases/download/4.1.0/RW-Template-PROS.zip"
+    ),
+  ])
+  const files = base.filter(
+    ({ path }) =>
+      !path.startsWith("src/") &&
+      path !== "include/autons.hpp" &&
+      path !== "include/subsystems.hpp" &&
+      !path.startsWith("include/EZ-Template/") &&
+      !path.startsWith("include/okapi/") &&
+      !/^(firmware\/)(lib)?(EZ-Template|okapi)/i.test(path)
+  )
+  for (const [path, contents] of Object.entries(rw)) {
+    if (path !== "template.pros" && !path.startsWith("sim/"))
+      files.push({ path, contents })
+  }
+  const manifestFile = files.find((file) => file.path === "project.pros")!
+  const manifest = JSON.parse(
+    typeof manifestFile.contents === "string"
+      ? manifestFile.contents
+      : new TextDecoder().decode(manifestFile.contents)
+  )
+  delete manifest["py/state"].templates["EZ-Template"]
+  delete manifest["py/state"].templates.okapilib
+  const rwManifest = JSON.parse(new TextDecoder().decode(rw["template.pros"]!))
+  rwManifest["py/state"].location = "RW-Template@4.1.0"
+  manifest["py/state"].templates["RW-Template"] = rwManifest["py/state"]
+  manifestFile.contents = JSON.stringify(manifest, null, 2) + "\n"
+  const header = files.find((file) => file.path === "include/main.h")!
+  header.contents = prosMainHeader()
+  files.push({
+    path: "src/main.cpp",
+    contents: `#include "main.h"\n#include "rw-config.h"\n\nvoid initialize() { runPreAutonomous(); }\nvoid disabled() {}\nvoid competition_initialize() {}\nvoid autonomous() { runAutonomous(); }\nvoid opcontrol() { runDriver(); }\n`,
+  })
   return files.sort((a, b) => a.path.localeCompare(b.path))
 }
 

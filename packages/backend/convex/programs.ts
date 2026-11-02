@@ -28,7 +28,8 @@ const templateValidator = v.union(
   v.literal("vexcode"),
   v.literal("jar"),
   v.literal("pros"),
-  v.literal("ez-template")
+  v.literal("ez-template"),
+  v.literal("rw")
 )
 
 export const listTemplates = query({

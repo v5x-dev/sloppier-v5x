@@ -38,3 +38,19 @@ test("EZ uploads exclude SDKs and libraries while retaining editable robot heade
   expect(isBuildDependency("jar", "include/api.h")).toBe(false)
   expect(isBuildDependency("vexcode", "firmware/custom.a")).toBe(false)
 })
+
+test("RW keeps robot configuration while managing its PROS and RW libraries", () => {
+  for (const path of [
+    "firmware/RW-Template.a",
+    "include/rw/api.h",
+    "include/pros/motors.hpp",
+    "common.mk",
+  ])
+    expect(isBuildDependency("rw", path)).toBe(true)
+  for (const path of [
+    "include/rw-config.h",
+    "src/rw-config.cpp",
+    "src/rw-autons.cpp",
+  ])
+    expect(isBuildDependency("rw", path)).toBe(false)
+})

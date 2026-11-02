@@ -16,7 +16,7 @@ _Avoid_: Project (when referring to the item in the app)
 ### Source
 
 **Program template**:
-A starter set of files and conventions used to create a Program. The app offers VEXcode, JAR, PROS, and EZ-Template templates.
+A starter set of files and conventions used to create a Program. The app offers VEXcode, JAR, PROS, EZ-Template, and RW templates.
 
 **Program source**:
 The files and current text being developed for a Program, including edits not yet committed. It excludes generated V5 binaries and dependencies supplied by the build environment.

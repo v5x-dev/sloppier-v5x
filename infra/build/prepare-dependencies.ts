@@ -10,7 +10,7 @@ import { loadTemplateFiles } from "../../packages/backend/convex/lib/templates"
 const root = fileURLToPath(new URL("./vendor/deps/", import.meta.url))
 await rm(root, { recursive: true, force: true })
 await mkdir(root, { recursive: true })
-for (const template of ["pros", "ez-template"] as const) {
+for (const template of ["pros", "ez-template", "rw"] as const) {
   const files = await loadTemplateFiles(template, "Build dependencies")
   const dependencies = files.filter((file) =>
     isBuildDependency(template, file.path)

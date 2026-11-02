@@ -14,6 +14,7 @@ export const programTemplates = [
     label: "PROS",
     description: "A V5 program with the PROS 4.1.1 kernel.",
   },
+  { id: "rw", label: "RW", description: "RW-Template for PROS 4.2." },
   {
     id: "ez-template",
     label: "EZ",

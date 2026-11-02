@@ -114,7 +114,7 @@ Create a program with
 `programs.create({ workspaceId, template })`. The backend generates a dashed
 name with `boring-name-generator`; callers can pass `name` to choose one
 explicitly. Supported template IDs are `vexcode`, `jar`, `pros`, and
-`ez-template`. The program record is created immediately with
+`ez-template`, and `rw`. The program record is created immediately with
 `repositoryStatus: "provisioning"`. A Convex action then
 creates a Code Storage repository named `programs/<programId>`, writes the
 template files to its `main` branch, and changes the status to `ready`. If the
@@ -207,3 +207,5 @@ configuration. The Code web Playwright emulator suite adds a browser smoke test
 against a temporary local deployment; see the Code web README for its
 setup and limitations. It does not replace production-like preview testing of
 the deployed frontend and its external services.
+
+RW uses the upstream [RW-Template PROS 4.1.0 package](https://github.com/richardbwang/RW-Template/releases/tag/4.1.0) with PROS 4.2.2. Its managed headers and firmware require an updated Builder image. Backend and Builder changes must be deployed before the web option. Existing client contracts remain supported; Code web and backend are the affected callers. Existing workspace membership checks apply to RW creation and access.
