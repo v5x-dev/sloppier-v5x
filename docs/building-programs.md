@@ -18,7 +18,7 @@ docker build --platform linux/amd64 -t YOUR_REGISTRY/v5x-build:VERSION infra/bui
 docker push YOUR_REGISTRY/v5x-build:VERSION
 ```
 
-The image installs Clang, GNU Arm Embedded, Python, and Make. Editor autocomplete runs in a browser worker; see [Autocomplete](autocomplete.md). SDK files stay in the ignored `infra/build/vendor/` directory. PROS and EZ-Template firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode programs use the supplied Makefile. The cloud must be able to pull the image.
+The image installs Clang, GNU Arm Embedded, Python, and Make. Editor autocomplete runs in a browser worker; see [Autocomplete](autocomplete.md). SDK files stay in the ignored `infra/build/vendor/` directory. PROS, EZ-Template, and RW firmware, SDK/library headers, and common.mk are baked into the image from the same pinned template revisions used by this project. They are omitted from new program repositories, and source commits cannot add firmware paths or managed build dependencies. JAR uses its upstream make rules. Generic VEXcode programs use the supplied Makefile. The cloud must be able to pull the image.
 
 EZ-Template uses PROS 4.2.2, LVGL 8.3.9, and the pinned Okapi 5.1.0 sources. The upstream EZ-Template 3.2.2 example ships PROS 4.1.1 and soft-float libraries. Template preparation replaces the kernel and LVGL; the Docker build recompiles EZ-Template and Okapi for the new kernel's hard-float ABI. Both ARM multilib variants remain installed because the standalone PROS starter still uses 4.1.1 and VEXcode uses soft-float. Updating an existing EZ program requires replacing the configured build image, since its managed SDK comes from the image rather than its repository. Refresh autocomplete archives and metadata from that same image.
 
@@ -47,13 +47,13 @@ Cloud API contracts were checked against [Smolmachines API reference](https://sm
 
 ## Configured production deployment
 
-Production (`different-fly-767`) uses the PROS 4.2.2 EZ-Template image, published as `20261027-pros-4.2.2`:
+Production (`different-fly-767`) uses the RW-capable image, published as `20261102-rw`:
 
 ```text
-registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:52ee5a5c7b0ab96782004eda7feb75fd0095cd3cbf45c34996f3d987459fdd99
+registry.smolmachines.com/tenants/tenant-72d19493acd7451b8fa6fa3680efb174/sloppier-v5x-build@sha256:3bd019796e6e49c437b9956dfd83b1ca7db6761582e941d9c833e2d053e9a9eb
 ```
 
-Its startup checkpoint is `ckpt-6ab47ed51a9f43c490dc198a60ed4f6f`, prewarmed for PROS and EZ-Template. On October 28, 2026, two direct production checkpoint restore and health checks took 23.29 and 16.18 seconds; EZ starter compiles after restore took 5.18 and 3.25 seconds. These measurements exclude browser source preparation, transfer, and artifact download, so they do not establish a five-second end-to-end build.
+Its startup checkpoint is `ckpt-c825938072324f0683ec459f00d8f93c`, prewarmed for PROS, EZ-Template, and RW. On October 28, 2026, two direct production checkpoint restore and health checks took 23.29 and 16.18 seconds; EZ starter compiles after restore took 5.18 and 3.25 seconds. These measurements exclude browser source preparation, transfer, and artifact download, so they do not establish a five-second end-to-end build.
 
 The upgrade was verified by compiling all four starters and the committed source of `pleasant-solana-991` (`k97ewazd1z52dne1k833b0s3gs8h3sqd`), including its `pros::AIVision` declaration. Existing program source files were preserved.
 

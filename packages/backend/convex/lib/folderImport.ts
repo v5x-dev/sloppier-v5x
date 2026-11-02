@@ -34,7 +34,7 @@ export function excludedImportPath(
   if (/\.(o|obj|elf|bin|a|d|pch|pyc)$/i.test(path)) return "Compiled files"
   if (isFirmwarePath(path) || isBuildDependency(template, path))
     return "Managed build dependency"
-  if (template === "pros" || template === "ez-template") {
+  if (template === "pros" || template === "ez-template" || template === "rw") {
     const filename = parts.at(-1)!.toLowerCase()
     if (
       parts.some((part) =>
@@ -98,6 +98,12 @@ export function validateImportPaths(paths: string[]) {
 
 export function detectImportTemplate(paths: string[]): ProgramTemplate | null {
   const lower = paths.map((path) => path.toLowerCase())
+  if (
+    lower.some(
+      (path) => path.startsWith("include/rw/") || path === "src/rw-config.cpp"
+    )
+  )
+    return "rw"
   if (lower.some((path) => path.includes("ez-template"))) return "ez-template"
   if (lower.some((path) => path.includes("jar-template"))) return "jar"
   if (lower.includes("project.pros")) return "pros"

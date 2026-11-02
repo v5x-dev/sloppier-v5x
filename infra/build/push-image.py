@@ -10,7 +10,7 @@ digests match what `docker push` would produce.
 Usage: infra/build/push-image.py IMAGE REPOSITORY TAG
   e.g. infra/build/push-image.py sloppier-v5x-build:local \\
          tenants/tenant-.../sloppier-v5x-build 20261026-language
-Requires `smol auth login`. Prints REGISTRY/REPOSITORY@DIGEST for SMOL_BUILD_IMAGE.
+Requires `smol auth login` or SMOL_REGISTRY_TOKEN. Prints REGISTRY/REPOSITORY@DIGEST for SMOL_BUILD_IMAGE.
 """
 import base64
 import json
@@ -32,8 +32,10 @@ token = None
 
 def authenticate():
     global token
-    config = tomllib.loads((pathlib.Path.home() / '.config/smolvm/config.toml').read_text())
-    identity = config['machines']['registries'][REGISTRY]['identity_token']
+    identity = os.environ.get('SMOL_REGISTRY_TOKEN')
+    if not identity:
+        config = tomllib.loads((pathlib.Path.home() / '.config/smolvm/config.toml').read_text())
+        identity = config['machines']['registries'][REGISTRY]['identity_token']
     basic = base64.b64encode(f'token:{identity}'.encode()).decode()
     query = urllib.parse.urlencode({'service': REGISTRY, 'scope': f'repository:{repository}:pull,push'})
     request = urllib.request.Request(f'https://api.smolmachines.com/v2/auth?{query}', headers={'Authorization': f'Basic {basic}'})

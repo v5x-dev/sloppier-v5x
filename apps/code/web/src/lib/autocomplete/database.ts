@@ -4,6 +4,7 @@ export async function loadDatabase(template: string): Promise<ApiDatabase> {
   switch (template) {
     case "pros":
       return (await import("./data/pros.json")).default
+    case "rw":
     case "ez-template":
       return (await import("./data/ez-template.json")).default
     case "vexcode":
@@ -19,6 +20,7 @@ export async function loadSdkSources(
   switch (template) {
     case "pros":
       return (await import("./data/pros-sources.json")).default
+    case "rw":
     case "ez-template":
       return (await import("./data/ez-template-sources.json")).default
     case "vexcode":

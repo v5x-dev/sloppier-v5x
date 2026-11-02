@@ -8,16 +8,17 @@ import subprocess
 import sys
 
 template = sys.argv[1]
-if template not in ('pros', 'ez-template', 'vexcode', 'jar'):
+if template not in ('pros', 'ez-template', 'rw', 'vexcode', 'jar'):
     sys.exit('Unknown program template')
 # Headers every starter includes before project code. The PCH key covers these fixed library headers
 # only, so editing project headers reuses the precompiled header that the Builder checkpoint ships with.
 LIBRARY_PCH = {
+    'rw': '#include "api.h"\n',
     'pros': '#include "api.h"\n',
     'ez-template': '#define PROS_USE_SIMPLE_NAMES\n#define PROS_USE_LITERALS\n#include "api.h"\n#include "EZ-Template/api.hpp"\n',
 }
 root = pathlib.Path.cwd()
-if template in ('pros', 'ez-template'):
+if template in ('pros', 'ez-template', 'rw'):
     dependencies = pathlib.Path('/opt/v5x/deps')
     manifest = json.loads((dependencies / 'manifest.json').read_text())
     for relative in manifest[template]:

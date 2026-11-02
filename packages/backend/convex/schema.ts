@@ -66,7 +66,8 @@ export default defineSchema({
       v.literal("vexcode"),
       v.literal("jar"),
       v.literal("pros"),
-      v.literal("ez-template")
+      v.literal("ez-template"),
+      v.literal("rw")
     ),
     expectedFiles: v.number(),
     paths: v.array(v.string()),
@@ -93,7 +94,8 @@ export default defineSchema({
       v.literal("vexcode"),
       v.literal("jar"),
       v.literal("pros"),
-      v.literal("ez-template")
+      v.literal("ez-template"),
+      v.literal("rw")
     ),
     repositoryId: v.string(),
     repositoryStatus: v.union(

@@ -103,6 +103,7 @@ const templateIcons: Record<Template, string> = {
   vexcode: "/template-icons/vexcode.png",
   jar: "/template-icons/jar.svg",
   pros: "/template-icons/pros.png",
+  rw: "/template-icons/rw.svg",
   "ez-template": "/template-icons/ez.png",
 }
 
@@ -110,6 +111,7 @@ const templateLabels: Record<Template, string> = {
   vexcode: "VEXCode",
   jar: "JAR",
   pros: "PROS",
+  rw: "RW",
   "ez-template": "EZ",
 }
 
@@ -148,7 +150,7 @@ function ProgramsPage() {
             Create program
           </h2>
           <div className="grid grid-cols-2 gap-3 pb-1 sm:grid-cols-5">
-            {(["vexcode", "jar", "pros", "ez-template"] as const).map(
+            {(["vexcode", "jar", "pros", "ez-template", "rw"] as const).map(
               (template) =>
                 workspace ? (
                   <NewProgramDialog

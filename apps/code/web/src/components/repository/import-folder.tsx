@@ -41,6 +41,7 @@ type Template = Doc<"programs">["template"]
 const templates = [
   { value: "vexcode", label: "VEXcode" },
   { value: "pros", label: "PROS" },
+  { value: "rw", label: "RW" },
   { value: "ez-template", label: "EZ-Template" },
   { value: "jar", label: "JAR" },
 ]
