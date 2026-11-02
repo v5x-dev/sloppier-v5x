@@ -1,19 +1,22 @@
 {
   "expo": {
-    "name": "v5x Code",
-    "slug": "v5x-code",
+    "name": "code (by v5x)",
+    "slug": "code-v5x",
     "version": "0.0.1",
-    "scheme": "v5x-code",
+    "scheme": "code-v5x",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "dev.v5x.code"
+      "bundleIdentifier": "com.v5x.code"
     },
     "android": {
-      "package": "dev.v5x.code"
+      "package": "com.v5x.code"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
     "experiments": {
       "typedRoutes": true
     }
