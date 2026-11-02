@@ -149,7 +149,7 @@ function ProgramsPage() {
           <h2 id="starters-heading" className="text-base font-semibold">
             Create program
           </h2>
-          <div className="grid grid-cols-2 gap-3 pb-1 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 pb-1 sm:grid-cols-6">
             {(["vexcode", "jar", "pros", "ez-template", "rw"] as const).map(
               (template) =>
                 workspace ? (
@@ -432,7 +432,7 @@ function ProgramList({
           </EmptyMedia>
           <EmptyTitle>No programs yet</EmptyTitle>
           <EmptyDescription>
-            Start from a VEXCode, JAR, PROS, or EZ starter.
+            Start from a VEXCode, JAR, PROS, EZ, or RW starter.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
