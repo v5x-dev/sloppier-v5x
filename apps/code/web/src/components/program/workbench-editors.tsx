@@ -256,7 +256,10 @@ export function WorkbenchEditors({
           <Fragment key={firstGroupId(child)}>
             {index > 0 && renderSash(node, path, index - 1)}
             <div
-              className="flex min-h-0 min-w-0"
+              className={cn(
+                "flex min-h-0 min-w-0",
+                node.axis === "column" && index > 0 && "pt-2"
+              )}
               style={{ flex: `0 0 ${child.size * 100}%` }}
             >
               {renderNode(child, [...path, index])}
