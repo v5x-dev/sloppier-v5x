@@ -426,3 +426,27 @@ it("includes PROS delays in source order", () => {
       .map((point) => point.source?.line)
   ).toEqual([3, 5])
 })
+
+it("records mechanism actions at the current pose with their source", () => {
+  const [route] = parse(`void red() {
+    intake.move(127);
+    chassis.pid_drive_set(12, 100);
+    clamp.set_value(true);
+    chassis.pid_wait();
+  }`)
+  expect(route.actions).toEqual([
+    {
+      x: 0,
+      y: 0,
+      command: "intake.move(127)",
+      source: { file: "src/autons.cpp", line: 2 },
+    },
+    {
+      x: 0,
+      y: 12,
+      command: "clamp.set_value(true)",
+      source: { file: "src/autons.cpp", line: 4 },
+    },
+  ])
+  expect(route.points.at(-1)).toMatchObject({ x: 0, y: 12 })
+})

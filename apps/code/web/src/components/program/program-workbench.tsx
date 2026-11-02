@@ -472,6 +472,15 @@ export function Workbench({
                   paths={paths}
                   drafts={source}
                   cursor={cursor?.path === activePath ? cursor : null}
+                  onSelectSource={(path, line) => {
+                    setDiagnosticTarget((current) => ({
+                      path,
+                      line,
+                      column: 1,
+                      request: (current?.request ?? 0) + 1,
+                    }))
+                    openFile(path)
+                  }}
                 />
               </Suspense>
             )}

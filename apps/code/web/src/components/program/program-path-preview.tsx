@@ -15,6 +15,11 @@ import type { Id } from "@v5x/backend/dataModel"
 import { Button } from "@v5x/ui/components/button"
 import { Input } from "@v5x/ui/components/input"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@v5x/ui/components/tooltip"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -72,8 +77,10 @@ export function ProgramPathPreview({
   paths,
   drafts,
   cursor,
+  onSelectSource,
 }: {
   cursor: { path: string; line: number } | null
+  onSelectSource: (path: string, line: number) => void
   programId: Id<"programs">
   revision?: string
   template: AutonTemplate
@@ -238,6 +245,10 @@ export function ProgramPathPreview({
     return () => cancelAnimationFrame(frame)
   }, [open, route])
   const robot = route && pathPoseAt(route.points, elapsed)
+  const sourceText = (source: { file: string; line: number }) =>
+    (drafts.getDrafts().get(source.file) ?? files?.get(source.file))
+      ?.split("\n")
+      [source.line - 1]?.trim()
   const segments: string[][] = []
   for (const point of route?.points ?? []) {
     if (point.start || !segments.length) segments.push([])
@@ -486,6 +497,27 @@ export function ProgramPathPreview({
                         strokeLinejoin="round"
                       />
                     ))}
+                    {route.points.map((point, index) => {
+                      const previous = route.points[index - 1]
+                      if (index === 0 || point.start || !point.source)
+                        return null
+                      const source = point.source
+                      return (
+                        <line
+                          key={`hit-${index}`}
+                          x1={project(previous.x, previous.y).split(",")[0]}
+                          y1={project(previous.x, previous.y).split(",")[1]}
+                          x2={project(point.x, point.y).split(",")[0]}
+                          y2={project(point.x, point.y).split(",")[1]}
+                          stroke="transparent"
+                          strokeWidth="3"
+                          className="cursor-pointer"
+                          onClick={() =>
+                            onSelectSource(source.file, source.line)
+                          }
+                        />
+                      )
+                    })}
                     {route.points.map(
                       (point, index) =>
                         !point.interpolated && (
@@ -572,6 +604,96 @@ export function ProgramPathPreview({
                         )
                     )}
                   </svg>
+                  {route.points.map((point, index) => {
+                    if (point.interpolated || !point.source) return null
+                    const source = point.source
+                    const overlap = route.points
+                      .slice(0, index)
+                      .filter(
+                        (item) =>
+                          !item.interpolated &&
+                          item.source &&
+                          item.x === point.x &&
+                          item.y === point.y
+                      ).length
+                    return (
+                      <Tooltip key={`step-${index}`}>
+                        <TooltipTrigger
+                          delay={200}
+                          render={
+                            <button
+                              type="button"
+                              aria-label={`Open step ${index} in ${source.file} at line ${source.line}`}
+                              className={cn(
+                                "absolute z-10 size-4 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-ring",
+                                overlap > 0 &&
+                                  "border-2 border-background bg-primary"
+                              )}
+                              style={{
+                                left: `calc(${50 + (point.x / extent) * 100}% - ${overlap * 16}px)`,
+                                top: `${50 - (point.y / extent) * 100}%`,
+                              }}
+                              onClick={() =>
+                                onSelectSource(source.file, source.line)
+                              }
+                            />
+                          }
+                        />
+                        <TooltipContent className="flex-col items-start">
+                          <span>
+                            {sourceText(source) ||
+                              (point.wait ? "Wait" : "Motion")}
+                          </span>
+                          <span>
+                            ({point.x.toFixed(1)}, {point.y.toFixed(1)}) in ·{" "}
+                            {point.heading.toFixed(0)}°
+                          </span>
+                          <span>
+                            {source.file}:{source.line}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  })}
+                  {route.actions.map((action, index) => {
+                    const atPose = route.actions
+                      .slice(0, index)
+                      .filter(
+                        (item) => item.x === action.x && item.y === action.y
+                      ).length
+                    return (
+                      <Tooltip key={`action-${index}`}>
+                        <TooltipTrigger
+                          delay={200}
+                          render={
+                            <button
+                              type="button"
+                              aria-label={`Open action ${action.command}`}
+                              className="absolute z-20 flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-sm border border-background bg-chart-4 text-[10px] text-background focus-visible:ring-2 focus-visible:ring-ring"
+                              style={{
+                                left: `calc(${50 + (action.x / extent) * 100}% + ${(atPose % 3) * 16 + 12}px)`,
+                                top: `calc(${50 - (action.y / extent) * 100}% - ${Math.floor(atPose / 3) * 16 + 12}px)`,
+                              }}
+                              onClick={() =>
+                                onSelectSource(
+                                  action.source.file,
+                                  action.source.line
+                                )
+                              }
+                            >
+                              •
+                            </button>
+                          }
+                        />
+                        <TooltipContent className="flex-col items-start">
+                          <span>{action.command}</span>
+                          <span>
+                            {action.source.file}:{action.source.line}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  })}
                 </div>
                 {imageError && (
                   <p className="text-xs text-destructive">
