@@ -123,6 +123,7 @@ function ProgramBootShape() {
           <Button
             variant="ghost"
             size="icon-sm"
+            data-cuelume-navigate
             render={<Link to="/" aria-label="All programs" />}
             nativeButton={false}
           >

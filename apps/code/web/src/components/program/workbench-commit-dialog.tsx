@@ -69,10 +69,18 @@ export function CommitDialog({
             onChange={(event) => setMessage(event.target.value)}
           />
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" type="button" />}>
+            <DialogClose
+              render={
+                <Button variant="outline" type="button" data-cuelume-close />
+              }
+            >
               Cancel
             </DialogClose>
-            <Button type="submit" disabled={pending || !message.trim()}>
+            <Button
+              type="submit"
+              data-cuelume-tap
+              disabled={pending || !message.trim()}
+            >
               {pending && <Spinner data-icon="inline-start" />}
               Commit
             </Button>

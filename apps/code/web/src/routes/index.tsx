@@ -154,6 +154,7 @@ function ProgramsPage() {
             >
               <Toggle
                 variant="outline"
+                data-cuelume-toggle
                 className="h-8 w-8 shrink-0 px-0"
                 aria-label="Show archived programs"
                 pressed={archived}
@@ -431,6 +432,7 @@ function ProgramList({
               <Link
                 to="/programs/$programId"
                 params={{ programId: program._id }}
+                data-cuelume-navigate
                 className="min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
               >
                 {program.name}
@@ -486,6 +488,7 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
               variant="ghost"
               size="icon-sm"
               aria-label={`Actions for ${program.name}`}
+              data-cuelume-open
               disabled={pending}
             />
           }
@@ -636,7 +639,7 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
         setOpen(next)
       }}
     >
-      <DialogTrigger render={<Button size="sm" />}>
+      <DialogTrigger render={<Button size="sm" data-cuelume-open />}>
         <PlusIcon data-icon="inline-start" />
         New program
       </DialogTrigger>
@@ -678,11 +681,16 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
             onChange={(event) => setName(event.target.value)}
           />
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" type="button" />}>
+            <DialogClose
+              render={
+                <Button variant="outline" type="button" data-cuelume-close />
+              }
+            >
               Cancel
             </DialogClose>
             <Button
               type="submit"
+              data-cuelume-tap
               disabled={pending || (!name.trim() && !generatedName)}
             >
               {pending && <Spinner data-icon="inline-start" />}

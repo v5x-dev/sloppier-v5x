@@ -59,6 +59,7 @@ import { Spinner } from "@v5x/ui/components/spinner"
 import { Switch } from "@v5x/ui/components/switch"
 import { toast } from "@v5x/ui/components/toast"
 import { cn } from "@v5x/ui/lib/utils"
+import { play } from "cuelume"
 import { errorMessage } from "@/lib/errors"
 import {
   BRAIN_SLOT_COUNT,
@@ -427,6 +428,7 @@ export function ProgramUpload({
           if (mounted.current) {
             setSuccess(true)
             setMessage(resultMessage)
+            play("success")
           }
           if (fromKeyboard) toast.add({ type: "success", title: resultMessage })
           return
@@ -483,9 +485,12 @@ export function ProgramUpload({
           setSuccess(true)
           setMessage(uploaded)
           setProgress(null)
+          play("success")
         }
         if (fromKeyboard) toast.add({ type: "success", title: uploaded })
       } catch (err) {
+        // Unmounting aborts the upload too; that is not a failure to report.
+        if (mounted.current) play("error")
         if (!preparing) await disconnect().catch(() => {})
         throw err
       } finally {
@@ -732,6 +737,7 @@ export function ProgramUpload({
                 size="icon-sm"
                 aria-label="Upload to V5 Brain"
                 aria-busy={busy}
+                data-cuelume-open
               />
             }
           >
@@ -912,6 +918,7 @@ export function ProgramUpload({
               </div>
               <Button
                 disabled={busy || !paired}
+                data-cuelume-tap
                 onClick={() => upload()}
                 className="w-full"
               >

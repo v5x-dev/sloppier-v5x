@@ -87,12 +87,17 @@ export function DuplicateProgramDialog({
             <Button
               type="button"
               variant="outline"
+              data-cuelume-close
               disabled={pending}
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending || !name.trim()}>
+            <Button
+              type="submit"
+              data-cuelume-tap
+              disabled={pending || !name.trim()}
+            >
               {pending ? "Creating…" : "Create program"}
             </Button>
           </DialogFooter>
