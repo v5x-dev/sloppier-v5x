@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -53,6 +54,10 @@ export function CommitDialog({
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Commit changes</DialogTitle>
+            <DialogDescription>
+              Your edits are already saved live. A commit records this version
+              in the Program&apos;s history.
+            </DialogDescription>
           </DialogHeader>
           <ul className="flex max-h-40 flex-col gap-1 overflow-auto text-xs text-muted-foreground">
             {paths.map((path) => (

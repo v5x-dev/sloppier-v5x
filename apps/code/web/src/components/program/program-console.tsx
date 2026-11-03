@@ -118,11 +118,11 @@ export function ProgramConsole({
   return (
     <>
       {connection && (
-        <ActionTooltip label="Robot console">
+        <ActionTooltip label="Brain console">
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="Open robot console"
+            aria-label="Open Brain console"
             onClick={() => setOpen(true)}
           >
             <TerminalIcon />
@@ -138,7 +138,7 @@ export function ProgramConsole({
           className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-xl"
         >
           <SheetHeader className="border-b pr-12">
-            <SheetTitle>Robot console</SheetTitle>
+            <SheetTitle>Brain console</SheetTitle>
             <SheetDescription>
               {connection
                 ? `${connection.type === "bluetooth" ? "Bluetooth" : "USB"} connected`
@@ -240,7 +240,7 @@ export function ProgramConsole({
               <pre
                 ref={log}
                 role="log"
-                aria-label="Robot output"
+                aria-label="Brain output"
                 aria-live="off"
                 className="min-h-0 flex-1 overflow-auto px-4 pb-4 font-mono text-xs break-words whitespace-pre-wrap"
               >

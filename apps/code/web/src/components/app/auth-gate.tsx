@@ -1,5 +1,5 @@
 import { useAuth } from "@/lib/auth"
-import { Spinner } from "@v5x/ui/components/spinner"
+import { SigningIn } from "@/components/app/signing-in"
 import { api } from "@v5x/backend/api"
 import { toast } from "@v5x/ui/components/toast"
 import { useConvexAuth, useMutation } from "convex/react"
@@ -37,11 +37,7 @@ export function AuthGate({
   }, [ensurePersonalWorkspace, isAuthenticated])
 
   if ((!renderWhileLoading && isLoading) || (!isLoading && !isAuthenticated)) {
-    return (
-      <div className="flex min-h-svh items-center justify-center">
-        <Spinner className="size-5 text-muted-foreground" />
-      </div>
-    )
+    return <SigningIn />
   }
 
   return children

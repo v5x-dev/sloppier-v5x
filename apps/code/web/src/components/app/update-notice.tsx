@@ -90,7 +90,8 @@ export function UpdateNotice() {
   return (
     <ToastProvider toastManager={updates}>
       <ToastPortal>
-        <ToastViewport>
+        {/* Bottom center, so the notice never covers the account menu or the tab strip. */}
+        <ToastViewport className="top-auto bottom-4 sm:right-auto sm:left-1/2 sm:-translate-x-1/2">
           <UpdateToast />
         </ToastViewport>
       </ToastPortal>

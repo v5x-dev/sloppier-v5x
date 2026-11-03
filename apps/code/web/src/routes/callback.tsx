@@ -5,11 +5,12 @@ import { Button } from "@v5x/ui/components/button"
 import {
   Empty,
   EmptyContent,
+  EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@v5x/ui/components/empty"
-import { Spinner } from "@v5x/ui/components/spinner"
+import { SigningIn } from "@/components/app/signing-in"
 
 // AuthKit exchanges the `code` param on load, then `onRedirectCallback` navigates away.
 export const Route = createFileRoute("/callback")({
@@ -20,11 +21,7 @@ function Callback() {
   const { isLoading, user } = useAuth()
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-svh items-center justify-center">
-        <Spinner className="size-5 text-muted-foreground" />
-      </div>
-    )
+    return <SigningIn />
   }
 
   if (user) {
@@ -38,6 +35,10 @@ function Callback() {
           <WarningCircleIcon />
         </EmptyMedia>
         <EmptyTitle>Sign-in didn&apos;t finish</EmptyTitle>
+        <EmptyDescription>
+          We couldn&apos;t finish signing you in. Try again. If it keeps
+          happening, make sure you&apos;re using the account your coach invited.
+        </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button render={<Link to="/login" />} nativeButton={false}>

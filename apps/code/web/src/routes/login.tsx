@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useAuth } from "@/lib/auth"
-import { Spinner } from "@v5x/ui/components/spinner"
+import { SigningIn } from "@/components/app/signing-in"
 import { useEffect } from "react"
 
 // WorkOS "Sign-in endpoint": starts AuthKit sign-in, forwarding any login hint.
@@ -20,9 +20,5 @@ function Login() {
     if (!isLoading) void signIn({ loginHint })
   }, [isLoading, loginHint, signIn])
 
-  return (
-    <div className="flex min-h-svh items-center justify-center">
-      <Spinner className="size-5 text-muted-foreground" />
-    </div>
-  )
+  return <SigningIn />
 }

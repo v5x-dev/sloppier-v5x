@@ -17,6 +17,7 @@ import { Editor, type EditorFactory } from "@pierre/diffs/edit"
 import { EditProvider, File } from "@pierre/diffs/react"
 import { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
+import type { LiveSaveStatus } from "@/lib/live-save-status"
 import {
   joinLiveFile,
   type LiveFileView,
@@ -52,6 +53,7 @@ type Props = {
   onChange: (text: string) => void
   onPeopleChange: (people: LivePerson[]) => void
   onSyncChange: (synced: boolean) => void
+  onLiveStatus: (status: LiveSaveStatus) => void
   onReplacementAction: (path: string, action: ReplacementAction | null) => void
   onCursorLine: (path: string, line: number) => void
 }
@@ -66,6 +68,7 @@ export function LiveFileEditor({
   onFormatChange,
   onChange,
   onSyncChange,
+  onLiveStatus,
   onPeopleChange,
   onReplacementAction,
   onCursorLine,
@@ -77,10 +80,21 @@ export function LiveFileEditor({
   const languageRef = useRef(language)
   languageRef.current = language
   const host = useRef<HTMLDivElement>(null)
-  const callbacks = useRef({ onChange, onSyncChange, onPeopleChange })
-  callbacks.current = { onChange, onSyncChange, onPeopleChange }
+  const callbacks = useRef({
+    onChange,
+    onSyncChange,
+    onPeopleChange,
+    onLiveStatus,
+  })
+  callbacks.current = { onChange, onSyncChange, onPeopleChange, onLiveStatus }
   const [ready, setReady] = useState(false)
-  const [status, setStatus] = useState("Opening live document…")
+  const [status, setStatus] = useState<LiveSaveStatus>("opening")
+  const shownStatus: LiveSaveStatus = connection.isWebSocketConnected
+    ? status
+    : "offline"
+  useEffect(() => {
+    callbacks.current.onLiveStatus(shownStatus)
+  }, [shownStatus])
   const [error, setError] = useState<string | null>(null)
   const retry = useRef(() => {})
   const joinRef = useRef<ReturnType<typeof joinLiveFile> | null>(null)
@@ -169,11 +183,6 @@ export function LiveFileEditor({
 
   return (
     <div className="flex min-h-full flex-col">
-      <span className="sr-only" role="status" aria-live="polite">
-        {!connection.isWebSocketConnected
-          ? "Offline · changes kept on this device"
-          : status}
-      </span>
       {error && (
         <div
           role="alert"

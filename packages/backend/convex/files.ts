@@ -173,6 +173,9 @@ export const applyCommitRestore = internalMutation({
         })
       )
     )
-    await ctx.db.patch(programId, { repositoryHeadSha: headSha })
+    await ctx.db.patch(programId, {
+      repositoryHeadSha: headSha,
+      lastActivityAt: now,
+    })
   },
 })

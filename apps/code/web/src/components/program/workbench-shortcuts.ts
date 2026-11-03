@@ -13,8 +13,9 @@ export const hotkeys = {
   formatDocument: "Alt+Shift+F",
   splitEditor: "Mod+[Backslash]",
   focusNextGroup: "Mod+Shift+[Backslash]",
-  focusGroup: "Mod+1",
-  focusLastTab: "Mod+9",
+  // Ctrl/Cmd+1 to 9 are reserved by browsers for switching tabs, so these are chords.
+  focusGroup: ["Mod+K", "1"],
+  focusLastTab: ["Mod+K", "9"],
   previousTab: "Mod+Alt+ArrowLeft",
   nextTab: "Mod+Alt+ArrowRight",
   closeTab: ["Mod+K", "W"],

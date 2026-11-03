@@ -105,6 +105,8 @@ export default defineSchema({
     ),
     repositoryProvisioningJob: v.optional(v.id("_scheduled_functions")),
     repositoryHeadSha: v.optional(v.string()),
+    /** Set when a commit moves the head. Dashboards fall back to createdAt. */
+    lastActivityAt: v.optional(v.number()),
     repositoryError: v.optional(v.string()),
     createdBy: v.string(),
     createdAt: v.number(),

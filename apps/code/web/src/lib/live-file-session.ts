@@ -23,6 +23,7 @@ import {
   source,
 } from "./live-document"
 import { errorMessage } from "./errors"
+import type { LiveSaveStatus } from "./live-save-status"
 
 export type LivePerson = {
   id: string
@@ -43,7 +44,7 @@ export type LiveFileView = {
   onChange: (text: string) => void
   onSyncChange: (synced: boolean) => void
   onPeopleChange: (people: LivePerson[]) => void
-  onStatus: (status: string) => void
+  onStatus: (status: LiveSaveStatus) => void
   onError: (error: string | null) => void
   onReplaced: () => void
   isFocused: () => boolean
@@ -152,7 +153,7 @@ export function createLiveFileSession({
     onPeopleChange: (people: LivePerson[]) => {
       for (const member of members) member.view.onPeopleChange(people)
     },
-    onStatus: (status: string) => {
+    onStatus: (status: LiveSaveStatus) => {
       for (const member of members) member.view.onStatus(status)
     },
     onError: (error: string | null) => {
@@ -227,11 +228,7 @@ export function createLiveFileSession({
       replaced || !caughtUp || !cacheReady || sending || hasChanges(doc, server)
     callbacks.onSyncChange(!dirty)
     callbacks.onStatus(
-      dirty
-        ? "Saving…"
-        : storagePending.size
-          ? "Saved live · backing up…"
-          : "All changes saved"
+      dirty ? "saving" : storagePending.size ? "backing-up" : "saved"
     )
   }
   function watchStorage() {

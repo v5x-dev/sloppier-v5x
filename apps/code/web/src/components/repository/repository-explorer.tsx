@@ -418,7 +418,7 @@ export function RepositoryExplorer(props: Props) {
       reserved.push(path)
       if (file.size > 512 * 1024)
         throw new Error(
-          `${file.name} exceeds the repository's 512 KiB operation limit.`
+          `${file.name} exceeds the 512 KiB limit for one change.`
         )
       return { file, path }
     })
@@ -753,12 +753,13 @@ export function RepositoryExplorer(props: Props) {
                       ? "New folder"
                       : "New file"}
               </DialogTitle>
-              {prompt?.kind === "delete" && (
-                <DialogDescription>
-                  This deletes the selected items and their contents from the
-                  repository. Unsaved edits in these files will be discarded.
-                </DialogDescription>
-              )}
+              <DialogDescription>
+                {prompt?.kind === "delete"
+                  ? "This deletes the selected items and their contents. Unsaved edits in these files will be discarded."
+                  : prompt?.kind === "rename"
+                    ? "Renaming records a version in history now."
+                    : "Creates it now and records a version in history. Use / to create nested paths."}
+              </DialogDescription>
             </DialogHeader>
             {prompt?.kind === "delete" ? (
               <ul className="max-h-48 overflow-auto text-sm">

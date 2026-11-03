@@ -6,6 +6,7 @@ import {
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
+import type { LiveSaveStatus } from "@/lib/live-save-status"
 import { File } from "@pierre/diffs/react"
 import type { Id } from "@v5x/backend/dataModel"
 
@@ -21,6 +22,7 @@ export function FileEditor({
   loaded,
   active,
   onSyncChange,
+  onLiveStatus,
   onPeopleChange,
   scrollPositions,
   onChange,
@@ -36,6 +38,7 @@ export function FileEditor({
   diagnosticTarget?: DiagnosticTarget
   active: boolean
   onSyncChange: (synced: boolean) => void
+  onLiveStatus: (status: LiveSaveStatus) => void
   onPeopleChange: (people: LivePerson[]) => void
   scrollPositions: Map<string, number>
   onChange: (text: string) => void
@@ -84,6 +87,7 @@ export function FileEditor({
           diagnosticTarget={diagnosticTarget}
           onChange={onChange}
           onSyncChange={onSyncChange}
+          onLiveStatus={onLiveStatus}
           onPeopleChange={onPeopleChange}
           onReplacementAction={onReplacementAction}
           onCursorLine={onCursorLine}

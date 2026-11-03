@@ -31,7 +31,7 @@ test("uploads through the real workbench, reuses the installed revision, and rep
     .getByRole("button", { name: "Upload to slot 1", exact: true })
     .click()
   await expect(
-    page.getByText("Uploaded to slot 1 and started.", { exact: true })
+    page.getByText("Uploaded to slot 1 and started.", { exact: true }).first()
   ).toBeVisible({ timeout: 90_000 })
   const before = await (await request.get(`${builder}/__control`)).json()
   expect(before.builds).toBeGreaterThan(0)
@@ -39,7 +39,7 @@ test("uploads through the real workbench, reuses the installed revision, and rep
     .getByRole("button", { name: "Upload to slot 1", exact: true })
     .click()
   await expect(
-    page.getByText("Slot 1 already has this version.", { exact: true })
+    page.getByText("Slot 1 already has this version.", { exact: true }).first()
   ).toBeVisible()
   expect(
     (await (await request.get(`${builder}/__control`)).json()).builds
