@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@v5x/ui/components/dialog"
-import { Field, FieldLabel } from "@v5x/ui/components/field"
 import { Input } from "@v5x/ui/components/input"
 import { errorMessage } from "@/lib/errors"
 
@@ -64,25 +63,21 @@ export function DuplicateProgramDialog({
         >
           <DialogHeader>
             <DialogTitle>Duplicate program</DialogTitle>
-            <DialogDescription>
-              {sha
-                ? `Create a new program from commit ${sha.slice(0, 7)}.`
-                : "Create a new program from the latest source commit."}{" "}
-              Uncommitted edits are not included. The copy stays in this
-              workspace.
-            </DialogDescription>
+            {sha && (
+              <DialogDescription>
+                From commit {sha.slice(0, 7)}
+              </DialogDescription>
+            )}
           </DialogHeader>
-          <Field>
-            <FieldLabel htmlFor="duplicate-program-name">Name</FieldLabel>
-            <Input
-              id="duplicate-program-name"
-              autoFocus
-              maxLength={80}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              disabled={pending}
-            />
-          </Field>
+          <Input
+            id="duplicate-program-name"
+            aria-label="Name"
+            autoFocus
+            maxLength={80}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            disabled={pending}
+          />
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

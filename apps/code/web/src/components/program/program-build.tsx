@@ -367,15 +367,6 @@ export function ProgramBuild({
                           ? "No source diagnostics found"
                           : "Ready when you are"}
                   </p>
-                  <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                    {building
-                      ? "Errors and warnings appear here as the compiler reports them."
-                      : succeeded
-                        ? "The compiler reported no errors or warnings."
-                        : revision
-                          ? "Check Build output for toolchain, linker, or other build messages."
-                          : "Upload your Program to see errors and warnings grouped by file."}
-                  </p>
                 </div>
               )}
             </TabsContent>

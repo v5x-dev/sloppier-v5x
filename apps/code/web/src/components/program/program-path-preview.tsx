@@ -56,15 +56,9 @@ const fields = ["H2H", "Skills"].map((setup) => ({
 const extent = 3690 / 25.4
 const project = (x: number, y: number) =>
   `${50 + (x / extent) * 100},${50 - (y / extent) * 100}`
-const templateNames: Record<AutonTemplate, { label: string; hint: string }> = {
-  "ez-template": {
-    label: "EZ-Template",
-    hint: "Add pid_drive_set or pid_odom_set calls inside a void function.",
-  },
-  jar: {
-    label: "JAR-Template",
-    hint: "Add drive_distance or drive_to_point calls inside a void function.",
-  },
+const templateNames: Record<AutonTemplate, string> = {
+  "ez-template": "EZ-Template",
+  jar: "JAR-Template",
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -468,8 +462,7 @@ export function ProgramPathPreview({
               </p>
             ) : files && !route ? (
               <p className="text-xs text-muted-foreground">
-                No {templateNames[template].label} motion routines found.{" "}
-                {templateNames[template].hint}
+                No {templateNames[template]} motion routines found.
               </p>
             ) : route ? (
               <>

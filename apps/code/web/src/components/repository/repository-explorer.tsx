@@ -19,7 +19,6 @@ import {
   DialogTitle,
 } from "@v5x/ui/components/dialog"
 import { Input } from "@v5x/ui/components/input"
-import { Field, FieldLabel } from "@v5x/ui/components/field"
 import { Spinner } from "@v5x/ui/components/spinner"
 import { toast } from "@v5x/ui/components/toast"
 import {
@@ -732,11 +731,12 @@ export function RepositoryExplorer(props: Props) {
                       ? "New folder"
                       : "New file"}
               </DialogTitle>
-              <DialogDescription>
-                {prompt?.kind === "delete"
-                  ? "This deletes the selected items and their contents from the repository. Unsaved edits in these files will be discarded."
-                  : "Changes are saved to the repository immediately. Use / to create nested paths."}
-              </DialogDescription>
+              {prompt?.kind === "delete" && (
+                <DialogDescription>
+                  This deletes the selected items and their contents from the
+                  repository. Unsaved edits in these files will be discarded.
+                </DialogDescription>
+              )}
             </DialogHeader>
             {prompt?.kind === "delete" ? (
               <ul className="max-h-48 overflow-auto text-sm">
@@ -745,19 +745,20 @@ export function RepositoryExplorer(props: Props) {
                 ))}
               </ul>
             ) : (
-              <Field>
-                <FieldLabel htmlFor="explorer-name">
-                  {prompt?.kind === "rename" ? "New name or path" : "Name"}
-                </FieldLabel>
-                <Input
-                  id="explorer-name"
-                  value={value}
-                  onChange={(event) => setValue(event.target.value)}
-                  required
-                  autoFocus
-                  disabled={busy}
-                />
-              </Field>
+              <Input
+                id="explorer-name"
+                aria-label={
+                  prompt?.kind === "rename" ? "New name or path" : "Name"
+                }
+                placeholder={
+                  prompt?.kind === "rename" ? "New name or path" : "Name"
+                }
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                required
+                autoFocus
+                disabled={busy}
+              />
             )}
             {promptError && (
               <p role="alert" className="text-sm text-destructive">

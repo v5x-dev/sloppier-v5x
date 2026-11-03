@@ -230,9 +230,6 @@ export function WorkbenchEditors({
                   <FileDashedIcon />
                 </EmptyMedia>
                 <EmptyTitle>Pick a file</EmptyTitle>
-                <EmptyDescription>
-                  Choose a file from the tree to start editing.
-                </EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

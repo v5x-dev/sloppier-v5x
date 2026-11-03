@@ -193,11 +193,7 @@ function ProvisioningState({ program }: { program: Doc<"programs"> }) {
         <EmptyMedia variant="icon">
           <Spinner />
         </EmptyMedia>
-        <EmptyTitle>Setting up the repository</EmptyTitle>
-        <EmptyDescription>
-          Copying the starter files into Code Storage. This page opens the
-          editor when it finishes.
-        </EmptyDescription>
+        <EmptyTitle>Setting up program</EmptyTitle>
       </EmptyHeader>
       <EmptyContent>
         <Button variant="outline" render={<Link to="/" />} nativeButton={false}>
