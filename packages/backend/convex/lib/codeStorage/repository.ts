@@ -84,12 +84,14 @@ export async function commitChanges(
   requireAbsentPaths: string[] = []
 ) {
   for (let attempt = 0; attempt < MAX_COMMIT_ATTEMPTS; attempt++) {
-    const branches = await repo.listBranches({ limit: 100 })
+    const [branches, existing] = await Promise.all([
+      repo.listBranches({ limit: 100 }),
+      requireAbsentPaths.length > 0 ? listAllPaths(repo) : undefined,
+    ])
     const headSha = branches.branches.find(
       (branch) => branch.name === repo.defaultBranch
     )?.headSha
-    if (requireAbsentPaths.length > 0) {
-      const existing = await listAllPaths(repo)
+    if (existing) {
       for (const path of requireAbsentPaths) {
         if (
           [...existing].some(

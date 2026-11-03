@@ -121,8 +121,11 @@ export async function prepareUploadBuild(options: {
   }
   onStage("Downloading build binaries…")
   const artifactId = current.artifactId
-  const response = await request("/artifact", undefined, signal)
-  const { readBuildBinaries } = await import("./build-binaries")
+  // The download and the binaries parser chunk load independently.
+  const [response, { readBuildBinaries }] = await Promise.all([
+    request("/artifact", undefined, signal),
+    import("./build-binaries"),
+  ])
   signal.throwIfAborted()
   const files = readBuildBinaries(new Uint8Array(await response.arrayBuffer()))
   current = await status()

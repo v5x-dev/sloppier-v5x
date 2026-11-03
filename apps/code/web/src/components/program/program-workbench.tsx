@@ -193,6 +193,7 @@ export function Workbench({
             <Button
               variant="ghost"
               size="icon-sm"
+              data-cuelume-navigate
               render={<Link to="/" aria-label="All programs" />}
               nativeButton={false}
             >
@@ -296,6 +297,7 @@ export function Workbench({
                   size="icon-sm"
                   aria-label="Program symbols"
                   aria-pressed={showSymbols}
+                  data-cuelume-toggle
                   onClick={() => setShowSymbols((value) => !value)}
                 >
                   <ListMagnifyingGlassIcon />
@@ -363,6 +365,7 @@ export function Workbench({
                       variant="ghost"
                       size="icon-sm"
                       aria-label="Format document"
+                      data-cuelume-tap
                       onClick={() => formatManually(activePath)}
                     >
                       <TextAlignLeftIcon />
@@ -385,6 +388,7 @@ export function Workbench({
                       variant="ghost"
                       size="icon-sm"
                       aria-label={commitLabel}
+                      data-cuelume-open
                       onClick={() => setCommitOpen(true)}
                     >
                       <GitCommitIcon />

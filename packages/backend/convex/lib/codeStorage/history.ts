@@ -5,6 +5,7 @@ import { action } from "../../_generated/server"
 import { ConvexError, v } from "convex/values"
 import { restoreUpdate, visibleHistoryPath } from "../history"
 import { replayLiveDocument, LiveReplayError } from "../liveReplay"
+import { mapWithConcurrency } from "../concurrency"
 import { validateRepositoryPath } from "../paths"
 import {
   requireAuthorizedProgram,
@@ -62,26 +63,23 @@ export function historyActions() {
         author: string
         date: string
       }> = []
-      for (let index = 0; index < page.commits.length; index += 5) {
-        const batch = page.commits.slice(index, index + 5)
-        const diffs = await Promise.all(
-          batch.map((commit) => repo.getCommitDiff({ sha: commit.sha }))
-        )
-        batch.forEach((commit, offset) => {
-          const diff = diffs[offset]
-          if (
-            [...diff.files, ...diff.filteredFiles].some((file) =>
-              visibleHistoryPath(file.path)
-            )
+      const diffs = await mapWithConcurrency(page.commits, 5, (commit) =>
+        repo.getCommitDiff({ sha: commit.sha })
+      )
+      page.commits.forEach((commit, index) => {
+        const diff = diffs[index]
+        if (
+          [...diff.files, ...diff.filteredFiles].some((file) =>
+            visibleHistoryPath(file.path)
           )
-            commits.push({
-              sha: commit.sha,
-              message: commit.message,
-              author: commit.authorName,
-              date: commit.date.toISOString(),
-            })
-        })
-      }
+        )
+          commits.push({
+            sha: commit.sha,
+            message: commit.message,
+            author: commit.authorName,
+            date: commit.date.toISOString(),
+          })
+      })
       return {
         commits,
         hasMore: page.hasMore,
@@ -187,12 +185,15 @@ export function historyActions() {
         id: program.repositoryId,
         defaultBranch: "main",
       })
-      const branches = await repo.listBranches({ limit: 100 })
+      // The branch head and the target commit's paths are independent reads.
+      const [branches, paths] = await Promise.all([
+        repo.listBranches({ limit: 100 }),
+        listAllPaths(repo, sha),
+      ])
       const headSha = branches.branches.find(
         (branch) => branch.name === "main"
       )?.headSha
       if (!headSha) throw new ConvexError("The program branch was not found.")
-      const paths = await listAllPaths(repo, sha)
       const result = await repo.restoreCommit({
         targetBranch: "main",
         targetCommitSha: sha,

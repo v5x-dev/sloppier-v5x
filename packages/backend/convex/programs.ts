@@ -235,27 +235,30 @@ export const markRepositoryReady = internalMutation({
       repositoryError: undefined,
     })
 
-    for (const path of files) {
-      const existing = await ctx.db
-        .query("files")
-        .withIndex("by_program_path", (q) =>
-          q.eq("programId", programId).eq("path", path)
-        )
-        .unique()
+    // Deduplicated paths make the concurrent lookups independent of each other.
+    await Promise.all(
+      [...new Set(files)].map(async (path) => {
+        const existing = await ctx.db
+          .query("files")
+          .withIndex("by_program_path", (q) =>
+            q.eq("programId", programId).eq("path", path)
+          )
+          .unique()
 
-      if (existing) {
-        await ctx.db.patch(existing._id, { updatedAt: now })
-      } else {
-        await ctx.db.insert("files", {
-          programId,
-          path,
-          origin: origin ?? "template",
-          createdBy: program.createdBy,
-          createdAt: now,
-          updatedAt: now,
-        })
-      }
-    }
+        if (existing) {
+          await ctx.db.patch(existing._id, { updatedAt: now })
+        } else {
+          await ctx.db.insert("files", {
+            programId,
+            path,
+            origin: origin ?? "template",
+            createdBy: program.createdBy,
+            createdAt: now,
+            updatedAt: now,
+          })
+        }
+      })
+    )
   },
 })
 

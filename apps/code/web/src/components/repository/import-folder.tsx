@@ -4,23 +4,17 @@ import { useMutation } from "convex/react"
 import { useNavigate } from "@tanstack/react-router"
 import { api } from "@v5x/backend/api"
 import type { Doc, Id } from "@v5x/backend/dataModel"
-import {
-  StarterTile,
-  starterTileClassName,
-  starterTileStyle,
-} from "@/components/program/starter-tile"
+import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { Button } from "@v5x/ui/components/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@v5x/ui/components/dialog"
 import { Input } from "@v5x/ui/components/input"
-import { Field, FieldLabel } from "@v5x/ui/components/field"
 import { Spinner } from "@v5x/ui/components/spinner"
 import {
   Select,
@@ -48,10 +42,8 @@ const templates = [
 
 export function ImportFolder({
   workspaceId,
-  tile = false,
 }: {
   workspaceId: Id<"workspaces">
-  tile?: boolean
 }) {
   const begin = useMutation(api.programs.beginFolderImport)
   const append = useMutation(api.programs.appendFolderImport)
@@ -61,7 +53,6 @@ export function ImportFolder({
   const [entries, setEntries] = useState<FolderFile[]>([])
   const [name, setName] = useState("")
   const [template, setTemplate] = useState<Template>("pros")
-  const [detected, setDetected] = useState<Template | null>(null)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const [uploaded, setUploaded] = useState(0)
@@ -89,29 +80,15 @@ export function ImportFolder({
         }
       }}
     >
-      <DialogTrigger
-        render={
-          <Button
-            className={tile ? starterTileClassName : undefined}
-            style={
-              tile ? starterTileStyle("var(--template-import)") : undefined
-            }
-            variant="outline"
-            size={tile ? "default" : "icon"}
-            aria-label="Import folder"
-            title="Import folder"
-          />
-        }
-      >
-        {tile ? (
-          <StarterTile
-            icon={<UploadSimpleIcon className="size-5 text-foreground" />}
-            label="Import"
-          />
-        ) : (
+      <ActionTooltip label="Import folder">
+        <DialogTrigger
+          render={
+            <Button variant="outline" size="icon" aria-label="Import folder" />
+          }
+        >
           <UploadSimpleIcon />
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      </ActionTooltip>
       <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-xl">
         <form
           className="flex flex-col gap-5"
@@ -151,84 +128,68 @@ export function ImportFolder({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Import a program folder</DialogTitle>
-            <DialogDescription>
-              Choose a folder from your computer. Your source files and folder
-              layout will become a new program.
-            </DialogDescription>
+            <DialogTitle>Import folder</DialogTitle>
           </DialogHeader>
-          <Field>
-            <FieldLabel htmlFor="program-folder">Program folder</FieldLabel>
-            <Input
-              key={open ? "open" : "closed"}
-              id="program-folder"
-              type="file"
-              multiple
-              disabled={busy}
-              ref={(node) => {
-                node?.setAttribute("webkitdirectory", "")
-              }}
-              onChange={(event) => {
-                setError("")
-                try {
-                  const files = Array.from(event.target.files ?? [])
-                  if (!files.length) return
-                  const folder = selectedFolder(files)
-                  setEntries(folder.entries)
-                  setName(folder.name)
-                  setDetected(folder.template)
-                  setTemplate(folder.template ?? "pros")
-                } catch (failure) {
-                  setEntries([])
-                  setError(errorMessage(failure))
-                }
-              }}
-            />
-          </Field>
+          <Input
+            key={open ? "open" : "closed"}
+            id="program-folder"
+            aria-label="Program folder"
+            type="file"
+            multiple
+            disabled={busy}
+            ref={(node) => {
+              node?.setAttribute("webkitdirectory", "")
+            }}
+            onChange={(event) => {
+              setError("")
+              try {
+                const files = Array.from(event.target.files ?? [])
+                if (!files.length) return
+                const folder = selectedFolder(files)
+                setEntries(folder.entries)
+                setName(folder.name)
+                setTemplate(folder.template ?? "pros")
+              } catch (failure) {
+                setEntries([])
+                setError(errorMessage(failure))
+              }
+            }}
+          />
           {entries.length > 0 && (
             <>
-              <Field>
-                <FieldLabel htmlFor="import-name">Program name</FieldLabel>
-                <Input
-                  id="import-name"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  required
-                  maxLength={80}
-                  disabled={busy}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="import-template">Program type</FieldLabel>
-                <Select
-                  value={template}
-                  onValueChange={(value) => {
-                    if (value) setTemplate(value)
-                  }}
-                  items={templates}
-                  disabled={busy}
+              <Input
+                id="import-name"
+                aria-label="Program name"
+                placeholder="Name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+                maxLength={80}
+                disabled={busy}
+              />
+              <Select
+                value={template}
+                onValueChange={(value) => {
+                  if (value) setTemplate(value)
+                }}
+                items={templates}
+                disabled={busy}
+              >
+                <SelectTrigger
+                  id="import-template"
+                  aria-label="Program type"
+                  className="w-full"
                 >
-                  <SelectTrigger id="import-template" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {detected
-                    ? "Detected from your folder. Change it if needed."
-                    : "Choose the program type so the correct toolchain is used."}
-                </p>
-              </Field>
-              <p className="text-xs text-muted-foreground">
-                SDK and firmware dependencies use the versions provided by the
-                Builder.
-              </p>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </>
           )}
           {plan && (
@@ -271,15 +232,10 @@ export function ImportFolder({
           {busy && (
             <p role="status" className="text-sm text-muted-foreground">
               {uploaded === plan?.included.length
-                ? "Creating Program…"
+                ? "Creating repository…"
                 : `Uploading ${uploaded} of ${plan?.included.length ?? 0} files…`}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Up to 1,000 files and 16 MiB total. Each file can be up to 384 KiB.
-            Git history, build output, local environment files, and managed
-            dependencies are excluded.
-          </p>
           <DialogFooter>
             <Button
               type="button"

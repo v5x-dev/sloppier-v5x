@@ -7,6 +7,7 @@ import {
   IMPORT_BATCH_BYTES,
   IMPORT_BATCH_FILES,
 } from "@v5x/backend/imports"
+import { mapWithConcurrency } from "@v5x/backend/concurrency"
 import type { Doc } from "@v5x/backend/dataModel"
 
 type Template = Doc<"programs">["template"]
@@ -63,23 +64,49 @@ export function planFolder(entries: FolderFile[], template: Template) {
   return { included, skipped, totalBytes }
 }
 
-export async function* folderBatches(entries: FolderFile[]) {
-  let batch: { path: string; contents: ArrayBuffer }[] = []
+// Groups use file sizes alone, so no file is read until its batch is needed.
+function groupFolderBatches(entries: FolderFile[]) {
+  const groups: FolderFile[][] = []
+  let group: FolderFile[] = []
   let bytes = 0
   for (const entry of entries) {
     if (entry.file.size > IMPORT_BATCH_BYTES)
       throw new Error(`${entry.path} exceeds the per-file import limit.`)
     if (
-      batch.length &&
+      group.length &&
       (bytes + entry.file.size > IMPORT_BATCH_BYTES ||
-        batch.length === IMPORT_BATCH_FILES)
+        group.length === IMPORT_BATCH_FILES)
     ) {
-      yield batch
-      batch = []
+      groups.push(group)
+      group = []
       bytes = 0
     }
-    batch.push({ path: entry.path, contents: await entry.file.arrayBuffer() })
+    group.push(entry)
     bytes += entry.file.size
   }
-  if (batch.length) yield batch
+  if (group.length) groups.push(group)
+  return groups
+}
+
+type FolderBatch = { path: string; contents: ArrayBuffer }[]
+
+function readFolderBatch(group: FolderFile[]): Promise<FolderBatch> {
+  return mapWithConcurrency(group, 4, async (entry) => ({
+    path: entry.path,
+    contents: await entry.file.arrayBuffer(),
+  }))
+}
+
+export async function* folderBatches(entries: FolderFile[]) {
+  const groups = groupFolderBatches(entries)
+  let next: Promise<FolderBatch> | undefined
+  for (let index = 0; index < groups.length; index++) {
+    const current = next ?? readFolderBatch(groups[index])
+    // Read the following batch while the caller uploads this one.
+    next =
+      index + 1 < groups.length ? readFolderBatch(groups[index + 1]) : undefined
+    // A read that fails before it is awaited must not surface as unhandled.
+    next?.catch(() => {})
+    yield await current
+  }
 }

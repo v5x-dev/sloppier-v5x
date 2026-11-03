@@ -14,7 +14,8 @@
     "./api": "./convex/_generated/api.js",
     "./dataModel": "./convex/_generated/dataModel.d.ts",
     "./search": "./convex/lib/programSearch.ts",
-    "./imports": "./convex/lib/folderImport.ts"
+    "./imports": "./convex/lib/folderImport.ts",
+    "./concurrency": "./convex/lib/concurrency.ts"
   },
   "dependencies": {
     "@convex-dev/presence": "^0.4.0",

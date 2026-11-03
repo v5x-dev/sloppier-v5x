@@ -16,7 +16,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@v5x/ui/components/dialog"
@@ -50,7 +49,7 @@ export function NewWorkspace({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <form
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-4"
           onSubmit={async (event) => {
             event.preventDefault()
             setPending(true)
@@ -68,20 +67,16 @@ export function NewWorkspace({
         >
           <DialogHeader>
             <DialogTitle>New workspace</DialogTitle>
-            <DialogDescription>
-              Create a shared home for your team's programs.
-            </DialogDescription>
           </DialogHeader>
-          <Field>
-            <FieldLabel htmlFor="workspace-name">Name</FieldLabel>
-            <Input
-              id="workspace-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              maxLength={80}
-              required
-            />
-          </Field>
+          <Input
+            id="workspace-name"
+            aria-label="Name"
+            placeholder="Name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={80}
+            required
+          />
           <Button disabled={pending || !name.trim()} type="submit">
             {pending && <Spinner />}Create workspace
           </Button>
@@ -105,10 +100,6 @@ export function WorkspaceTeam({
       <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{workspace.name} team</DialogTitle>
-          <DialogDescription>
-            Admins can invite people and manage access to every program in this
-            workspace.
-          </DialogDescription>
         </DialogHeader>
         {open && <TeamSettings workspace={workspace} />}
       </DialogContent>
@@ -206,9 +197,6 @@ function TeamSettings({ workspace }: { workspace: Doc<"workspaces"> }) {
             </Button>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          PNG, JPEG, WebP, or GIF, up to 128 KB.
-        </p>
       </section>
       <form
         className="flex flex-col gap-3"
@@ -220,18 +208,16 @@ function TeamSettings({ workspace }: { workspace: Doc<"workspaces"> }) {
           })
         }}
       >
-        <Field>
-          <FieldLabel htmlFor="invite-email">Invite by email</FieldLabel>
-          <Input
-            id="invite-email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            maxLength={254}
-            placeholder="teammate@example.com"
-          />
-        </Field>
+        <Input
+          id="invite-email"
+          type="email"
+          aria-label="Invite by email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+          maxLength={254}
+          placeholder="teammate@example.com"
+        />
         <div className="flex items-end gap-3">
           <RolePicker
             id="invite-role"
@@ -243,10 +229,6 @@ function TeamSettings({ workspace }: { workspace: Doc<"workspaces"> }) {
             {busy && <Spinner />}Invite
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Invitations expire in 7 days. Your teammate must sign in with the
-          invited email address.
-        </p>
       </form>
       <section className="flex flex-col gap-3" aria-label="Workspace members">
         <h3 className="font-semibold">Members</h3>

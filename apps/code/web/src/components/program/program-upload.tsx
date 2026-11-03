@@ -59,6 +59,7 @@ import { Spinner } from "@v5x/ui/components/spinner"
 import { Switch } from "@v5x/ui/components/switch"
 import { toast } from "@v5x/ui/components/toast"
 import { cn } from "@v5x/ui/lib/utils"
+import { play } from "cuelume"
 import { errorMessage } from "@/lib/errors"
 import {
   BRAIN_SLOT_COUNT,
@@ -427,6 +428,7 @@ export function ProgramUpload({
           if (mounted.current) {
             setSuccess(true)
             setMessage(resultMessage)
+            play("success")
           }
           toast.add({ type: "success", title: resultMessage })
           return
@@ -483,9 +485,12 @@ export function ProgramUpload({
           setSuccess(true)
           setMessage(uploaded)
           setProgress(null)
+          play("success")
         }
         toast.add({ type: "success", title: uploaded })
       } catch (err) {
+        // Unmounting aborts the upload too; that is not a failure to report.
+        if (mounted.current) play("error")
         if (!preparing) await disconnect().catch(() => {})
         throw err
       } finally {
@@ -568,11 +573,6 @@ export function ProgramUpload({
             <PopoverTitle>Connect V5 Brain</PopoverTitle>
           </PopoverHeader>
           <div className="flex flex-col gap-1">
-            {!connected && (
-              <span className="text-xs font-medium text-muted-foreground">
-                Connection
-              </span>
-            )}
             {connected ? (
               <div className="flex items-center justify-between rounded-lg bg-muted px-2 py-1 text-xs">
                 <span className="flex items-center gap-2">
@@ -742,6 +742,7 @@ export function ProgramUpload({
                 size="icon-sm"
                 aria-label="Upload to V5 Brain"
                 aria-busy={busy}
+                data-cuelume-open
               />
             }
           >
@@ -770,9 +771,6 @@ export function ProgramUpload({
           </PopoverHeader>
           {!brainReady ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Connect your V5 Brain before uploading your Program.
-              </p>
               <Button
                 className="w-full"
                 onClick={() => {
@@ -933,6 +931,7 @@ export function ProgramUpload({
               </div>
               <Button
                 disabled={busy || !paired}
+                data-cuelume-tap
                 onClick={() => upload()}
                 className="w-full"
               >

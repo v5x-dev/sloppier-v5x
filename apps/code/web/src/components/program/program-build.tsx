@@ -129,6 +129,7 @@ export function ProgramBuild({
           size="icon-sm"
           aria-label={buildLabel}
           aria-busy={building}
+          data-cuelume-open
           onClick={() => {
             setTab(diagnostics.length ? "problems" : "output")
             setOpen(true)
@@ -208,6 +209,7 @@ export function ProgramBuild({
                   size="icon-sm"
                   className="shrink-0"
                   aria-label="Close build sheet"
+                  data-cuelume-close
                 />
               }
             >
@@ -371,15 +373,6 @@ export function ProgramBuild({
                         : revision
                           ? "No source diagnostics found"
                           : "Ready when you are"}
-                  </p>
-                  <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                    {building
-                      ? "Errors and warnings appear here as the compiler reports them."
-                      : succeeded
-                        ? "The compiler reported no errors or warnings."
-                        : revision
-                          ? "Check Build output for toolchain, linker, or other build messages."
-                          : "Upload your Program to see errors and warnings grouped by file."}
                   </p>
                 </div>
               )}

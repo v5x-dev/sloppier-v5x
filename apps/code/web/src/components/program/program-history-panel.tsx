@@ -352,11 +352,6 @@ export function ProgramHistoryPanel({
                   ))}
                 </ul>
               )}
-              {uploads && uploads.length === 100 && (
-                <p className="px-3 pb-3 text-xs text-muted-foreground">
-                  Showing the latest 100 uploads.
-                </p>
-              )}
             </section>
             {!!checkpoints?.length && (
               <section

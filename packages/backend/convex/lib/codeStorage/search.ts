@@ -3,6 +3,7 @@
 import { api } from "../../_generated/api"
 import { action } from "../../_generated/server"
 import { ConvexError, v } from "convex/values"
+import { mapWithConcurrency } from "../concurrency"
 import { replayLiveDocument } from "../liveReplay"
 import {
   literalPattern,
@@ -50,6 +51,12 @@ export function searchActions() {
         id: program.repositoryId,
         defaultBranch: "main",
       })
+      // Open live documents are read while the committed search pages run.
+      const liveDocuments = ctx.runQuery(api.search.liveDocuments, {
+        programId,
+      })
+      // A rejected lookup is awaited below. This handler keeps an early grep failure from leaving it unhandled.
+      void liveDocuments.catch(() => {})
       const files: SearchFile[] = []
       let cursor: string | undefined
       let hasMore = false
@@ -95,35 +102,43 @@ export function searchActions() {
         if (!committed.nextCursor || committed.nextCursor === cursor) break
         cursor = committed.nextCursor
       }
-      const docs = await ctx.runQuery(api.search.liveDocuments, { programId })
+      const liveFiles = (await liveDocuments).filter((document) =>
+        matchesSearchPath(document.path, filters)
+      )
       const drafts = new Map<string, string>()
-      let skipped = 0
+      // Never show a committed match as current when its live text could not be read.
+      for (const document of liveFiles) drafts.set(document.path, "")
       const replayBudget = { used: 0, limit: 16 * 1024 * 1024 }
-      for (const [index, document] of docs
-        .filter((document) => matchesSearchPath(document.path, filters))
-        .entries()) {
-        // Never show a committed match as current when its live text could not be read.
-        drafts.set(document.path, "")
-        if (index >= 100 || replayBudget.used >= replayBudget.limit) {
-          skipped++
-          continue
+      // Replays run a few at a time and share one byte budget. Null means skipped.
+      const replays = await mapWithConcurrency(
+        liveFiles,
+        4,
+        async (document, index) => {
+          if (index >= 100 || replayBudget.used >= replayBudget.limit)
+            return null
+          try {
+            const replay = await replayLiveDocument(
+              (afterSequence) =>
+                ctx.runQuery(api.crdt.updatesSince, {
+                  programId,
+                  path: document.path,
+                  afterSequence,
+                }),
+              replayBudget,
+              document.id
+            )
+            return replay.contents
+          } catch {
+            return null
+          }
         }
-        try {
-          const replay = await replayLiveDocument(
-            (afterSequence) =>
-              ctx.runQuery(api.crdt.updatesSince, {
-                programId,
-                path: document.path,
-                afterSequence,
-              }),
-            replayBudget,
-            document.id
-          )
-          drafts.set(document.path, replay.contents)
-        } catch {
-          skipped++
-        }
-      }
+      )
+      let skipped = 0
+      liveFiles.forEach((document, index) => {
+        const contents = replays[index]
+        if (contents === null) skipped++
+        else drafts.set(document.path, contents)
+      })
       const result = overlaySearch(files, drafts, query, matchCase, filters)
       return {
         ...result,

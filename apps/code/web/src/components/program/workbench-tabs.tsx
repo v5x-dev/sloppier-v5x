@@ -100,6 +100,7 @@ export function SortableFileTab({
     >
       <TabsTrigger
         ref={setActivatorNodeRef}
+        data-cuelume-select
         {...listeners}
         onKeyDown={(event) => {
           listeners?.onKeyDown(event)
@@ -135,6 +136,7 @@ export function SortableFileTab({
         variant="ghost"
         size="icon-xs"
         aria-label={`Close ${path}`}
+        data-cuelume-close
         className="absolute right-1 text-muted-foreground"
         onClick={onClose}
       >

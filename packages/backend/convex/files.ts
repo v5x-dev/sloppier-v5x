@@ -30,12 +30,31 @@ export const applyRepositoryChanges = internalMutation({
   },
   handler: async (ctx, { programId, actorId, changes, moves }) => {
     const now = Date.now()
+    for (const move of moves ?? []) {
+      validateRepositoryPath(move.from)
+      validateRepositoryPath(move.to)
+    }
+    for (const change of changes) validateRepositoryPath(change.path)
+
+    // Moves only touch live documents, and each change path appears once, so
+    // the file rows can be read together before any writes below.
+    const fileIds = new Map(
+      await Promise.all(
+        changes.map(async (change) => {
+          const file = await ctx.db
+            .query("files")
+            .withIndex("by_program_path", (q) =>
+              q.eq("programId", programId).eq("path", change.path)
+            )
+            .unique()
+          return [change.path, file?._id ?? null] as const
+        })
+      )
+    )
 
     // Keep the live document identity and its pending edits when a file moves.
     // The subsequent source deletion then removes only the file metadata.
     for (const move of moves ?? []) {
-      validateRepositoryPath(move.from)
-      validateRepositoryPath(move.to)
       const live = await ctx.db
         .query("crdtDocuments")
         .withIndex("by_program_path", (q) =>
@@ -60,18 +79,12 @@ export const applyRepositoryChanges = internalMutation({
     }
 
     for (const change of changes) {
-      validateRepositoryPath(change.path)
-
-      const existing = await ctx.db
-        .query("files")
-        .withIndex("by_program_path", (q) =>
-          q.eq("programId", programId).eq("path", change.path)
-        )
-        .unique()
+      const existing = fileIds.get(change.path) ?? null
 
       if (change.operation === "delete") {
         if (existing) {
-          await ctx.db.delete(existing._id)
+          await ctx.db.delete(existing)
+          fileIds.set(change.path, null)
           const live = await ctx.db
             .query("crdtDocuments")
             .withIndex("by_program_path", (q) =>
@@ -89,19 +102,22 @@ export const applyRepositoryChanges = internalMutation({
       }
 
       if (existing) {
-        await ctx.db.patch(existing._id, {
+        await ctx.db.patch(existing, {
           origin: "user",
           updatedAt: now,
         })
       } else {
-        await ctx.db.insert("files", {
-          programId,
-          path: change.path,
-          origin: "user",
-          createdBy: actorId,
-          createdAt: now,
-          updatedAt: now,
-        })
+        fileIds.set(
+          change.path,
+          await ctx.db.insert("files", {
+            programId,
+            path: change.path,
+            origin: "user",
+            createdBy: actorId,
+            createdAt: now,
+            updatedAt: now,
+          })
+        )
       }
     }
   },
@@ -122,35 +138,41 @@ export const applyCommitRestore = internalMutation({
       .query("crdtDocuments")
       .withIndex("by_program_path", (q) => q.eq("programId", programId))
       .collect()
-    for (const document of documents) {
-      await ctx.db.delete(document._id)
-      await ctx.scheduler.runAfter(0, internal.crdt.deleteOrphanUpdates, {
-        documentId: document._id,
+    await Promise.all(
+      documents.map(async (document) => {
+        await ctx.db.delete(document._id)
+        await ctx.scheduler.runAfter(0, internal.crdt.deleteOrphanUpdates, {
+          documentId: document._id,
+        })
       })
-    }
+    )
     const files = await ctx.db
       .query("files")
       .withIndex("by_program", (q) => q.eq("programId", programId))
       .collect()
     const wanted = new Set(paths)
-    for (const file of files) {
-      if (!wanted.delete(file.path)) await ctx.db.delete(file._id)
-      else await ctx.db.patch(file._id, { updatedAt: now })
-    }
-    for (const path of wanted) {
-      validateRepositoryPath(path)
-      await ctx.db.insert("files", {
-        programId,
-        path,
-        origin: "user",
-        createdBy: actorId,
-        createdAt: now,
-        updatedAt: now,
-      })
-    }
-    await ctx.db.patch(programId, {
-      repositoryHeadSha: headSha,
-      lastActivityAt: now,
-    })
+    // Each callback claims its path synchronously, before any write is awaited.
+    await Promise.all(
+      files.map((file) =>
+        wanted.delete(file.path)
+          ? ctx.db.patch(file._id, { updatedAt: now })
+          : ctx.db.delete(file._id)
+      )
+    )
+    const inserted = [...wanted]
+    for (const path of inserted) validateRepositoryPath(path)
+    await Promise.all(
+      inserted.map((path) =>
+        ctx.db.insert("files", {
+          programId,
+          path,
+          origin: "user",
+          createdBy: actorId,
+          createdAt: now,
+          updatedAt: now,
+        })
+      )
+    )
+    await ctx.db.patch(programId, { repositoryHeadSha: headSha, lastActivityAt: now })
   },
 })
