@@ -125,6 +125,7 @@ export function ProgramBuild({
             variant="ghost"
             size="icon-sm"
             aria-label={`View build problems, ${errors} errors, ${warnings} warnings`}
+            data-cuelume-open
             onClick={() => {
               setTab("problems")
               setOpen(true)
@@ -203,6 +204,7 @@ export function ProgramBuild({
                   size="icon-sm"
                   className="shrink-0"
                   aria-label="Close build sheet"
+                  data-cuelume-close
                 />
               }
             >
