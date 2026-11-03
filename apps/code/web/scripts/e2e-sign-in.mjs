@@ -16,8 +16,7 @@ try {
     .getByRole("heading", { name: "Programs", exact: true })
     .waitFor({ timeout: 300_000 })
   await page
-    .getByRole("region", { name: "Create program" })
-    .getByRole("button", { name: "New pros program" })
+    .getByRole("button", { name: "New program", exact: true })
     .waitFor({ timeout: 60_000 })
   await mkdir(dirname(state), { recursive: true })
   await context.storageState({ path: state, indexedDB: true })

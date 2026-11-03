@@ -30,18 +30,14 @@ test("signs in through AuthKit and restores the session after reload", async ({
     page.getByRole("heading", { name: "Programs", exact: true })
   ).toBeVisible()
   await expect(
-    page
-      .getByRole("region", { name: "Create program" })
-      .getByRole("button", { name: "New pros program" })
+    page.getByRole("button", { name: "New program", exact: true })
   ).toBeVisible()
   await page.reload()
   await expect(
     page.getByRole("heading", { name: "Programs", exact: true })
   ).toBeVisible()
   await expect(
-    page
-      .getByRole("region", { name: "Create program" })
-      .getByRole("button", { name: "New pros program" })
+    page.getByRole("button", { name: "New program", exact: true })
   ).toBeVisible()
 })
 
@@ -56,9 +52,10 @@ test("edits and commits a disposable Program after WorkOS sign-in", async ({
   await page.goto("/")
   await page.locator('input[name="email"]').fill("playwright@example.test")
   await page.getByRole("button", { name: "Continue" }).click()
-  const create = page
-    .getByRole("region", { name: "Create program" })
-    .getByRole("button", { name: "New pros program" })
+  const create = page.getByRole("button", {
+    name: "New program",
+    exact: true,
+  })
   await expect(create).toBeVisible()
   await create.click()
   const dialog = page.getByRole("dialog", { name: "New program" })

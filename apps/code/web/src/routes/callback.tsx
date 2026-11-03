@@ -5,7 +5,6 @@ import { Button } from "@v5x/ui/components/button"
 import {
   Empty,
   EmptyContent,
-  EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
@@ -39,10 +38,6 @@ function Callback() {
           <WarningCircleIcon />
         </EmptyMedia>
         <EmptyTitle>Sign-in didn&apos;t finish</EmptyTitle>
-        <EmptyDescription>
-          WorkOS couldn&apos;t complete the sign-in. Check the browser console
-          for details, then try again.
-        </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <Button render={<Link to="/login" />} nativeButton={false}>

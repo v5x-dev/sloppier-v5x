@@ -5,7 +5,6 @@ import {
   MagnifyingGlassIcon,
   DotsThreeIcon,
   BuildingsIcon,
-  CodeIcon,
   EnvelopeSimpleIcon,
   PlusIcon,
   SignOutIcon,
@@ -32,51 +31,29 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@v5x/ui/components/dialog"
 import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@v5x/ui/components/empty"
-import { Field, FieldGroup, FieldLabel } from "@v5x/ui/components/field"
-import { Input } from "@v5x/ui/components/input"
-import {
   Item,
   ItemActions,
   ItemContent,
-  ItemDescription,
   ItemGroup,
   ItemMedia,
   ItemTitle,
 } from "@v5x/ui/components/item"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@v5x/ui/components/select"
 import { Skeleton } from "@v5x/ui/components/skeleton"
 import { Spinner } from "@v5x/ui/components/spinner"
 import { toast } from "@v5x/ui/components/toast"
-import { useAction, useMutation, useQuery } from "convex/react"
-import { formatDistanceToNow, startOfDay, startOfWeek, subDays } from "date-fns"
+import { ToggleGroup, ToggleGroupItem } from "@v5x/ui/components/toggle-group"
 import { Toggle } from "@v5x/ui/components/toggle"
+import { Input } from "@v5x/ui/components/input"
+import { useAction, useMutation, useQuery } from "convex/react"
+import { format, isSameWeek, isSameYear, isToday, isYesterday } from "date-fns"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { useEffect, useRef, useState } from "react"
-import {
-  StarterTile,
-  starterTileClassName,
-  starterTileStyle,
-} from "@/components/program/starter-tile"
 import {
   NewWorkspace,
   WorkspaceTeam,
@@ -98,6 +75,14 @@ export const Route = createFileRoute("/")({
 })
 
 type Template = Doc<"programs">["template"]
+
+const templateOrder: Template[] = [
+  "vexcode",
+  "jar",
+  "pros",
+  "ez-template",
+  "rw",
+]
 
 const templateIcons: Record<Template, string> = {
   vexcode: "/template-icons/vexcode.png",
@@ -129,107 +114,75 @@ function ProgramsPage() {
   )
   const workspace =
     available.find(({ _id }) => _id === selectedId) ?? available.at(0)
+  const isAdmin =
+    workspaces?.find((entry) => entry.workspace?._id === workspace?._id)
+      ?.role === "admin"
 
   return (
     <div className="flex min-h-svh flex-col">
       <AppHeader
         workspaces={available}
         workspace={workspace}
-        isAdmin={
-          workspaces?.find((entry) => entry.workspace?._id === workspace?._id)
-            ?.role === "admin"
-        }
+        isAdmin={isAdmin}
         onSelect={setSelectedId}
       />
-      <main className="mx-auto flex w-[52rem] max-w-full flex-1 flex-col gap-10 px-4 pt-8 pb-16 sm:px-6">
-        <section
-          aria-labelledby="starters-heading"
-          className="flex flex-col gap-3"
-        >
-          <h2 id="starters-heading" className="text-base font-semibold">
-            Create program
-          </h2>
-          <div className="grid grid-cols-2 gap-3 pb-1 sm:grid-cols-6">
-            {(["vexcode", "jar", "pros", "ez-template", "rw"] as const).map(
-              (template) =>
-                workspace ? (
-                  <NewProgramDialog
-                    key={`${workspace._id}-${template}`}
-                    workspaceId={workspace._id}
-                    initialTemplate={template}
-                    tile
-                  />
-                ) : (
-                  <Skeleton key={template} className="h-[6.75rem] rounded-xl" />
-                )
-            )}
-            {workspace ? (
-              <ImportFolder
-                key={workspace._id}
-                workspaceId={workspace._id}
-                tile
+      <main className="mx-auto flex w-[52rem] max-w-full flex-1 flex-col gap-4 px-4 pt-6 pb-16 sm:px-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="mr-auto text-lg font-semibold">Programs</h1>
+          <div className="order-last flex w-full items-center gap-2 sm:order-none sm:w-auto">
+            <div className="relative w-full sm:w-56">
+              <MagnifyingGlassIcon
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
               />
-            ) : (
-              <Skeleton className="h-[6.75rem] rounded-xl" />
-            )}
-          </div>
-        </section>
-        <section
-          aria-labelledby="programs-heading"
-          className="flex flex-col gap-4"
-        >
-          <div className="flex flex-wrap items-center gap-3">
-            <h2
-              id="programs-heading"
-              className="mr-auto text-base font-semibold"
-            >
-              Programs
-            </h2>
-            <div className="flex max-w-full items-center gap-1.5">
-              <div className="relative w-56 max-w-full">
-                <MagnifyingGlassIcon
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  type="search"
-                  aria-label="Search programs"
-                  placeholder="Search programs…"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") setQuery("")
-                  }}
-                  className="h-8 pl-8 [&::-webkit-search-cancel-button]:appearance-none"
-                />
-              </div>
-              <ActionTooltip
-                label={
-                  archived ? "Show active programs" : "Show archived programs"
-                }
-              >
-                <Toggle
-                  variant="outline"
-                  className="h-8 w-8 shrink-0 px-0"
-                  aria-label="Show archived programs"
-                  pressed={archived}
-                  onPressedChange={setArchived}
-                >
-                  <ArchiveBoxIcon />
-                </Toggle>
-              </ActionTooltip>
+              <Input
+                type="search"
+                aria-label="Search programs"
+                placeholder="Search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") setQuery("")
+                }}
+                className="h-8 pl-8 [&::-webkit-search-cancel-button]:appearance-none"
+              />
             </div>
+            <ActionTooltip
+              label={
+                archived ? "Show active programs" : "Show archived programs"
+              }
+            >
+              <Toggle
+                variant="outline"
+                className="h-8 w-8 shrink-0 px-0"
+                aria-label="Show archived programs"
+                pressed={archived}
+                onPressedChange={setArchived}
+              >
+                <ArchiveBoxIcon />
+              </Toggle>
+            </ActionTooltip>
           </div>
-          {!workspace ? (
-            <ProgramListSkeleton />
+          {workspace ? (
+            <ImportFolder key={workspace._id} workspaceId={workspace._id} />
           ) : (
-            <ProgramList
-              workspaceId={workspace._id}
-              archived={archived}
-              query={query}
-            />
+            <Skeleton className="size-8" />
           )}
-        </section>
+          {workspace ? (
+            <NewProgramDialog key={workspace._id} workspaceId={workspace._id} />
+          ) : (
+            <Skeleton className="h-8 w-32" />
+          )}
+        </div>
+        {!workspace ? (
+          <ProgramListSkeleton />
+        ) : (
+          <ProgramList
+            workspaceId={workspace._id}
+            archived={archived}
+            query={query}
+          />
+        )}
       </main>
     </div>
   )
@@ -306,7 +259,6 @@ function AppHeader({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64">
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={workspace?._id ?? ""}
                 onValueChange={(value) => {
@@ -388,9 +340,6 @@ function AppHeader({
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Invitations</DialogTitle>
-              <DialogDescription>
-                Join a workspace using an invitation sent to your account email.
-              </DialogDescription>
             </DialogHeader>
             {viewingInvitations && (
               <WorkspaceInvitations
@@ -406,6 +355,16 @@ function AppHeader({
       </div>
     </header>
   )
+}
+
+// Time for today, the weekday for this week, and the date otherwise.
+function listedDate(timestamp: number, now: Date) {
+  const date = new Date(timestamp)
+  if (isToday(date)) return format(date, "p")
+  if (isYesterday(date)) return "Yesterday"
+  if (isSameWeek(date, now, { weekStartsOn: 1 })) return format(date, "EEE")
+  if (isSameYear(date, now)) return format(date, "MMM d")
+  return format(date, "MMM d, yyyy")
 }
 
 function ProgramList({
@@ -425,104 +384,73 @@ function ProgramList({
 
   if (programs.length === 0) {
     return (
-      <Empty className="border border-dashed">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <CodeIcon />
-          </EmptyMedia>
-          <EmptyTitle>No programs yet</EmptyTitle>
-          <EmptyDescription>
-            Start from a VEXCode, JAR, PROS, EZ, or RW starter.
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <NewProgramDialog workspaceId={workspaceId} />
-        </EmptyContent>
-      </Empty>
+      <p className="rounded-xl border border-dashed py-12 text-center text-sm text-muted-foreground">
+        No programs yet
+      </p>
     )
   }
 
-  const now = new Date()
-  const today = startOfDay(now).getTime()
-  const yesterday = startOfDay(subDays(now, 1)).getTime()
-  const week = startOfWeek(now, { weekStartsOn: 1 }).getTime()
-  const groups = ["Today", "Yesterday", "This week", "Older"]
+  const needle = query.trim().toLowerCase()
   const visible = [...programs]
     .filter(
       (program) =>
         Boolean(program.archivedAt) === archived &&
-        program.name.toLowerCase().includes(query.toLowerCase())
+        program.name.toLowerCase().includes(needle)
     )
     .sort((a, b) => b.createdAt - a.createdAt)
+
+  if (visible.length === 0) {
+    return (
+      <p className="py-10 text-center text-sm text-muted-foreground">
+        {needle
+          ? "No matches"
+          : archived
+            ? "No archived programs"
+            : "No active programs"}
+      </p>
+    )
+  }
+
+  const now = new Date()
   return (
-    <div className="flex flex-col gap-6">
-      {visible.length === 0 && (
-        <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
-          No matching {archived ? "archived" : "active"} programs.
-        </p>
-      )}
-      {groups.map((label, index) => {
-        const entries = visible.filter(
-          ({ createdAt }) =>
-            (createdAt >= today
-              ? 0
-              : createdAt >= yesterday
-                ? 1
-                : createdAt >= week
-                  ? 2
-                  : 3) === index
-        )
-        if (!entries.length) return null
-        return (
-          <section
-            key={label}
-            aria-label={label}
-            className="flex flex-col gap-2"
-          >
-            <h3 className="px-1 text-xs font-medium text-muted-foreground">
-              {label}
-            </h3>
-            <ItemGroup className="gap-0 overflow-hidden rounded-xl surface-raised">
-              {entries.map((program) => (
-                <Item
-                  key={program._id}
-                  className="group relative min-h-14 gap-x-4 rounded-none border-0 px-4 py-2 transition-colors not-last:shadow-[0_1px_0_0_var(--border)] hover:bg-accent/60"
-                >
-                  <ItemMedia className="translate-y-0! self-center!">
-                    <img
-                      src={templateIcons[program.template]}
-                      alt=""
-                      className="size-6 object-contain"
-                    />
-                  </ItemMedia>
-                  <ItemContent className="gap-0">
-                    <ItemTitle className="text-[13px] leading-5 font-medium">
-                      <Link
-                        to="/programs/$programId"
-                        params={{ programId: program._id }}
-                        className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
-                      >
-                        {program.name}
-                      </Link>
-                    </ItemTitle>
-                    <ItemDescription className="font-documentation text-xs">
-                      Created{" "}
-                      {formatDistanceToNow(program.createdAt, {
-                        addSuffix: true,
-                      })}
-                    </ItemDescription>
-                  </ItemContent>
-                  <ItemActions className="relative z-10">
-                    <RepositoryStatusBadge status={program.repositoryStatus} />
-                    <ProgramActions program={program} />
-                  </ItemActions>
-                </Item>
-              ))}
-            </ItemGroup>
-          </section>
-        )
-      })}
-    </div>
+    <ItemGroup className="gap-0 overflow-hidden rounded-xl surface-raised">
+      {visible.map((program) => (
+        <Item
+          key={program._id}
+          className="group relative min-h-12 gap-3 rounded-none border-0 px-3 py-2 transition-colors not-last:shadow-[0_1px_0_0_var(--border)] hover:bg-accent/60"
+        >
+          <ItemMedia className="translate-y-0! self-center!">
+            <img
+              src={templateIcons[program.template]}
+              alt=""
+              className="size-6 object-contain"
+            />
+          </ItemMedia>
+          <ItemContent className="min-w-0 gap-0">
+            <ItemTitle className="w-full min-w-0 text-[13px] leading-5 font-medium">
+              <Link
+                to="/programs/$programId"
+                params={{ programId: program._id }}
+                className="min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
+              >
+                {program.name}
+              </Link>
+            </ItemTitle>
+          </ItemContent>
+          <ItemActions className="relative z-10">
+            <RepositoryStatusBadge status={program.repositoryStatus} />
+            <time
+              dateTime={new Date(program.createdAt).toISOString()}
+              title={format(program.createdAt, "PPPp")}
+              className="pointer-events-none text-xs text-muted-foreground tabular-nums"
+            >
+              {listedDate(program.createdAt, now)}
+            </time>
+            <ProgramActions program={program} />
+          </ItemActions>
+        </Item>
+      ))}
+    </ItemGroup>
   )
 }
 
@@ -609,7 +537,7 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
       >
         <DialogContent>
           <form
-            className="flex flex-col gap-6"
+            className="flex flex-col gap-4"
             onSubmit={(event) => {
               event.preventDefault()
               void save(() => rename({ programId: program._id, name }))
@@ -617,23 +545,15 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
           >
             <DialogHeader>
               <DialogTitle>Rename program</DialogTitle>
-              <DialogDescription>
-                Choose a name for this program.
-              </DialogDescription>
             </DialogHeader>
-            <Field>
-              <FieldLabel htmlFor={`program-name-${program._id}`}>
-                Name
-              </FieldLabel>
-              <Input
-                id={`program-name-${program._id}`}
-                autoFocus
-                maxLength={80}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                disabled={pending}
-              />
-            </Field>
+            <Input
+              aria-label="Name"
+              autoFocus
+              maxLength={80}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              disabled={pending}
+            />
             <DialogFooter>
               <Button
                 type="button"
@@ -654,23 +574,14 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
   )
 }
 
-function NewProgramDialog({
-  workspaceId,
-  initialTemplate = "pros",
-  tile = false,
-}: {
-  workspaceId: Id<"workspaces">
-  initialTemplate?: Template
-  tile?: boolean
-}) {
-  const templates = useQuery(api.programs.listTemplates)
-  const createProgram = useMutation(api.programs.create)
+function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const generateName = useMutation(api.programs.generateName)
+  const createProgram = useMutation(api.programs.create)
   const navigate = Route.useNavigate()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [generatedName, setGeneratedName] = useState("")
-  const [template, setTemplate] = useState<Template>(initialTemplate)
+  const [template, setTemplate] = useState<Template>("pros")
   const [pending, setPending] = useState(false)
   // Numbers each suggestion request so a reply that arrives after close is ignored.
   const suggestion = useRef(0)
@@ -720,86 +631,52 @@ function NewProgramDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (next) {
-          setTemplate(initialTemplate)
-          suggestName()
-        } else suggestion.current++
+        if (next) suggestName()
+        else suggestion.current++
         setOpen(next)
       }}
     >
-      <DialogTrigger
-        render={
-          <Button
-            aria-label={`New ${initialTemplate} program`}
-            title={`New ${initialTemplate} program`}
-            className={tile ? starterTileClassName : undefined}
-            style={
-              tile
-                ? starterTileStyle(`var(--template-${initialTemplate})`)
-                : undefined
-            }
-            variant={tile ? "outline" : "default"}
-            size={tile ? "default" : "icon"}
-          />
-        }
-      >
-        {tile ? (
-          <StarterTile
-            icon={
-              <img
-                src={templateIcons[initialTemplate]}
-                alt=""
-                className="size-6 object-contain"
-              />
-            }
-            label={templateLabels[initialTemplate]}
-          />
-        ) : (
-          <PlusIcon />
-        )}
+      <DialogTrigger render={<Button size="sm" />}>
+        <PlusIcon data-icon="inline-start" />
+        New program
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={submit} className="flex flex-col gap-6">
+        <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>New program</DialogTitle>
-            <DialogDescription>
-              Pick a starter. Leave the name blank to use the suggested name.
-            </DialogDescription>
           </DialogHeader>
-          <FieldGroup>
-            <Field>
-              <FieldLabel>Template</FieldLabel>
-              <Select
-                value={template}
-                onValueChange={(value) => setTemplate(value as Template)}
-                items={(templates ?? []).map(({ id, label }) => ({
-                  value: id,
-                  label,
-                }))}
+          <ToggleGroup
+            aria-label="Template"
+            multiple={false}
+            value={[template]}
+            onValueChange={(value) => {
+              const next = templateOrder.find((item) => item === value.at(-1))
+              if (next) setTemplate(next)
+            }}
+            className="grid w-full grid-cols-5"
+          >
+            {templateOrder.map((item) => (
+              <ToggleGroupItem
+                key={item}
+                value={item}
+                className="h-auto flex-col gap-1.5 px-1 py-2 text-xs"
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(templates ?? []).map(({ id, label }) => (
-                    <SelectItem key={id} value={id}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="program-name">Name</FieldLabel>
-              <Input
-                id="program-name"
-                value={name}
-                maxLength={80}
-                placeholder={generatedName || "Program name"}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </Field>
-          </FieldGroup>
+                <img
+                  src={templateIcons[item]}
+                  alt=""
+                  className="size-6 object-contain"
+                />
+                {templateLabels[item]}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <Input
+            aria-label="Name"
+            value={name}
+            maxLength={80}
+            placeholder={generatedName || "Name"}
+            onChange={(event) => setName(event.target.value)}
+          />
           <DialogFooter>
             <DialogClose render={<Button variant="outline" type="button" />}>
               Cancel
@@ -822,7 +699,7 @@ function ProgramListSkeleton() {
   return (
     <div className="flex flex-col gap-2">
       {[0, 1, 2].map((index) => (
-        <Skeleton key={index} className="h-14 w-full rounded-xl" />
+        <Skeleton key={index} className="h-12 w-full rounded-xl" />
       ))}
     </div>
   )

@@ -3,12 +3,10 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@v5x/ui/components/dialog"
-import { Field, FieldLabel } from "@v5x/ui/components/field"
 import { Input } from "@v5x/ui/components/input"
 import { Spinner } from "@v5x/ui/components/spinner"
 import { toast } from "@v5x/ui/components/toast"
@@ -52,29 +50,24 @@ export function CommitDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form onSubmit={submit} className="flex flex-col gap-6">
+        <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Commit changes</DialogTitle>
-            <DialogDescription>
-              Saves to the program&apos;s <code>main</code> branch.
-            </DialogDescription>
           </DialogHeader>
           <ul className="flex max-h-40 flex-col gap-1 overflow-auto text-xs text-muted-foreground">
             {paths.map((path) => (
               <li key={path}>{path}</li>
             ))}
           </ul>
-          <Field>
-            <FieldLabel htmlFor="commit-message">Message</FieldLabel>
-            <Input
-              id="commit-message"
-              required
-              maxLength={200}
-              value={message}
-              placeholder="Tune autonomous turn speed"
-              onChange={(event) => setMessage(event.target.value)}
-            />
-          </Field>
+          <Input
+            id="commit-message"
+            aria-label="Message"
+            required
+            maxLength={200}
+            value={message}
+            placeholder="Message"
+            onChange={(event) => setMessage(event.target.value)}
+          />
           <DialogFooter>
             <DialogClose render={<Button variant="outline" type="button" />}>
               Cancel

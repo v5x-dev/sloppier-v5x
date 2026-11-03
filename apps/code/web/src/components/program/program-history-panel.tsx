@@ -352,11 +352,6 @@ export function ProgramHistoryPanel({
                   ))}
                 </ul>
               )}
-              {uploads && uploads.length === 100 && (
-                <p className="px-3 pb-3 text-xs text-muted-foreground">
-                  Showing the latest 100 uploads.
-                </p>
-              )}
             </section>
             {!!checkpoints?.length && (
               <section
@@ -616,11 +611,11 @@ export function ProgramHistoryPanel({
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs text-muted-foreground">
-                    {!canRestore
-                      ? "Commit and sync current edits before restoring."
-                      : "Restore all program files without rewriting history."}
-                  </p>
+                  {!canRestore && (
+                    <p className="text-xs text-muted-foreground">
+                      Commit and sync current edits before restoring.
+                    </p>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"

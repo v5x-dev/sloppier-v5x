@@ -19,17 +19,12 @@ test.describe("signed-in dashboard", () => {
       page.getByRole("heading", { name: "Programs", exact: true })
     ).toBeVisible()
     await expect(
-      page
-        .getByRole("region", { name: "Create program" })
-        .getByRole("button", { name: "New pros program" })
+      page.getByRole("button", { name: "New program", exact: true })
     ).toBeVisible()
   })
 
   test("opens and cancels the new program dialog", async ({ page }) => {
-    await page
-      .getByRole("region", { name: "Create program" })
-      .getByRole("button", { name: "New pros program" })
-      .click()
+    await page.getByRole("button", { name: "New program", exact: true }).click()
     const dialog = page.getByRole("dialog", { name: "New program" })
     await expect(dialog).toBeVisible()
     await dialog.getByLabel("Name").fill("Playwright draft")
@@ -42,9 +37,7 @@ test.describe("signed-in dashboard", () => {
   }) => {
     const search = page.getByRole("searchbox", { name: "Search programs" })
     await search.fill("playwright-no-matching-program-987654321")
-    await expect(
-      page.getByText(/No matching active programs|No programs yet/)
-    ).toBeVisible()
+    await expect(page.getByText(/No matches|No programs yet/)).toBeVisible()
     await search.press("Escape")
     await expect(search).toHaveValue("")
   })

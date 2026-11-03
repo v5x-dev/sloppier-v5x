@@ -317,11 +317,7 @@ export function ProgramConsole({
                 </Button>
               </div>
               <div className="min-h-0 flex-1 overflow-auto px-4">
-                {events === null ? (
-                  <p className="text-xs text-muted-foreground">
-                    Refresh to read the Brain’s recorded event log.
-                  </p>
-                ) : events.length === 0 ? (
+                {events === null ? null : events.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
                     No recorded events.
                   </p>
@@ -350,10 +346,6 @@ export function ProgramConsole({
                   </table>
                 )}
               </div>
-              <p className="p-4 text-xs text-muted-foreground">
-                Event codes are shown as reported by VEXos. Their meanings are
-                undocumented upstream.
-              </p>
             </>
           )}
         </SheetContent>

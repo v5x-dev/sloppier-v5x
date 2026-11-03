@@ -14,7 +14,6 @@ import { ScrollArea } from "@v5x/ui/components/scroll-area"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@v5x/ui/components/dialog"
@@ -228,9 +227,6 @@ export function WorkbenchHotkeys({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Keyboard shortcuts</DialogTitle>
-            <DialogDescription>
-              Editor shortcuts follow the file you have focused.
-            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[70vh] [&_[data-slot=scroll-area-viewport]]:max-h-[70vh]">
             <div className="space-y-4 pr-3">
@@ -264,9 +260,6 @@ export function WorkbenchHotkeys({
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Go to line</DialogTitle>
-            <DialogDescription>
-              Jump to a line in the file you have open.
-            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(event) => {

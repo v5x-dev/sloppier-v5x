@@ -568,11 +568,6 @@ export function ProgramUpload({
             <PopoverTitle>Connect V5 Brain</PopoverTitle>
           </PopoverHeader>
           <div className="flex flex-col gap-1">
-            {!connected && (
-              <span className="text-xs font-medium text-muted-foreground">
-                Connection
-              </span>
-            )}
             {connected ? (
               <div className="flex items-center justify-between rounded-lg bg-muted px-2 py-1 text-xs">
                 <span className="flex items-center gap-2">
@@ -757,9 +752,6 @@ export function ProgramUpload({
           </PopoverHeader>
           {!brainReady ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Connect your V5 Brain before uploading your Program.
-              </p>
               <Button
                 className="w-full"
                 onClick={() => {
