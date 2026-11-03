@@ -17,12 +17,15 @@ export function liveActions() {
   const openLiveFile = action({
     args: { programId: v.id("programs"), path: v.string() },
     handler: async (ctx, args): Promise<Id<"crdtDocuments">> => {
-      const program = await requireAuthorizedProgram(ctx, args.programId)
       const path = validateRepositoryPath(args.path)
-      const existing = await ctx.runQuery(internal.crdt.documentExists, {
-        programId: args.programId,
-        path,
-      })
+      // The existing id is returned only after authorization succeeds.
+      const [program, existing] = await Promise.all([
+        requireAuthorizedProgram(ctx, args.programId),
+        ctx.runQuery(internal.crdt.documentExists, {
+          programId: args.programId,
+          path,
+        }),
+      ])
       if (existing) return existing
       const repo = storage().repo({
         id: program.repositoryId,

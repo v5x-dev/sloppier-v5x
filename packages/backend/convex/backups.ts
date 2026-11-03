@@ -51,20 +51,25 @@ export const complete = internalMutation({
       )
       return
     }
-    for (const id of args.updateIds) {
-      const update = await ctx.db.get(id)
-      if (!update || update.storageStatus === "persisted") continue
-      await ctx.db.patch(
-        id,
-        args.error
-          ? { storageStatus: "failed", storageError: args.error.slice(0, 500) }
-          : {
-              storageStatus: "persisted",
-              storageCommitSha: args.commitSha,
-              storageError: undefined,
-            }
-      )
-    }
+    await Promise.all(
+      args.updateIds.map(async (id) => {
+        const update = await ctx.db.get(id)
+        if (!update || update.storageStatus === "persisted") return
+        await ctx.db.patch(
+          id,
+          args.error
+            ? {
+                storageStatus: "failed",
+                storageError: args.error.slice(0, 500),
+              }
+            : {
+                storageStatus: "persisted",
+                storageCommitSha: args.commitSha,
+                storageError: undefined,
+              }
+        )
+      })
+    )
     const next = await ctx.db
       .query("crdtUpdates")
       .withIndex("by_program_storage", (q) =>

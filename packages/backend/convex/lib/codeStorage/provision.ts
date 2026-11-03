@@ -74,15 +74,16 @@ export function provisionActions() {
             id: program.duplicateSource.repositoryId,
             defaultBranch: "main",
           })
-          const paths = [
-            ...(await listAllPaths(source, program.duplicateSource.sha)),
-          ].filter(
+          const [listed, repo] = await Promise.all([
+            listAllPaths(source, program.duplicateSource.sha),
+            getOrCreateRepository(store, program.repositoryId),
+          ])
+          const paths = [...listed].filter(
             (path) =>
               !path.startsWith(".v5x/") &&
               !isFirmwarePath(path) &&
               !isBuildDependency(program.template, path)
           )
-          const repo = await getOrCreateRepository(store, program.repositoryId)
           const changes = await Promise.all(
             paths.map(async (path) => {
               const response = await source.getFileStream({
@@ -127,12 +128,22 @@ export function provisionActions() {
             storage(),
             program.repositoryId
           )
+          const importId = program.importId
+          const readBatch = (sequence: number) =>
+            ctx.runQuery(internal.programs.folderImportBatch, {
+              importId,
+              sequence,
+            })
           let headSha = ""
+          let pending = source.batches > 0 ? readBatch(0) : undefined
           for (let sequence = 0; sequence < source.batches; sequence++) {
-            const batch = await ctx.runQuery(
-              internal.programs.folderImportBatch,
-              { importId: program.importId, sequence }
-            )
+            const batch = await pending
+            // Commits stay in order, but the next batch can load during this commit.
+            pending =
+              sequence + 1 < source.batches
+                ? readBatch(sequence + 1)
+                : undefined
+            pending?.catch(() => {})
             if (!batch) throw new Error("Folder import batch is missing.")
             const result = await commitChanges(
               repo,
@@ -161,15 +172,16 @@ export function provisionActions() {
           )
           return
         }
-        const files = (
-          await loadTemplateFiles(program.template, program.name)
-        ).filter(
+        const store = storage()
+        const [loaded, repo] = await Promise.all([
+          loadTemplateFiles(program.template, program.name),
+          getOrCreateRepository(store, program.repositoryId),
+        ])
+        const files = loaded.filter(
           (file) =>
             !isFirmwarePath(file.path) &&
             !isBuildDependency(program.template, file.path)
         )
-        const store = storage()
-        const repo = await getOrCreateRepository(store, program.repositoryId)
 
         const branches = await repo.listBranches({ limit: 100 })
         const main = branches.branches.find((branch) => branch.name === "main")
