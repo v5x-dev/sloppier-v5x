@@ -3,7 +3,7 @@ import type { Id } from "./_generated/dataModel"
 import { mutation, query, type MutationCtx } from "./_generated/server"
 import { Presence } from "@convex-dev/presence"
 import { ConvexError, v } from "convex/values"
-import { requireProgramMembership } from "./lib/auth"
+import { requireIdentity, requireProgramMembership } from "./lib/auth"
 
 const presence = new Presence(components.presence)
 
@@ -41,25 +41,28 @@ export const updateCarets = mutation({
     if (args.sessionId.length < 8 || args.sessionId.length > 128) {
       throw new ConvexError("Session ID must be between 8 and 128 characters.")
     }
-    const file = await ctx.db
-      .query("files")
-      .withIndex("by_program_path", (q) =>
-        q.eq("programId", args.programId).eq("path", args.path)
-      )
-      .unique()
+    // Both lookups use the requested path, so they can run concurrently.
+    const [file, joinedSession] = await Promise.all([
+      ctx.db
+        .query("files")
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", args.programId).eq("path", args.path)
+        )
+        .unique(),
+      ctx.db
+        .query("presenceSessions")
+        .withIndex("by_file_user_session", (q) =>
+          q
+            .eq("programId", args.programId)
+            .eq("path", args.path)
+            .eq("userId", identity.subject)
+            .eq("sessionId", args.sessionId)
+        )
+        .unique(),
+    ])
     if (!file) {
       throw new ConvexError("File not found.")
     }
-    const joinedSession = await ctx.db
-      .query("presenceSessions")
-      .withIndex("by_file_user_session", (q) =>
-        q
-          .eq("programId", args.programId)
-          .eq("path", file.path)
-          .eq("userId", identity.subject)
-          .eq("sessionId", args.sessionId)
-      )
-      .unique()
     if (!joinedSession) {
       throw new ConvexError("Join this file before publishing carets.")
     }
@@ -181,24 +184,25 @@ async function heartbeatFileHandler(
     )
   }
 
-  const tokens = await presence.heartbeat(
-    ctx,
-    file._id.toString(),
-    identity.subject,
-    args.sessionId,
-    intervalMs
-  )
-
-  const previous = await ctx.db
-    .query("presenceSessions")
-    .withIndex("by_file_user_session", (q) =>
-      q
-        .eq("programId", args.programId)
-        .eq("path", file.path)
-        .eq("userId", identity.subject)
-        .eq("sessionId", args.sessionId)
-    )
-    .unique()
+  const [tokens, previous] = await Promise.all([
+    presence.heartbeat(
+      ctx,
+      file._id.toString(),
+      identity.subject,
+      args.sessionId,
+      intervalMs
+    ),
+    ctx.db
+      .query("presenceSessions")
+      .withIndex("by_file_user_session", (q) =>
+        q
+          .eq("programId", args.programId)
+          .eq("path", file.path)
+          .eq("userId", identity.subject)
+          .eq("sessionId", args.sessionId)
+      )
+      .unique(),
+  ])
 
   const session = {
     programId: args.programId,
@@ -247,19 +251,23 @@ export const publishAwareness = mutation({
     bytes: v.bytes(),
   },
   handler: async (ctx, args) => {
-    const { identity } = await requireProgramMembership(ctx, args.programId)
+    const identity = await requireIdentity(ctx)
+    // Membership and the session lookup both depend only on the caller's identity.
+    const [, session] = await Promise.all([
+      requireProgramMembership(ctx, args.programId),
+      ctx.db
+        .query("presenceSessions")
+        .withIndex("by_file_user_session", (q) =>
+          q
+            .eq("programId", args.programId)
+            .eq("path", args.path)
+            .eq("userId", identity.subject)
+            .eq("sessionId", args.sessionId)
+        )
+        .unique(),
+    ])
     if (args.bytes.byteLength > 16_384)
       throw new ConvexError("Awareness payload is too large.")
-    const session = await ctx.db
-      .query("presenceSessions")
-      .withIndex("by_file_user_session", (q) =>
-        q
-          .eq("programId", args.programId)
-          .eq("path", args.path)
-          .eq("userId", identity.subject)
-          .eq("sessionId", args.sessionId)
-      )
-      .unique()
     if (!session)
       throw new ConvexError("Join the file before sharing your cursor.")
     await ctx.db.patch(session._id, { awareness: args.bytes })

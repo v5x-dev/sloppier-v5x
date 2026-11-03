@@ -272,16 +272,19 @@ export function sourceActions() {
         ]
       )
 
-      await ctx.runMutation(internal.files.applyRepositoryChanges, {
-        programId: args.programId,
-        actorId: identity.subject,
-        changes: changes.map(({ operation, path }) => ({ operation, path })),
-        moves,
-      })
-      await ctx.runMutation(internal.programs.recordRepositoryHead, {
-        programId: args.programId,
-        headSha: result.commitSha,
-      })
+      // The commit already exists, and the two mutations write disjoint tables.
+      await Promise.all([
+        ctx.runMutation(internal.files.applyRepositoryChanges, {
+          programId: args.programId,
+          actorId: identity.subject,
+          changes: changes.map(({ operation, path }) => ({ operation, path })),
+          moves,
+        }),
+        ctx.runMutation(internal.programs.recordRepositoryHead, {
+          programId: args.programId,
+          headSha: result.commitSha,
+        }),
+      ])
 
       return { commitSha: result.commitSha }
     },

@@ -26,6 +26,7 @@ import {
   FilePlusIcon,
   FolderPlusIcon,
 } from "@phosphor-icons/react"
+import { mapWithConcurrency } from "@v5x/backend/concurrency"
 import type { useProgramBinaries } from "@/hooks/use-program-binaries"
 import { makefileIcons } from "@/lib/makefile-icons"
 import { errorMessage } from "@/lib/errors"
@@ -249,7 +250,7 @@ export function RepositoryExplorer(props: Props) {
       [...entries.map((entry) => entry.path), ...destinations],
       generatedPaths
     )
-    const changes: RepositoryChange[] = []
+    const planned: { path: string; destination: string }[] = []
     const moves: { from: string; to: string }[] = []
     for (const [index, entry] of entries.entries()) {
       const from = barePath(entry.path)
@@ -260,15 +261,23 @@ export function RepositoryExplorer(props: Props) {
       const sources = filesUnder([entry])
       if (!sources.length)
         throw new Error(`${from} no longer exists. Refresh the Explorer.`)
-      for (const path of sources) {
-        const destination = `${to}${path.slice(from.length)}`
-        // Moving preserves the saved version; the parent remaps unsaved drafts.
-        const contents = await readBytes(path, move)
-        changes.push({ operation: "put", path: destination, contents })
-        if (move) changes.push({ operation: "delete", path })
-      }
+      for (const path of sources)
+        planned.push({ path, destination: `${to}${path.slice(from.length)}` })
       if (move) moves.push({ from, to })
     }
+    // Moving preserves the saved version; the parent remaps unsaved drafts.
+    const contents = await mapWithConcurrency(planned, 4, ({ path }) =>
+      readBytes(path, move)
+    )
+    const changes: RepositoryChange[] = []
+    planned.forEach(({ path, destination }, index) => {
+      changes.push({
+        operation: "put",
+        path: destination,
+        contents: contents[index],
+      })
+      if (move) changes.push({ operation: "delete", path })
+    })
     await apply({
       changes,
       moves,
@@ -370,29 +379,37 @@ export function RepositoryExplorer(props: Props) {
       throw error
     }
     const prefix = entries.length === 1 ? parentPath(entries[0].path) : ""
-    for (const path of files) {
-      const relative = prefix ? path.slice(prefix.length + 1) : path
-      const segments = relative.split("/")
-      let target = directory
-      for (const segment of segments.slice(0, -1))
-        target = await target.getDirectoryHandle(segment, { create: true })
-      const file = await target.getFileHandle(segments.at(-1)!, {
-        create: true,
-      })
-      const writer = await file.createWritable()
-      try {
-        await writer.write(await readBytes(path))
-      } finally {
-        await writer.close()
+    // Read a small window ahead of the writes, so memory stays bounded.
+    const WINDOW = 4
+    for (let start = 0; start < files.length; start += WINDOW) {
+      const chunk = files.slice(start, start + WINDOW)
+      const bytes = await mapWithConcurrency(chunk, WINDOW, (path) =>
+        readBytes(path)
+      )
+      for (const [offset, path] of chunk.entries()) {
+        const relative = prefix ? path.slice(prefix.length + 1) : path
+        const segments = relative.split("/")
+        let target = directory
+        for (const segment of segments.slice(0, -1))
+          target = await target.getDirectoryHandle(segment, { create: true })
+        const file = await target.getFileHandle(segments.at(-1)!, {
+          create: true,
+        })
+        const writer = await file.createWritable()
+        try {
+          await writer.write(bytes[offset])
+        } finally {
+          await writer.close()
+        }
       }
     }
   }
 
   async function upload(files: File[]) {
     if (!files.length) return
-    const changes: RepositoryChange[] = []
     const reserved = [...paths]
-    for (const file of files) {
+    // Validate every file before reading any of them.
+    const planned = files.map((file) => {
       const path = joinPath(
         uploadFolder.current,
         file.webkitRelativePath || file.name
@@ -403,12 +420,17 @@ export function RepositoryExplorer(props: Props) {
         throw new Error(
           `${file.name} exceeds the repository's 512 KiB operation limit.`
         )
-      changes.push({
-        operation: "put",
+      return { file, path }
+    })
+    const changes = await mapWithConcurrency(
+      planned,
+      4,
+      async ({ file, path }) => ({
+        operation: "put" as const,
         path,
         contents: await file.arrayBuffer(),
       })
-    }
+    )
     await apply({
       changes,
       requireAbsentPaths: changes.map((change) => change.path),

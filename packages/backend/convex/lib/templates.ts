@@ -114,18 +114,21 @@ async function loadProsFiles(programName: string): Promise<TemplateFile[]> {
 async function loadEzTemplateFiles(
   programName: string
 ): Promise<TemplateFile[]> {
-  const archiveFiles = await fetchExampleProjectArchive()
+  // The starter archive and SDK zips are independent downloads.
   // Kernel and LVGL must share the hard-float ABI introduced in PROS 4.2.
-  const [kernel, lvgl, okapi] = await Promise.all([
-    fetchZip(
-      `https://pros.cs.purdue.edu/v5/_static/releases/kernel@${EZ_PROS_VERSION}.zip`
-    ),
-    fetchZip(
-      "https://pros.cs.purdue.edu/v5/_static/releases/liblvgl@8.3.9.zip"
-    ),
-    fetchZip(
-      `https://codeload.github.com/purduesigbots/OkapiLib/zip/${OKAPI_REVISION}`
-    ),
+  const [archiveFiles, [kernel, lvgl, okapi]] = await Promise.all([
+    fetchExampleProjectArchive(),
+    Promise.all([
+      fetchZip(
+        `https://pros.cs.purdue.edu/v5/_static/releases/kernel@${EZ_PROS_VERSION}.zip`
+      ),
+      fetchZip(
+        "https://pros.cs.purdue.edu/v5/_static/releases/liblvgl@8.3.9.zip"
+      ),
+      fetchZip(
+        `https://codeload.github.com/purduesigbots/OkapiLib/zip/${OKAPI_REVISION}`
+      ),
+    ]),
   ])
   for (const path of Object.keys(archiveFiles)) {
     if (path.startsWith("include/pros/") || path.startsWith("include/liblvgl/"))

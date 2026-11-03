@@ -40,22 +40,24 @@ export const appendUpdate = mutation({
       throw new ConvexError("CRDT updates must be between 1 byte and 512 KiB.")
     }
 
-    const file = await ctx.db
-      .query("files")
-      .withIndex("by_program_path", (q) =>
-        q.eq("programId", args.programId).eq("path", args.path)
-      )
-      .unique()
+    // Both lookups use the requested path, so they can run concurrently.
+    const [file, document] = await Promise.all([
+      ctx.db
+        .query("files")
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", args.programId).eq("path", args.path)
+        )
+        .unique(),
+      ctx.db
+        .query("crdtDocuments")
+        .withIndex("by_program_path", (q) =>
+          q.eq("programId", args.programId).eq("path", args.path)
+        )
+        .unique(),
+    ])
     if (!file) {
       throw new ConvexError("File not found.")
     }
-
-    const document = await ctx.db
-      .query("crdtDocuments")
-      .withIndex("by_program_path", (q) =>
-        q.eq("programId", args.programId).eq("path", file.path)
-      )
-      .unique()
     const now = Date.now()
     if (!document) {
       throw new ConvexError("Open the live document before editing.")
