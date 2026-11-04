@@ -395,3 +395,139 @@ test("ephemeral requests authorize and share one bounded checkpoint restore with
     vi.unstubAllEnvs()
   }
 })
+
+test("failed Smolmachines requests keep the server's code and detail in the Builder error", async () => {
+  const { t, programId, alice } = await setup()
+  vi.stubEnv("SMOL_CLOUD_TOKEN", "test-token")
+  vi.stubEnv("SMOL_BUILD_CHECKPOINT", "startup-checkpoint")
+  vi.spyOn(console, "error").mockImplementation(() => {})
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      Response.json(
+        {
+          type: "about:blank",
+          title: "Internal Server Error",
+          status: 500,
+          code: "internal",
+          detail: "Checkpoint restore failed on the host.",
+          retryable: false,
+        },
+        {
+          status: 500,
+          headers: {
+            "content-type": "application/problem+json",
+            "x-request-id": "req-500",
+          },
+        }
+      )
+    )
+  )
+  try {
+    await alice.mutation(api.builds.start, { programId })
+    await t.action(internal.buildWorker.reconcile, { programId })
+    expect(await alice.query(api.builds.status, { programId })).toMatchObject({
+      status: "error",
+      logs: "Builder request failed (500, internal, request req-500). Checkpoint restore failed on the host.",
+    })
+  } finally {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  }
+})
+
+test("a failing startup checkpoint is replaced by an image boot in the same run", async () => {
+  const { t, programId, alice } = await setup()
+  vi.stubEnv("SMOL_CLOUD_TOKEN", "test-token")
+  vi.stubEnv("SMOL_BUILD_IMAGE", "registry.example.com/build:test")
+  vi.stubEnv("SMOL_BUILD_CHECKPOINT", "stale-checkpoint")
+  vi.spyOn(console, "error").mockImplementation(() => {})
+  const calls: string[] = []
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: string, init: RequestInit) => {
+      const path = new URL(input).pathname
+      calls.push(`${init.method} ${path}`)
+      if (init.method === "DELETE") return new Response(null, { status: 204 })
+      if (path.endsWith("/restore"))
+        return Response.json(
+          {
+            type: "about:blank",
+            title: "Internal Server Error",
+            status: 500,
+            code: "internal",
+            detail: "vCPU rejected checkpoint state",
+            retryable: false,
+          },
+          { status: 500 }
+        )
+      if (path === "/v1/machines") return Response.json({ id: "image-machine" })
+      if (path.endsWith("/exec"))
+        return Response.json({
+          exitCode: 0,
+          stdout: JSON.stringify({ building: false }),
+        })
+      return Response.json({ ready: true, state: "started" })
+    })
+  )
+  try {
+    await alice.mutation(api.builds.start, { programId })
+    await t.action(internal.buildWorker.reconcile, { programId })
+    expect(calls.filter((c) => c.includes("/restore"))).toHaveLength(1)
+    expect(calls).toContain("POST /v1/machines")
+    expect(await alice.query(api.builds.status, { programId })).toMatchObject({
+      status: "ready",
+      machineId: "image-machine",
+    })
+  } finally {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  }
+})
+
+test("a restored machine that fails to start is deleted before the image boot", async () => {
+  const { t, programId, alice } = await setup()
+  vi.stubEnv("SMOL_CLOUD_TOKEN", "test-token")
+  vi.stubEnv("SMOL_BUILD_IMAGE", "registry.example.com/build:test")
+  vi.stubEnv("SMOL_BUILD_CHECKPOINT", "stale-checkpoint")
+  vi.spyOn(console, "error").mockImplementation(() => {})
+  const calls: string[] = []
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: string, init: RequestInit) => {
+      const path = new URL(input).pathname
+      calls.push(`${init.method} ${path}`)
+      if (init.method === "DELETE") return new Response(null, { status: 204 })
+      if (path.endsWith("/restore"))
+        return Response.json({ id: "restored-machine" })
+      if (path === "/v1/machines") return Response.json({ id: "image-machine" })
+      if (path.endsWith("/exec")) {
+        // The restored machine fails its first exec; the image machine answers health.
+        const restored = calls.some((c) => c.includes("restored-machine"))
+        return Response.json(
+          restored && calls.filter((c) => c.includes("/exec")).length === 1
+            ? { exitCode: 1, stdout: "" }
+            : { exitCode: 0, stdout: JSON.stringify({ building: false }) }
+        )
+      }
+      return Response.json({ ready: true, state: "started" })
+    })
+  )
+  try {
+    await alice.mutation(api.builds.start, { programId })
+    await t.action(internal.buildWorker.reconcile, { programId })
+    const deleteIndex = calls.indexOf("DELETE /v1/machines/restored-machine")
+    expect(deleteIndex).toBeGreaterThan(-1)
+    expect(calls.indexOf("POST /v1/machines")).toBeGreaterThan(deleteIndex)
+    expect(await alice.query(api.builds.status, { programId })).toMatchObject({
+      status: "ready",
+      machineId: "image-machine",
+    })
+  } finally {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  }
+})
