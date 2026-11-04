@@ -27,6 +27,13 @@ def template():
 UPLOADS = {}
 VIEWERS = {}
 
+# Phase timing for measurement. Off unless V5X_TIMING_LOG names a file; when off, nothing is written.
+TIMING_LOG = os.environ.get('V5X_TIMING_LOG')
+def mark(event, **fields):
+    if TIMING_LOG:
+        with open(TIMING_LOG, 'a') as log:
+            log.write(json.dumps({'tool': 'v5x-server', 'event': event, 'at': time.time(), **fields}) + '\n')
+
 def append(text):
     import re
     with LOCK:
@@ -58,7 +65,9 @@ def extract(snapshot, target):
 def compile_source(snapshot, commit):
     global ARTIFACT
     try:
+        mark('compile-start', bytes=len(snapshot))
         extract(snapshot, SOURCE)
+        mark('extract-end')
         process = subprocess.Popen(['/usr/local/bin/v5x-build', template()], cwd=SOURCE,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
         def timeout():
@@ -76,6 +85,7 @@ def compile_source(snapshot, commit):
                 append(decoder.decode(chunk))
             append(decoder.decode(b'', final=True))
             code = process.wait()
+            mark('build-exit', code=code)
         finally: timer.cancel()
         if code == 0:
             output = io.BytesIO()
@@ -88,6 +98,7 @@ def compile_source(snapshot, commit):
                             if total > 64*1024*1024: raise ValueError('Binaries exceed 64 MiB.')
                             archive.write(path, str(path.relative_to(SOURCE)))
             data = output.getvalue()
+            mark('artifact-zipped', bytes=len(data))
             if len(data) > 32*1024*1024: raise ValueError('Artifacts exceed 32 MiB.')
             with LOCK:
                 ARTIFACT = data

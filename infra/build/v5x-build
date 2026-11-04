@@ -6,7 +6,16 @@ import os
 import pathlib
 import subprocess
 import sys
+import time
 
+# Phase timing for measurement. Off unless V5X_TIMING_LOG names a file.
+TIMING_LOG = os.environ.get('V5X_TIMING_LOG')
+def mark(event, **fields):
+    if TIMING_LOG:
+        with open(TIMING_LOG, 'a') as log:
+            log.write(json.dumps({'tool': 'v5x-build', 'event': event, 'at': time.time(), **fields}) + '\n')
+
+mark('build-start')
 template = sys.argv[1]
 if template not in ('pros', 'ez-template', 'rw', 'vexcode', 'jar'):
     sys.exit('Unknown program template')
@@ -45,4 +54,6 @@ if template in LIBRARY_PCH:
     os.environ['V5X_PCH_SOURCE'] = LIBRARY_PCH[template]
 else:
     os.environ.pop('V5X_PCH_SOURCE', None)
+mark('make-start')
 subprocess.run(command, check=True)
+mark('make-end')

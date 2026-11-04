@@ -7,12 +7,22 @@ import pathlib
 import re
 import subprocess
 import sys
+import json
+import time
+
+# Phase timing for measurement. Off unless V5X_TIMING_LOG names a file; when off, behaviour is unchanged.
+TIMING_LOG = os.environ.get('V5X_TIMING_LOG')
+def mark(event, **fields):
+    if TIMING_LOG:
+        with open(TIMING_LOG, 'a') as log:
+            log.write(json.dumps({'tool': 'v5x-cxx', 'event': event, 'at': time.time(), **fields}) + '\n')
 
 compiler = os.environ['V5X_REAL_CXX']
 args = sys.argv[1:]
 source = next((a for a in args if a.endswith(('.cpp', '.cc', '.cxx'))), None)
 if '-c' not in args or not source:
     os.execvp(compiler, [compiler, *args])
+mark('cxx-start', source=source)
 # Library-only PCHs are baked into the Builder checkpoint, so they must not depend on project headers or debug info.
 library_prefix = os.environ.get('V5X_PCH_SOURCE')
 DEBUG_FLAG = re.compile(r'-g(?:\d|gdb\d*)?')
@@ -50,11 +60,17 @@ with (cache / 'lock').open('w') as lock:
     fcntl.flock(lock, fcntl.LOCK_EX)
     prefix = cache / 'prefix.h'
     pch = cache / 'prefix.h.gch'
+    mark('pch-lookup', hit=pch.exists(), key=digest.hexdigest()[:12])
     if not pch.exists():
         print('Precompiling ' + label, flush=True)
         prefix.write_text(prefix_text)
         subprocess.run([compiler, *flags, '-x', 'c++-header', str(prefix), '-o', str(pch)], check=True)
+        mark('pch-built', key=digest.hexdigest()[:12])
 # Clang validates header metadata too. Uploads preserve unchanged headers, and
 # the cache key includes metadata to invalidate headers restored to older contents.
 extra = ['-include-pch', str(pch)] if 'clang' in pathlib.Path(compiler).name else ['-include', str(prefix), '-Werror=invalid-pch']
+if TIMING_LOG:
+    result = subprocess.run([compiler, *extra, *args])
+    mark('cxx-end', source=source, code=result.returncode)
+    sys.exit(result.returncode)
 os.execvp(compiler, [compiler, *extra, *args])
