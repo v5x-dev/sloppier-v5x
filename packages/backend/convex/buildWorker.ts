@@ -21,10 +21,30 @@ export async function cloud<T>(
     signal: AbortSignal.timeout(330_000),
   })
   if (method === "DELETE" && response.status === 404) return undefined as T
-  if (!response.ok)
+  if (!response.ok) {
+    // Smolmachines returns RFC 9457 problem details; keep its code and message.
+    const requestId = response.headers.get("x-request-id") ?? "unknown"
+    const problem = await response.json().catch(() => undefined as unknown)
+    const code =
+      problem && typeof problem === "object" && "code" in problem
+        ? String((problem as { code: unknown }).code)
+        : undefined
+    const detail =
+      problem && typeof problem === "object" && "detail" in problem
+        ? String((problem as { detail: unknown }).detail).slice(0, 300)
+        : undefined
+    console.error("Smolmachines request failed", {
+      method,
+      path,
+      status: response.status,
+      requestId,
+      code,
+      detail,
+    })
     throw new Error(
-      `Builder request failed (${response.status}, request ${response.headers.get("x-request-id") ?? "unknown"}).`
+      `Builder request failed (${response.status}${code ? `, ${code}` : ""}, request ${requestId}).${detail ? ` ${detail}` : ""}`
     )
+  }
   return response.status === 204
     ? (undefined as T)
     : ((await response.json()) as T)
@@ -145,37 +165,55 @@ export const reconcile = internalAction({
       const checkpoint = process.env.SMOL_BUILD_CHECKPOINT
       if (!machineId && checkpoint) {
         // Restoring a booted machine takes ~1 s instead of a ~15 s image boot.
-        const machine = await cloud<{ id: string }>(
-          `/checkpoints/${encodeURIComponent(checkpoint)}/restore`,
-          { name: `v5x-${args.programId}`, network: { mode: "open" } }
-        )
-        machineId = machine.id
-        await ctx.runMutation(internal.builds.update, {
-          ...args,
-          machineId,
-          status: "starting",
-          logs: "Waiting for builder…",
-        })
-        // Exec starts the restored machine; the server reads its template from this file.
-        const health = await cloud<{ stdout?: string; exitCode?: number }>(
-          `/machines/${encodeURIComponent(machineId)}/exec?output=text`,
-          {
-            command: [
-              "python3",
-              "-c",
-              "import sys,urllib.request; open('/home/builder/workspace/template','w').write(sys.argv[1]); print(urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=5).read().decode())",
-              state.program!.template,
-            ],
-            timeoutSeconds: 10,
-          }
-        )
-        if (health.exitCode !== 0) throw new Error("Builder failed to start.")
-        await ctx.runMutation(internal.builds.update, {
-          ...args,
-          status: "ready",
-          logs: "Builder is ready. Commit changes, then select Build.",
-        })
-        return
+        try {
+          const machine = await cloud<{ id: string }>(
+            `/checkpoints/${encodeURIComponent(checkpoint)}/restore`,
+            { name: `v5x-${args.programId}`, network: { mode: "open" } }
+          )
+          machineId = machine.id
+          await ctx.runMutation(internal.builds.update, {
+            ...args,
+            machineId,
+            status: "starting",
+            logs: "Waiting for builder…",
+          })
+          // Exec starts the restored machine; the server reads its template from this file.
+          const health = await cloud<{ stdout?: string; exitCode?: number }>(
+            `/machines/${encodeURIComponent(machineId)}/exec?output=text`,
+            {
+              command: [
+                "python3",
+                "-c",
+                "import sys,urllib.request; open('/home/builder/workspace/template','w').write(sys.argv[1]); print(urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=5).read().decode())",
+                state.program!.template,
+              ],
+              timeoutSeconds: 10,
+            }
+          )
+          if (health.exitCode !== 0) throw new Error("Builder failed to start.")
+          await ctx.runMutation(internal.builds.update, {
+            ...args,
+            status: "ready",
+            logs: "Builder is ready. Commit changes, then select Build.",
+          })
+          return
+        } catch (error) {
+          // Without an image there is no fallback; report the checkpoint failure itself.
+          if (!process.env.SMOL_BUILD_IMAGE) throw error
+          // A stored checkpoint can stop restoring after the cloud hosts change.
+          // Remove any machine it left behind, then boot the image in this run.
+          console.error(
+            "Builder checkpoint failed; booting the image instead.",
+            error instanceof Error ? error.message : error
+          )
+          if (machineId)
+            await cloud(
+              `/machines/${encodeURIComponent(machineId)}`,
+              undefined,
+              "DELETE"
+            )
+          machineId = undefined
+        }
       }
       if (!machineId) {
         const image = process.env.SMOL_BUILD_IMAGE
