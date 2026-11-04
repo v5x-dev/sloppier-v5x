@@ -3,6 +3,7 @@ import { ProgramHistory } from "@/components/program/program-history"
 import { ProgramSearch } from "@/components/program/program-search"
 import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
+import { SoundToggle } from "@/components/shared/sound-toggle"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 import { DndContext, DragOverlay } from "@dnd-kit/core"
@@ -488,6 +489,7 @@ export function Workbench({
                 />
               </Suspense>
             )}
+            <SoundToggle />
           </ActionsBar>
         </SidebarInset>
         <CommitDialog

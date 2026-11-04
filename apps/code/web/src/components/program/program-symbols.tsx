@@ -1,11 +1,15 @@
 import { useContext, useState, useSyncExternalStore } from "react"
-import { CaretRightIcon } from "@phosphor-icons/react"
+import { CaretRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@v5x/ui/components/collapsible"
-import { Input } from "@v5x/ui/components/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@v5x/ui/components/input-group"
 import { ScrollArea } from "@v5x/ui/components/scroll-area"
 import "@vscode/codicons/dist/codicon.css"
 import {
@@ -78,13 +82,18 @@ export function ProgramSymbols() {
       aria-label="Program symbols"
     >
       <div className="px-3 pt-3 pb-3">
-        <Input
-          autoFocus
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search symbols…"
-          aria-label="Search symbols"
-        />
+        <InputGroup>
+          <InputGroupAddon>
+            <MagnifyingGlassIcon aria-hidden="true" />
+          </InputGroupAddon>
+          <InputGroupInput
+            autoFocus
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search symbols…"
+            aria-label="Search symbols"
+          />
+        </InputGroup>
       </div>
       <ScrollArea className="min-h-0 flex-1" aria-label="Symbol results">
         {client?.error && (
