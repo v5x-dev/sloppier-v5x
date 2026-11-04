@@ -19,12 +19,46 @@ test.describe("signed-in dashboard", () => {
       page.getByRole("heading", { name: "Programs", exact: true })
     ).toBeVisible()
     await expect(
-      page.getByRole("button", { name: "New program", exact: true })
+      page
+        .getByRole("region", { name: "Create program" })
+        .getByRole("button", { name: "New PROS program", exact: true })
     ).toBeVisible()
   })
 
+  test("shows a tile for each program template", async ({ page }) => {
+    const create = page.getByRole("region", { name: "Create program" })
+    for (const label of ["VEXCode", "JAR", "PROS", "EZ", "RW"]) {
+      await expect(
+        create.getByRole("button", {
+          name: `New ${label} program`,
+          exact: true,
+        })
+      ).toBeVisible()
+    }
+  })
+
+  test("opens the new program dialog from a template tile", async ({
+    page,
+  }) => {
+    await page
+      .getByRole("region", { name: "Create program" })
+      .getByRole("button", { name: "New PROS program", exact: true })
+      .click()
+    const dialog = page.getByRole("dialog", { name: "New program" })
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByRole("button", { name: "PROS" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+    await dialog.getByRole("button", { name: "Cancel" }).click()
+    await expect(dialog).toBeHidden()
+  })
+
   test("opens and cancels the new program dialog", async ({ page }) => {
-    await page.getByRole("button", { name: "New program", exact: true }).click()
+    await page
+      .getByRole("region", { name: "Create program" })
+      .getByRole("button", { name: "New VEXCode program", exact: true })
+      .click()
     const dialog = page.getByRole("dialog", { name: "New program" })
     await expect(dialog).toBeVisible()
     await dialog.getByLabel("Name").fill("Playwright draft")
@@ -35,11 +69,15 @@ test.describe("signed-in dashboard", () => {
   test("filters programs and clears the search with Escape", async ({
     page,
   }) => {
+    await page.getByRole("button", { name: "Search programs" }).click()
     const search = page.getByRole("searchbox", { name: "Search programs" })
     await search.fill("playwright-no-matching-program-987654321")
     await expect(page.getByText(/No matches|No programs yet/)).toBeVisible()
     await search.press("Escape")
-    await expect(search).toHaveValue("")
+    await expect(search).toBeHidden()
+    await expect(
+      page.getByRole("button", { name: "Search programs", exact: true })
+    ).toBeVisible()
   })
 
   test("toggles the archived program view", async ({ page }) => {
