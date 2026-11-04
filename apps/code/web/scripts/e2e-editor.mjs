@@ -2,6 +2,15 @@ import { execFileSync } from "node:child_process"
 import { basename, resolve } from "node:path"
 import { startFakeBuilder } from "../e2e/fixtures/fake-builder.mjs"
 import { startDemoSession } from "./demo-session.mjs"
+const allSuites = ["editor", "collaboration", "build-upload"]
+// CI runs one suite per job so suites execute in parallel; each job still
+// starts its own disposable backend. Unset runs every suite in order.
+const requestedSuite = process.env.E2E_EDITOR_SUITE
+if (requestedSuite && !allSuites.includes(requestedSuite))
+  throw new Error(
+    `E2E_EDITOR_SUITE must be one of: ${allSuites.join(", ")} (got "${requestedSuite}")`
+  )
+const suites = requestedSuite ? [requestedSuite] : allSuites
 const builder = await startFakeBuilder()
 let session
 try {
@@ -26,7 +35,6 @@ try {
     ],
     { cwd: resolve(import.meta.dirname, ".."), stdio: "inherit" }
   )
-  const suites = ["editor", "collaboration", "build-upload"]
   for (const [index, suite] of suites.entries()) {
     // Each capability starts with clean source; interrupted or failed edits in
     // another suite must never change this suite's initial state.
