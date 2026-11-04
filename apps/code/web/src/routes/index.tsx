@@ -48,7 +48,11 @@ import { Skeleton } from "@v5x/ui/components/skeleton"
 import { Spinner } from "@v5x/ui/components/spinner"
 import { toast } from "@v5x/ui/components/toast"
 import { ToggleGroup, ToggleGroupItem } from "@v5x/ui/components/toggle-group"
-import { Toggle } from "@v5x/ui/components/toggle"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@v5x/ui/components/input-group"
 import { Input } from "@v5x/ui/components/input"
 import { useAction, useMutation, useQuery } from "convex/react"
 import { format, isSameWeek, isSameYear, isToday, isYesterday } from "date-fns"
@@ -60,6 +64,11 @@ import {
   WorkspaceInvitations,
 } from "@/components/workspace/workspace-team"
 import { ImportFolder } from "@/components/repository/import-folder"
+import {
+  StarterTile,
+  starterTileClassName,
+  starterTileStyle,
+} from "@/components/program/starter-tile"
 import { AuthGate } from "@/components/app/auth-gate"
 import { RepositoryStatusBadge } from "@/components/repository/repository-status-badge"
 import { errorMessage } from "@/lib/errors"
@@ -108,6 +117,7 @@ function ProgramsPage() {
   )
   const [archived, setArchived] = useState(false)
   const [query, setQuery] = useState("")
+  const [searching, setSearching] = useState(false)
 
   const available = (workspaces ?? []).flatMap(({ workspace }) =>
     workspace ? [workspace] : []
@@ -127,52 +137,81 @@ function ProgramsPage() {
         onSelect={setSelectedId}
       />
       <main className="mx-auto flex w-[52rem] max-w-full flex-1 flex-col gap-4 px-4 pt-6 pb-16 sm:px-6">
+        <section
+          aria-label="Create program"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-5 [&>:last-child]:col-span-2 sm:[&>:last-child]:col-span-1"
+        >
+          {templateOrder.map((template) =>
+            workspace ? (
+              <NewProgramDialog
+                key={`${workspace._id}-${template}`}
+                workspaceId={workspace._id}
+                initialTemplate={template}
+              />
+            ) : (
+              <Skeleton key={template} className="h-[6.75rem] rounded-xl" />
+            )
+          )}
+        </section>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="mr-auto text-lg font-semibold">Programs</h1>
-          <div className="order-last flex w-full items-center gap-2 sm:order-none sm:w-auto">
-            <div className="relative w-full sm:w-56">
-              <MagnifyingGlassIcon
-                aria-hidden="true"
-                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
+          {searching || query !== "" ? (
+            <InputGroup className="order-last w-full border-field-border sm:order-none sm:w-56">
+              <InputGroupAddon>
+                <MagnifyingGlassIcon aria-hidden="true" />
+              </InputGroupAddon>
+              <InputGroupInput
                 type="search"
                 aria-label="Search programs"
                 placeholder="Search"
+                autoFocus
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") setQuery("")
+                onBlur={(event) => {
+                  // Focus moving to another control keeps the field open, so
+                  // the click that moved it still lands on that control.
+                  if (query === "" && event.relatedTarget === null)
+                    setSearching(false)
                 }}
-                className="h-8 pl-8 [&::-webkit-search-cancel-button]:appearance-none"
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setQuery("")
+                    setSearching(false)
+                  }
+                }}
+                className="h-8 [&::-webkit-search-cancel-button]:appearance-none"
               />
-            </div>
-            <ActionTooltip
-              label={
-                archived ? "Show active programs" : "Show archived programs"
-              }
-            >
-              <Toggle
+            </InputGroup>
+          ) : (
+            <ActionTooltip label="Search programs">
+              <Button
                 variant="outline"
-                data-cuelume-toggle
-                className="h-8 w-8 shrink-0 px-0"
-                aria-label="Show archived programs"
-                pressed={archived}
-                onPressedChange={setArchived}
+                size="icon"
+                aria-label="Search programs"
+                onClick={() => setSearching(true)}
               >
-                <ArchiveBoxIcon />
-              </Toggle>
+                <MagnifyingGlassIcon />
+              </Button>
             </ActionTooltip>
-          </div>
+          )}
+          <ActionTooltip
+            label={archived ? "Show active programs" : "Show archived programs"}
+          >
+            <Button
+              variant={archived ? "default" : "outline"}
+              size="icon"
+              data-cuelume-toggle
+              aria-label="Show archived programs"
+              aria-pressed={archived}
+              onClick={() => setArchived((value) => !value)}
+            >
+              <ArchiveBoxIcon />
+            </Button>
+          </ActionTooltip>
           {workspace ? (
             <ImportFolder key={workspace._id} workspaceId={workspace._id} />
           ) : (
             <Skeleton className="size-8" />
-          )}
-          {workspace ? (
-            <NewProgramDialog key={workspace._id} workspaceId={workspace._id} />
-          ) : (
-            <Skeleton className="h-8 w-32" />
           )}
         </div>
         {!workspace ? (
@@ -577,14 +616,20 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
   )
 }
 
-function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
+function NewProgramDialog({
+  workspaceId,
+  initialTemplate,
+}: {
+  workspaceId: Id<"workspaces">
+  initialTemplate: Template
+}) {
   const generateName = useMutation(api.programs.generateName)
   const createProgram = useMutation(api.programs.create)
   const navigate = Route.useNavigate()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [generatedName, setGeneratedName] = useState("")
-  const [template, setTemplate] = useState<Template>("pros")
+  const [template, setTemplate] = useState<Template>(initialTemplate)
   const [pending, setPending] = useState(false)
   // Numbers each suggestion request so a reply that arrives after close is ignored.
   const suggestion = useRef(0)
@@ -634,14 +679,34 @@ function NewProgramDialog({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (next) suggestName()
-        else suggestion.current++
+        if (next) {
+          setTemplate(initialTemplate)
+          suggestName()
+        } else suggestion.current++
         setOpen(next)
       }}
     >
-      <DialogTrigger render={<Button size="sm" data-cuelume-open />}>
-        <PlusIcon data-icon="inline-start" />
-        New program
+      <DialogTrigger
+        render={
+          <Button
+            aria-label={`New ${templateLabels[initialTemplate]} program`}
+            variant="outline"
+            className={starterTileClassName}
+            style={starterTileStyle(`var(--template-${initialTemplate})`)}
+            data-cuelume-open
+          />
+        }
+      >
+        <StarterTile
+          icon={
+            <img
+              src={templateIcons[initialTemplate]}
+              alt=""
+              className="size-6 object-contain"
+            />
+          }
+          label={templateLabels[initialTemplate]}
+        />
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={submit} className="flex flex-col gap-4">

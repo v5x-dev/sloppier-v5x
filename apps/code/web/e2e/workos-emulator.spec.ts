@@ -30,14 +30,14 @@ test("signs in through AuthKit and restores the session after reload", async ({
     page.getByRole("heading", { name: "Programs", exact: true })
   ).toBeVisible()
   await expect(
-    page.getByRole("button", { name: "New program", exact: true })
+    page.getByRole("button", { name: "New PROS program", exact: true })
   ).toBeVisible()
   await page.reload()
   await expect(
     page.getByRole("heading", { name: "Programs", exact: true })
   ).toBeVisible()
   await expect(
-    page.getByRole("button", { name: "New program", exact: true })
+    page.getByRole("button", { name: "New PROS program", exact: true })
   ).toBeVisible()
 })
 
@@ -53,7 +53,7 @@ test("edits and commits a disposable Program after WorkOS sign-in", async ({
   await page.locator('input[name="email"]').fill("playwright@example.test")
   await page.getByRole("button", { name: "Continue" }).click()
   const create = page.getByRole("button", {
-    name: "New program",
+    name: "New PROS program",
     exact: true,
   })
   await expect(create).toBeVisible()
