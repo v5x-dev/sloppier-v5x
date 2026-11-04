@@ -10,6 +10,7 @@ import tokenCss from "@v5x/tokens/code/web.css?url"
 import noiseCss from "../noise.css?url"
 import { fontPreloadsForRoute } from "@v5x/ui/lib/font-preloads"
 import { AppProviders } from "@/components/app/app-providers"
+import { applySoundPreference } from "@/lib/sound-preference"
 import { bind } from "cuelume"
 import { useEffect } from "react"
 
@@ -73,7 +74,10 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   // Sounds for data-cuelume-* controls. Audio starts on the first user gesture.
-  useEffect(() => bind(), [])
+  useEffect(() => {
+    applySoundPreference()
+    return bind()
+  }, [])
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
