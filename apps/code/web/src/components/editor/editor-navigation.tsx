@@ -72,7 +72,7 @@ function HoverCard({
     }
   }, [popup])
   return (
-    <ScrollArea
+    <div
       role="tooltip"
       data-language-hover
       onMouseEnter={onEnter}
@@ -83,10 +83,12 @@ function HoverCard({
         height: Math.min(contentHeight, position.maxHeight),
       }}
     >
-      <div ref={content} className="flow-root">
-        <HoverDocumentation contents={popup.contents} />
-      </div>
-    </ScrollArea>
+      <ScrollArea className="h-full">
+        <div ref={content} className="flow-root">
+          <HoverDocumentation contents={popup.contents} />
+        </div>
+      </ScrollArea>
+    </div>
   )
 }
 

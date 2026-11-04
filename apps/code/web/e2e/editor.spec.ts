@@ -50,6 +50,28 @@ test.describe("program editor", () => {
     ).toBeHidden()
   })
 
+  test("toggles the minimap and remembers the preference", async ({ page }) => {
+    await page.keyboard.press("Control+p")
+    const fileSearch = page.getByRole("combobox", { name: "Find a file" })
+    await fileSearch.fill("main.cpp")
+    await fileSearch.press("Enter")
+    const toggle = page.getByRole("button", { name: "Toggle minimap" })
+    await expect(
+      page.getByRole("slider", { name: "Editor minimap" })
+    ).toBeVisible()
+    await toggle.click()
+    await expect(toggle).toHaveAttribute("aria-pressed", "false")
+    await expect(
+      page.getByRole("slider", { name: "Editor minimap" })
+    ).toHaveCount(0)
+    await page.reload()
+    await expect(toggle).toHaveAttribute("aria-pressed", "false")
+    await toggle.click()
+    await expect(
+      page.getByRole("slider", { name: "Editor minimap" })
+    ).toBeVisible()
+  })
+
   test("searches source and opens a matching file", async ({ page }) => {
     await page.getByRole("button", { name: "Search program" }).click()
     await page.getByRole("textbox", { name: "Search text" }).fill(searchTerm)

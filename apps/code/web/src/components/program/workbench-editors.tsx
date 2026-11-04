@@ -14,6 +14,7 @@ import {
 import {
   ColumnsIcon,
   FileDashedIcon,
+  MapTrifoldIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react"
 import type { Id } from "@v5x/backend/dataModel"
@@ -32,7 +33,8 @@ import { cn } from "@v5x/ui/lib/utils"
 
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
-import { Fragment, useSyncExternalStore } from "react"
+import { Fragment, useEffect, useState, useSyncExternalStore } from "react"
+import { readEditorState, writeEditorState } from "@/lib/editor-persistence"
 
 import type { DragSource, DropHighlight } from "./workbench-drop"
 import { FileEditor } from "./workbench-file-editor"
@@ -56,6 +58,10 @@ export function WorkbenchEditors({
   dropHighlight: DropHighlight | null
   drag: DragSource | null
 }) {
+  const [showMinimap, setShowMinimap] = useState(true)
+  useEffect(() => {
+    setShowMinimap(readEditorState<boolean>("show-minimap") !== false)
+  }, [])
   const {
     paths,
     listError,
@@ -147,6 +153,23 @@ export function WorkbenchEditors({
                 group.activePath ? liveStatus[group.activePath] : undefined
               }
             />
+            <ActionTooltip
+              label={showMinimap ? "Hide minimap" : "Show minimap"}
+            >
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Toggle minimap"
+                aria-pressed={showMinimap}
+                onClick={() => {
+                  const next = !showMinimap
+                  setShowMinimap(next)
+                  writeEditorState("show-minimap", next)
+                }}
+              >
+                <MapTrifoldIcon />
+              </Button>
+            </ActionTooltip>
             <ActionTooltip label="Split editor" shortcut={shortcutKeys("\\")}>
               <Button
                 variant="ghost"
@@ -207,6 +230,7 @@ export function WorkbenchEditors({
                       : undefined
                   }
                   active={group.activePath === path}
+                  showMinimap={showMinimap}
                   onCursorLine={onCursorLine}
                   onPeopleChange={(people) => source.setPeople(path, people)}
                   onSyncChange={(synced) => source.setSynced(path, synced)}

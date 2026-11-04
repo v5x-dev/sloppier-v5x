@@ -25,6 +25,7 @@ import {
 } from "@/lib/live-file-session"
 import { useEditorCompletion } from "./editor-completion"
 import { useEditorBrackets } from "./editor-brackets"
+import { EditorMinimap } from "./editor-minimap"
 import { useLanguageService } from "./language-session"
 import {
   replacementEdits,
@@ -48,6 +49,7 @@ type Props = {
   ) => Promise<Id<"crdtDocuments"> | null> | undefined
   path: string
   active: boolean
+  showMinimap: boolean
   onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   onChange: (text: string) => void
@@ -64,6 +66,7 @@ export function LiveFileEditor({
   takeLiveOpen,
   path,
   active,
+  showMinimap,
   diagnosticTarget,
   onFormatChange,
   onChange,
@@ -209,6 +212,7 @@ export function LiveFileEditor({
             key={binding.shared.clientID}
             binding={binding}
             active={active}
+            showMinimap={showMinimap}
             onCursorLine={onCursorLine}
             onFormatChange={onFormatChange}
             diagnosticTarget={active ? diagnosticTarget : undefined}
@@ -228,6 +232,7 @@ function PierreFile({
   onFormatChange,
   binding,
   active,
+  showMinimap,
   onCursorLine,
   path,
   programId,
@@ -237,6 +242,7 @@ function PierreFile({
   viewId: string
   binding: PierreCollaboration
   active: boolean
+  showMinimap: boolean
   onCursorLine: (path: string, line: number) => void
   onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
@@ -475,6 +481,11 @@ function PierreFile({
           onEditComplete={() => "accept"}
         />
       </EditProvider>
+      <EditorMinimap
+        binding={binding}
+        active={active && showMinimap}
+        host={completion.wrapper}
+      />
       {completion.popup}
       {navigation}
     </div>

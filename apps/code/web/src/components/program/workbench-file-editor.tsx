@@ -21,6 +21,7 @@ export function FileEditor({
   path,
   loaded,
   active,
+  showMinimap,
   onSyncChange,
   onLiveStatus,
   onPeopleChange,
@@ -37,6 +38,7 @@ export function FileEditor({
   onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   active: boolean
+  showMinimap: boolean
   onSyncChange: (synced: boolean) => void
   onLiveStatus: (status: LiveSaveStatus) => void
   onPeopleChange: (people: LivePerson[]) => void
@@ -84,6 +86,7 @@ export function FileEditor({
           viewId={viewId}
           path={path}
           active={active}
+          showMinimap={showMinimap}
           diagnosticTarget={diagnosticTarget}
           onChange={onChange}
           onSyncChange={onSyncChange}
