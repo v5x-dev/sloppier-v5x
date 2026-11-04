@@ -5,6 +5,8 @@ import { Workbench } from "@/components/program/program-workbench"
 import { WorkbenchSource } from "@/lib/workbench-source"
 import { errorMessage } from "@/lib/errors"
 import { useAuth } from "@/lib/auth"
+import { preloadEditorHighlighter } from "@/lib/editor-theme"
+import { takePrefetchedProgramEditor } from "@/lib/program-editor-prefetch"
 import {
   ArrowClockwiseIcon,
   CaretLeftIcon,
@@ -70,6 +72,7 @@ function ProgramLoader({ programId }: { programId: Id<"programs"> }) {
   const restoreHistoryCommit = useAction(api.codeStorage.restoreHistoryCommit)
   const [source] = useState(
     () =>
+      takePrefetchedProgramEditor(programId) ??
       new WorkbenchSource(programId, {
         buildManifest,
         listFiles,
@@ -84,6 +87,11 @@ function ProgramLoader({ programId }: { programId: Id<"programs"> }) {
     if (program === undefined && !auth.isLoading && auth.user)
       source.prefetchPaths()
   }, [source, program, auth.isLoading, auth.user])
+  useEffect(() => {
+    preloadEditorHighlighter().catch(() => {
+      /* The editor loads the highlighter itself when this fails. */
+    })
+  }, [])
 
   if (program === undefined) {
     return <ProgramBootShape />

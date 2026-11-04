@@ -141,7 +141,11 @@ export function LiveFileEditor({
       programId,
       path,
       user,
-      openLanguage: (text) => languageRef.current?.openDocument(path, text),
+      openLanguage: (text) => {
+        // The first editor on screen starts autocomplete in idle time.
+        languageRef.current?.scheduleStart()
+        return languageRef.current?.openDocument(path, text)
+      },
       view,
     })
     joinRef.current = join

@@ -292,3 +292,47 @@ it("keeps API assistance available when unopened repository files cannot be read
     ).items.map((s) => s.label)
   ).toContain("spin")
 })
+
+describe("deferred autocomplete start", () => {
+  it("reads the repository only after an editor schedules the start", async () => {
+    vi.useFakeTimers()
+    try {
+      const prepareSource = vi.fn(async () => encode({}))
+      const service = new LanguageService(
+        "vexcode",
+        prepareSource,
+        async () => vex
+      )
+      cleanup.push(() => service.stop())
+      void service.refreshSource()
+      expect(prepareSource).not.toHaveBeenCalled()
+      service.scheduleStart()
+      service.scheduleStart()
+      expect(prepareSource).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(prepareSource).toHaveBeenCalledTimes(1)
+      expect(service.getStatus()).not.toBe("stopped")
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("cancels a scheduled start when the editor closes first", async () => {
+    vi.useFakeTimers()
+    try {
+      const prepareSource = vi.fn(async () => encode({}))
+      const service = new LanguageService(
+        "vexcode",
+        prepareSource,
+        async () => vex
+      )
+      service.scheduleStart()
+      service.stop()
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(prepareSource).not.toHaveBeenCalled()
+      expect(service.getStatus()).toBe("stopped")
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

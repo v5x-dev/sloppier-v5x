@@ -230,3 +230,41 @@ if ((state || demoUser) && programId) {
     )
   })
 }
+
+if ((state || demoUser) && programId) {
+  test("Return to Program from dashboard", async ({ browser, baseURL }) => {
+    const samples: number[] = []
+    const dashboard = demoUser
+      ? `/?demoUser=${encodeURIComponent(demoUser)}`
+      : "/"
+    const link = `a[href="/programs/${encodeURIComponent(programId)}"]`
+    for (let i = 0; i < runs; i++) {
+      const context = await browser.newContext({ baseURL, storageState: state })
+      try {
+        const page = await measuredPage(context)
+        // Open the Program once so its saved tabs and live document exist, then leave.
+        await page.goto(dashboard)
+        await waitVisible(page.locator(link))
+        await page.locator(link).click()
+        await waitVisible(page.getByRole("tabpanel").getByRole("textbox"))
+        await page.locator('[aria-label="All programs"]').first().click()
+        await waitVisible(page.locator(link))
+        const start = performance.now()
+        await page.locator(link).click()
+        await waitVisible(page.getByRole("button", { name: "New file" }))
+        await waitVisible(page.getByRole("tabpanel").getByRole("textbox"))
+        samples.push(performance.now() - start)
+      } finally {
+        await context.close()
+      }
+    }
+    console.log(
+      JSON.stringify({
+        scenario: "Return to Program from dashboard",
+        runs,
+        cpuRate,
+        ...summarize(samples),
+      })
+    )
+  })
+}

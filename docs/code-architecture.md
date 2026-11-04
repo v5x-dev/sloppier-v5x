@@ -18,7 +18,11 @@ editor layout is modeled in `lib/editor-groups.ts` and persisted by
 
 `lib/workbench-source.ts` coordinates the current Program files and live file
 sessions. `lib/live-file-session.ts` and `lib/live-document.ts` manage local and
-remote Yjs state; `components/editor/live-file-editor.tsx` connects it to Pierre.
+remote Yjs state; `components/editor/live-file-editor.tsx` connects it to Pierre. Hovering a ready
+Program on the dashboard starts its listing and read-only file reads through
+`lib/program-editor-prefetch.ts`, and the editor adopts that source on navigation.
+Live documents still open only when an editor opens, because opening one records a
+backup commit.
 The backend `crdt.ts`, `files.ts`, and the `codeStorage.ts` compatibility facade enforce workspace access
 and persist their respective state. Live edits are distinct from source commits:
 a commit captures a source revision, and restoring one must also account for
