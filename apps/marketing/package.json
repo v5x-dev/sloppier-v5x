@@ -1,0 +1,16 @@
+{
+  "name": "@v5x/marketing",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.12",
+    "astro": "^7.4.5"
+  }
+}

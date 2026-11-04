@@ -14,27 +14,40 @@ Design and Film are works in progress; their detailed workflows are not defined
 here. Read their product documentation and the task brief as they are added,
 rather than inventing requirements from their names.
 
-Each product has an Expo mobile app and a TanStack Start web app. All products
-share the Convex backend in `packages/backend`. Build features around the team's
+Each product has a TanStack Start web app. Only Code has an Expo mobile app; do
+not create Expo apps for Film, Design, or other products until the team asks for
+them. All products share the Convex backend in `packages/backend`. Build features around the team's
 competition workflow and use VEX V5 terminology. This is one suite with distinct
 products, not three unrelated projects.
+
+`marketing` (`apps/marketing`) is the suite's Astro marketing site. It is not a
+product, has no backend or product data, and is currently empty.
 
 Use "Builder" in user-facing copy for the build service. Use "Program" for the
 robot code item and "Brain" for the V5 device.
 
 ## Layout and ownership
 
-- `apps/<product>/web`: the product's TanStack Start app.
-- `apps/<product>/mobile`: the product's Expo app.
+- `apps/<product>/web`: the product's TanStack Start app. `apps/code/web`,
+  `apps/film/web`, and `apps/design/web` exist.
+- `apps/<product>/mobile`: the product's Expo app. `apps/code/mobile` exists.
+- `apps/marketing`: the Astro marketing site (`@v5x/marketing`).
 - `packages/backend`: shared backend, schema, authorization, and business rules.
 - `packages/ui`: shared web UI built with shadcn/ui. It currently depends on the DOM.
+- `packages/tokens`: each product's color and suite tokens for web. See its README.
 - `packages/serial`: VEX device communication; consult its README before changing
   transport or protocol behavior.
 - `design/<product>`: product design assets.
 
 The layout describes where new apps belong; it does not imply every app already
 exists. Follow the existing `apps/code/web` implementation when working on Code.
-Give new app packages unique names so workspace filters identify one app.
+Give new app packages unique names so workspace filters identify one app. Root
+workspaces match `apps/*/*`; a package directly under `apps/` (such as
+`apps/marketing`) needs its own entry in the root `package.json` workspaces.
+
+Dev ports: Code `3000`, Film `3001`, Design `3002`. Film and Design `typecheck`
+regenerates `routeTree.gen.ts` before `tsc`; commit the regenerated file with
+route changes, as Code does.
 
 Keep product-specific behavior in that product's app or an explicitly named
 product module. Extract shared code when consumers need the same behavior and
@@ -77,6 +90,17 @@ For web work, follow the app's existing TanStack Router routes, loaders, and
 TanStack Start server/client boundaries. Keep browser-only APIs safe during SSR.
 Import shared web components through `@v5x/ui` exports.
 
+Each product's web root imports its own token file, `@v5x/tokens/<product>/web.css`,
+beside `@v5x/ui/globals.css`. Never import another product's token file. Product
+token files must define the suite tokens that shared UI reads, including
+`--radius`, `--success`, `--field-border`, and the elevation tokens; see
+`packages/tokens/README.md`. New color pairs must meet
+`docs/suite-visual-rules.md`.
+
+Each product's favicon (`public/favicon.svg`) is filled with that product's
+`--chart-2` color, as an `oklch()` value copied from its token file. This is the
+interim rule until the products choose their own marks.
+
 Use the requested component and its existing variants rather than recreating its
 appearance. Use the tokens in `packages/ui/src/styles/globals.css`, Phosphor for
 general UI icons, and the existing template logos and file/symbol icon mappings.
@@ -118,6 +142,10 @@ Check frontend build variables, Worker runtime bindings, Convex deployment, and
 WorkOS configuration together. Verify CI/deployment status for the exact commit
 before saying it is live; distinguish a local fix, pushed code, and deployment.
 When watching CI checks, skip the cleanup check.
+
+Film and Design web apps and the marketing site have no deployment config, Convex
+wiring, or CI jobs yet. Add them with their product's decisions, not by copying
+Code's Cloudflare setup unchanged.
 
 ## Working and checking changes
 

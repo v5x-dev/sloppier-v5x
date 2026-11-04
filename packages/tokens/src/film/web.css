@@ -1,4 +1,5 @@
-/* shadcn preset b3QxLIEcq: color tokens only. */
+/* shadcn preset b3QxLIEcq: color tokens from the preset. The suite tokens at
+   the end of each block are not in the preset; shared UI needs them. */
 
 :root {
   --background: oklch(1 0 0);
@@ -32,6 +33,22 @@
   --sidebar-accent-foreground: oklch(0.228 0.013 107.4);
   --sidebar-border: oklch(0.93 0.007 106.5);
   --sidebar-ring: oklch(0.737 0.021 106.9);
+
+  /* Suite tokens. */
+  --radius: 0.5rem;
+  --success: oklch(0.5 0.13 150);
+  /* Input outlines must reach 3:1 against the page (WCAG 1.4.11). */
+  --field-border: oklch(0.6 0.008 107);
+
+  /* Elevation, as in the Code tokens, tinted toward this palette's hue. */
+  --highlight: oklch(1 0 0 / 70%);
+  --shadow-color: oklch(0.3 0.02 107 / 12%);
+  --shadow-raised:
+    inset 0 1px 0 0 var(--highlight), 0 0 0 1px var(--border),
+    0 1px 2px 0 var(--shadow-color);
+  --shadow-overlay:
+    inset 0 1px 0 0 var(--highlight), 0 0 0 1px var(--border),
+    0 4px 8px -4px var(--shadow-color), 0 16px 40px -12px var(--shadow-color);
 }
 
 .dark {
@@ -66,4 +83,11 @@
   --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.58 0.031 107.3);
+
+  /* Suite tokens. */
+  --success: oklch(0.76 0.15 152);
+  --field-border: oklch(0.5 0.008 107);
+
+  --highlight: oklch(1 0 0 / 6%);
+  --shadow-color: oklch(0 0 0 / 45%);
 }

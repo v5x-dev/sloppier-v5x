@@ -2,11 +2,15 @@
 
 v5x is a suite for VEX V5 teams. Code provides collaborative Program editing,
 builds through Builder, and upload to a Brain. Design and Film are works in
-progress; their app layout is reserved but their workflows are not defined yet.
+progress; their web apps exist as TanStack Start placeholders and their workflows
+are not defined yet.
 
 | Location           | Responsibility                                        |
 | ------------------ | ----------------------------------------------------- |
 | `apps/code/web`    | Code web, TanStack Start and React                    |
+| `apps/film/web`    | Film web, TanStack Start placeholder                  |
+| `apps/design/web`  | Design web, TanStack Start placeholder                |
+| `apps/marketing`   | Marketing site, Astro, empty                          |
 | `packages/backend` | Shared Convex data, authorization, and business rules |
 | `packages/ui`      | Shared DOM components, typography, and web tokens     |
 | `packages/serial`  | VEX device transport and protocol                     |

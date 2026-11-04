@@ -27,6 +27,7 @@
   },
   "workspaces": [
     "apps/*/*",
+    "apps/marketing",
     "packages/*"
   ]
 }
