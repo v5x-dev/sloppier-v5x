@@ -91,8 +91,9 @@ checks do not verify hosted WorkOS, production cookies, or production configurat
 
 ## Benchmarks
 
-`bun run benchmark:load` measures control readiness, reload, opening an editor,
-search navigation, a one-line edit, and undo. Configure an authenticated session
+`bun run benchmark:load` measures control readiness, reload, opening a Program from
+the dashboard, returning to a Program after leaving it, opening an editor, search
+navigation, a one-line edit, and undo. Configure an authenticated session
 and Program as above. Set `PLAYWRIGHT_BENCHMARK_RUNS` (1–100) and
 `PLAYWRIGHT_CPU_THROTTLE` (1–20) for sampling and constrained CPU comparisons.
 For representative timing, build and preview the app and select it with

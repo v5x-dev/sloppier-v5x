@@ -250,7 +250,14 @@ export class WorkbenchSource {
     )
   }
 
-  loadPaths = async () => {
+  loadPaths = () => this.listPaths(true)
+
+  /**
+   * `speculativeEntry` opens the starter entry's live document with the listing.
+   * A hover-started listing leaves that open for navigation, since opening a
+   * live document records a backup commit.
+   */
+  private async listPaths(speculativeEntry: boolean) {
     const request = ++this.pathRequest
     this.update({ listError: null })
     const saved = !this.initialOpen ? this.readSavedLayout() : null
@@ -264,6 +271,11 @@ export class WorkbenchSource {
           ? "src/main.cpp"
           : null
     if (speculativePath) void this.loadFile(speculativePath)
+    // The saved active tab's live document opens with the listing, as does the
+    // starter entry's unless a hover started the listing. The listing still
+    // decides whether the tab stays open.
+    if (speculativePath && (saved || speculativeEntry))
+      this.prefetchLiveFile(speculativePath, false)
     try {
       const all: string[] = []
       let cursor: string | undefined
@@ -284,6 +296,7 @@ export class WorkbenchSource {
           (guessedEntry && pickEntryFile(paths) !== speculativePath))
       ) {
         this.reads.delete(speculativePath)
+        this.liveOpens.delete(speculativePath)
 
         this.committed.delete(speculativePath)
         const loaded = { ...this.state.loaded }
@@ -327,8 +340,9 @@ export class WorkbenchSource {
 
   // Start the authorized listing while the Program metadata query is pending.
   // The workbench consumes it on first mount; later head changes still refresh.
-  prefetchPaths = () => {
-    if (!this.prefetchedPaths) this.prefetchedPaths = this.loadPaths()
+  prefetchPaths = (options: { hover?: boolean } = {}) => {
+    if (!this.prefetchedPaths)
+      this.prefetchedPaths = this.listPaths(!options.hover)
   }
 
   refreshRepository = async () => {
@@ -351,8 +365,13 @@ export class WorkbenchSource {
     )
   }
 
-  private prefetchLiveFile(path: string) {
-    if (!this.state.paths?.includes(path) || this.liveOpens.has(path)) return
+  /** `listed` is false while the listing is in flight, for the speculative open. */
+  private prefetchLiveFile(path: string, listed = true) {
+    if (
+      (listed && !this.state.paths?.includes(path)) ||
+      this.liveOpens.has(path)
+    )
+      return
     // Failure is retried by the editor, and must not hide read-only previews.
     const opening = this.actions
       .openLiveFile({ programId: this.programId, path })

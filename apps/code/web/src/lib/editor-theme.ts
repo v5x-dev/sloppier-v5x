@@ -1,4 +1,4 @@
-import { registerCustomTheme } from "@pierre/diffs"
+import { preloadHighlighter, registerCustomTheme } from "@pierre/diffs"
 import { birdsOfParadiseTheme } from "@v5x/ui/lib/birds-of-paradise-theme"
 
 const themeName = "v5x-birds-of-paradise"
@@ -14,4 +14,16 @@ export const editorThemeOptions = {
     [data-code] { scrollbar-width: none; }
     [data-code]::-webkit-scrollbar { display: none; }
   `,
+}
+
+/**
+ * Loads the editor's highlighter for C++ before the first file opens, so the
+ * editor does not wait for the highlighter chunk and its setup.
+ */
+export function preloadEditorHighlighter() {
+  return preloadHighlighter({
+    themes: [editorThemeOptions.theme.dark],
+    langs: ["cpp"],
+    preferredHighlighter: editorThemeOptions.preferredHighlighter,
+  })
 }

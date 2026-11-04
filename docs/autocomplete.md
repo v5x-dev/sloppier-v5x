@@ -3,7 +3,8 @@
 C and C++ suggestions run locally from API metadata and a tolerant declaration
 index. The editor remains `@pierre/diffs`, with edits and undo synchronized through
 Yjs. Opening autocomplete does not start a compiler, contact a build machine, or
-send source to a completion service.
+send source to a completion service. It starts in idle time after the first editor
+mounts, so opening a file does not wait for the repository snapshot it reads.
 
 ## Implementation
 

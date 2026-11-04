@@ -104,6 +104,25 @@ export class LanguageService {
     if (wasReady !== this.isReady)
       for (const listener of this.readyListeners) listener(this.isReady)
   }
+  private scheduledStart: { cancel: () => void } | undefined
+  /**
+   * Starts loading once the first editor is on screen, in idle time. Opening a
+   * file should not wait for autocomplete's repository reads and index build.
+   */
+  scheduleStart() {
+    if (this.status !== "stopped" || this.scheduledStart) return
+    const run = () => {
+      this.scheduledStart = undefined
+      void this.start()
+    }
+    if (typeof requestIdleCallback === "function") {
+      const handle = requestIdleCallback(run, { timeout: 1000 })
+      this.scheduledStart = { cancel: () => cancelIdleCallback(handle) }
+    } else {
+      const handle = setTimeout(run, 200)
+      this.scheduledStart = { cancel: () => clearTimeout(handle) }
+    }
+  }
   async start() {
     const generation = ++this.generation
     const revision = ++this.sourceGeneration
@@ -138,6 +157,8 @@ export class LanguageService {
     }
   }
   async refreshSource() {
+    // Before the first start, the next start reads the current file list.
+    if (this.status === "stopped") return
     const generation = this.generation
     const revision = ++this.sourceGeneration
     this.sourceLoading = true
@@ -181,6 +202,8 @@ export class LanguageService {
   }
   stop() {
     this.generation++
+    this.scheduledStart?.cancel()
+    this.scheduledStart = undefined
     this.setStatus("stopped")
     this.formatter.stop()
     this.engine?.clear()

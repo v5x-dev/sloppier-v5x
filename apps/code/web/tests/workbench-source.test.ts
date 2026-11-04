@@ -604,3 +604,95 @@ describe("editor groups", () => {
     }
   })
 })
+
+describe("saved live documents", () => {
+  it("opens a saved active file's live document alongside the listing", async () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () =>
+        JSON.stringify({
+          openPaths: ["src/main.cpp"],
+          activePath: "src/main.cpp",
+        }),
+      setItem: () => {},
+    })
+    try {
+      const { source, actions } = setup()
+      const listing = deferred<{ paths: string[]; hasMore: boolean }>()
+      actions.listFiles.mockReturnValueOnce(listing.promise)
+      const loading = source.loadPaths()
+      expect(actions.openLiveFile).toHaveBeenCalledWith({
+        programId: "program",
+        path: "src/main.cpp",
+      })
+      listing.resolve({
+        paths: ["src/main.cpp", "include/robot.h"],
+        hasMore: false,
+      })
+      await loading
+      expect(source.getSnapshot().activePath).toBe("src/main.cpp")
+      expect(actions.openLiveFile).toHaveBeenCalledTimes(1)
+      expect(source.takeLiveOpen("src/main.cpp")).toBeDefined()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it("drops a saved live document whose tab the listing no longer contains", async () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () =>
+        JSON.stringify({
+          openPaths: ["removed.cpp"],
+          activePath: "removed.cpp",
+        }),
+      setItem: () => {},
+    })
+    try {
+      const { source, actions } = setup()
+      await source.loadPaths()
+      expect(actions.openLiveFile).toHaveBeenCalledWith({
+        programId: "program",
+        path: "removed.cpp",
+      })
+      expect(source.takeLiveOpen("removed.cpp")).toBeUndefined()
+      expect(source.getSnapshot().openPaths).toEqual([])
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it("opens the starter entry's live document with the listing", async () => {
+    vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} })
+    try {
+      const { source, actions } = setup()
+      const listing = deferred<{ paths: string[]; hasMore: boolean }>()
+      actions.listFiles.mockReturnValueOnce(listing.promise)
+      const loading = source.loadPaths()
+      expect(actions.openLiveFile).toHaveBeenCalledWith({
+        programId: "program",
+        path: "src/main.cpp",
+      })
+      listing.resolve({ paths: ["src/main.cpp"], hasMore: false })
+      await loading
+      expect(actions.openLiveFile).toHaveBeenCalledTimes(1)
+      expect(source.takeLiveOpen("src/main.cpp")).toBeDefined()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it("drops the starter live document when the listing chooses another entry", async () => {
+    vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} })
+    try {
+      const { source, actions } = setup()
+      actions.listFiles.mockResolvedValueOnce({
+        paths: ["other/main.c", "src/main.cpp"],
+        hasMore: false,
+      })
+      await source.loadPaths()
+      expect(source.getSnapshot().activePath).toBe("other/main.c")
+      expect(source.takeLiveOpen("src/main.cpp")).toBeUndefined()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})

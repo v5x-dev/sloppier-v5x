@@ -54,7 +54,7 @@ import {
   InputGroupInput,
 } from "@v5x/ui/components/input-group"
 import { Input } from "@v5x/ui/components/input"
-import { useAction, useMutation, useQuery } from "convex/react"
+import { useAction, useConvex, useMutation, useQuery } from "convex/react"
 import { format, isSameWeek, isSameYear, isToday, isYesterday } from "date-fns"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { useEffect, useRef, useState } from "react"
@@ -72,6 +72,7 @@ import {
 import { AuthGate } from "@/components/app/auth-gate"
 import { RepositoryStatusBadge } from "@/components/repository/repository-status-badge"
 import { errorMessage } from "@/lib/errors"
+import { prefetchProgramEditor } from "@/lib/program-editor-prefetch"
 
 export const Route = createFileRoute("/")({
   validateSearch: (search): { workspace?: string } =>
@@ -417,6 +418,7 @@ function ProgramList({
   query: string
 }) {
   const programs = useQuery(api.programs.listByWorkspace, { workspaceId })
+  const client = useConvex()
 
   if (programs === undefined) {
     return <ProgramListSkeleton />
@@ -472,6 +474,11 @@ function ProgramList({
                 to="/programs/$programId"
                 params={{ programId: program._id }}
                 data-cuelume-navigate
+                onPointerEnter={() => {
+                  // Start the editor's listing and open tabs before the click.
+                  if (program.repositoryStatus === "ready")
+                    prefetchProgramEditor(client, program._id)
+                }}
                 className="min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
               >
                 {program.name}

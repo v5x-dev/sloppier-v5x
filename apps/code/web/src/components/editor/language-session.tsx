@@ -54,11 +54,14 @@ export function LanguageSession({
       }
     })
     const stopDrafts = source.subscribeDrafts(sync)
-    void client.start().then(() => {
-      if (!disposed) sync()
-    })
+    // The first editor on screen starts autocomplete. This fallback covers a
+    // Program with no open editor, so symbols still load.
+    const fallback = setTimeout(() => {
+      if (!disposed) client.scheduleStart()
+    }, 3000)
     return () => {
       disposed = true
+      clearTimeout(fallback)
       stop()
       stopDrafts()
       client.stop()
