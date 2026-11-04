@@ -7,6 +7,7 @@ import { historyActions } from "./lib/codeStorage/history"
 import { liveActions } from "./lib/codeStorage/live"
 import { provisionActions } from "./lib/codeStorage/provision"
 import { searchActions } from "./lib/codeStorage/search"
+import { deletionActions } from "./lib/codeStorage/deletion"
 
 export const { buildManifest, listFiles, readFile, commitFiles } =
   sourceActions()
@@ -27,3 +28,5 @@ export const { openLiveFile, persistCrdtUpdate, persistProgramUpdates } =
 export const { provisionProgram, duplicateProgram } = provisionActions()
 
 export const { searchProgram } = searchActions()
+
+export const { deleteProgram } = deletionActions()

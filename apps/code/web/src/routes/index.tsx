@@ -37,6 +37,16 @@ import {
   DialogTrigger,
 } from "@v5x/ui/components/dialog"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@v5x/ui/components/alert-dialog"
+import {
   Item,
   ItemActions,
   ItemContent,
@@ -505,7 +515,9 @@ function ProgramList({
 function ProgramActions({ program }: { program: Doc<"programs"> }) {
   const rename = useMutation(api.programs.rename)
   const setArchived = useMutation(api.programs.setArchived)
+  const deleteProgram = useAction(api.codeStorage.deleteProgram)
   const [open, setOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [duplicateOpen, setDuplicateOpen] = useState(false)
   const [name, setName] = useState(program.name)
   const [pending, setPending] = useState(false)
@@ -519,6 +531,22 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
       toast.add({
         type: "error",
         title: "Could not update program",
+        description: errorMessage(error),
+      })
+    } finally {
+      setPending(false)
+    }
+  }
+  async function remove() {
+    if (pending) return
+    setPending(true)
+    try {
+      await deleteProgram({ programId: program._id })
+      setDeleteOpen(false)
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not delete program",
         description: errorMessage(error),
       })
     } finally {
@@ -566,7 +594,13 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
               )
             }
           >
-            {program.archivedAt ? "Restore program" : "Archive"}
+            {program.archivedAt ? "Restore" : "Archive"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -619,6 +653,32 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
           </form>
         </DialogContent>
       </Dialog>
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(value) => {
+          if (!pending) setDeleteOpen(value)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {program.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the program, its files, and its history.
+              It cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={pending}
+              onClick={() => void remove()}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

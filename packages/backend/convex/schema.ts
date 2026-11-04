@@ -84,6 +84,8 @@ export default defineSchema({
 
   programs: defineTable({
     archivedAt: v.optional(v.number()),
+    /** Set when permanent deletion starts. Hidden from listings until the row is removed. */
+    deletionStartedAt: v.optional(v.number()),
     importId: v.optional(v.id("programImports")),
     duplicateSource: v.optional(
       v.object({ repositoryId: v.string(), sha: v.string() })

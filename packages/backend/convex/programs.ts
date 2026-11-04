@@ -50,10 +50,11 @@ export const listByWorkspace = query({
   handler: async (ctx, args) => {
     await requireWorkspaceMembership(ctx, args.workspaceId)
 
-    return ctx.db
+    const programs = await ctx.db
       .query("programs")
       .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
       .collect()
+    return programs.filter((program) => !program.deletionStartedAt)
   },
 })
 
@@ -479,6 +480,140 @@ export const cleanupFolderImport = internalMutation({
       if (program) await ctx.db.patch(program._id, { importId: undefined })
       await ctx.db.delete(importId)
     }
+  },
+})
+
+// Permanent deletion. The deletion action removes the repository and Builder
+// machine first, so a failure there leaves the Program visible for a retry.
+export const getForDeletion = internalQuery({
+  args: { programId: v.id("programs"), userId: v.string() },
+  handler: async (ctx, { programId, userId }) => {
+    const program = await ctx.db.get(programId)
+    if (!program) {
+      throw new ConvexError("Program not found.")
+    }
+    const membership = await ctx.db
+      .query("workspaceMembers")
+      .withIndex("by_workspace_user", (q) =>
+        q.eq("workspaceId", program.workspaceId).eq("userId", userId)
+      )
+      .unique()
+    if (!membership) {
+      throw new ConvexError("You do not have access to this program.")
+    }
+    const machine = await ctx.db
+      .query("buildMachines")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .unique()
+    return { program, machineId: machine?.machineId }
+  },
+})
+
+const PURGE_BATCH_SIZE = 100
+
+// Removes up to batchSize rows of a deleted Program, then the Program row.
+// Each call deletes at least one row until done, so repeated calls terminate.
+export const purgeBatch = internalMutation({
+  args: { programId: v.id("programs"), batchSize: v.optional(v.number()) },
+  handler: async (ctx, { programId, batchSize = PURGE_BATCH_SIZE }) => {
+    const program = await ctx.db.get(programId)
+    if (!program) return { done: true }
+    if (!program.deletionStartedAt) {
+      await ctx.db.patch(programId, { deletionStartedAt: Date.now() })
+    }
+
+    let budget = batchSize
+
+    const sessions = await ctx.db
+      .query("programSessions")
+      .withIndex("by_program_session", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of sessions) await ctx.db.delete(row._id)
+    budget -= sessions.length
+    if (budget === 0) return { done: false }
+
+    const machines = await ctx.db
+      .query("buildMachines")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of machines) {
+      if (row.artifactId) await ctx.storage.delete(row.artifactId)
+      await ctx.db.delete(row._id)
+    }
+    budget -= machines.length
+    if (budget === 0) return { done: false }
+
+    const diagnostics = await ctx.db
+      .query("programDiagnostics")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of diagnostics) await ctx.db.delete(row._id)
+    budget -= diagnostics.length
+    if (budget === 0) return { done: false }
+
+    const uploads = await ctx.db
+      .query("programUploads")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of uploads) await ctx.db.delete(row._id)
+    budget -= uploads.length
+    if (budget === 0) return { done: false }
+
+    const checkpoints = await ctx.db
+      .query("programCheckpoints")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of checkpoints) await ctx.db.delete(row._id)
+    budget -= checkpoints.length
+    if (budget === 0) return { done: false }
+
+    const files = await ctx.db
+      .query("files")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of files) await ctx.db.delete(row._id)
+    budget -= files.length
+    if (budget === 0) return { done: false }
+
+    const backupJobs = await ctx.db
+      .query("crdtBackupJobs")
+      .withIndex("by_program", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of backupJobs) await ctx.db.delete(row._id)
+    budget -= backupJobs.length
+    if (budget === 0) return { done: false }
+
+    const presence = await ctx.db
+      .query("presenceSessions")
+      .withIndex("by_file_user_session", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const row of presence) await ctx.db.delete(row._id)
+    budget -= presence.length
+    if (budget === 0) return { done: false }
+
+    // Live updates belong to their document, so remove them before the document.
+    const documents = await ctx.db
+      .query("crdtDocuments")
+      .withIndex("by_program_path", (q) => q.eq("programId", programId))
+      .take(budget)
+    for (const document of documents) {
+      const updates = await ctx.db
+        .query("crdtUpdates")
+        .withIndex("by_document_sequence", (q) =>
+          q.eq("documentId", document._id)
+        )
+        .take(budget)
+      for (const update of updates) await ctx.db.delete(update._id)
+      budget -= updates.length
+      if (budget === 0) return { done: false }
+      // Fewer updates than the remaining budget means this document has none left.
+      await ctx.db.delete(document._id)
+      budget -= 1
+      if (budget === 0) return { done: false }
+    }
+
+    await ctx.db.delete(programId)
+    return { done: true }
   },
 })
 
