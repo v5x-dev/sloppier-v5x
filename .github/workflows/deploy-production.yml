@@ -14,9 +14,40 @@ permissions:
 
 concurrency:
   group: production-deploy-${{ github.event.pull_request.number || 'main' }}
-  cancel-in-progress: false
+  # Superseded pull request runs are cancelled. Runs on main always finish so a
+  # deploy is never cut off partway through.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+      VITE_WORKOS_CLIENT_ID: ${{ vars.VITE_WORKOS_CLIENT_ID }}
+      VITE_WORKOS_REDIRECT_URI: ${{ vars.VITE_WORKOS_REDIRECT_URI }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint, typecheck, and test workspace
+        run: bun run checks
+      - name: Check formatting
+        run: bun run format:check
+      - name: Build web
+        run: |
+          : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
+          : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"
+          : "${VITE_WORKOS_REDIRECT_URI:?Missing VITE_WORKOS_REDIRECT_URI}"
+          bun run build
+        working-directory: apps/code/web
+
   e2e-workos:
     # Fork pull requests cannot receive the dedicated test deployment secret.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
@@ -36,7 +67,18 @@ jobs:
           bun-version: 1.4.4
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Restore Playwright Chromium cache
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: bunx playwright install-deps chromium
+        working-directory: apps/code/web
       - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: bunx playwright install --with-deps chromium
         working-directory: apps/code/web
       - name: Validate test credential source
@@ -49,25 +91,29 @@ jobs:
       - name: Test WorkOS sign-in and Program commits
         working-directory: apps/code/web
         run: bun run test:e2e:workos
-      - name: Test editor collaboration and simulated Builder and Brain
-        working-directory: apps/code/web
-        run: bun run test:e2e:editor
       - name: Upload browser failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: code-browser-failures
+          name: code-browser-failures-workos
           path: apps/code/web/test-results/
           retention-days: 7
 
-  quality-pr:
-    if: github.event_name == 'pull_request'
+  e2e-editor:
+    # Fork pull requests cannot receive the dedicated test deployment secret.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        # Each suite gets its own disposable backend, so suites run in parallel.
+        suite: [editor, collaboration, build-upload]
     env:
-      VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
-      VITE_WORKOS_CLIENT_ID: ${{ vars.VITE_WORKOS_CLIENT_ID }}
-      VITE_WORKOS_REDIRECT_URI: ${{ vars.VITE_WORKOS_REDIRECT_URI }}
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_E2E_DEPLOY_KEY }}
+      PIERRE_ORG: ${{ secrets.CODE_TEST_PIERRE_ORG }}
+      PIERRE_PRIVATE_KEY: ${{ secrets.CODE_TEST_PIERRE_PRIVATE_KEY }}
+      E2E_EDITOR_SUITE: ${{ matrix.suite }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -78,30 +124,47 @@ jobs:
           bun-version: 1.4.4
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Lint workspace
-        run: bun run lint
-      - name: Check formatting
-        run: bun run format:check
-      - name: Typecheck workspace
-        run: bun run typecheck
-      - name: Test workspace
-        run: bun run test
-      - name: Build web
-        run: |
-          : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
-          : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"
-          : "${VITE_WORKOS_REDIRECT_URI:?Missing VITE_WORKOS_REDIRECT_URI}"
-          bun run build
+      - name: Restore Playwright Chromium cache
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: bunx playwright install-deps chromium
         working-directory: apps/code/web
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: bunx playwright install --with-deps chromium
+        working-directory: apps/code/web
+      - name: Validate test credential source
+        run: |
+          if [ -n "$PIERRE_ORG" ] && [ -n "$PIERRE_PRIVATE_KEY" ]; then exit 0; fi
+          case "$CONVEX_DEPLOY_KEY" in
+            dev:*) ;;
+            *) echo "CONVEX_E2E_DEPLOY_KEY must select a development credential source" >&2; exit 1 ;;
+          esac
+      - name: Test ${{ matrix.suite }} suite with simulated Builder and Brain
+        working-directory: apps/code/web
+        run: bun run test:e2e:editor
+      - name: Upload browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-browser-failures-${{ matrix.suite }}
+          path: apps/code/web/test-results/
+          retention-days: 7
 
   deploy:
-    needs: [e2e-workos, quality-pr]
+    needs: [quality, e2e-workos, e2e-editor]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      E2E_RESULT: ${{ needs.e2e-workos.result }}
-      QUALITY_RESULT: ${{ needs.quality-pr.result }}
+      QUALITY_RESULT: ${{ needs.quality.result }}
+      E2E_WORKOS_RESULT: ${{ needs.e2e-workos.result }}
+      E2E_EDITOR_RESULT: ${{ needs.e2e-editor.result }}
       EVENT_NAME: ${{ github.event_name }}
       IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
       VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
@@ -110,20 +173,21 @@ jobs:
     steps:
       - name: Require the validation jobs to pass
         run: |
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            if [ "$QUALITY_RESULT" != "success" ]; then
-              echo "Code web quality checks did not pass: $QUALITY_RESULT" >&2
-              exit 1
-            fi
-            if [ "$E2E_RESULT" = "success" ]; then exit 0; fi
-            if [ "$IS_FORK" = "true" ] && [ "$E2E_RESULT" = "skipped" ]; then exit 0; fi
-            echo "WorkOS end-to-end checks did not pass: $E2E_RESULT" >&2
+          if [ "$QUALITY_RESULT" != "success" ]; then
+            echo "Code web quality checks did not pass: $QUALITY_RESULT" >&2
             exit 1
           fi
-          if [ "$E2E_RESULT" != "success" ] || [ "$QUALITY_RESULT" != "skipped" ]; then
-            echo "Validation jobs did not pass (e2e=$E2E_RESULT, PR quality=$QUALITY_RESULT)" >&2
-            exit 1
-          fi
+          failed=0
+          require_e2e() {
+            local label="$1" result="$2"
+            if [ "$result" = "success" ]; then return 0; fi
+            if [ "$EVENT_NAME" = "pull_request" ] && [ "$IS_FORK" = "true" ] && [ "$result" = "skipped" ]; then return 0; fi
+            echo "$label end-to-end checks did not pass: $result" >&2
+            failed=1
+          }
+          require_e2e "WorkOS" "$E2E_WORKOS_RESULT"
+          require_e2e "Editor" "$E2E_EDITOR_RESULT"
+          exit "$failed"
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request'
         with:
@@ -139,18 +203,9 @@ jobs:
       - name: Install dependencies
         if: github.event_name != 'pull_request'
         run: bun install --frozen-lockfile
-      - name: Lint workspace
-        if: github.event_name != 'pull_request'
-        run: bun run lint
-      - name: Check formatting
-        if: github.event_name != 'pull_request'
-        run: bun run format:check
-      - name: Typecheck workspace
-        if: github.event_name != 'pull_request'
-        run: bun run typecheck
-      - name: Test workspace
-        if: github.event_name != 'pull_request'
-        run: bun run test
+      # Checks already passed in the quality job for this commit. The web build
+      # is repeated here because Wrangler deploys its output, and rebuilding is
+      # about as quick as moving the output between jobs.
       - name: Build web
         if: github.event_name != 'pull_request'
         run: |

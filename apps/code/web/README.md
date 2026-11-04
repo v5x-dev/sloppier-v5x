@@ -41,6 +41,9 @@ bun run test:e2e:editor # editor controls, two sessions, simulated Builder and B
 bun run demo:visual   # real app, signed Luna identity; accepts a template argument
 ```
 
+Set `E2E_EDITOR_SUITE` to `editor`, `collaboration`, or `build-upload` to run one
+suite with its own temporary backend; CI runs the three suites as parallel jobs.
+
 `test:e2e:editor` simulates Smol's external machine API and the direct Builder
 HTTP service on loopback. Only the URLs in the temporary backend copy are
 redirected. The app still performs its normal authorized backend handshake and
