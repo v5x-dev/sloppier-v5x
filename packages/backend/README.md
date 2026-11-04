@@ -185,10 +185,10 @@ The web and mobile apps also need the Convex deployment URL and the public
 WorkOS Client ID/redirect URI in their own app configuration. Never expose
 `WORKOS_API_KEY` or `RESEND_API_KEY` through Vite environment variables.
 
-## Renaming and archiving programs
+## Renaming, archiving, and deleting programs
 
-The dashboard program actions menu offers Rename and Archive program. Switch
-between Active and Archived above the list, and use Restore program to bring an
+The dashboard program actions menu offers Rename, Archive, and Delete. Switch
+between Active and Archived above the list, and use Restore to bring an
 archived program back. Workspace members can perform these actions. Names are
 trimmed and must contain 1–80 characters.
 
@@ -197,6 +197,13 @@ the repository. `programs.setArchived({ programId, archived })` sets or clears
 `archivedAt`. Archiving changes dashboard organization; existing program links,
 files, history, and workspace access continue to work. The workspace list query
 returns both active and archived programs so clients can provide both views.
+
+`codeStorage.deleteProgram({ programId })` permanently deletes a program. It
+checks workspace membership, deletes the Code Storage repository and any Builder
+machine, then removes the program's rows in bounded batches. The program is
+hidden from the workspace list once row removal starts. If the repository or
+machine cannot be deleted, the action fails before any row changes, so the
+program stays listed and deletion can be retried.
 
 ## Testing layers
 
