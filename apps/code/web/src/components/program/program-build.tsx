@@ -105,9 +105,7 @@ export function ProgramBuild({
   const succeeded = !building && logs.trimEnd().endsWith("Build succeeded.")
   const buildLabel = building
     ? "Building Program"
-    : diagnostics.length
-      ? `Build output, ${errors} errors, ${warnings} warnings`
-      : "Build output"
+    : `Build output, ${errors} errors, ${warnings} warnings`
   // Runs the status-row clock: connecting time starts when the builder drops out of ready.
   useEffect(() => {
     if (ready) setConnectingStartedAt(null)
@@ -122,28 +120,30 @@ export function ProgramBuild({
   }, [logs, open, tab])
   return (
     <>
-      {/* Always reachable, so a clean or running build still has its output. */}
-      <ActionTooltip label={buildLabel}>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={buildLabel}
-          aria-busy={building}
-          data-cuelume-open
-          onClick={() => {
-            setTab(diagnostics.length ? "problems" : "output")
-            setOpen(true)
-          }}
-        >
-          {building ? (
-            <Spinner />
-          ) : errors ? (
-            <WarningCircleIcon className="text-destructive" />
-          ) : (
-            <HammerIcon />
-          )}
-        </Button>
-      </ActionTooltip>
+      {/* Only offered when the current results have problems. The Sheet stays mounted so an open one can finish closing. */}
+      {diagnostics.length > 0 && (
+        <ActionTooltip label={buildLabel}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={buildLabel}
+            aria-busy={building}
+            data-cuelume-open
+            onClick={() => {
+              setTab("problems")
+              setOpen(true)
+            }}
+          >
+            {building ? (
+              <Spinner />
+            ) : errors ? (
+              <WarningCircleIcon className="text-destructive" />
+            ) : (
+              <HammerIcon />
+            )}
+          </Button>
+        </ActionTooltip>
+      )}
       <Sheet
         open={open}
         onOpenChange={setOpen}
