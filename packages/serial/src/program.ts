@@ -32,6 +32,44 @@ async function gzip(data: Uint8Array): Promise<Uint8Array> {
     .pipeThrough(new CompressionStream("gzip"))
   return new Uint8Array(await new Response(stream).arrayBuffer())
 }
+type PreparedLibrary = { name: string; data: Uint8Array; crc: number }
+// The name, packed bytes, and CRC depend only on the cold package. A package the caller reuses (the same array)
+// is hashed and compressed once; a different array with the same bytes is prepared again.
+const preparedLibraries = new WeakMap<
+  Uint8Array,
+  Map<boolean, Promise<PreparedLibrary>>
+>()
+
+async function libraryName(cold: Uint8Array) {
+  const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(cold))
+  return btoa(String.fromCharCode(...new Uint8Array(digest).slice(0, 16)))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "")
+}
+
+function prepareLibrary(cold: Uint8Array, compress: boolean) {
+  let byMode = preparedLibraries.get(cold)
+  if (!byMode) {
+    byMode = new Map()
+    preparedLibraries.set(cold, byMode)
+  }
+  const modes = byMode
+  const cached = modes.get(compress)
+  if (cached) return cached
+  const pending = (async (): Promise<PreparedLibrary> => {
+    const name = await libraryName(cold)
+    const data = compress ? await gzip(cold) : cold
+    return { name, data, crc: crc32(data) }
+  })()
+  modes.set(compress, pending)
+  // A failed preparation is not kept, so the next upload tries again.
+  pending.catch(() => {
+    if (modes.get(compress) === pending) modes.delete(compress)
+  })
+  return pending
+}
+
 export async function uploadProgram(
   connection: Connection,
   program: ProgramData,
@@ -97,32 +135,22 @@ async function uploadProgramFiles(
   const compress = options.compress ?? true
   const afterUpload = options.afterUpload ?? FileExitAction.DoNothing
   // Content identity allows safe library reuse across programs and slots.
-  const libraryName = cold
-    ? btoa(
-        String.fromCharCode(
-          ...new Uint8Array(
-            await crypto.subtle.digest("SHA-256", new Uint8Array(cold))
-          ).slice(0, 16)
-        )
-      )
-        .replaceAll("+", "-")
-        .replaceAll("/", "_")
-        .replaceAll("=", "")
-    : undefined
-  if (cold && libraryName) {
-    const data = compress ? await gzip(cold) : cold
+  const library = cold ? await prepareLibrary(cold, compress) : undefined
+  const libraryName = library?.name
+  if (cold && library) {
+    const { data, crc } = library
     let existing: { size: number; crc: number } | null | undefined
     try {
       existing = await connection.request(
-        fileMetadata(libraryName, FileVendor.Pros)
+        fileMetadata(library.name, FileVendor.Pros)
       )
     } catch (error) {
       // PROS also treats a missing-library NACK as a cache miss.
       if (!(error instanceof NackError)) throw error
     }
-    if (existing?.size !== data.length || existing.crc !== crc32(data))
+    if (existing?.size !== data.length || existing.crc !== crc)
       await uploadFile(connection, data, {
-        fileName: libraryName,
+        fileName: library.name,
         vendor: FileVendor.Pros,
         metadata: { extension: "bin" },
         address: USER_PROGRAM_LOAD_ADDR,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useProgramConnection } from "@/components/program/program-connection"
 import { errorMessage } from "@/lib/errors"
+import type { ArtifactEntries } from "@/lib/build-binaries"
 
 // This map belongs to the client explorer, never to repository drafts or commits.
 export function useProgramBinaries() {
@@ -9,6 +10,8 @@ export function useProgramBinaries() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const artifactId = status?.artifactId
+  // Status arrives on every poll with a new object, so depend on the index's contents, not its identity.
+  const entriesKey = JSON.stringify(status?.artifactEntries ?? null)
   useEffect(() => {
     if (!artifactId) {
       setFiles({})
@@ -21,20 +24,17 @@ export function useProgramBinaries() {
     setError(null)
     void (async () => {
       try {
-        const response = await request(
-          "/artifact",
-          undefined,
+        const { loadArtifactFiles } = await import("@/lib/build-binaries")
+        const entries = JSON.parse(entriesKey) as ArtifactEntries | null
+        const loaded = await loadArtifactFiles(
+          request,
+          { artifactId, entries },
           controller.signal
-        )
-        const { readBuildBinaries } = await import("@/lib/build-binaries")
-        controller.signal.throwIfAborted()
-        const entries = readBuildBinaries(
-          new Uint8Array(await response.arrayBuffer())
         )
         if (controller.signal.aborted) return
         setFiles(
           Object.fromEntries(
-            Object.entries(entries).map(([path, bytes]) => [
+            Object.entries(loaded).map(([path, bytes]) => [
               path.startsWith("bin/") ? path : `bin/${path}`,
               bytes,
             ])
@@ -47,6 +47,6 @@ export function useProgramBinaries() {
       }
     })()
     return () => controller.abort()
-  }, [artifactId, request])
+  }, [artifactId, entriesKey, request])
   return { files, error, loading }
 }

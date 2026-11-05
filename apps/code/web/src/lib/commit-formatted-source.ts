@@ -6,6 +6,7 @@ type FormatActions = Record<string, (() => Promise<void>) | null>
 export async function commitFormattedSource(
   source: {
     isSynced: () => boolean
+    subscribe: (listener: () => void) => () => void
     getSnapshot: () => {
       dirtyPaths: string[]
       openPaths: string[]
@@ -19,7 +20,7 @@ export async function commitFormattedSource(
   message: string | undefined,
   signal: AbortSignal
 ) {
-  await waitForSourceSync(source.isSynced, signal)
+  await waitForSourceSync(source.isSynced, signal, source.subscribe)
   const paths = source.getSnapshot().dirtyPaths.filter(isLanguageFile)
   const active = source.getSnapshot().activePath
   for (const path of paths) {
@@ -39,7 +40,7 @@ export async function commitFormattedSource(
     await action()
     formatted.set(path, source.getDrafts().get(path))
   }
-  await waitForSourceSync(source.isSynced, signal)
+  await waitForSourceSync(source.isSynced, signal, source.subscribe)
   const unexpected = source
     .getSnapshot()
     .dirtyPaths.filter((path) => isLanguageFile(path) && !paths.includes(path))

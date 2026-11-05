@@ -9,7 +9,7 @@ import {
   requireAuthorizedProgram,
   storage,
   commitChanges,
-  commitAuthor,
+  LIVE_BACKUP_AUTHOR,
   publicErrorMessage,
 } from "./repository"
 
@@ -94,7 +94,7 @@ export function liveActions() {
             contents: new Uint8Array(update.bytes),
           })),
           `Back up ${batch.updates.length} live edits`,
-          commitAuthor("V5X Collaborators", "collaborators@users.v5x.local")
+          LIVE_BACKUP_AUTHOR
         )
         await ctx.runMutation(internal.backups.complete, {
           ...args,

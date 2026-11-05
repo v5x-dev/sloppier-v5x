@@ -1,5 +1,6 @@
 import { afterEach, expect, test, vi } from "vitest"
 import { zipSync } from "fflate"
+import { sourceHash } from "../src/lib/build-source"
 import {
   prepareUploadBuild,
   waitForSourceSync,
@@ -26,7 +27,7 @@ function setup(statuses: BuildStatus[]) {
       last = statuses.shift() ?? last
       return Response.json(last)
     }
-    if (path === "/artifact")
+    if (path.startsWith("/artifact?id=new-artifact"))
       return new Response(
         zipSync({ "bin/program.bin": new Uint8Array([1, 2, 3]) })
       )
@@ -62,7 +63,7 @@ test("commits before snapshot, builds missing output, then downloads fresh binar
     "/upload",
     "/build",
     "/status",
-    "/artifact",
+    "/artifact?id=new-artifact",
     "/status",
   ])
 })
@@ -101,7 +102,9 @@ test("waits for compilation before downloading", async () => {
   const pending = prepareUploadBuild(options)
   await vi.advanceTimersByTimeAsync(500)
   await pending
-  expect(events.indexOf("/artifact")).toBeGreaterThan(events.indexOf("/build"))
+  expect(events.indexOf("/artifact?id=new-artifact")).toBeGreaterThan(
+    events.indexOf("/build")
+  )
   expect(events.filter((event) => event === "/status")).toHaveLength(4)
 })
 test("commit failure prevents builds and downloads", async () => {
@@ -116,7 +119,7 @@ test("failed builds cannot fall back to previous artifacts", async () => {
     { ...success, logs: "Building commit new-commit\nBuild failed (exit 2)." },
   ])
   await expect(prepareUploadBuild(options)).rejects.toThrow("Build failed")
-  expect(events).not.toContain("/artifact")
+  expect(events).not.toContain("/artifact?id=new-artifact")
 })
 test("rejects artifacts replaced during download", async () => {
   const { options } = setup([
@@ -135,7 +138,7 @@ test("aborting a pending build prevents downloading and uploading", async () => 
   await vi.advanceTimersByTimeAsync(0)
   controller.abort()
   await rejected
-  expect(events).not.toContain("/artifact")
+  expect(events).not.toContain("/artifact?id=new-artifact")
   expect(events).not.toContain("/build")
 })
 
@@ -155,4 +158,99 @@ test("waits for live edits to sync before committing", async () => {
   await vi.advanceTimersByTimeAsync(500)
   await pending
   expect(finished).toBe(true)
+})
+
+test("wakes as soon as the source reports a sync, without waiting for the fallback timer", async () => {
+  vi.useFakeTimers()
+  let synced = false
+  let listener: (() => void) | undefined
+  let finished = false
+  const pending = waitForSourceSync(
+    () => synced,
+    new AbortController().signal,
+    (next) => {
+      listener = next
+      return () => {
+        listener = undefined
+      }
+    }
+  ).then(() => {
+    finished = true
+  })
+  await vi.advanceTimersByTimeAsync(10)
+  synced = true
+  listener?.()
+  await pending
+  expect(finished).toBe(true)
+})
+
+test("claims a speculative artifact for the committed source instead of building again", async () => {
+  const { events, options } = setup([success])
+  const hash = await sourceHash(source.files)
+  const claimed = {
+    ...options,
+    request: async (path: string, body?: unknown, signal?: AbortSignal) => {
+      if (path === "/artifact?id=spec-1") {
+        events.push(path)
+        return new Response(
+          zipSync({ "bin/program.bin": new Uint8Array([4, 5, 6]) })
+        )
+      }
+      return options.request(path, body, signal)
+    },
+    claimSpeculative: vi.fn(async (claimedHash: string) =>
+      claimedHash === hash ? { artifactId: "spec-1", entries: null } : null
+    ),
+  }
+  expect(await prepareUploadBuild(claimed)).toEqual({
+    type: "monolith",
+    data: new Uint8Array([4, 5, 6]),
+  })
+  expect(claimed.claimSpeculative).toHaveBeenCalledWith(hash)
+  expect(events).toEqual(["commit", "snapshot", "/artifact?id=spec-1"])
+})
+
+test("does not wait for a speculative build; the normal build replaces it", async () => {
+  const speculating: BuildStatus = {
+    logs: "Building speculative abc\n",
+    building: true,
+    speculative: true,
+    artifactId: null,
+  }
+  const { events, options } = setup([speculating, success])
+  expect(await prepareUploadBuild(options)).toEqual({
+    type: "monolith",
+    data: new Uint8Array([1, 2, 3]),
+  })
+  expect(events).toEqual([
+    "commit",
+    "snapshot",
+    "/status",
+    "/upload",
+    "/build",
+    "/status",
+    "/artifact?id=new-artifact",
+    "/status",
+  ])
+})
+
+test("a speculative artifact is dropped when the Brain already has this revision", async () => {
+  const { events, options } = setup([success])
+  const hash = await sourceHash(source.files)
+  const claimed = {
+    ...options,
+    request: async (path: string, body?: unknown, signal?: AbortSignal) => {
+      if (path.startsWith("/artifact?id=")) {
+        events.push(path)
+        return new Response(zipSync({ "bin/program.bin": new Uint8Array([7]) }))
+      }
+      return options.request(path, body, signal)
+    },
+    claimSpeculative: vi.fn(async (claimedHash: string) =>
+      claimedHash === hash ? { artifactId: "spec-2", entries: null } : null
+    ),
+    isInstalled: vi.fn(async () => true),
+  }
+  expect(await prepareUploadBuild(claimed)).toBeNull()
+  expect(events).not.toContain("/build")
 })

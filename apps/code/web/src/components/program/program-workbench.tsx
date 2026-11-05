@@ -49,6 +49,7 @@ import { useProgramConnection } from "@/components/program/program-connection"
 import { RepositoryExplorer } from "@/components/repository/repository-explorer"
 import { useProgramBinaries } from "@/hooks/use-program-binaries"
 import { prepareUploadBuild, waitForSourceSync } from "@/lib/build-program"
+import { BuildSpeculation } from "@/lib/build-speculation"
 import type { WorkbenchSource } from "@/lib/workbench-source"
 import {
   Avatar,
@@ -60,6 +61,7 @@ import {
   Suspense,
   lazy,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -106,7 +108,49 @@ export function Workbench({
     null
   )
   const binaries = useProgramBinaries()
-  const { request: buildRequest, status: buildStatus } = useProgramConnection()
+  const {
+    request: buildRequest,
+    status: buildStatus,
+    ready: buildReady,
+    startBuilder,
+  } = useProgramConnection()
+  const buildWarm = useRef(false)
+  useEffect(() => {
+    buildWarm.current = buildReady
+  }, [buildReady])
+  // Builds the source as the user edits it, so Upload usually finds the binary ready. See build-speculation.ts.
+  const speculation = useMemo(
+    () =>
+      new BuildSpeculation({
+        prepare: () => source.prepareDraftSource(),
+        request: buildRequest,
+        warm: () => buildWarm.current,
+      }),
+    [source, buildRequest]
+  )
+  useEffect(() => () => speculation.stop(), [speculation])
+  // The formatter and the committed head load on first use; start them now so the first Upload does not wait for them.
+  useEffect(() => {
+    speculation.warmFormatter()
+    source.prefetchHead()
+    // The modules an Upload needs after its commit: loading them then would delay the Brain check.
+    void import("@/lib/brain-revision")
+    void import("@/lib/build-binaries")
+    void import("@/lib/brain-slots-reader")
+  }, [source, speculation])
+  useEffect(
+    () =>
+      source.subscribeDrafts(() => {
+        // Editing starts a Builder when none is running, so the speculative build can finish before Upload.
+        if (!buildWarm.current) startBuilder()
+        speculation.warmFormatter()
+        speculation.schedule()
+      }),
+    [source, speculation, startBuilder]
+  )
+  useEffect(() => {
+    if (buildReady) speculation.schedule()
+  }, [buildReady, speculation])
   const [uploadProgress, setUploadProgress] = useState<{
     label: string
     value: number | null
@@ -454,10 +498,18 @@ export function Workbench({
                 name={program.name}
                 programId={program._id}
                 dirty={dirtyPaths.length > 0}
-                prepareProgram={(signal, onStage, isInstalled) =>
-                  prepareUploadBuild({
+                // Choosing a slot takes longer than the draft build, so opening the popover starts it.
+                onOpen={() => speculation.schedule(0)}
+                prepareProgram={(signal, onStage, isInstalled) => {
+                  // Build the draft now, while the commit runs: the build is the slow part of an Upload.
+                  speculation.schedule(0)
+                  return prepareUploadBuild({
                     commitChanges: async (commitSignal) => {
-                      await waitForSourceSync(source.isSynced, commitSignal)
+                      await waitForSourceSync(
+                        source.isSynced,
+                        commitSignal,
+                        source.subscribe
+                      )
                       await commitFormatted(
                         "Save changes before upload",
                         commitSignal
@@ -468,8 +520,9 @@ export function Workbench({
                     signal,
                     onStage,
                     isInstalled,
+                    claimSpeculative: (hash) => speculation.claimOrWait(hash),
                   })
-                }
+                }}
               />
             </Suspense>
             {(program.template === "ez-template" ||
