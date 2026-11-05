@@ -104,9 +104,9 @@ interim rule until the products choose their own marks.
 Use the requested component and its existing variants rather than recreating its
 appearance. Use the tokens in `packages/ui/src/styles/globals.css`, Phosphor for
 general UI icons, and the existing template logos and file/symbol icon mappings.
-Preserve the established typography: Merriweather for serif UI, DM Sans for sans
-UI and documentation prose, JetBrains Mono for code and shortcut hints. Use the
-existing `@fontsource-variable` fonts. Apply opacity to the requested background
+All UI uses Merriweather, including controls, dialogs, shortcut hints, and
+documentation prose. JetBrains Mono is only for code. Use the existing
+`@fontsource-variable` fonts. Apply opacity to the requested background
 or color, not to the whole element and its text.
 
 For mobile work, inspect the app's Expo SDK and configuration first. Install

@@ -1,3 +1,4 @@
+import { useSettings } from "@/lib/settings"
 import { useMutation } from "convex/react"
 import { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
@@ -173,8 +174,15 @@ export function ProgramUpload({
   const [teamNumber, setTeamNumber] = useState("")
   const [savedTeamNumber, setSavedTeamNumber] = useState<string | null>(null)
   const [teamMessage, setTeamMessage] = useState<string | null>(null)
-  const [slot, setSlot] = useState(1)
-  const [run, setRun] = useState(true)
+  const settings = useSettings()
+  const [slot, setSlot] = useState(() => settings.uploadSlot)
+  const [run, setRun] = useState(() => settings.runAfterUpload)
+  useEffect(() => {
+    setSlot(settings.uploadSlot)
+  }, [settings.uploadSlot])
+  useEffect(() => {
+    setRun(settings.runAfterUpload)
+  }, [settings.runAfterUpload])
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<number | null>(null)

@@ -7,7 +7,7 @@ import {
   type HoverContents,
 } from "@/lib/hover-content"
 
-const proseStyle = { fontFamily: '"DM Sans Variable", sans-serif' }
+const proseStyle = { fontFamily: '"Merriweather Variable", serif' }
 
 const codeOptions = {
   ...editorThemeOptions,
@@ -51,7 +51,7 @@ export function HoverDocumentation({
     <>
       <div
         style={proseStyle}
-        className={`font-documentation leading-relaxed [overflow-wrap:anywhere] ${compact ? "space-y-2 text-xs" : "space-y-3 px-4 py-3 text-[13px]"}`}
+        className={`font-serif leading-relaxed [overflow-wrap:anywhere] ${compact ? "space-y-2 text-xs" : "space-y-3 px-4 py-3 text-[13px]"}`}
       >
         {blocks.map((block, index) =>
           block.kind === "code" ? (

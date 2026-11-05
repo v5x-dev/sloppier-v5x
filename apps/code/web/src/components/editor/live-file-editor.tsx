@@ -6,6 +6,7 @@ import {
 import { useEditorFormatting, type FormatChange } from "./editor-formatting"
 import { useEditorNavigation } from "./editor-navigation"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
+import { useSettings } from "@/lib/settings"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { useEffect, useEffectEvent, useRef, useState } from "react"
 import { useAuth } from "@/lib/auth"
@@ -250,6 +251,14 @@ function PierreFile({
   programId: Id<"programs">
   onReplacementAction: (path: string, action: ReplacementAction | null) => void
 }) {
+  const {
+    lineNumbers,
+    wordWrap,
+    matchBrackets,
+    roundedSelection,
+    autoSurround,
+    autoCloseBrackets,
+  } = useSettings()
   useEffect(
     () => () => onReplacementAction(path, null),
     [path, onReplacementAction]
@@ -349,9 +358,16 @@ function PierreFile({
       })
     }
   }, [binding, diagnosticTarget])
+  useEffect(() => {
+    binding.editor?.setOptions({
+      matchBrackets,
+      roundedSelection,
+      autoSurround: autoSurround ? "default" : "never",
+    })
+  }, [binding, matchBrackets, roundedSelection, autoSurround])
   useEditorFormatting(binding, path, onFormatChange)
   const completion = useEditorCompletion(binding, path)
-  useEditorBrackets(binding, completion.wrapper)
+  useEditorBrackets(binding, completion.wrapper, autoCloseBrackets)
   const navigation = useEditorNavigation(binding, path, completion.wrapper)
   const file = useRef({
     name: path,
@@ -364,8 +380,15 @@ function PierreFile({
         <File<undefined, { name: string }>
           file={file}
           edit
-          options={editorThemeOptions}
+          options={{
+            ...editorThemeOptions,
+            disableLineNumbers: !lineNumbers,
+            overflow: wordWrap ? "wrap" : "scroll",
+          }}
           editorOptions={{
+            matchBrackets,
+            roundedSelection,
+            autoSurround: autoSurround ? "default" : "never",
             initialState: { type: "file", document: binding.document },
             onAttach: (editor) => {
               binding.attach(editor)

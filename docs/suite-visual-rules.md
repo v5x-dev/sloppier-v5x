@@ -33,8 +33,8 @@ Every v5x product shares these rules. Each product chooses its own palette in
 
 ## Type
 
-- Merriweather for serif UI. DM Sans for sans UI and documentation prose.
-  JetBrains Mono for code and keyboard shortcut hints. See the root AGENTS.md.
+- Merriweather for all UI, including controls, shortcut hints, and documentation
+  prose. JetBrains Mono only for code. See the root AGENTS.md.
 
 ## Vocabulary
 

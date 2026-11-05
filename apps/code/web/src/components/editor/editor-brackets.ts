@@ -5,11 +5,12 @@ const pairs: Record<string, string> = { "(": ")", "[": "]", "{": "}" }
 
 export function useEditorBrackets(
   binding: PierreCollaboration,
-  wrapper: RefObject<HTMLDivElement | null>
+  wrapper: RefObject<HTMLDivElement | null>,
+  enabled = true
 ) {
   useEffect(() => {
     const host = wrapper.current
-    if (!host) return
+    if (!host || !enabled) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (
         event.defaultPrevented ||
@@ -89,5 +90,5 @@ export function useEditorBrackets(
     }
     host.addEventListener("keydown", onKeyDown, true)
     return () => host.removeEventListener("keydown", onKeyDown, true)
-  }, [binding, wrapper])
+  }, [binding, wrapper, enabled])
 }

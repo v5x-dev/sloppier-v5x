@@ -33,8 +33,7 @@ import { cn } from "@v5x/ui/lib/utils"
 
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
-import { Fragment, useEffect, useState, useSyncExternalStore } from "react"
-import { readEditorState, writeEditorState } from "@/lib/editor-persistence"
+import { Fragment, useSyncExternalStore } from "react"
 
 import type { DragSource, DropHighlight } from "./workbench-drop"
 import { FileEditor } from "./workbench-file-editor"
@@ -43,6 +42,8 @@ import { SortableFileTab, SortableTabsList, tabId } from "./workbench-tabs"
 
 export function WorkbenchEditors({
   source,
+  showMinimap,
+  setShowMinimap,
   programId,
   diagnosticTarget,
   onFormatChange,
@@ -51,6 +52,8 @@ export function WorkbenchEditors({
   drag,
 }: {
   source: WorkbenchSource
+  showMinimap: boolean
+  setShowMinimap: (value: boolean) => void
   programId: Id<"programs">
   diagnosticTarget: (DiagnosticTarget & { path: string }) | null
   onFormatChange: FormatChange
@@ -58,10 +61,6 @@ export function WorkbenchEditors({
   dropHighlight: DropHighlight | null
   drag: DragSource | null
 }) {
-  const [showMinimap, setShowMinimap] = useState(true)
-  useEffect(() => {
-    setShowMinimap(readEditorState<boolean>("show-minimap") !== false)
-  }, [])
   const {
     paths,
     listError,
@@ -164,7 +163,6 @@ export function WorkbenchEditors({
                 onClick={() => {
                   const next = !showMinimap
                   setShowMinimap(next)
-                  writeEditorState("show-minimap", next)
                 }}
               >
                 <MapTrifoldIcon />

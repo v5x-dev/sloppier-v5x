@@ -4,6 +4,7 @@ import {
   type LivePerson,
 } from "@/components/editor/live-file-editor"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
+import { useSettings } from "@/lib/settings"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import { MAX_SOURCE_BYTES } from "@/lib/live-document"
 import type { LiveSaveStatus } from "@/lib/live-save-status"
@@ -48,6 +49,7 @@ export function FileEditor({
   onCursorLine: (path: string, line: number) => void
   takeLiveOpen: WorkbenchSource["takeLiveOpen"]
 }) {
+  const { lineNumbers, wordWrap } = useSettings()
   const container = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const viewport = container.current?.parentElement
@@ -76,7 +78,14 @@ export function FileEditor({
               ? "This file is not UTF-8 text and is read-only."
               : "Files larger than 256 KiB are read-only. Preview limited to 512 KiB."}
           </p>
-          <File file={file} options={editorThemeOptions} />
+          <File
+            file={file}
+            options={{
+              ...editorThemeOptions,
+              disableLineNumbers: !lineNumbers,
+              overflow: wordWrap ? "wrap" : "scroll",
+            }}
+          />
         </>
       ) : (
         <LiveFileEditor
