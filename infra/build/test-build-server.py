@@ -265,6 +265,17 @@ class SupersedingBuilds(unittest.TestCase):
         self.assertNotIn('normal-source', server['UPLOADS'])
         server['UPLOADS'].clear()
 
+    def test_abandoned_uploads_never_block_a_new_upload(self):
+        # A superseded or interrupted upload is never followed by /build, so only the slot limit can free it.
+        server['UPLOADS'].clear()
+        chunk = base64.b64encode(b'source archive').decode()
+        for index in range(4):
+            self.assertEqual(self.post('/upload', {'id': f'abandoned-{index}', 'offset': 0, 'data': chunk}), 200)
+        self.assertEqual(self.post('/upload', {'id': 'fresh-source', 'offset': 0, 'data': chunk}), 200)
+        self.assertIn('fresh-source', server['UPLOADS'])
+        self.assertLessEqual(len(server['UPLOADS']), 4)
+        server['UPLOADS'].clear()
+
 
 if __name__ == '__main__':
     unittest.main()
