@@ -29,6 +29,7 @@ export function FileEditor({
   scrollPositions,
   onChange,
   onReplacementAction,
+  onQuickFixAction,
   onCursorLine,
   takeLiveOpen,
 }: {
@@ -46,6 +47,7 @@ export function FileEditor({
   scrollPositions: Map<string, number>
   onChange: (text: string) => void
   onReplacementAction: WorkbenchSource["setReplacementAction"]
+  onQuickFixAction: WorkbenchSource["setQuickFixAction"]
   onCursorLine: (path: string, line: number) => void
   takeLiveOpen: WorkbenchSource["takeLiveOpen"]
 }) {
@@ -102,6 +104,7 @@ export function FileEditor({
           onLiveStatus={onLiveStatus}
           onPeopleChange={onPeopleChange}
           onReplacementAction={onReplacementAction}
+          onQuickFixAction={onQuickFixAction}
           onCursorLine={onCursorLine}
         />
       )}

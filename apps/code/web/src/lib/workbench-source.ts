@@ -28,6 +28,7 @@ import type { LivePerson } from "./live-file-session"
 import type { LiveSaveStatus } from "./live-save-status"
 import type { SearchMatch } from "@v5x/backend/search"
 import type { ReplacementAction } from "./search-replacement"
+import type { QuickFix, QuickFixAction } from "./build-quick-fixes"
 
 type Action<TName extends keyof typeof api.codeStorage> = (
   args: FunctionArgs<(typeof api.codeStorage)[TName]>
@@ -102,6 +103,8 @@ export class WorkbenchSource {
   private prefetchedPaths: Promise<void> | null = null
   private replacementActions = new Map<string, ReplacementAction>()
   private replacementListeners = new Set<() => void>()
+  private quickFixActions = new Map<string, QuickFixAction>()
+  private quickFixListeners = new Set<() => void>()
   readonly scrollPositions = new Map<string, number>()
 
   constructor(
@@ -165,13 +168,46 @@ export class WorkbenchSource {
     for (const listener of this.replacementListeners) listener()
   }
 
+  setQuickFixAction = (path: string, action: QuickFixAction | null) => {
+    if (action) this.quickFixActions.set(path, action)
+    else this.quickFixActions.delete(path)
+    for (const listener of this.quickFixListeners) listener()
+  }
+
+  applyQuickFix = async (path: string, fix: QuickFix) => {
+    const action = await this.whenEditable(
+      path,
+      this.quickFixActions,
+      this.quickFixListeners
+    )
+    if (this.quickFixActions.get(path) !== action)
+      throw new Error(`${path} was closed or replaced. Build again.`)
+    action(fix)
+  }
+
   replaceMatches = async (
     path: string,
     matches: SearchMatch[],
     replacement: string
   ) => {
+    const action = await this.whenEditable(
+      path,
+      this.replacementActions,
+      this.replacementListeners
+    )
+    if (this.replacementActions.get(path) !== action)
+      throw new Error(`${path} was closed or replaced. Search again.`)
+    action(matches, replacement)
+  }
+
+  /** Opens the file in the background and resolves once its editor has registered an action. */
+  private whenEditable<TAction>(
+    path: string,
+    actions: Map<string, TAction>,
+    listeners: Set<() => void>
+  ): Promise<TAction> {
     if (!this.state.paths?.includes(path))
-      throw new Error(`${path} no longer exists.`)
+      return Promise.reject(new Error(`${path} no longer exists.`))
     if (!this.state.openPaths.includes(path))
       this.update({
         layout: addTab(
@@ -182,13 +218,13 @@ export class WorkbenchSource {
         ),
       })
     void this.loadFile(path)
-    const action = await new Promise<ReplacementAction>((resolve, reject) => {
-      const finish = (error?: string, ready?: ReplacementAction) => {
+    return new Promise<TAction>((resolve, reject) => {
+      const finish = (error?: string, ready?: TAction) => {
         clearTimeout(timer)
-        this.replacementListeners.delete(check)
+        listeners.delete(check)
         unsubscribe()
         if (error) reject(new Error(error))
-        else if (ready) resolve(ready)
+        else if (ready !== undefined) resolve(ready)
       }
       const check = () => {
         if (
@@ -196,7 +232,7 @@ export class WorkbenchSource {
           !this.state.openPaths.includes(path)
         )
           return finish(`${path} was closed or removed.`)
-        const ready = this.replacementActions.get(path)
+        const ready = actions.get(path)
         if (ready) return finish(undefined, ready)
         const error = this.state.readError[path]
         if (error) return finish(error)
@@ -215,12 +251,9 @@ export class WorkbenchSource {
         () => finish(`Could not open ${path} for editing.`),
         15000
       )
-      this.replacementListeners.add(check)
+      listeners.add(check)
       check()
     })
-    if (this.replacementActions.get(path) !== action)
-      throw new Error(`${path} was closed or replaced. Search again.`)
-    action(matches, replacement)
   }
   setSynced = (path: string, synced: boolean) => {
     if (this.state.paths && !this.state.paths.includes(path)) return
