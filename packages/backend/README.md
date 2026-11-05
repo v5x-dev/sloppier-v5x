@@ -35,9 +35,8 @@ See [Code web testing](../../apps/code/web/README.md).
 
 The workflow rejects non-production Convex keys and verifies that the key's
 deployment URL matches `VITE_CONVEX_URL` before pushing backend changes. Convex
-runtime credentials listed below, plus the build configuration in
-[Building programs](../../docs/building-programs.md), must already exist in that
-production deployment.
+runtime credentials listed below, plus the build configuration, must already
+exist in that production deployment.
 
 The two deployments are sequential, not atomic. Keep backend changes compatible
 with the currently deployed web and mobile clients. If Cloudflare deployment
@@ -92,8 +91,7 @@ Before enabling the workflow, configure:
   not change WorkOS settings.
 
 Builder is unavailable unless its separate preview Convex environment is
-configured with dedicated Builder credentials and limits; see
-[Building programs](../../docs/building-programs.md). Email invitations also
+configured with dedicated Builder credentials and limits. Email invitations also
 need test-only email settings and a preview-specific `APP_URL`; a shared default
 `APP_URL` cannot point to every PR. Verify sign-in, authenticated Convex access,
 reload, Program creation, and any enabled integrations on a real preview before
@@ -109,7 +107,6 @@ schema is deployed; code generation does not move stored data.
 Create workspaces and manage their teams from the avatar menu in the dashboard header. Admins invite
 collaborators by email, choose a member or admin role, revoke invitations, and
 remove members. Recipients accept from the avatar menu or an invitation link.
-See [workspace invitations](../../docs/workspaces.md) for setup and behavior.
 Create a program with
 `programs.create({ workspaceId, template })`. The backend generates a dashed
 name with `boring-name-generator`; callers can pass `name` to choose one
@@ -126,8 +123,7 @@ The JAR starter is pinned to a JAR-Template commit. PROS and EZ-Template use
 the pinned EZ-Template 3.2.2 example archive. Program repositories contain the
 starter source and configuration; firmware, SDK headers, and other managed
 build dependencies are supplied by the build image and are not committed to
-program Git repositories. The template research and first-party sources are in
-[`docs/research/code-templates.md`](../../docs/research/code-templates.md).
+program Git repositories.
 
 ## Folder imports
 
@@ -135,7 +131,6 @@ The dashboard's **Import folder** action imports a local program folder into a
 new repository. Source is staged in authenticated batches before the program is
 created. Repository setup preserves the uploaded files instead of seeding a
 template, and failed setup can be retried from the original staged contents.
-See [folder import](../../docs/folder-import.md) for exclusions, limits, and cleanup.
 
 ## Files and live editing
 

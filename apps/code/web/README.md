@@ -1,8 +1,5 @@
 # Code web
 
-Read [the architecture and verification map](../../../docs/code-architecture.md)
-and [the domain glossary](../../../GLOSSARY.md) before changing domain behavior.
-
 ## Normal development
 
 Use Bun 1.4.4. Install from the root with `bun install --frozen-lockfile`.
