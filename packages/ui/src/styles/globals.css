@@ -52,6 +52,7 @@
   --radius-4xl: calc(var(--radius) * 2.6);
   --font-serif: "Merriweather Variable", serif;
   --font-mono: "JetBrains Mono Variable", monospace;
+  --default-mono-font-family: var(--font-mono);
 }
 
 :root {
