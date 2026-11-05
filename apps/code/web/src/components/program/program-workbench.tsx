@@ -9,7 +9,6 @@ import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 import { DndContext, DragOverlay } from "@dnd-kit/core"
 import {
-  CaretLeftIcon,
   GitCommitIcon,
   ListMagnifyingGlassIcon,
   TextAlignLeftIcon,
@@ -246,7 +245,23 @@ export function Workbench({
               render={<Link to="/" aria-label="All programs" />}
               nativeButton={false}
             >
-              <CaretLeftIcon />
+              {/* Tight viewBox around the logo's stroked outline, so the
+                  artwork fills the 16px box at its real aspect ratio. */}
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                viewBox="-6.1 39 176.2 95.4"
+                className="size-4 text-primary"
+              >
+                <path
+                  d="M133.9 45c-.5 0-1 .2-1.3.6 0 0-48.6 59.4-51 62.4-2.4-3-50.1-62.4-50.1-62.4-.3-.4-.8-.6-1.3-.6h-28.6c-.6 0-1.2.4-1.5.9-.3.6-.2 1.2.2 1.7l66 80.2c.3.4.8.6 1.3.6h27.8c.5 0 .9-.2 1.3-.6l67-80.2c.4-.5.5-1.2.2-1.7-.3-.6-.8-.9-1.5-.9h-28.5z"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </Button>
             <span className="truncate text-xs font-medium">{program.name}</span>
           </SidebarHeader>
