@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "bun run generate-routes && tsc --noEmit"
+    "typecheck": "bun run generate-routes && tsc --noEmit",
+    "alchemy:plan": "alchemy plan",
+    "alchemy:deploy": "alchemy deploy",
+    "alchemy:destroy": "alchemy destroy"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.46",
@@ -22,6 +25,9 @@
     "tailwindcss": "^4"
   },
   "devDependencies": {
+    "@alchemy.run/cloudflare": "^2.0.0-beta.85",
+    "@effect/platform-bun": "^4.1.2",
+    "@effect/platform-node": "^4.1.2",
     "@tailwindcss/vite": "^4",
     "@tanstack/devtools-vite": "0.8.5",
     "@tanstack/eslint-config": "0.4.0",
@@ -30,6 +36,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",
+    "alchemy": "^2.0.0-beta.85",
+    "effect": "^4.1.2",
     "eslint": "^10",
     "typescript": "^6.0.2",
     "vite": "^8"
