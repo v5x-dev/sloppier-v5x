@@ -1,38 +1,52 @@
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import { mapWithConcurrency } from "../convex/lib/concurrency"
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+// A call waits on a gate the test opens, so completion order comes from the test rather than timer lengths.
+function gate() {
+  let open!: () => void
+  const opened = new Promise<void>((resolve) => {
+    open = resolve
+  })
+  return { opened, open }
+}
 
 describe("mapWithConcurrency", () => {
   test("keeps input order while capping calls in flight", async () => {
+    const gates = [gate(), gate(), gate(), gate(), gate()]
     let inFlight = 0
     let peak = 0
-    const results = await mapWithConcurrency(
-      [30, 5, 20, 1, 10],
+    const results = mapWithConcurrency(
+      ["a", "b", "c", "d", "e"],
       2,
-      async (delay, index) => {
+      async (_, index) => {
         inFlight++
         peak = Math.max(peak, inFlight)
-        await wait(delay)
+        await gates[index].opened
         inFlight--
-        return `${index}:${delay}`
+        return `${index}`
       }
     )
-    expect(results).toEqual(["0:30", "1:5", "2:20", "3:1", "4:10"])
+    // Calls finish out of order; the results still follow the input order.
+    for (const index of [1, 0, 2, 4, 3]) gates[index].open()
+    await expect(results).resolves.toEqual(["0", "1", "2", "3", "4"])
     expect(peak).toBe(2)
   })
 
   test("a finished slot starts the next item without waiting for the batch", async () => {
     const started: number[] = []
     const finished: number[] = []
-    await mapWithConcurrency([50, 1, 1, 1], 2, async (delay, index) => {
+    const slow = gate()
+    const run = mapWithConcurrency([0, 1, 2, 3], 2, async (_, index) => {
       started.push(index)
-      await wait(delay)
+      if (index === 0) await slow.opened
       finished.push(index)
     })
-    // Item 2 starts as soon as item 1 finishes, while item 0 is still running.
+    // Items 1-3 complete while item 0 is still held, so item 2 and item 3 used the freed slot.
+    await vi.waitFor(() => expect(finished).toEqual([1, 2, 3]))
     expect(started).toEqual([0, 1, 2, 3])
-    expect(finished.indexOf(0)).toBeGreaterThan(finished.indexOf(2))
+    slow.open()
+    await run
+    expect(finished).toEqual([1, 2, 3, 0])
   })
 
   test("returns an empty list without calling the mapper", async () => {
@@ -45,15 +59,17 @@ describe("mapWithConcurrency", () => {
 
   test("rejects with the first failure and starts no new items", async () => {
     const started: number[] = []
+    const held = gate()
     await expect(
       mapWithConcurrency([0, 1, 2, 3, 4, 5], 2, async (_, index) => {
         started.push(index)
-        await wait(index === 0 ? 1 : 10)
         if (index === 0) throw new Error("boom")
+        await held.opened
       })
     ).rejects.toThrow("boom")
     // Only the two items already in flight started before the failure stopped the pool.
     expect(started).toEqual([0, 1])
+    held.open()
   })
 
   test("rejects invalid concurrency limits", async () => {

@@ -17,9 +17,18 @@ const backend = read("packages/backend/.env.local"),
 const node = execFileSync(process.env.CODE_TEST_NODE ?? "node", ["--version"], {
   encoding: "utf8",
 }).trim()
+// The browser runner fetches Node 22 with npx when the default Node is another version.
+const npx = (() => {
+  try {
+    execFileSync("npx", ["--version"], { stdio: "ignore" })
+    return true
+  } catch {
+    return false
+  }
+})()
 check(
-  /^v(22|24)\./.test(node),
-  `Local Convex tests need Node 22 or 24 (selected ${node}); CODE_TEST_NODE can select another executable.`
+  /^v(22|24)\./.test(node) || npx || Boolean(process.env.CODE_TEST_NODE),
+  `Local Convex tests need Node 22 or 24 (selected ${node}). Use npx (fetches Node 22 automatically) or set CODE_TEST_NODE.`
 )
 check(
   execFileSync("bun", ["--version"], { encoding: "utf8" }).trim() === "1.4.4",

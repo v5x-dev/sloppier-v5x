@@ -78,11 +78,20 @@ function storageCredentials() {
   const supplied = process.env.CODE_TEST_STORAGE_ENV
     ? readEnv(readFileSync(process.env.CODE_TEST_STORAGE_ENV, "utf8"))
     : process.env
-  if (supplied.PIERRE_ORG && supplied.PIERRE_PRIVATE_KEY)
+  if (supplied.PIERRE_ORG && supplied.PIERRE_PRIVATE_KEY) {
+    console.error(
+      process.env.CODE_TEST_STORAGE_ENV
+        ? "Test storage: CODE_TEST_STORAGE_ENV file"
+        : "Test storage: PIERRE_* environment variables"
+    )
     return {
       PIERRE_ORG: supplied.PIERRE_ORG,
       PIERRE_PRIVATE_KEY: supplied.PIERRE_PRIVATE_KEY,
     }
+  }
+  console.error(
+    "Test storage: read from the development Convex deployment in packages/backend"
+  )
   const selection = existsSync(resolve(backend, ".env.local"))
     ? readEnv(readFileSync(resolve(backend, ".env.local"), "utf8"))
     : {}
@@ -114,17 +123,53 @@ function storageCredentials() {
   return credentials
 }
 
+const nodeMajor = (executable) =>
+  Number(
+    execFileSync(executable, ["--version"], { encoding: "utf8" }).match(
+      /^v(\d+)/
+    )?.[1]
+  )
+
+/**
+ * Local Convex actions need Node 22 or 24. Use CODE_TEST_NODE when set, otherwise the
+ * default Node when it is supported, otherwise a Node 22 that npx fetches and caches.
+ * Returns the executable to prepend to PATH, or undefined when the default works.
+ */
+export function supportedNode() {
+  if (process.env.CODE_TEST_NODE) {
+    const executable = resolve(process.env.CODE_TEST_NODE)
+    if (![22, 24].includes(nodeMajor(executable)))
+      throw new Error(
+        `CODE_TEST_NODE (${executable}) must be Node 22 or 24 for local Convex actions.`
+      )
+    return executable
+  }
+  if ([22, 24].includes(nodeMajor("node"))) return undefined
+  try {
+    const executable = execFileSync(
+      "npx",
+      ["-y", "node@22", "-p", "process.execPath"],
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "inherit"],
+        timeout: 300_000,
+      }
+    )
+      .trim()
+      .split("\n")
+      .at(-1)
+    if (nodeMajor(executable) === 22) return executable
+  } catch {
+    // Fall through to the explicit error below.
+  }
+  throw new Error(
+    "Local Convex Node actions need Node 22 or 24. Install one, or set CODE_TEST_NODE to its executable."
+  )
+}
+
 export async function createLocalFixture({ builderURL } = {}) {
   const credentials = storageCredentials()
-  const major = Number(
-    execFileSync(process.env.CODE_TEST_NODE ?? "node", ["--version"], {
-      encoding: "utf8",
-    }).match(/^v(\d+)/)?.[1]
-  )
-  if (![22, 24].includes(major))
-    throw new Error(
-      "Local Convex Node actions require Node 22 or 24. Run with that Node on PATH or set CODE_TEST_NODE to its executable."
-    )
+  const nodeExecutable = supportedNode()
   const dir = mkdtempSync(resolve(tmpdir(), "v5x-code-test-"))
   const children = []
   let stopped = false
@@ -139,8 +184,7 @@ export async function createLocalFixture({ builderURL } = {}) {
     "CONVEX_SELF_HOSTED_ADMIN_KEY",
   ])
     delete env[key]
-  if (process.env.CODE_TEST_NODE)
-    env.PATH = `${dirname(resolve(process.env.CODE_TEST_NODE))}:${env.PATH}`
+  if (nodeExecutable) env.PATH = `${dirname(nodeExecutable)}:${env.PATH}`
   function start(command, args, options = {}) {
     if (stopped) throw new Error("Fixture has been stopped")
     const child = spawn(command, args, {
