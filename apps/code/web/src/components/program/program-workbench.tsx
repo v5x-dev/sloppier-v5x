@@ -5,7 +5,6 @@ import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
 import { SettingsDialog } from "@/components/program/settings-dialog"
 import { updateSettings, useSettings } from "@/lib/settings"
-import { SoundToggle } from "@/components/shared/sound-toggle"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
 import { DndContext, DragOverlay } from "@dnd-kit/core"
@@ -338,7 +337,7 @@ export function Workbench({
                 )
               )}
             </AvatarGroup>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-0.5">
               <ActionTooltip
                 label={showSymbols ? "Show files" : "Program symbols"}
               >
@@ -353,6 +352,7 @@ export function Workbench({
                   <ListMagnifyingGlassIcon />
                 </Button>
               </ActionTooltip>
+              <SettingsDialog />
             </div>
           </SidebarFooter>
         </Sidebar>
@@ -549,8 +549,6 @@ export function Workbench({
                 />
               </Suspense>
             )}
-            <SoundToggle />
-            <SettingsDialog />
           </ActionsBar>
         </SidebarInset>
         <CommitDialog
