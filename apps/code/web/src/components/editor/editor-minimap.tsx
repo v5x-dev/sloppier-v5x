@@ -64,7 +64,6 @@ export function EditorMinimap({
       if (element.width !== width * ratio) element.width = width * ratio
       if (element.height !== height * ratio) element.height = height * ratio
       element.style.height = `${height}px`
-      element.style.maskImage = getComputedStyle(panel).maskImage
       context.setTransform(ratio, 0, 0, ratio, 0, 0)
       context.clearRect(0, 0, width, height)
       const lineHeight = Math.min(3, height / Math.max(lines.length, 1))
@@ -158,11 +157,6 @@ export function EditorMinimap({
     const observer = new ResizeObserver(schedule)
     observer.observe(panel)
     if (panel.firstElementChild) observer.observe(panel.firstElementChild)
-    const styleObserver = new MutationObserver(schedule)
-    styleObserver.observe(panel, {
-      attributes: true,
-      attributeFilter: ["style"],
-    })
     schedule()
     return () => {
       resolution.removeEventListener("change", resolutionChanged)
@@ -173,7 +167,6 @@ export function EditorMinimap({
       shared.unobserve(update)
       panel.removeEventListener("scroll", schedule)
       observer.disconnect()
-      styleObserver.disconnect()
       cancelAnimationFrame(frame)
     }
   }, [binding, host, parent, width])

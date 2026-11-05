@@ -56,9 +56,10 @@ test.describe("program editor", () => {
     await fileSearch.fill("main.cpp")
     await fileSearch.press("Enter")
     const toggle = page.getByRole("button", { name: "Toggle minimap" })
-    await expect(
-      page.getByRole("slider", { name: "Editor minimap" })
-    ).toBeVisible()
+    const minimap = page.getByRole("slider", { name: "Editor minimap" })
+    await expect(minimap).toBeVisible()
+    // The file's scroll fade must not reach the minimap.
+    await expect(minimap).toHaveCSS("mask-image", "none")
     await toggle.click()
     await expect(toggle).toHaveAttribute("aria-pressed", "false")
     await expect(
