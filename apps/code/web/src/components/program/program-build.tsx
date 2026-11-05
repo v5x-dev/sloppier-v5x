@@ -17,6 +17,8 @@ import {
   resolveDiagnosticPath,
   type BuildDiagnostic,
 } from "@/lib/build-diagnostics"
+import { quickFixesFor, type QuickFix } from "@/lib/build-quick-fixes"
+import { errorMessage } from "@/lib/errors"
 import { useQuery } from "convex/react"
 import { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
@@ -45,12 +47,14 @@ export function ProgramBuild({
   paths,
   currentSha,
   onDiagnostic,
+  onQuickFix,
 }: {
   programId: Id<"programs">
   dirty: boolean
   paths: readonly string[]
   currentSha?: string
   onDiagnostic: (path: string, diagnostic: BuildDiagnostic) => void
+  onQuickFix: (path: string, fix: QuickFix) => Promise<void>
 }) {
   const logRef = useRef<HTMLPreElement>(null)
   const pendingJump = useRef<{
@@ -65,6 +69,8 @@ export function ProgramBuild({
   } = useProgramConnection()
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState("problems")
+  const [fixing, setFixing] = useState<BuildDiagnostic | null>(null)
+  const [fixError, setFixError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   // The machine reports startedAt while building; this covers the gap before the first poll.
   const [connectingStartedAt, setConnectingStartedAt] = useState<number | null>(
@@ -262,6 +268,14 @@ export function ProgramBuild({
                 {presenceError}
               </p>
             )}
+            {fixError && (
+              <p
+                role="alert"
+                className="border-b px-4 py-2 text-xs text-destructive"
+              >
+                {fixError}
+              </p>
+            )}
             {stale && (
               <div
                 role="status"
@@ -297,6 +311,10 @@ export function ProgramBuild({
                             diagnostic.path,
                             paths
                           )
+                          // Offered only when the file is editable and the message settles the fix.
+                          const fix = target
+                            ? quickFixesFor(diagnostic)[0]
+                            : undefined
                           const Icon =
                             diagnostic.severity === "error"
                               ? WarningCircleIcon
@@ -304,7 +322,7 @@ export function ProgramBuild({
                                 ? WarningIcon
                                 : InfoIcon
                           return (
-                            <li key={index}>
+                            <li key={index} className="flex items-start">
                               <button
                                 type="button"
                                 disabled={!target}
@@ -313,7 +331,7 @@ export function ProgramBuild({
                                     ? `Open ${target}:${diagnostic.line}`
                                     : "This file is outside the editable Program. See Build output for context."
                                 }
-                                className="group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset disabled:cursor-default disabled:hover:bg-transparent"
+                                className="group flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset disabled:cursor-default disabled:hover:bg-transparent"
                                 onClick={() => {
                                   if (target) {
                                     pendingJump.current = {
@@ -349,6 +367,29 @@ export function ProgramBuild({
                                   <ArrowUpRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
                                 )}
                               </button>
+                              {fix && target && (
+                                <Button
+                                  variant="outline"
+                                  size="xs"
+                                  className="mt-3 mr-4 shrink-0"
+                                  disabled={fixing !== null}
+                                  aria-busy={fixing === diagnostic}
+                                  onClick={async () => {
+                                    setFixing(diagnostic)
+                                    setFixError(null)
+                                    try {
+                                      await onQuickFix(target, fix)
+                                      setOpen(false)
+                                    } catch (error) {
+                                      setFixError(errorMessage(error))
+                                    } finally {
+                                      setFixing(null)
+                                    }
+                                  }}
+                                >
+                                  {fix.title}
+                                </Button>
+                              )}
                             </li>
                           )
                         })}

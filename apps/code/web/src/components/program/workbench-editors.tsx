@@ -238,6 +238,7 @@ export function WorkbenchEditors({
                   scrollPositions={source.scrollPositions}
                   onChange={(text) => source.setDraft(path, text)}
                   onReplacementAction={source.setReplacementAction}
+                  onQuickFixAction={source.setQuickFixAction}
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">

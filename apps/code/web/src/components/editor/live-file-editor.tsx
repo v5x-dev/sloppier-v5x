@@ -32,6 +32,7 @@ import {
   replacementEdits,
   type ReplacementAction,
 } from "@/lib/search-replacement"
+import { quickFixEdit, type QuickFixAction } from "@/lib/build-quick-fixes"
 
 export type { LivePerson } from "@/lib/live-file-session"
 
@@ -58,6 +59,7 @@ type Props = {
   onSyncChange: (synced: boolean) => void
   onLiveStatus: (status: LiveSaveStatus) => void
   onReplacementAction: (path: string, action: ReplacementAction | null) => void
+  onQuickFixAction: (path: string, action: QuickFixAction | null) => void
   onCursorLine: (path: string, line: number) => void
 }
 
@@ -75,6 +77,7 @@ export function LiveFileEditor({
   onLiveStatus,
   onPeopleChange,
   onReplacementAction,
+  onQuickFixAction,
   onCursorLine,
 }: Props) {
   const client = useConvex()
@@ -116,6 +119,7 @@ export function LiveFileEditor({
       onError: setError,
       onReplaced: () => {
         onReplacementAction(path, null)
+        onQuickFixAction(path, null)
         host.current?.setAttribute("inert", "")
       },
       isFocused: () =>
@@ -221,6 +225,7 @@ export function LiveFileEditor({
             programId={programId}
             viewId={viewId}
             onReplacementAction={onReplacementAction}
+            onQuickFixAction={onQuickFixAction}
           />
         )}
       </div>
@@ -239,6 +244,7 @@ function PierreFile({
   programId,
   viewId,
   onReplacementAction,
+  onQuickFixAction,
 }: {
   viewId: string
   binding: PierreCollaboration
@@ -250,6 +256,7 @@ function PierreFile({
   path: string
   programId: Id<"programs">
   onReplacementAction: (path: string, action: ReplacementAction | null) => void
+  onQuickFixAction: (path: string, action: QuickFixAction | null) => void
 }) {
   const {
     lineNumbers,
@@ -263,6 +270,7 @@ function PierreFile({
     () => () => onReplacementAction(path, null),
     [path, onReplacementAction]
   )
+  useEffect(() => () => onQuickFixAction(path, null), [path, onQuickFixAction])
   // A copy opened from a split starts from the file's last view state, and then
   // keeps its own cursor and scroll under its tab's key.
   const viewKey = `${programId}:file:${path}`
@@ -413,6 +421,25 @@ function PierreFile({
                 binding.undo.stopCapturing()
                 try {
                   editor.applyEdits(edits)
+                } finally {
+                  binding.undo.stopCapturing()
+                }
+              })
+              onQuickFixAction(path, (fix) => {
+                const text = binding.document.getText()
+                const edit = quickFixEdit(text, fix)
+                const encoder = new TextEncoder()
+                const nextSize =
+                  encoder.encode(text).byteLength +
+                  encoder.encode(fix.replacement).byteLength -
+                  encoder.encode(fix.expected).byteLength
+                if (nextSize > MAX_SOURCE_BYTES)
+                  throw new Error(
+                    "The fix exceeds the 256 KiB live editing limit."
+                  )
+                binding.undo.stopCapturing()
+                try {
+                  editor.applyEdits([edit])
                 } finally {
                   binding.undo.stopCapturing()
                 }

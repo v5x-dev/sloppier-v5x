@@ -507,6 +507,10 @@ export function Workbench({
                         }))
                         openFile(path)
                       }}
+                      onQuickFix={async (path, fix) => {
+                        await source.applyQuickFix(path, fix)
+                        openFile(path)
+                      }}
                     />
                   </Suspense>
                 }
