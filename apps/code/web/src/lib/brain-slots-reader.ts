@@ -16,18 +16,32 @@ import {
 
 const INI_MAX_SIZE = 1024
 
-/** Reads every slot's name and v5x record through the Brain's user directory. */
+/** Thrown when a read stops early because the Brain is needed for something else. */
+export class SlotReadCancelled extends Error {}
+
+/**
+ * Reads every slot's name and v5x record through the Brain's user directory. `keepReading` is checked before each
+ * slot, so an upload waits for at most one slot's transfers rather than the whole refresh.
+ */
 export async function readBrainSlots(
-  connection: Connection
+  connection: Connection,
+  options: { keepReading?: () => boolean } = {}
 ): Promise<BrainSlotReading[]> {
+  const check = () => {
+    if (options.keepReading && !options.keepReading())
+      throw new SlotReadCancelled()
+  }
+  check()
   const count = await connection.request(directoryFileCount())
   const files = new Map<string, { size: number; crc: number }>()
   for (let index = 0; index < count; index++) {
+    check()
     const entry = await connection.request(directoryEntry(index))
     files.set(entry.fileName, { size: entry.size, crc: entry.crc })
   }
   const readings: BrainSlotReading[] = []
   for (let slot = 1; slot <= BRAIN_SLOT_COUNT; slot++) {
+    check()
     const ini = files.get(`slot_${slot}.ini`)
     const binary = files.get(`slot_${slot}.bin`) ?? null
     const recordFile = files.get(`v5x_${slot}.dat`)

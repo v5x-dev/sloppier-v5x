@@ -13,6 +13,7 @@ function fixture() {
   ])
   const source = {
     isSynced: () => true,
+    subscribe: () => () => {},
     getSnapshot: () => state,
     getDrafts: () => drafts,
     openFile: vi.fn((path: string) => {

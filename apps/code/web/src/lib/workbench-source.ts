@@ -22,6 +22,7 @@ import type { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
 import type { FunctionArgs, FunctionReturnType } from "convex/server"
 import { containsPath, type ExplorerUpdate } from "./explorer"
+import { encodeSourceText } from "./build-source"
 import { errorMessage } from "./errors"
 import type { LivePerson } from "./live-file-session"
 import type { LiveSaveStatus } from "./live-save-status"
@@ -87,6 +88,13 @@ export class WorkbenchSource {
   private draftListeners = new Set<() => void>()
   private draftVersion = 0
   private reads = new Map<string, object>()
+  // Committed bytes at one repository SHA. A commit's contents never change, so an entry is reusable until the head moves.
+  private headFiles: { sha: string; files: Map<string, Uint8Array> } | null =
+    null
+  private headLoading:
+    Promise<{ sha: string; files: Map<string, Uint8Array> }> | undefined
+  /** The commit this client made last. Its snapshot is in headFiles when the cache could be advanced. */
+  private lastCommitSha: string | null = null
   private liveOpens = new Map<string, Promise<Id<"crdtDocuments"> | null>>()
   private operationBusy = false
   private initialOpen = false
@@ -505,7 +513,7 @@ export class WorkbenchSource {
         paths.length === 1
           ? `Update ${paths[0]}`
           : `Update ${paths.length} files: ${paths.join(", ")}`
-      await this.actions.commitFiles({
+      const committed = await this.actions.commitFiles({
         programId: this.programId,
         message: message ?? generated.slice(0, 200),
         changes,
@@ -513,6 +521,8 @@ export class WorkbenchSource {
       // Acknowledge only the captured text. Later typing remains dirty.
       for (const change of changes)
         this.committed.set(change.path, change.contents)
+      this.advanceHead(committed.commitSha, committed.parentSha, changes)
+      this.lastCommitSha = committed.commitSha
       this.sourceChanged()
     })
   }
@@ -716,13 +726,24 @@ export class WorkbenchSource {
     return bytes.buffer
   }
 
-  prepareSource = () => this.prepareSnapshot(1)
+  /** Reads the committed head in the background, so the first draft build does not wait for it. */
+  prefetchHead = () => {
+    if (!this.headFiles) void this.loadHeadOnce().catch(() => undefined)
+  }
+
+  prepareSource = () => this.prepareSnapshot(6)
 
   // Independent repository reads overlap without flooding a Chromebook with
-  // requests. The build snapshot still follows its existing serial path.
+  // requests. Both snapshots pin all reads to the manifest's commit.
   prepareAutocompleteSource = () => this.prepareSnapshot(6, true)
 
   private async prepareSnapshot(concurrency: number, sourceOnly = false) {
+    // Right after this client's commit, its snapshot is already cached at the new head, and the manifest would only
+    // confirm that head. Any other head change replaces the cache, so it falls through to the manifest.
+    const head = this.headFiles
+    if (!sourceOnly && head && head.sha === this.lastCommitSha) {
+      return { sha: head.sha, files: Object.fromEntries(head.files) }
+    }
     const { sha, paths: manifestPaths } = await this.actions.buildManifest({
       programId: this.programId,
     })
@@ -731,22 +752,102 @@ export class WorkbenchSource {
           /\.(c|cc|cpp|cxx|h|hh|hpp|hxx|inc)$|(^|\/)\.clang-format$/i.test(path)
         )
       : manifestPaths
-    const files: Record<string, Uint8Array> = {}
-    let total = 0
+    const files = await this.readCommitted(sha, paths, concurrency, !sourceOnly)
+    return { sha, files: Object.fromEntries(files) }
+  }
+
+  /**
+   * Committed contents for paths at sha. Files already read at that SHA are reused; a commit
+   * made from this client advances the cache without re-reading unchanged files. Only a complete
+   * snapshot becomes the cache: a source-only read would otherwise leave out files a build needs.
+   */
+  private async readCommitted(
+    sha: string,
+    paths: string[],
+    concurrency: number,
+    complete = true
+  ) {
+    const cached =
+      this.headFiles?.sha === sha
+        ? this.headFiles.files
+        : new Map<string, Uint8Array>()
+    const files = new Map<string, Uint8Array>()
+    const missing: string[] = []
+    for (const path of paths) {
+      const bytes = cached.get(path)
+      if (bytes) files.set(path, bytes)
+      else missing.push(path)
+    }
     let next = 0
     await Promise.all(
-      Array.from({ length: Math.min(concurrency, paths.length) }, async () => {
-        while (next < paths.length) {
-          const path = paths[next++]
-          const bytes = new Uint8Array(await this.readBytes(path, true, sha))
-          total += bytes.length
-          if (total > 96 * 1024 * 1024)
-            throw new Error("Source snapshot exceeds 96 MiB.")
-          files[path] = bytes
+      Array.from(
+        { length: Math.min(concurrency, missing.length) },
+        async () => {
+          while (next < missing.length) {
+            const path = missing[next++]
+            files.set(
+              path,
+              new Uint8Array(await this.readBytes(path, true, sha))
+            )
+          }
         }
-      })
+      )
     )
-    return { sha, files }
+    let total = 0
+    for (const bytes of files.values()) total += bytes.length
+    if (total > 96 * 1024 * 1024)
+      throw new Error("Source snapshot exceeds 96 MiB.")
+    if (complete) this.headFiles = { sha, files: new Map(files) }
+    return files
+  }
+
+  /** Records a commit made from this client. Only a commit whose parent is the cached head can be applied. */
+  private advanceHead(
+    sha: string,
+    parent: string | null | undefined,
+    changes: Array<{ path: string; contents: string }>
+  ) {
+    if (!this.headFiles || parent !== this.headFiles.sha) {
+      this.headFiles = null
+      return
+    }
+    const files = new Map(this.headFiles.files)
+    for (const change of changes)
+      files.set(change.path, encodeSourceText(change.contents))
+    this.headFiles = { sha, files }
+  }
+
+  /**
+   * The source a commit would record now: committed files at the current head with unsaved text
+   * overlaid, using the same rule as commit(). Used to build speculatively before the user commits.
+   */
+  prepareDraftSource = async () => {
+    // The cached head is used without asking for the current head. A head that has moved since makes the draft
+    // hash differ from the commit's, so that build is not claimed and the upload builds normally.
+    const head = this.headFiles ?? (await this.loadHeadOnce())
+    const files: Record<string, Uint8Array> = Object.fromEntries(head.files)
+    const dirty: string[] = []
+    for (const [path, text] of this.drafts) {
+      if (this.committed.get(path) === text) continue
+      files[path] = encodeSourceText(text)
+      dirty.push(path)
+    }
+    return { sha: head.sha, files, dirty }
+  }
+
+  /** One head read at a time: a prefetch in flight is shared with the first draft build. */
+  private loadHeadOnce() {
+    this.headLoading ??= this.loadHead().finally(() => {
+      this.headLoading = undefined
+    })
+    return this.headLoading
+  }
+
+  private async loadHead() {
+    const { sha, paths } = await this.actions.buildManifest({
+      programId: this.programId,
+    })
+    return { sha, files: await this.readCommitted(sha, paths, 6) }
   }
 
   private async exclusive<T>(operation: () => Promise<T>) {

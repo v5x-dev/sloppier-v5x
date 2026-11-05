@@ -126,12 +126,15 @@ export function ProgramUpload({
   programId,
   currentSha,
   onActivityChange,
+  onOpen,
 }: {
   name: string
   programId: Id<"programs">
   /** The Program's committed head, which uploads record as their revision. */
   currentSha?: string
   buildAction: ReactNode
+  /** Called when the upload popover opens, before a slot is chosen. */
+  onOpen?: () => void
   prepareProgram: (
     signal: AbortSignal,
     onStage: (message: string) => void,
@@ -237,8 +240,18 @@ export function ProgramUpload({
     setSlotsError(null)
     try {
       await consoleIO(async (connection) => {
-        const { readBrainSlots } = await import("@/lib/brain-slots-reader")
-        const readings = await readBrainSlots(connection)
+        const { readBrainSlots, SlotReadCancelled } =
+          await import("@/lib/brain-slots-reader")
+        let readings
+        try {
+          readings = await readBrainSlots(connection, {
+            keepReading: () => !busyRef.current,
+          })
+        } catch (cause) {
+          // An upload started: its refresh runs again when it finishes.
+          if (cause instanceof SlotReadCancelled) return
+          throw cause
+        }
         if (mounted.current && device.current?.connection === connection)
           setSlots(readings)
       })
@@ -270,14 +283,18 @@ export function ProgramUpload({
     selectSlot(next + 1)
     slotButtons.current[next]?.focus()
   }
-  async function operation(action: () => Promise<void>, notify = false) {
+  async function operation(
+    action: () => Promise<void>,
+    notify = false,
+    { waitForConsole = true }: { waitForConsole?: boolean } = {}
+  ) {
     if (busyRef.current) return
     busyRef.current = true
     setBusy(true)
     setError(null)
     setSuccess(false)
     try {
-      await consoleQueue.current
+      if (waitForConsole) await consoleQueue.current
       await action()
     } catch (err) {
       // Keyboard-started work has no open popover to show the error in.
@@ -400,113 +417,137 @@ export function ProgramUpload({
     })
   }
   function upload(fromKeyboard = false) {
-    void operation(async () => {
-      const selected = device.current
-      if (!selected || !paired) return
-      const controller = new AbortController()
-      preparation.current = controller
-      const targetSlot = slot
-      onActivityChange({ label: "Preparing upload", value: null })
-      setProgress(null)
-      setMessage("Checking connection…")
-      let preparing = false
-      try {
-        await verifyBrain(selected.connection)
-        preparing = true
-        let revision = ""
-        const program = await prepareProgram(
-          controller.signal,
-          (stage) => {
-            if (mounted.current) {
-              setMessage(stage)
-              onActivityChange({ label: stage, value: null })
-            }
-          },
-          async (sha) => {
-            const { isInstalled } = await import("@/lib/brain-revision")
-            revision = sha
-            setMessage("Checking the program on your Brain…")
-            return isInstalled(selected.connection, targetSlot, programId, sha)
-          }
+    void operation(
+      async () => {
+        const selected = device.current
+        if (!selected || !paired) return
+        const controller = new AbortController()
+        preparation.current = controller
+        const targetSlot = slot
+        onActivityChange({ label: "Preparing upload", value: null })
+        setProgress(null)
+        setMessage("Checking connection…")
+        let preparing = false
+        // Verification waits for queued console I/O, then runs beside the commit and build, which never touch the
+        // Brain. Anything that needs the Brain awaits it first, so a failed check still stops the upload before a transfer.
+        const brain = { verifyFailed: false }
+        // The modules the Brain check and binary parsing need load now, not after the commit and build.
+        const revisionModule = import("@/lib/brain-revision")
+        revisionModule.catch(() => {})
+        void import("@/lib/build-binaries").catch(() => {})
+        const verified = consoleQueue.current.then(() =>
+          verifyBrain(selected.connection)
         )
-        preparing = false
-        controller.signal.throwIfAborted()
-        if (!program) {
-          const resultMessage = `Slot ${targetSlot} already has this version.`
+        verified.catch(() => {
+          brain.verifyFailed = true
+        })
+        try {
+          preparing = true
+          let revision = ""
+          const program = await prepareProgram(
+            controller.signal,
+            (stage) => {
+              if (mounted.current) {
+                setMessage(stage)
+                onActivityChange({ label: stage, value: null })
+              }
+            },
+            async (sha) => {
+              await verified
+              const { isInstalled } = await revisionModule
+              revision = sha
+              setMessage("Checking the program on your Brain…")
+              return isInstalled(
+                selected.connection,
+                targetSlot,
+                programId,
+                sha
+              )
+            }
+          )
+          preparing = false
+          await verified
+          controller.signal.throwIfAborted()
+          if (!program) {
+            const resultMessage = `Slot ${targetSlot} already has this version.`
+            if (mounted.current) {
+              setSuccess(true)
+              setMessage(resultMessage)
+              play("success")
+            }
+            toast.add({ type: "success", title: resultMessage })
+            return
+          }
+          await verifyBrain(selected.connection)
+          setProgress(0)
+          onActivityChange({ label: "Uploading Program", value: 0 })
+          await uploadProgram(selected.connection, program, {
+            slot: targetSlot,
+            name,
+            programType: "v5x",
+            compress: true,
+            afterUpload: run
+              ? FileExitAction.RunProgram
+              : FileExitAction.DoNothing,
+            onProgress: (file, percent) => {
+              if (!mounted.current) return
+              setMessage(
+                `Uploading ${file === "ini" ? "program details" : file === "lib" ? "library" : "program"}…`
+              )
+              setProgress(Math.round(percent))
+              onActivityChange({
+                label: `Uploading ${file === "ini" ? "program details" : file === "lib" ? "library" : "Program"}`,
+                value: Math.round(percent),
+              })
+            },
+          })
+          if (
+            program.type === "monolith" &&
+            selected.connection.type !== "controller"
+          ) {
+            try {
+              const { recordInstalled } = await import("@/lib/brain-revision")
+              await recordInstalled(
+                selected.connection,
+                targetSlot,
+                programId,
+                revision
+              )
+            } catch {
+              // The program was uploaded successfully; a missing record only prevents reuse.
+            }
+          }
+          try {
+            await recordUpload({ programId, revision, slot: targetSlot })
+          } catch {
+            toast.add({
+              type: "error",
+              title: "Upload succeeded, but activity could not be saved.",
+            })
+          }
+          const uploaded = `Uploaded to slot ${targetSlot}${run ? " and started" : ""}.`
           if (mounted.current) {
             setSuccess(true)
-            setMessage(resultMessage)
+            setMessage(uploaded)
+            setProgress(null)
             play("success")
           }
-          toast.add({ type: "success", title: resultMessage })
-          return
+          toast.add({ type: "success", title: uploaded })
+        } catch (err) {
+          // Unmounting aborts the upload too; that is not a failure to report.
+          if (mounted.current) play("error")
+          if (!preparing || brain.verifyFailed)
+            await disconnect().catch(() => {})
+          throw err
+        } finally {
+          preparation.current = null
+          onActivityChange(null)
+          if (mounted.current) setProgress(null)
         }
-        await verifyBrain(selected.connection)
-        setProgress(0)
-        onActivityChange({ label: "Uploading Program", value: 0 })
-        await uploadProgram(selected.connection, program, {
-          slot: targetSlot,
-          name,
-          programType: "v5x",
-          compress: true,
-          afterUpload: run
-            ? FileExitAction.RunProgram
-            : FileExitAction.DoNothing,
-          onProgress: (file, percent) => {
-            if (!mounted.current) return
-            setMessage(
-              `Uploading ${file === "ini" ? "program details" : file === "lib" ? "library" : "program"}…`
-            )
-            setProgress(Math.round(percent))
-            onActivityChange({
-              label: `Uploading ${file === "ini" ? "program details" : file === "lib" ? "library" : "Program"}`,
-              value: Math.round(percent),
-            })
-          },
-        })
-        if (
-          program.type === "monolith" &&
-          selected.connection.type !== "controller"
-        ) {
-          try {
-            const { recordInstalled } = await import("@/lib/brain-revision")
-            await recordInstalled(
-              selected.connection,
-              targetSlot,
-              programId,
-              revision
-            )
-          } catch {
-            // The program was uploaded successfully; a missing record only prevents reuse.
-          }
-        }
-        try {
-          await recordUpload({ programId, revision, slot: targetSlot })
-        } catch {
-          toast.add({
-            type: "error",
-            title: "Upload succeeded, but activity could not be saved.",
-          })
-        }
-        const uploaded = `Uploaded to slot ${targetSlot}${run ? " and started" : ""}.`
-        if (mounted.current) {
-          setSuccess(true)
-          setMessage(uploaded)
-          setProgress(null)
-          play("success")
-        }
-        toast.add({ type: "success", title: uploaded })
-      } catch (err) {
-        // Unmounting aborts the upload too; that is not a failure to report.
-        if (mounted.current) play("error")
-        if (!preparing) await disconnect().catch(() => {})
-        throw err
-      } finally {
-        preparation.current = null
-        onActivityChange(null)
-        if (mounted.current) setProgress(null)
-      }
-    }, fromKeyboard).then(refreshSlots)
+      },
+      fromKeyboard,
+      { waitForConsole: false }
+    ).then(refreshSlots)
   }
   const brainReady = Boolean(connected) && paired
   const connectTitle = !connected
@@ -734,7 +775,10 @@ export function ProgramUpload({
         open={open}
         onOpenChange={(nextOpen) => {
           setOpen(nextOpen)
-          if (nextOpen) void refreshSlots()
+          if (nextOpen) {
+            void refreshSlots()
+            onOpen?.()
+          }
         }}
       >
         <ActionTooltip

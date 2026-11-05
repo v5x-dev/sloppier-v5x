@@ -17,8 +17,55 @@ def mark(event, **fields):
         with open(TIMING_LOG, 'a') as log:
             log.write(json.dumps({'tool': 'v5x-cxx', 'event': event, 'at': time.time(), **fields}) + '\n')
 
+def run_units(source, output, compiler, target_flags, flags, pch, cache_root, pch_prefix):
+    """Splits, compiles changed units, and writes the combined object to output. Raises on any fallback case."""
+    import unit_build
+    # No newline translation: libclang's offsets count the file's bytes, CRLF included.
+    text = open(source, encoding='utf-8', newline='').read()
+    stem = source.replace('/', '__')
+    state_dir = cache_root / 'state'
+    state_dir.mkdir(parents=True, exist_ok=True)
+    state_file, prev_file = state_dir / f'{stem}.json', state_dir / f'{stem}.src'
+    previous, previous_text = None, None
+    if state_file.exists() and prev_file.exists():
+        try:
+            previous = unit_build.Analysis.from_json(state_file.read_text())
+            previous_text = open(prev_file, encoding='utf-8', newline='').read()
+            if unit_build.sha(previous_text) != previous.source_sha:
+                previous, previous_text = None, None
+        except Exception:
+            previous, previous_text = None, None
+    # Header-level state depends only on the headers, so it is checked once per PCH and cached with it.
+    import unit_split
+    marker = cache_root / 'headers' / (unit_build.sha(pch) + '.json')
+    if marker.exists():
+        risky = json.loads(marker.read_text())
+    else:
+        risky = unit_split.header_check(pch_prefix, [*target_flags, *flags, '-x', 'c++'])
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(json.dumps(risky))
+    # libclang parses with the same PCH the units compile with, which keeps the analysis fast.
+    plan = unit_build.plan(source, text, [*target_flags, *flags, '-x', 'c++', '-include-pch', pch], previous_text, previous, risky)
+    include_dir = os.path.dirname(source) or '.'
+    unit_flags = [*target_flags, *flags]
+    compile_key = unit_build.flags_key(unit_flags, include_dir, pch)
+    # A unit keeps its object from the last build when nothing it can see has changed, on either path.
+    reuse = unit_build.reusable_units(plan, previous, compile_key)
+    mark('units-planned', source=source, mode=plan.analysis.mode, units=len(plan.labels), reused=len(reuse))
+    objects = unit_build.compile_units(plan, cache_root / 'objects', compiler, unit_flags, pch,
+                                       include_dir=include_dir, basename=os.path.basename(source), reuse=reuse)
+    unit_build.combine(objects, output)
+    plan.analysis.objects = {key: str(path) for key, path in zip(plan.keys, objects)}
+    plan.analysis.flags = compile_key
+    with open(prev_file, 'w', encoding='utf-8', newline='') as handle:
+        handle.write(text)
+    state_file.write_text(plan.analysis.to_json())
+
+
 compiler = os.environ['V5X_REAL_CXX']
 args = sys.argv[1:]
+# Compiler-specific target flags (clang needs the ARM sysroot spelled out; gcc's driver already knows it).
+target_flags = json.loads(os.environ.get('V5X_EXTRA_CXX_FLAGS', '[]'))
 source = next((a for a in args if a.endswith(('.cpp', '.cc', '.cxx'))), None)
 if '-c' not in args or not source:
     os.execvp(compiler, [compiler, *args])
@@ -41,7 +88,7 @@ for arg in args:
 if library_prefix is not None:
     prefix_text = library_prefix
     label = 'library headers'
-    digest = hashlib.sha256((compiler + repr(flags) + prefix_text).encode())
+    digest = hashlib.sha256((compiler + repr(flags) + repr(target_flags) + prefix_text + ('pch-instantiate-templates' if 'clang' in pathlib.Path(compiler).name else '')).encode())
 else:
     header = pathlib.Path(os.environ['V5X_PCH_HEADER'])
     prefix_text = '#include "' + str(header) + '"\n'
@@ -64,13 +111,33 @@ with (cache / 'lock').open('w') as lock:
     if not pch.exists():
         print('Precompiling ' + label, flush=True)
         prefix.write_text(prefix_text)
-        subprocess.run([compiler, *flags, '-x', 'c++-header', str(prefix), '-o', str(pch)], check=True)
+        # A cancelled build can kill this compile; publish the PCH only once it is complete.
+        partial = cache / 'prefix.h.gch.partial'
+        # Clang instantiates the PCH's pending templates up front; without this an empty translation unit still pays ~300 ms per compile.
+        pch_flags = ['-Xclang', '-fpch-instantiate-templates'] if 'clang' in pathlib.Path(compiler).name else []
+        subprocess.run([compiler, *target_flags, *flags, *pch_flags, '-x', 'c++-header', str(prefix), '-o', str(partial)], check=True)
+        os.replace(partial, pch)
         mark('pch-built', key=digest.hexdigest()[:12])
+# Per-function units (clang with the library PCH): an edit recompiles only the function it touched. Any file the
+# splitter cannot prove equivalent falls through to the whole-file compile below. See unit_build.py.
+if os.environ.get('V5X_UNITS') == '1' and library_prefix is not None and 'clang' in pathlib.Path(compiler).name:
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import unit_build
+        output = args[args.index('-o') + 1] if '-o' in args else None
+        if output is None:
+            raise unit_build.Unsplittable('no output path')
+        run_units(source, output, compiler, target_flags, flags, str(pch), pathlib.Path(os.environ.get('V5X_UNIT_CACHE', '/home/builder/.cache/v5x-units')), str(prefix))
+        mark('units-done', source=source)
+        sys.exit(0)
+    except Exception as error:
+        mark('units-fallback', source=source, reason=str(error)[:300])
+        print(f'Compiling {source} whole: {str(error)[:300]}', file=sys.stderr, flush=True)
 # Clang validates header metadata too. Uploads preserve unchanged headers, and
 # the cache key includes metadata to invalidate headers restored to older contents.
 extra = ['-include-pch', str(pch)] if 'clang' in pathlib.Path(compiler).name else ['-include', str(prefix), '-Werror=invalid-pch']
 if TIMING_LOG:
-    result = subprocess.run([compiler, *extra, *args])
+    result = subprocess.run([compiler, *target_flags, *extra, *args])
     mark('cxx-end', source=source, code=result.returncode)
     sys.exit(result.returncode)
-os.execvp(compiler, [compiler, *extra, *args])
+os.execvp(compiler, [compiler, *target_flags, *extra, *args])

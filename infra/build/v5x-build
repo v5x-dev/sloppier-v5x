@@ -17,6 +17,10 @@ def mark(event, **fields):
 
 mark('build-start')
 template = sys.argv[1]
+# Sysroot for clang: the ARM C++ library is the gcc one shipped in the image.
+# gcc's ARM ABI: short enums and the integer typedef widths the gcc-built PROS libraries use. Clang defaults differ
+# (uint32_t is unsigned int, not long), which made calls such as pros::rtos::Task fail to link.
+CLANG_TARGET_FLAGS = ['--target=arm-none-eabi', '-fshort-enums', '-nostdinc++', '-isystem', '/usr/lib/arm-none-eabi/include/c++/13.2.1', '-isystem', '/usr/lib/arm-none-eabi/include/c++/13.2.1/arm-none-eabi/thumb/v7-a+simd/hard', '-isystem', '/usr/lib/arm-none-eabi/include/c++/13.2.1/arm-none-eabi', '-isystem', '/usr/lib/arm-none-eabi/include', '-D__CHAR16_TYPE__=short unsigned int', '-D__CHAR32_TYPE__=long unsigned int', '-D__INT16_TYPE__=short int', '-D__INT32_TYPE__=long int', '-D__INT_FAST16_TYPE__=int', '-D__INT_FAST8_TYPE__=int', '-D__INT_LEAST16_TYPE__=short int', '-D__INT_LEAST32_TYPE__=long int', '-D__SIG_ATOMIC_TYPE__=int', '-D__UINT16_TYPE__=short unsigned int', '-D__UINT32_TYPE__=long unsigned int', '-D__UINT_FAST16_TYPE__=unsigned int', '-D__UINT_FAST8_TYPE__=unsigned int', '-D__UINT_LEAST16_TYPE__=short unsigned int', '-D__UINT_LEAST32_TYPE__=long unsigned int', '-D__WINT_TYPE__=unsigned int']
 if template not in ('pros', 'ez-template', 'rw', 'vexcode', 'jar'):
     sys.exit('Unknown program template')
 # Headers every starter includes before project code. The PCH key covers these fixed library headers
@@ -39,6 +43,10 @@ if template in ('pros', 'ez-template', 'rw'):
         target.parent.mkdir(parents=True, exist_ok=True)
         target.symlink_to(dependencies / template / relative)
     compiler = os.environ.get('PROS_CXX', 'arm-none-eabi-g++')
+    if os.environ.get('V5X_COMPILER') == 'clang':
+        # Clang compiles the program; the link stays with the ARM gcc driver.
+        compiler = 'clang++'
+        os.environ['V5X_EXTRA_CXX_FLAGS'] = json.dumps(CLANG_TARGET_FLAGS)
     header = 'main.h'
     command = ['make', '-j2', 'CXX=/usr/local/bin/v5x-cxx', 'USE_PCH=0']
 else:

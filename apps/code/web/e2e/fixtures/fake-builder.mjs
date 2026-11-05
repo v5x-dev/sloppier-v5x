@@ -1,7 +1,33 @@
 // Simulates only the external machine API and direct Builder HTTP protocol.
 import { createServer } from "node:http"
-import { randomBytes, randomUUID } from "node:crypto"
+import { createHash, randomBytes, randomUUID } from "node:crypto"
 import { zipSync, unzipSync } from "fflate"
+
+// Same identity as the Builder's source_hash (infra/build/v5x-server) and the browser's sourceHash.
+function sourceHash(files) {
+  const names = Object.keys(files).sort((a, b) =>
+    Buffer.compare(Buffer.from(a), Buffer.from(b))
+  )
+  const outer = createHash("sha256")
+  for (const name of names) {
+    outer.update(Buffer.from(name + "\0"))
+    outer.update(createHash("sha256").update(files[name]).digest())
+  }
+  return outer.digest("hex")
+}
+
+// Same index as the Builder's /status artifactEntries: each file's SHA-256 and size.
+function indexFiles(files) {
+  return Object.fromEntries(
+    Object.entries(files).map(([name, bytes]) => [
+      name,
+      {
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+        bytes: bytes.length,
+      },
+    ])
+  )
+}
 
 export async function startFakeBuilder() {
   const machines = new Map()
@@ -40,6 +66,8 @@ export async function startFakeBuilder() {
       return
     }
     if (url.pathname === "/__control") {
+      // Builds fail until the test clears this. A speculative build of the same content would otherwise take the
+      // one failure and leave the requested build to succeed, and a claimed speculative artifact would skip it.
       if (body.failNext !== undefined) failNext = body.failNext
       send({ builds, uploads })
       return
@@ -54,8 +82,11 @@ export async function startFakeBuilder() {
         logs: "Ready",
         building: false,
         artifactId: null,
+        speculative: false,
+        sourceHash: null,
         chunks: new Map(),
         artifact: null,
+        files: null,
       })
       send({ id })
       return
@@ -100,6 +131,9 @@ export async function startFakeBuilder() {
         logs: machine.logs,
         building: machine.building,
         artifactId: machine.artifactId,
+        speculative: machine.speculative,
+        sourceHash: machine.sourceHash,
+        artifactEntries: machine.files ? indexFiles(machine.files) : null,
       })
       return
     }
@@ -121,23 +155,48 @@ export async function startFakeBuilder() {
         send({ error: "Source snapshot missing" }, 400)
         return
       }
+      // Like the real Builder: a speculative build never replaces a normal build; a normal build supersedes a
+      // speculative one, whose result is then discarded.
+      const speculative = body.speculative === true
+      if (machine.building && !machine.speculative) {
+        send({ error: "A build is already running." }, 409)
+        return
+      }
       builds++
       const failure = failNext
-      failNext = false
+      const hash = sourceHash(unzipSync(source))
+      const token = {}
+      machine.token = token
       machine.building = true
-      machine.logs = `Building commit ${body.commit}\n`
+      machine.speculative = speculative
+      machine.sourceHash = null
+      machine.logs = `Building ${speculative ? "speculative " : "commit "}${body.commit}\n`
       setTimeout(() => {
+        if (machine.token !== token) return
         machine.building = false
         machine.logs += failure ? "Build failed (exit 2)." : "Build succeeded."
         machine.artifactId = failure ? null : randomUUID()
-        machine.artifact = failure
+        machine.sourceHash = hash
+        machine.files = failure
           ? null
-          : zipSync({ "bin/program.bin": randomBytes(8192) })
+          : { "bin/program.bin": randomBytes(8192) }
+        machine.artifact = failure ? null : zipSync(machine.files)
       }, 800)
       send({})
       return
     }
     if (path === "/connect/8080/artifact" && machine.artifact) {
+      const entry = url.searchParams.get("entry")
+      if (entry !== null) {
+        const bytes = machine.files?.[entry]
+        if (!bytes) {
+          send({ error: "No such entry" }, 404)
+          return
+        }
+        response.setHeader("Content-Type", "application/octet-stream")
+        response.end(bytes)
+        return
+      }
       response.setHeader("Content-Type", "application/zip")
       response.end(machine.artifact)
       return

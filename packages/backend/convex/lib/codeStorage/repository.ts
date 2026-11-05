@@ -73,6 +73,46 @@ export async function listAllPaths(repo: Repo, ref = "main") {
   return paths
 }
 
+/** Live-edit backups commit to the default branch under `.v5x/` and never record a source head. */
+export const LIVE_BACKUP_AUTHOR = commitAuthor(
+  "V5X Collaborators",
+  "collaborators@users.v5x.local"
+)
+
+type HistoryCommit = { sha: string; parentShas: string[]; authorEmail: string }
+
+/**
+ * The source head a new commit's snapshot builds on, given the branch head and the recorded head.
+ *
+ * Live-edit backups advance the branch without recording a head, and they touch only `.v5x/`, which source
+ * snapshots exclude. When every commit from the branch head down to the recorded head is such a backup, the
+ * recorded head's source files are still the branch's source files. Otherwise the branch head is returned, so
+ * callers fall back to a full read.
+ *
+ * `history` lists the branch newest first, starting at the head it was read for.
+ */
+export function snapshotParentSha(
+  history: { commits: HistoryCommit[] },
+  headSha: string,
+  recordedSha: string | null | undefined
+): string {
+  if (!recordedSha || recordedSha === headSha) return headSha
+  if (history.commits[0]?.sha !== headSha) return headSha
+  for (let index = 0; index < history.commits.length; index++) {
+    const commit = history.commits[index]
+    if (commit.sha === recordedSha) return recordedSha
+    const parent = history.commits[index + 1]
+    if (
+      commit.authorEmail !== LIVE_BACKUP_AUTHOR.email ||
+      commit.parentShas.length !== 1 ||
+      parent?.sha !== commit.parentShas[0]
+    ) {
+      return headSha
+    }
+  }
+  return headSha
+}
+
 export async function commitChanges(
   repo: Repo,
   changes: Array<
@@ -81,12 +121,18 @@ export async function commitChanges(
   >,
   message: string,
   author: { name: string; email: string },
-  requireAbsentPaths: string[] = []
+  requireAbsentPaths: string[] = [],
+  recordedHeadSha?: string | null
 ) {
   for (let attempt = 0; attempt < MAX_COMMIT_ATTEMPTS; attempt++) {
-    const [branches, existing] = await Promise.all([
+    const [branches, existing, history] = await Promise.all([
       repo.listBranches({ limit: 100 }),
       requireAbsentPaths.length > 0 ? listAllPaths(repo) : undefined,
+      recordedHeadSha
+        ? repo
+            .listCommits({ branch: repo.defaultBranch, limit: 100 })
+            .catch(() => undefined)
+        : undefined,
     ])
     const headSha = branches.branches.find(
       (branch) => branch.name === repo.defaultBranch
@@ -121,7 +167,14 @@ export async function commitChanges(
     }
 
     try {
-      return await builder.send()
+      // expectedHeadSha is the commit's parent. parentSha is the snapshot it builds on, which callers use to reuse
+      // cached file contents; it can be the recorded head when only live-edit backups sit above it.
+      const commit = await builder.send()
+      const parentSha =
+        headSha && history
+          ? snapshotParentSha(history, headSha, recordedHeadSha)
+          : (headSha ?? null)
+      return { ...commit, parentSha }
     } catch (error) {
       if (
         !(error instanceof RefUpdateError) ||

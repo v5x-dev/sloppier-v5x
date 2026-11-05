@@ -24,7 +24,10 @@ function setup() {
       contentRange: null,
       contentType: "text/plain",
     })),
-    commitFiles: vi.fn(async () => ({ commitSha: "commit" })),
+    commitFiles: vi.fn(async () => ({
+      commitSha: "commit",
+      parentSha: "pinned",
+    })),
     restoreHistoryCommit: vi.fn(async () => ({ commitSha: "restored" })),
     restoreHistoryFile: vi.fn(async () => ({
       commitSha: "restore",
@@ -181,7 +184,7 @@ describe("workbench source", () => {
 
   it("acknowledges the commit snapshot while later typing stays dirty", async () => {
     const { source, actions } = await opened()
-    const write = deferred<{ commitSha: string }>()
+    const write = deferred<{ commitSha: string; parentSha: string }>()
     actions.commitFiles.mockReturnValueOnce(write.promise)
     source.setDraft("src/main.cpp", "captured")
     const commit = source.commit()
@@ -193,7 +196,7 @@ describe("workbench source", () => {
         removed: ["src/main.cpp"],
       })
     ).rejects.toThrow("current file operation")
-    write.resolve({ commitSha: "saved" })
+    write.resolve({ commitSha: "saved", parentSha: "pinned" })
     await commit
     expect(actions.commitFiles.mock.calls[0]).toEqual([
       {
@@ -207,6 +210,38 @@ describe("workbench source", () => {
     expect(source.getSnapshot().dirtyPaths).toEqual(["src/main.cpp"])
     source.setDraft("src/main.cpp", "captured")
     expect(source.getSnapshot().dirtyPaths).toEqual([])
+  })
+  it("builds the snapshot from the cache after its own commit, without reading the repository again", async () => {
+    const { source, actions } = await opened()
+    await source.prepareSource()
+    actions.buildManifest.mockClear()
+    actions.readFile.mockClear()
+    actions.commitFiles.mockResolvedValueOnce({
+      commitSha: "saved",
+      parentSha: "pinned",
+    })
+    source.setDraft("src/main.cpp", "captured")
+    await source.commit()
+    const snapshot = await source.prepareSource()
+    expect(snapshot.sha).toBe("saved")
+    expect(new TextDecoder().decode(snapshot.files["src/main.cpp"])).toBe(
+      "captured"
+    )
+    expect(actions.buildManifest).not.toHaveBeenCalled()
+    expect(actions.readFile).not.toHaveBeenCalled()
+  })
+  it("reads the repository again when the commit was made on a different head", async () => {
+    const { source, actions } = await opened()
+    await source.prepareSource()
+    actions.buildManifest.mockClear()
+    actions.commitFiles.mockResolvedValueOnce({
+      commitSha: "saved",
+      parentSha: "elsewhere",
+    })
+    source.setDraft("src/main.cpp", "captured")
+    await source.commit()
+    await source.prepareSource()
+    expect(actions.buildManifest).toHaveBeenCalledOnce()
   })
   it("refreshes another viewer's committed baseline without losing later edits", async () => {
     const { source, actions } = await opened()
@@ -390,36 +425,39 @@ describe("workbench source", () => {
       },
     ])
   })
-  it("loads language snapshots in parallel with a fixed request bound and one source revision", async () => {
-    const { source, actions } = setup()
-    const paths = Array.from(
-      { length: 20 },
-      (_, index) => `include/header-${index}.hpp`
-    )
-    actions.buildManifest.mockResolvedValue({ sha: "pinned", paths })
-    let active = 0,
-      peak = 0
-    actions.readFile.mockImplementation(async () => {
-      active++
-      peak = Math.max(peak, active)
-      await Promise.resolve()
-      active--
-      return {
-        bytes: new TextEncoder().encode("header").buffer,
-        contentRange: null,
-        contentType: "text/plain",
-      }
-    })
-    const snapshot = await source.prepareAutocompleteSource()
-    expect(Object.keys(snapshot.files).sort()).toEqual([...paths].sort())
-    expect(peak).toBeGreaterThan(1)
-    expect(peak).toBeLessThanOrEqual(6)
-    expect(
-      actions.readFile.mock.calls.every(
-        (call) => (call as unknown as [{ ref: string }])[0].ref === "pinned"
+  it.each(["prepareSource", "prepareAutocompleteSource"] as const)(
+    "loads %s snapshots in parallel with a fixed request bound and one source revision",
+    async (prepare) => {
+      const { source, actions } = setup()
+      const paths = Array.from(
+        { length: 20 },
+        (_, index) => `include/header-${index}.hpp`
       )
-    ).toBe(true)
-  })
+      actions.buildManifest.mockResolvedValue({ sha: "pinned", paths })
+      let active = 0,
+        peak = 0
+      actions.readFile.mockImplementation(async () => {
+        active++
+        peak = Math.max(peak, active)
+        await Promise.resolve()
+        active--
+        return {
+          bytes: new TextEncoder().encode("header").buffer,
+          contentRange: null,
+          contentType: "text/plain",
+        }
+      })
+      const snapshot = await source[prepare]()
+      expect(Object.keys(snapshot.files).sort()).toEqual([...paths].sort())
+      expect(peak).toBeGreaterThan(1)
+      expect(peak).toBeLessThanOrEqual(6)
+      expect(
+        actions.readFile.mock.calls.every(
+          (call) => (call as unknown as [{ ref: string }])[0].ref === "pinned"
+        )
+      ).toBe(true)
+    }
+  )
 })
 
 describe("persisted workbench tabs", () => {
@@ -694,5 +732,88 @@ describe("saved live documents", () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+})
+
+describe("workbench source snapshot cache", () => {
+  const text = (bytes: Uint8Array | undefined) =>
+    new TextDecoder().decode(bytes)
+
+  it("reuses committed bytes after this client commits on top of the cached head", async () => {
+    const { source, actions } = await opened()
+    await source.prepareSource()
+    const reads = actions.readFile.mock.calls.length
+    source.setDraft("src/main.cpp", "edited")
+    await source.commit("save")
+    actions.buildManifest.mockResolvedValue({
+      sha: "commit",
+      paths: ["src/main.cpp"],
+    })
+    const snapshot = await source.prepareSource()
+    expect(snapshot.sha).toBe("commit")
+    expect(text(snapshot.files["src/main.cpp"])).toBe("edited")
+    expect(actions.readFile.mock.calls.length).toBe(reads)
+  })
+
+  it("re-reads committed files when the commit's parent is not the cached head", async () => {
+    const { source, actions } = await opened()
+    await source.prepareSource()
+    const reads = actions.readFile.mock.calls.length
+    source.setDraft("src/main.cpp", "edited")
+    actions.commitFiles.mockResolvedValueOnce({
+      commitSha: "commit",
+      parentSha: "someone-elses-commit",
+    })
+    await source.commit("save")
+    actions.buildManifest.mockResolvedValue({
+      sha: "commit",
+      paths: ["src/main.cpp"],
+    })
+    await source.prepareSource()
+    expect(actions.readFile.mock.calls.length).toBe(reads + 1)
+  })
+
+  it("builds draft snapshots from the cached head without asking for the head again", async () => {
+    const { source, actions } = await opened()
+    await source.prepareSource()
+    actions.buildManifest.mockClear()
+    source.setDraft("src/main.cpp", "unsaved")
+    const draft = await source.prepareDraftSource()
+    expect(actions.buildManifest).not.toHaveBeenCalled()
+    expect(draft.sha).toBe("pinned")
+    expect(text(draft.files["src/main.cpp"])).toBe("unsaved")
+  })
+  it("keeps the cached head complete after a source-only read for autocomplete", async () => {
+    const { source, actions } = await opened()
+    actions.buildManifest.mockResolvedValue({
+      sha: "pinned",
+      paths: ["src/main.cpp", "Makefile"],
+    })
+    await source.prepareSource()
+    await source.prepareAutocompleteSource()
+    const draft = await source.prepareDraftSource()
+    expect(Object.keys(draft.files).sort()).toEqual([
+      "Makefile",
+      "src/main.cpp",
+    ])
+  })
+  it("overlays unsaved text on the committed head for draft snapshots", async () => {
+    const { source } = await opened()
+    source.setDraft("src/main.cpp", "unsaved")
+    const draft = await source.prepareDraftSource()
+    expect(draft.sha).toBe("pinned")
+    expect(draft.dirty).toEqual(["src/main.cpp"])
+    expect(text(draft.files["src/main.cpp"])).toBe("unsaved")
+  })
+})
+
+describe("head prefetch", () => {
+  it("shares the committed head read with the first draft build", async () => {
+    const { source, actions } = await opened()
+    source.prefetchHead()
+    const draft = source.prepareDraftSource()
+    source.setDraft("src/main.cpp", "draft")
+    await draft
+    expect(actions.buildManifest).toHaveBeenCalledTimes(1)
   })
 })

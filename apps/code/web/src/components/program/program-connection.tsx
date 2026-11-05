@@ -15,6 +15,7 @@ import {
   parseBuildDiagnostics,
 } from "@/lib/build-diagnostics"
 import { errorMessage } from "@/lib/errors"
+import type { ArtifactEntries } from "@/lib/build-binaries"
 
 type Connection = { baseUrl: string; token: string; expiresAt: string }
 type Status = {
@@ -22,7 +23,13 @@ type Status = {
   building: boolean
   startedAt?: number | null
   artifactId: string | null
+  speculative?: boolean
+  sourceHash?: string | null
+  artifactEntries?: ArtifactEntries | null
 }
+// Status cadence: quick while a build runs, relaxed while the Builder is idle.
+const IDLE_STATUS_MS = 500
+const BUILD_STATUS_MS = 100
 type Channel = {
   machineStatus: string | null
   status: Status | null
@@ -33,6 +40,8 @@ type Channel = {
     body?: unknown,
     signal?: AbortSignal
   ) => Promise<Response>
+  /** Starts a Builder when none is running. Editing uses it so speculative builds have a machine to use. */
+  startBuilder: () => void
 }
 const Context = createContext<Channel | null>(null)
 export function useProgramConnection() {
@@ -135,7 +144,10 @@ export function ProgramConnection({
         throw new Error(
           `The Builder didn't respond (${response.status}). Try again.`
         )
-      if (path === "/build") {
+      // A speculative build is not a commit: it must not claim the build clock or the revision for diagnostics.
+      const speculative = (body as { speculative?: boolean } | undefined)
+        ?.speculative
+      if (path === "/build" && !speculative) {
         buildStarted.current = Date.now()
         submittedRevision.current =
           (body as { commit?: string } | undefined)?.commit ?? null
@@ -149,18 +161,21 @@ export function ProgramConnection({
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
     const isAborted = () => controller.signal.aborted
+    let pollInterval = IDLE_STATUS_MS
     const poll = async () => {
       if (!connectionRef.current || isAborted()) return
       try {
         const response = await request("/status", undefined, controller.signal)
         const next = (await response.json()) as Status
+        pollInterval = next.building ? BUILD_STATUS_MS : IDLE_STATUS_MS
         if (!isAborted()) {
-          if (next.building && next.startedAt)
+          if (next.building && next.startedAt && !next.speculative)
             buildStarted.current = next.startedAt
           const revision =
             diagnosticRevision(next.logs) ?? submittedRevision.current
           if (
             !next.building &&
+            !next.speculative &&
             revision &&
             buildStarted.current !== null &&
             savedBuild.current !== buildStarted.current
@@ -186,7 +201,7 @@ export function ProgramConnection({
       } catch (err) {
         if (!isAborted()) setError(errorMessage(err))
       } finally {
-        if (!isAborted()) timer = setTimeout(() => void poll(), 500)
+        if (!isAborted()) timer = setTimeout(() => void poll(), pollInterval)
       }
     }
     void poll()
@@ -195,14 +210,32 @@ export function ProgramConnection({
       clearTimeout(timer)
     }
   }, [connection, request, programId, saveDiagnostics])
+  const machineStatus = machine?.status ?? null
+  const machineStatusRef = useRef<string | null>(null)
+  machineStatusRef.current = machineStatus
+  const lastStart = useRef(0)
+  const startBuilder = useCallback(() => {
+    if (connectionRef.current) return
+    if (
+      machineStatusRef.current === "ready" ||
+      machineStatusRef.current === "starting"
+    )
+      return
+    if (Date.now() - lastStart.current < 10_000) return
+    lastStart.current = Date.now()
+    start({ programId }).catch(() => {
+      lastStart.current = 0
+    })
+  }, [programId, start])
   return (
     <Context
       value={{
-        machineStatus: machine?.status ?? null,
+        machineStatus,
         status,
         ready: Boolean(connection && status),
         error,
         request,
+        startBuilder,
       }}
     >
       {children}

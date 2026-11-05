@@ -1,46 +1,82 @@
 #!/usr/bin/env python3
 """Private build service, reachable through machine/port-scoped cloud tokens."""
 import base64
+import codecs
+import hashlib
 import io
 import json
 import os
 import pathlib
-import shutil
+import re
+import signal
+import struct
 import subprocess
 import threading
 import time
 import uuid
 import zipfile
+import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 ROOT = pathlib.Path('/home/builder/workspace')
 SOURCE = ROOT / 'source'
 LOCK = threading.RLock()
-STATE = {'logs': 'Build machine is ready.', 'building': False, 'startedAt': None, 'artifactId': None}
-ARTIFACT = None
+STATE = {'logs': 'Build machine is ready.', 'building': False, 'startedAt': None, 'artifactId': None,
+         'sourceHash': None, 'speculative': False, 'version': 0}
+# Status changes wake long polls: GET /status?since=<version>&wait=<ms> returns once the version moves.
+STATE_CHANGED = threading.Condition(LOCK)
+MAX_STATUS_WAIT_MS = 25000
+
+
+def publish():
+    """Caller holds LOCK. Bumps the status version and wakes long polls."""
+    STATE['version'] += 1
+    STATE_CHANGED.notify_all()
+# Artifacts stay addressable by id so a speculative build can be claimed after the committed source is verified.
+ARTIFACTS = {}
+ARTIFACT_LIMIT = 4
+SOURCE_MANIFEST = None
+# The running (or most recently started) build. A new build cancels a running speculative build.
+CURRENT = None
+UPLOADS = {}
+VIEWERS = {}
+# Deflated binaries keyed by content digest, kept for the latest artifact only. The cold package is
+# megabytes and changes only with its template, so compressing it once saves ~90 ms on every build.
+COMPRESSED = {}
+# Phase timing for measurement. Off unless V5X_TIMING_LOG names a file; when off, nothing is written.
+TIMING_LOG = os.environ.get('V5X_TIMING_LOG')
 
 def template():
     # Machines restored from the shared startup checkpoint receive their template as a file.
     path = ROOT / 'template'
     return path.read_text().strip() if path.exists() else os.environ['V5X_TEMPLATE']
-UPLOADS = {}
-VIEWERS = {}
 
-# Phase timing for measurement. Off unless V5X_TIMING_LOG names a file; when off, nothing is written.
-TIMING_LOG = os.environ.get('V5X_TIMING_LOG')
 def mark(event, **fields):
     if TIMING_LOG:
         with open(TIMING_LOG, 'a') as log:
             log.write(json.dumps({'tool': 'v5x-server', 'event': event, 'at': time.time(), **fields}) + '\n')
 
-def append(text):
-    import re
+def append(text, job=None):
     with LOCK:
+        if job is not None and job is not CURRENT: return
         STATE['logs'] = (STATE['logs'] + re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text))[-200000:]
+        publish()
+
+def source_hash(manifest):
+    """Identity of a source snapshot: sorted (UTF-8 path, SHA-256 of contents) pairs.
+
+    The browser computes the same value from its draft files, so a speculative build can be
+    claimed only when the committed snapshot has byte-identical contents.
+    """
+    digest = hashlib.sha256()
+    for name in sorted(manifest, key=lambda item: item.encode()):
+        digest.update(name.encode() + b'\0' + manifest[name])
+    return digest.hexdigest()
 
 def extract(snapshot, target):
     """Mirror a validated source ZIP into target, keeping unchanged files' metadata."""
+    global SOURCE_MANIFEST
     with zipfile.ZipFile(io.BytesIO(snapshot)) as archive:
         entries = archive.infolist()
         if len(entries) > 3000 or sum(e.file_size for e in entries) > 96*1024*1024:
@@ -48,66 +84,166 @@ def extract(snapshot, target):
         expected = set()
         for entry in entries:
             path = pathlib.PurePosixPath(entry.filename)
-            if path.is_absolute() or '..' in path.parts or '\\' in entry.filename or entry.is_dir():
+            if path.is_absolute() or '..' in path.parts or '\\' in entry.filename or entry.is_dir() or entry.filename in expected:
                 raise ValueError('Invalid source path.')
             expected.add(entry.filename)
+        contents = {entry.filename: archive.read(entry) for entry in entries}
+        manifest = {name: hashlib.sha256(data).digest() for name, data in contents.items()}
+        # Reuse make output only for a stable source tree with translation-unit edits.
+        # Build rules, headers, added/deleted files, and source-owned output paths
+        # can change the dependency graph and require a clean build.
+        outputs = ('bin', 'build')
+        has_output_source = any(name.split('/')[0] in outputs for name in manifest)
+        changed = {name for name in manifest if SOURCE_MANIFEST is None or SOURCE_MANIFEST.get(name) != manifest[name]}
+        incremental = (SOURCE_MANIFEST is not None and not has_output_source
+                       and manifest.keys() == SOURCE_MANIFEST.keys()
+                       and all(name.lower().endswith(('.c', '.cc', '.cpp', '.cxx')) for name in changed))
+        SOURCE_MANIFEST = None  # An interrupted extraction must force the next build clean.
         target.mkdir(parents=True, exist_ok=True)
         for path in target.rglob('*'):
+            if incremental and path.relative_to(target).parts[0] in outputs: continue
             if path.is_symlink(): path.unlink()
             elif path.is_file() and str(path.relative_to(target)) not in expected: path.unlink()
         for entry in entries:
             path = target / entry.filename
             if not path.resolve().is_relative_to(target): raise ValueError('Invalid source path.')
             path.parent.mkdir(parents=True, exist_ok=True)
-            data = archive.read(entry)
+            data = contents[entry.filename]
             if not path.exists() or path.read_bytes() != data: path.write_bytes(data)
+        SOURCE_MANIFEST = manifest
+        return source_hash(manifest)
 
-def compile_source(snapshot, commit):
-    global ARTIFACT
+def write_zip(members):
+    """Write a deterministic ZIP whose members are deflated once per distinct content."""
+    global COMPRESSED
+    body, central, reused = io.BytesIO(), io.BytesIO(), {}
+    dos_date = 33  # 1980-01-01, so identical contents always produce identical archives
+    for name, data in members:
+        key = hashlib.sha256(data).digest()
+        packed = COMPRESSED.get(key)
+        if packed is None:
+            compressor = zlib.compressobj(6, zlib.DEFLATED, -15)
+            packed = compressor.compress(data) + compressor.flush()
+        reused[key] = packed
+        crc, encoded, offset = zlib.crc32(data), name.encode('utf-8'), body.tell()
+        body.write(struct.pack('<IHHHHHIIIHH', 0x04034b50, 20, 0x800, 8, 0, dos_date, crc, len(packed), len(data), len(encoded), 0))
+        body.write(encoded)
+        body.write(packed)
+        central.write(struct.pack('<IHHHHHHIIIHHHHHII', 0x02014b50, 20, 20, 0x800, 8, 0, dos_date, crc, len(packed), len(data), len(encoded), 0, 0, 0, 0, 0, offset))
+        central.write(encoded)
+    start = body.tell()
+    body.write(central.getvalue())
+    body.write(struct.pack('<IHHHHIIH', 0x06054b50, 0, 0, len(members), len(members), len(central.getvalue()), start, 0))
+    COMPRESSED = reused
+    return body.getvalue()
+
+def remove_outputs_since(started):
+    """Delete outputs a cancelled build wrote; make would otherwise trust a partially written file."""
+    for folder in ('bin', 'build'):
+        for path in (SOURCE / folder).rglob('*'):
+            try:
+                if path.is_file() and not path.is_symlink() and path.stat().st_mtime >= started:
+                    path.unlink()
+            except FileNotFoundError:
+                pass
+
+def store_artifact(data, files=None):
+    """Keeps an artifact's ZIP and its files. The index gives each file's digest so clients can reuse files they have."""
+    artifact_id = str(uuid.uuid4())
+    files = dict(files or {})
+    index = {name: {'sha256': hashlib.sha256(content).hexdigest(), 'bytes': len(content)} for name, content in files.items()}
+    with LOCK:
+        ARTIFACTS[artifact_id] = {'zip': data, 'files': files, 'index': index}
+        while len(ARTIFACTS) > ARTIFACT_LIMIT:
+            del ARTIFACTS[next(iter(ARTIFACTS))]
+    return artifact_id
+
+def cancel_current():
+    """Stop the running build so a newer request can take over. Caller holds LOCK."""
+    job = CURRENT
+    if job is None or job['done'].is_set(): return
+    job['cancelled'] = True
+    process = job.get('process')
+    if process is not None and process.poll() is None:
+        try: os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError: pass
+
+def run_build(job, snapshot, commit):
+    code = None
+    started = time.time()
     try:
-        mark('compile-start', bytes=len(snapshot))
-        extract(snapshot, SOURCE)
+        # The previous job releases SOURCE and the outputs before this one touches them.
+        if job['previous'] is not None: job['previous'].wait()
+        with LOCK:
+            if job['cancelled']: return
+        mark('compile-start', bytes=len(snapshot), speculative=job['speculative'])
+        source = extract(snapshot, SOURCE)
         mark('extract-end')
+        with LOCK:
+            if job['cancelled']: return
+            if job is CURRENT:
+                STATE['sourceHash'] = source
+                publish()
         process = subprocess.Popen(['/usr/local/bin/v5x-build', template()], cwd=SOURCE,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
+        with LOCK: job['process'] = process
         def timeout():
-            import signal
             try: os.killpg(process.pid, signal.SIGKILL)
             except ProcessLookupError: pass
         timer = threading.Timer(240, timeout)
         timer.start()
         try:
-            import codecs
             decoder = codecs.getincrementaldecoder('utf-8')('replace')
             while True:
                 chunk = process.stdout.read1(8192)
                 if not chunk: break
-                append(decoder.decode(chunk))
-            append(decoder.decode(b'', final=True))
+                append(decoder.decode(chunk), job)
+            append(decoder.decode(b'', final=True), job)
             code = process.wait()
             mark('build-exit', code=code)
         finally: timer.cancel()
+        if job['cancelled']:
+            remove_outputs_since(started)
+            return
         if code == 0:
-            output = io.BytesIO()
-            with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
-                total = 0
-                for folder in ('bin', 'build'):
-                    for path in (SOURCE / folder).rglob('*.bin'):
-                        if path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(SOURCE):
-                            total += path.stat().st_size
-                            if total > 64*1024*1024: raise ValueError('Binaries exceed 64 MiB.')
-                            archive.write(path, str(path.relative_to(SOURCE)))
-            data = output.getvalue()
+            members, total = [], 0
+            for folder in ('bin', 'build'):
+                for path in sorted((SOURCE / folder).rglob('*.bin')):
+                    if path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(SOURCE):
+                        total += path.stat().st_size
+                        if total > 64*1024*1024: raise ValueError('Binaries exceed 64 MiB.')
+                        members.append((str(path.relative_to(SOURCE)), path.read_bytes()))
+            data = write_zip(members)
             mark('artifact-zipped', bytes=len(data))
             if len(data) > 32*1024*1024: raise ValueError('Artifacts exceed 32 MiB.')
+            artifact_id = store_artifact(data, dict(members))
             with LOCK:
-                ARTIFACT = data
-                STATE['artifactId'] = str(uuid.uuid4())
-        append(f'\nBuild {"succeeded" if code == 0 else f"failed (exit {code})"}.')
+                if not job['cancelled']:
+                    STATE['artifactId'] = artifact_id
+                    publish()
+        append(f'\nBuild {"succeeded" if code == 0 else f"failed (exit {code})"}.', job)
     except Exception as error:
-        append(f'\nBuild failed: {error}')
+        append(f'\nBuild failed: {error}', job)
     finally:
-        with LOCK: STATE.update(building=False, startedAt=None)
+        with LOCK:
+            if job is CURRENT:
+                STATE.update(building=False, startedAt=None)
+                publish()
+        job['done'].set()
+
+def start_build(snapshot, commit, speculative):
+    """Caller holds LOCK. Replaces a running speculative build; a normal build is never replaced."""
+    global CURRENT
+    previous = CURRENT
+    if previous is not None and not previous['done'].is_set():
+        cancel_current()
+    job = {'speculative': speculative, 'cancelled': False, 'process': None, 'done': threading.Event(),
+           'previous': previous['done'] if previous is not None and not previous['done'].is_set() else None}
+    CURRENT = job
+    STATE.update(building=True, startedAt=int(time.time() * 1000), speculative=speculative, sourceHash=None,
+                 logs=f'Building {"speculative " if speculative else "commit "}{commit}\n')
+    publish()
+    threading.Thread(target=run_build, args=(job, snapshot, commit), daemon=True).start()
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass  # Never log bearer tokens or URL query strings.
@@ -126,12 +262,38 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.end_headers()
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         with LOCK:
             if path == '/health':
                 code, data, content_type = 200, json.dumps({'building': STATE['building'], 'viewers': sum(expiry > time.time() for expiry in VIEWERS.values())}).encode(), 'application/json'
-            elif path == '/status': code, data, content_type = 200, json.dumps(STATE).encode(), 'application/json'
-            elif path == '/artifact' and ARTIFACT: code, data, content_type = 200, ARTIFACT, 'application/zip'
+            elif path == '/status':
+                query = parse_qs(parsed.query)
+                since = query.get('since', [None])[0]
+                if since is not None:
+                    try:
+                        version = int(since)
+                        wait = min(max(float(query.get('wait', ['0'])[0]), 0), MAX_STATUS_WAIT_MS) / 1000
+                    except ValueError:
+                        version, wait = None, 0
+                    deadline = time.time() + wait
+                    while version is not None and STATE['version'] == version and time.time() < deadline:
+                        STATE_CHANGED.wait(max(deadline - time.time(), 0))
+                state = dict(STATE)
+                current = ARTIFACTS.get(STATE['artifactId']) if STATE['artifactId'] else None
+                state['artifactEntries'] = current['index'] if current is not None else None
+                code, data, content_type = 200, json.dumps(state).encode(), 'application/json'
+            elif path == '/artifact':
+                query = parse_qs(parsed.query)
+                wanted = query.get('id', [STATE['artifactId']])[0]
+                artifact = ARTIFACTS.get(wanted) if wanted else None
+                entry = query.get('entry', [None])[0]
+                if artifact is None: code, data, content_type = 404, b'{}', 'application/json'
+                elif entry is not None:
+                    content = artifact['files'].get(entry)
+                    if content is not None: code, data, content_type = 200, content, 'application/octet-stream'
+                    else: code, data, content_type = 404, b'{}', 'application/json'
+                else: code, data, content_type = 200, artifact['zip'], 'application/zip'
             else: code, data, content_type = 404, b'{}', 'application/json'
         # A slow binary download must not block log updates or viewer heartbeats.
         self.send(code, data, content_type)
@@ -171,13 +333,18 @@ class Handler(BaseHTTPRequestHandler):
                     if (ROOT / 'draining').exists():
                         self.send(503, b'{"error":"Build machine is updating."}')
                         return
-                    if STATE['building']:
+                    speculative = data.get('speculative') is True
+                    # Take the source even when the request is refused: a leftover upload would hold one of the
+                    # four upload slots until it expires, and refused speculative builds are common.
+                    upload = UPLOADS.pop(data['id'], None)
+                    # Speculative work yields: a newer request (speculative or normal) replaces it.
+                    # A normal build is never replaced; the client waits for it.
+                    if STATE['building'] and not CURRENT['speculative']:
                         self.send(409, b'{"error":"A build is already running."}')
                         return
-                    upload = UPLOADS.pop(data['id'])
+                    if upload is None: raise KeyError('id')
                     commit = str(data['commit'])[:80]
-                    STATE.update(building=True, startedAt=int(now * 1000), logs=f'Building commit {commit}\n')
-                    threading.Thread(target=compile_source, args=(bytes(upload['data']), commit), daemon=True).start()
+                    start_build(bytes(upload['data']), commit, speculative)
                     self.send(202, b'{}')
                 else: self.send(404, b'{}')
         except (ValueError, KeyError, TypeError) as error:

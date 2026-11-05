@@ -269,7 +269,8 @@ export function sourceActions() {
             validateRepositoryPath(path)
           ),
           ...moves.map(({ to }) => to),
-        ]
+        ],
+        program.repositoryHeadSha
       )
 
       // The commit already exists, and the two mutations write disjoint tables.
@@ -286,7 +287,7 @@ export function sourceActions() {
         }),
       ])
 
-      return { commitSha: result.commitSha }
+      return { commitSha: result.commitSha, parentSha: result.parentSha }
     },
   })
   return { buildManifest, listFiles, readFile, commitFiles }
