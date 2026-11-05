@@ -122,7 +122,12 @@
       "version": "0.0.1",
       "dependencies": {
         "@astrojs/check": "^0.9.12",
+        "@fontsource-variable/jetbrains-mono": "^5.3.0",
+        "@fontsource-variable/merriweather": "^5.3.0",
+        "@tailwindcss/vite": "^4",
+        "@v5x/tokens": "workspace:*",
         "astro": "^7.4.5",
+        "tailwindcss": "^4",
       },
     },
     "packages/backend": {

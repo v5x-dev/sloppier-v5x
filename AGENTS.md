@@ -1,257 +1,54 @@
 # v5x
 
-Style the suite's name as `v5x`, always lowercase.
+This repo is the v5x suite: a set of tools for VEX V5 robotics teams, plus the
+marketing site and the shared code they are built from. It is one platform, not a
+collection of unrelated projects.
 
-v5x is a suite of tools for VEX V5 robotics teams to prepare for and compete in
-competitions. The starting lineup is three products:
+## The products
 
-- **Code** (`code`): tools for developing robot programs. The existing app covers
-  collaborative editing, builds, and uploading programs to a V5 Brain.
-- **Design** (`design`): work in progress.
-- **Film** (`film`): work in progress.
+- **Code** (code.v5x.dev) is an editor for writing V5 robot programs in the browser.
+  Programs are compiled on a remote build farm.
+- **Design** (design.v5x.dev) is CAD software for V5 robots.
+- **Film** (film.v5x.dev) is a match and skills review platform, similar to Hudl.
+- **Marketing** (v5x.dev) is the public website.
 
-Design and Film are works in progress; their detailed workflows are not defined
-here. Read their product documentation and the task brief as they are added,
-rather than inventing requirements from their names.
+## What is shared
 
-Each product has a TanStack Start web app. No product has an Expo mobile app
-right now: Code's was removed. Do not create Expo apps for any product until the
-team asks for one. All products share the Convex backend in `packages/backend`.
-Build features around the team's competition workflow and use VEX V5
-terminology. This is one suite with distinct products, not three unrelated
-projects.
+- **One backend.** `packages/backend` is a Convex backend. All of the products use it.
+- **One sign-in.** Accounts use WorkOS AuthKit and work across the products.
+- **One UI kit.** `packages/ui` holds the components the apps are built from.
+- **Design tokens.** `packages/tokens` holds the colors, type, and spacing values
+  shared by the apps and the marketing site.
+- **Serial.** `packages/serial` is shared serial-port code. The Code app uses it.
 
-`marketing` (`apps/marketing`) is the suite's Astro marketing site. It is not a
-product, has no backend or product data, and is currently empty.
+## Where things live
 
-Use "Builder" in user-facing copy for the build service. Use "Program" for the
-robot code item and "Brain" for the V5 device.
+- `apps/code/web`, `apps/design/web`, `apps/film/web`: the three product apps.
+- `apps/marketing`: the marketing site.
+- `packages/`: code shared between apps.
+- `infra/`: the build server images and scripts for compiling V5 programs, and the
+  generator for the editor's autocomplete data.
+- `scripts/`: repo tooling, such as the boundary checker and the doctor script.
+- `.github/workflows/`: CI and deploys.
 
-## Layout and ownership
+Tests sit next to the code they test, in each workspace's `tests/` folder.
 
-- `apps/<product>/web`: the product's TanStack Start app. `apps/code/web`,
-  `apps/film/web`, and `apps/design/web` exist.
-- `apps/<product>/mobile`: a product's Expo app, if the team adds one. None exists now.
-- `apps/marketing`: the Astro marketing site (`@v5x/marketing`).
-- `packages/backend`: shared backend, schema, authorization, and business rules.
-- `packages/ui`: shared web UI built with shadcn/ui. It currently depends on the DOM.
-- `packages/tokens`: each product's color and suite tokens for web. See its README.
-- `packages/serial`: VEX device communication; consult its README before changing
-  transport or protocol behavior.
-- `design/<product>`: product design assets.
+## How the pieces depend on each other
 
-The layout describes where new apps belong; it does not imply every app already
-exists. Follow the existing `apps/code/web` implementation when working on Code.
-Give new app packages unique names so workspace filters identify one app. Root
-workspaces match `apps/*/*`; a package directly under `apps/` (such as
-`apps/marketing`) needs its own entry in the root `package.json` workspaces.
+Apps can use packages. Packages cannot import from apps, and apps do not import from
+each other. Code in one workspace reaches another only through its `@v5x/...` name
+and the paths that package exports. `bun run check:boundaries` checks this.
 
-Dev ports: Code `3000`, Film `3001`, Design `3002`. Film and Design `typecheck`
-regenerates `routeTree.gen.ts` before `tsc`; commit the regenerated file with
-route changes, as Code does.
+## Pierre packages
 
-Keep product-specific behavior in that product's app or an explicitly named
-product module. Extract shared code when consumers need the same behavior and
-contract. Apps may depend on packages; packages must not import from apps, and
-apps must not import another app's source. Use workspace package exports for
-cross-package imports.
+Several of the most important parts of the Code editor come from the Pierre packages:
+`@pierre/diffs`, `@pierre/trees`, `@pierre/highlights`, and `@pierre/storage`. They are
+central to this project, so do not replace them with something else.
 
-Keep platform-neutral logic separate from UI and platform APIs. Share domain
-types, validation, and pure logic where useful; implement web and native UI with
-their respective platform tools. Treat `packages/ui` as web-only unless native
-support is deliberately added.
+## Getting around
 
-## Shared backend
-
-Implement business rules and authorization in `packages/backend` so web and
-mobile use the same rules. TanStack Start server functions may adapt web requests
-and sessions, but shared business behavior belongs in the backend.
-
-For each backend change, identify affected products and callers. Enforce identity
-and resource membership on the server; client-supplied product, workspace, and
-resource IDs are inputs to validate, not proof of access. Keep product-specific
-data and permissions scoped explicitly as new products are added.
-
-Preserve compatibility with deployed clients, including older mobile releases.
-Prefer additive API and schema changes. For breaking changes, describe the data
-migration and client rollout sequence before removing the old contract. Backend
-and app deployments are separate operations.
-
-Use the generated API through `@v5x/backend/api`. Keep server credentials
-and server-only modules out of client bundles. Environment variables exposed by
-Vite or Expo are public; store secrets only in server environments.
-
-For data copies or repairs, identify the destination account and workspace by
-stable IDs and verify visibility through that user's access path. Names and
-email addresses have matched multiple accounts in this project.
-
-## Web and mobile
-
-For web work, follow the app's existing TanStack Router routes, loaders, and
-TanStack Start server/client boundaries. Keep browser-only APIs safe during SSR.
-Import shared web components through `@v5x/ui` exports.
-
-Each product's web root imports its own token file, `@v5x/tokens/<product>/web.css`,
-beside `@v5x/ui/globals.css`. Never import another product's token file. Product
-token files must define the suite tokens that shared UI reads, including
-`--radius`, `--success`, `--field-border`, and the elevation tokens; see
-`packages/tokens/README.md`. New color pairs must meet
-`docs/suite-visual-rules.md`.
-
-Each product's favicon (`public/favicon.svg`) is filled with that product's
-`--chart-2` color, as an `oklch()` value copied from its token file. This is the
-interim rule until the products choose their own marks.
-
-Use the requested component and its existing variants rather than recreating its
-appearance. Use the tokens in `packages/ui/src/styles/globals.css`, Phosphor for
-general UI icons, and the existing template logos and file/symbol icon mappings.
-All UI uses Merriweather, including controls, dialogs, shortcut hints, and
-documentation prose. JetBrains Mono is only for code. Use the existing
-`@fontsource-variable` fonts. Apply opacity to the requested background
-or color, not to the whole element and its text.
-
-For mobile work, inspect the app's Expo SDK and configuration first. Install
-Expo-managed dependencies with `bunx expo install` from that app's directory.
-Keep native permissions, app identifiers, deep links, and build configuration
-specific to the product. Check whether native directories are generated or
-maintained before editing them.
-
-## Code editor and builds
-
-Preserve Pierre integrations: `@pierre/diffs` for the web editor,
-`@pierre/trees` for the file tree, and `@pierre/highlights` with
-`preferredHighlighter: "highlights"` and the existing Birds of Paradise theme.
-Use `setCarets` for remote positions. Check any custom caret renderer actually
-draws the caret line, label, and selections. Keep the theme consistent in
-search results, hover cards, and other code previews.
-
-Preserve open file tabs, active file, cursor positions, and scroll positions
-across reloads. Keep live edits distinct from source commits. For collaboration
-changes, check independent sessions, remote commits, refresh/reconnect cleanup,
-selections, and local undo. A whole-commit restore must account for added and
-deleted files and invalidate stale live documents.
-
-Keep generated binaries and managed firmware/build dependencies out of program
-source commits and imports. Keep build output in the client-only `bin/` view.
-Preserve direct client-to-builder communication after the backend handshake;
-inspect `docs/building-programs.md` before changing data transfer paths.
-
-## Deployment and environments
-
-Preserve Cloudflare bindings when changing deployment commands (`--keep-vars`).
-Check frontend build variables, Worker runtime bindings, Convex deployment, and
-WorkOS configuration together. Verify CI/deployment status for the exact commit
-before saying it is live; distinguish a local fix, pushed code, and deployment.
-When watching CI checks, skip the cleanup check.
-
-Film and Design web apps and the marketing site have no deployment config, Convex
-wiring, or CI jobs yet. Add them with their product's decisions, not by copying
-Code's Cloudflare setup unchanged.
-
-## Working and checking changes
-
-Use Bun and the committed Bun lockfile. Read root and affected package scripts
-before running commands; Turborepo coordinates root tasks. Run app-specific
-commands from that app's directory or use its unique workspace package name.
-
-Resolve the affected product, platform, control, and environment before editing.
-Browser tabs and editor file tabs are different concepts. Removing a shortcut
-does not mean removing its button. Apply the requested scope and preserve
-adjacent behavior.
-
-Carry every requested deliverable through to completion. A partial implementation,
-passing unit tests, or a description of a recording does not satisfy a request for
-the full behavior and a video. If an attempt fails, diagnose the environment, use
-the documented setup, and retry the actual task. Report a specific remaining
-blocker only after exhausting available authorized paths; do not silently replace
-the requested deliverable with a narrower one.
-
-Before proposing a feature, trace the existing UI through its implementation.
-Extend an existing history, build, or workspace flow when it already owns the
-behavior. A missing or broken operation is a fix, not automatically a new
-product concept.
-
-Before changing behavior, read the relevant implementation and tests. For Code
-domain changes, read `GLOSSARY.md` and the matching document in `docs/`. For backend
-setup, authentication, or deployment changes, read `packages/backend/README.md`.
-
-Run the affected packages' available typechecks, lint, and relevant tests. Changes
-to shared packages also need checks for affected consumers. Add regression tests
-for changed business rules, authorization, and bug fixes. Report checks run and
-anything that could not be verified. The root test task runs packages that provide a test script; use the affected
-package's test script when a narrower check is appropriate.
-
-Regenerate derived files with their owning tools, including Convex `_generated`
-files and TanStack's `routeTree.gen.ts`. Keep edits and formatting scoped to the
-task.
-
-For performance work, measure the user's complete path as well as individual
-phases. Include cold startup, repeat use, and common one-line edits on the
-target hardware budget. Read the provider's current docs before changing build
-packaging; use its native tooling when requested rather than substituting a
-familiar image workflow.
-
-## Checking web behavior with agent-browser
-
-Reproduce the reported failure on the reported environment. Local success does
-not establish success on `code-dev.v5x.dev` or production `code.v5x.dev`. For auth,
-check the full callback, authenticated backend access, and reload persistence;
-reaching the provider's sign-in screen is only the first step. School
-Chromebooks may block DevTools: inspect available logs and expose useful error
-states instead of repeatedly asking the user for console output.
-
-After a correction, reproduce the exact reported symptom again. Inspect the
-actual scroll container, shadow root, portal, hit target, or font rendering as
-applicable. A matching class name or passing unit test does not prove the
-visible issue is fixed. Keep screenshots and recordings out of tracked source
-unless the task explicitly calls for committed artifacts.
-
-When the task asks for browser verification, use `agent-browser` to exercise the
-actual app instead of the T3 preview browser. Passing typechecks or reading JSX
-does not establish that a user flow works. Follow the session's tool restrictions
-on when browser verification is available and authorized.
-
-1. Read the affected app's scripts and start its development server if needed.
-   Use the server's reported port; check startup output for failures before
-   opening the app. Start the local backend too if the flow requires it, using
-   the documented development environment.
-2. Open the app with `agent-browser open` and inspect it with
-   `agent-browser snapshot`. Use snapshot references to click, type, and submit
-   through the same controls a user uses. Refresh the snapshot after navigation
-   or substantial UI changes so references refer to the current page.
-3. Exercise the changed flow from its entry point to its observable result.
-   Check the saved result after reload when persistence matters. Include the
-   relevant empty, error, loading, and permission states. For a bug fix, repeat
-   the original reproduction and verify the expected behavior.
-4. Inspect the rendered result visually as well as structurally. Set relevant
-   desktop and narrow web viewports with `agent-browser set viewport`; check for
-   clipped content, overflow, unreadable text, and unreachable controls.
-   Browser resizing checks responsive web layout, not the native Expo app.
-5. Use `agent-browser wait` for observable UI conditions instead of arbitrary
-   delays. Use `agent-browser eval` for targeted diagnostics when needed; changing
-   page state through JavaScript is not evidence that the user interaction works.
-6. Fix failures and repeat the affected flow. Close browser sessions opened solely
-   for the check unless the user asked to keep them open or is using them. Report
-   which flow and viewport you checked, its result, and any
-   blockers such as missing authentication, backend configuration, or hardware.
-
-If browser verification cannot run, report the specific tool or environment
-failure and the checks you completed. Claim browser verification only after
-actually exercising the flow.
-
-When asked to record the app or an editor, record the real application and the
-requested flow, including the actual route, surrounding interface, and controls.
-A standalone reconstruction or component demo is not the real app, even if it
-imports production components. Do not substitute one without the user's explicit
-agreement. A fake device or service may stand in for the requested external
-dependency while the app UI and integration path remain real. Label simulated
-dependencies and distinguish their results from physical-device verification.
-Inspect the recording for the requested states, make sure the file is playable,
-and give the user its accessible path. If the browser opens a blank page or an
-automation tool times out, investigate startup, logs, authentication, and the
-documented test environment, then repeat the flow; a running server alone does
-not prove the app is usable.
-
-Keep this root file focused on rules shared across products. Add nested
-`AGENTS.md` files when an app or package needs its own instructions, and keep
-detailed setup and feature explanations in the relevant README or `docs/` file.
+- Install dependencies with `bun install`.
+- `bun run checks` runs the full set: boundaries, tooling tests, lint, typecheck, and
+  tests across the workspaces.
+- Each workspace has its own `lint`, `typecheck`, and `test` scripts. Run those when
+  you only changed one workspace.
