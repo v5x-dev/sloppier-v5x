@@ -707,7 +707,8 @@ export function RepositoryExplorer(props: Props) {
         />
       </div>
       {binaries.loading && (
-        <p role="status" className="px-3 py-1 text-xs text-muted-foreground">
+        // Visually hidden: the sidebar stays quiet, but screen readers still hear the status.
+        <p role="status" className="sr-only">
           Downloading build binaries…
         </p>
       )}
