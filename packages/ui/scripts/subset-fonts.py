@@ -51,7 +51,7 @@ OUT_CSS = UI / "src/styles/fonts.css"
 # nearest end. A range narrows only where advance widths stay exact: narrowing
 # re-encodes deltas (outlines move by at most 0.35 font units, under 0.01 px at
 # 16 px), and moving the default or the top of the axis changes advances. So
-# Merriweather keeps 300, its default, and DM Sans keeps 1000.
+# Merriweather keeps 300, its default.
 FAMILIES = {
     "merriweather": {
         "css_name": "Merriweather Variable",
@@ -61,12 +61,6 @@ FAMILIES = {
         "rename_to": "v5x Serif Subset",
         # tnum: the site sets tabular-nums on serif text (scores, counts).
         "features": ["calt", "ccmp", "liga", "locl", "tnum", "kern", "mark", "mkmk"],
-    },
-    "dm-sans": {
-        "css_name": "DM Sans Variable",
-        "weight_range": (400, 1000),
-        "rename_to": None,
-        "features": ["calt", "ccmp", "liga", "locl", "kern", "mark", "mkmk"],
     },
     "jetbrains-mono": {
         "css_name": "JetBrains Mono Variable",
