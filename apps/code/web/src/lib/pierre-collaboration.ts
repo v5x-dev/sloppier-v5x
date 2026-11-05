@@ -76,7 +76,7 @@ export class CollaborativeTextDocument extends TextDocument<"file", undefined> {
   }
 }
 
-export function yDeltaToEdits(
+function yDeltaToEdits(
   document: TextDocument<"file", undefined>,
   delta: Y.YTextEvent["delta"]
 ): TextEdit[] {
@@ -113,7 +113,7 @@ export function yDeltaToEdits(
   return edits
 }
 
-export function applyLocalChanges(
+function applyLocalChanges(
   shared: Y.Doc,
   changes: readonly ResolvedTextEdit[],
   origin: symbol

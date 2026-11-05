@@ -163,11 +163,7 @@ function DefinitionSource({ source }: { source: Definition }) {
 }
 
 /** Maps a pointer into the highlighted text, including Pierre's shadow root. */
-export function pointerOffset(
-  event: MouseEvent,
-  host: HTMLElement,
-  text: string
-) {
+function pointerOffset(event: MouseEvent, host: HTMLElement, text: string) {
   const roots = [...host.querySelectorAll("*")].flatMap((node) =>
     node.shadowRoot ? [node.shadowRoot] : []
   )

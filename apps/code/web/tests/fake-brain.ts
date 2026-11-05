@@ -240,12 +240,3 @@ export class FakeBrain {
     this.response(command, out)
   }
 }
-/** Install only from a test or an explicitly initiated local demo session. */
-export function installFakeBrain(writeDelay = 25) {
-  const brain = new FakeBrain(writeDelay)
-  Object.defineProperty(navigator, "serial", {
-    configurable: true,
-    value: { requestPort: async () => brain, getPorts: async () => [brain] },
-  })
-  return brain
-}

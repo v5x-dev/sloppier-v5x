@@ -1,6 +1,6 @@
 import { posix } from "node:path"
 
-export function ownerOf(path) {
+function ownerOf(path) {
   const parts = path.replaceAll("\\", "/").split("/")
   if (parts[0] === "apps" && parts.length >= 3)
     return { kind: "app", root: parts.slice(0, 3).join("/") }

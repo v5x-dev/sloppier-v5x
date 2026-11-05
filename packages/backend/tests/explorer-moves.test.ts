@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test"
-import { applyRepositoryChanges } from "../packages/backend/convex/files"
+import { describe, expect, test } from "vitest"
+import { applyRepositoryChanges } from "../convex/files"
 
 type Row = {
   _id: string

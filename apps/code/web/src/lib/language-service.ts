@@ -11,11 +11,7 @@ import {
 } from "./autocomplete/types"
 
 export { positionAt } from "./autocomplete/types"
-export type {
-  CompletionItem,
-  CompletionList,
-  SignatureHelp,
-} from "./autocomplete/types"
+export type { CompletionItem, SignatureHelp } from "./autocomplete/types"
 
 export class RequestCancelled extends Error {}
 export type LanguageStatus = "stopped" | "starting" | "ready" | "error"
