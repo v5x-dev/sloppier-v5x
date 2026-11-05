@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
 import {
   assertAvailable,
   containsPath,
@@ -7,7 +7,7 @@ import {
   parentPath,
   rootEntries,
   validateNewPath,
-} from "../apps/code/web/src/lib/explorer"
+} from "../src/lib/explorer"
 
 describe("Explorer repository paths", () => {
   test("folder operations include descendants but never similarly named siblings", () => {

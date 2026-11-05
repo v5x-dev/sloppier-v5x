@@ -1,7 +1,6 @@
-export type HoverValue =
-  string | { value: string; kind?: string; language?: string }
+type HoverValue = string | { value: string; kind?: string; language?: string }
 export type HoverContents = HoverValue | HoverValue[]
-export type HoverBlock = {
+type HoverBlock = {
   kind: "code" | "text" | "heading" | "list"
   text: string
   language?: string

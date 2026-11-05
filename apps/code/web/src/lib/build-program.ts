@@ -45,7 +45,7 @@ export async function uploadSource(
   return id
 }
 
-export async function submitBuild(
+async function submitBuild(
   request: BuildRequest,
   source: BuildSource,
   signal?: AbortSignal

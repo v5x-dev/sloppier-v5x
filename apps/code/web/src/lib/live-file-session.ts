@@ -615,7 +615,7 @@ export function createLiveFileSession({
   }
 }
 
-export type LiveFileSession = ReturnType<typeof createLiveFileSession>
+type LiveFileSession = ReturnType<typeof createLiveFileSession>
 
 // Every open editor of a file in this tab shares one session, so their undo
 // history, sync, and presence stay together. A tab that moves to another group

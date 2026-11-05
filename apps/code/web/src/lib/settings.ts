@@ -73,7 +73,7 @@ export function getSettings() {
   initialize()
   return current
 }
-export function subscribeSettings(listener: () => void) {
+function subscribeSettings(listener: () => void) {
   listeners.add(listener)
   return () => {
     listeners.delete(listener)

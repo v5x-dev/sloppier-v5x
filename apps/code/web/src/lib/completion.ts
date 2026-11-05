@@ -34,7 +34,7 @@ export function itemLabel(item: CompletionItem) {
 }
 
 /** Fuzzy match: in-order characters, first one at a word boundary. */
-export function fuzzyMatch(word: string, label: string) {
+function fuzzyMatch(word: string, label: string) {
   if (!word) return { positions: [] as number[], score: 0 }
   const lower = label.toLowerCase()
   const query = word.toLowerCase()

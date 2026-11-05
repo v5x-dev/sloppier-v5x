@@ -14,11 +14,12 @@ Design and Film are works in progress; their detailed workflows are not defined
 here. Read their product documentation and the task brief as they are added,
 rather than inventing requirements from their names.
 
-Each product has a TanStack Start web app. Only Code has an Expo mobile app; do
-not create Expo apps for Film, Design, or other products until the team asks for
-them. All products share the Convex backend in `packages/backend`. Build features around the team's
-competition workflow and use VEX V5 terminology. This is one suite with distinct
-products, not three unrelated projects.
+Each product has a TanStack Start web app. No product has an Expo mobile app
+right now: Code's was removed. Do not create Expo apps for any product until the
+team asks for one. All products share the Convex backend in `packages/backend`.
+Build features around the team's competition workflow and use VEX V5
+terminology. This is one suite with distinct products, not three unrelated
+projects.
 
 `marketing` (`apps/marketing`) is the suite's Astro marketing site. It is not a
 product, has no backend or product data, and is currently empty.
@@ -30,7 +31,7 @@ robot code item and "Brain" for the V5 device.
 
 - `apps/<product>/web`: the product's TanStack Start app. `apps/code/web`,
   `apps/film/web`, and `apps/design/web` exist.
-- `apps/<product>/mobile`: the product's Expo app. `apps/code/mobile` exists.
+- `apps/<product>/mobile`: a product's Expo app, if the team adds one. None exists now.
 - `apps/marketing`: the Astro marketing site (`@v5x/marketing`).
 - `packages/backend`: shared backend, schema, authorization, and business rules.
 - `packages/ui`: shared web UI built with shadcn/ui. It currently depends on the DOM.

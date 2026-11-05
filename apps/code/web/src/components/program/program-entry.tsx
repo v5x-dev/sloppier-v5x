@@ -46,7 +46,7 @@ export function ProgramEntry() {
   )
 }
 
-export function ProgramPage() {
+function ProgramPage() {
   const { programId: rawProgramId } = programRoute.useParams()
   return (
     <ProgramLoader
