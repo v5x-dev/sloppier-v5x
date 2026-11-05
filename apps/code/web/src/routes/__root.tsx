@@ -10,6 +10,7 @@ import tokenCss from "@v5x/tokens/code/web.css?url"
 import noiseCss from "../noise.css?url"
 import { fontPreloadsForRoute } from "@v5x/ui/lib/font-preloads"
 import { AppProviders } from "@/components/app/app-providers"
+import { useSettings } from "@/lib/settings"
 import { applySoundPreference } from "@/lib/sound-preference"
 import { bind } from "cuelume"
 import { useEffect } from "react"
@@ -73,6 +74,18 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
+  const settings = useSettings()
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty("--diffs-font-size", `${settings.fontSize}px`)
+    root.style.setProperty(
+      "--diffs-line-height",
+      `${settings.fontSize + settings.lineSpacing}px`
+    )
+    root.style.setProperty("--diffs-tab-size", String(settings.tabSize))
+    root.dataset.reduceMotion = String(settings.reduceMotion)
+    root.dataset.texture = String(settings.texture)
+  }, [settings])
   // Sounds for data-cuelume-* controls. Audio starts on the first user gesture.
   useEffect(() => {
     applySoundPreference()

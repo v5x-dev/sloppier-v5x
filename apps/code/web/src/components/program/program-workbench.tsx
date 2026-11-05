@@ -3,6 +3,8 @@ import { ProgramHistory } from "@/components/program/program-history"
 import { ProgramSearch } from "@/components/program/program-search"
 import { ActionGroup } from "@/components/shared/action-group"
 import { ActionTooltip } from "@/components/shared/action-tooltip"
+import { SettingsDialog } from "@/components/program/settings-dialog"
+import { updateSettings, useSettings } from "@/lib/settings"
 import { SoundToggle } from "@/components/shared/sound-toggle"
 import type { DiagnosticTarget } from "@/lib/build-diagnostics"
 import { shortcutKeys } from "@/lib/keyboard-shortcuts"
@@ -93,6 +95,9 @@ export function Workbench({
   source: WorkbenchSource
 }) {
   const [showSymbols, setShowSymbols] = useState(false)
+  const { showMinimap } = useSettings()
+  const changeMinimap = (value: boolean) =>
+    updateSettings({ showMinimap: value })
   const editorArea = useRef<HTMLDivElement>(null)
   useEffect(() => {
     void loadProgramBuild().catch(() => {})
@@ -312,6 +317,8 @@ export function Workbench({
             <DndContext {...dragEvents}>
               <div ref={editorArea} className="flex min-h-0 min-w-0 flex-1">
                 <WorkbenchEditors
+                  showMinimap={showMinimap}
+                  setShowMinimap={changeMinimap}
                   source={source}
                   programId={program._id}
                   diagnosticTarget={diagnosticTarget}
@@ -490,6 +497,7 @@ export function Workbench({
               </Suspense>
             )}
             <SoundToggle />
+            <SettingsDialog />
           </ActionsBar>
         </SidebarInset>
         <CommitDialog

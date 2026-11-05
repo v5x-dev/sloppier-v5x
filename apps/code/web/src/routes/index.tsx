@@ -1,3 +1,4 @@
+import { SettingsDialog } from "@/components/program/settings-dialog"
 import { DuplicateProgramDialog } from "@/components/program/duplicate-program-dialog"
 import {
   ArchiveBoxIcon,
@@ -346,10 +347,13 @@ function AppHeader({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        <div className="ml-auto">
+          <SettingsDialog />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Account menu"
-            className="ml-auto rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="rounded-full outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <Avatar className="size-8 ring-1 ring-border">
               <AvatarImage src={user?.profilePictureUrl ?? undefined} alt="" />

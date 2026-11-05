@@ -1,3 +1,4 @@
+import { getSettings } from "@/lib/settings"
 import {
   useEffect,
   useEffectEvent,
@@ -287,8 +288,8 @@ export function useEditorCompletion(
         direction: "forward",
       },
     ])
-    if (text.includes("(")) signatureHelp()
-    if (item.retrigger) complete()
+    if (text.includes("(") && getSettings().autoSignature) signatureHelp()
+    if (item.retrigger && getSettings().autoComplete) complete()
   }
 
   const onLocalChange = (
@@ -308,7 +309,7 @@ export function useEditorCompletion(
         if (!typed || [...typed].every(isWordChar)) refilter()
         else if (char && client.triggerCharacters.has(char)) complete()
         else close()
-      } else if (char && typed.length <= 2) {
+      } else if (getSettings().autoComplete && char && typed.length <= 2) {
         if (client.triggerCharacters.has(char)) complete()
         else if (
           isWordChar(char) &&
@@ -319,7 +320,12 @@ export function useEditorCompletion(
           state.timer = setTimeout(() => complete(), 50)
         }
       }
-      if (char && client.signatureTriggerCharacters.has(char)) signatureHelp()
+      if (
+        getSettings().autoSignature &&
+        char &&
+        client.signatureTriggerCharacters.has(char)
+      )
+        signatureHelp()
       else if (state.signature) signatureHelp()
     })
   }
