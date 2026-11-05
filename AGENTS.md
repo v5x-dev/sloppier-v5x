@@ -52,3 +52,37 @@ central to this project, so do not replace them with something else.
   tests across the workspaces.
 - Each workspace has its own `lint`, `typecheck`, and `test` scripts. Run those when
   you only changed one workspace.
+- `bun run test:affected` runs only the suites that depend on what changed.
+
+## Testing
+
+CI (`.github/workflows/ci.yml`) runs the boundary check, tooling tests, test hygiene,
+formatting, lint, typecheck, and every workspace's unit suite on each pull request.
+Browser end-to-end suites run in `deploy-production.yml` with deployment credentials.
+
+- Test behavior that can break: data, state, protocol, auth, and the logic a bug fix
+  changed. Skip tests for what types already guarantee and for copy or static markup.
+- Extend the existing case or table before adding a new `it`. Test at the lowest layer
+  that fails on `main`.
+- A bug fix starts with a failing test, then the fix.
+- Tests never wait on wall-clock time: no `setTimeout`/`sleep` waits, no polling loops,
+  no per-test timeout or retry. Await the promise, event, or state that marks the
+  milestone, or use fake timers that the test advances explicitly.
+- No committed `.only`. An unconditional `.skip` needs `// quarantine: #<issue> <reason>`
+  on the line above.
+- Test files live in a `tests/`, `e2e/`, or `benchmarks/` folder, where the runner collects them.
+- `bun run check:tests` enforces these rules. The rules are in `scripts/lib/test-hygiene.mjs`.
+
+### Browser end-to-end tests
+
+Run them with `bun run test:e2e` from the repo root. It takes no setup: it installs
+Chromium when missing, fetches Node 22 with npx when the default Node is another
+version, and prints which storage source it used. It runs the WorkOS sign-in suite and
+the editor suites, each against a fresh local Convex backend and a local WorkOS emulator.
+
+The only credential these suites need is the Pierre Code Storage test organization
+(`PIERRE_ORG` and `PIERRE_PRIVATE_KEY`). The runner reads it from the first source that
+has it: a `CODE_TEST_STORAGE_ENV` file, `PIERRE_*` environment variables, or the
+development Convex deployment named in `packages/backend/.env.local`. Nothing else is
+required. WorkOS, Smol, and Resend keys are not used, and production deploy keys are
+rejected. Never print the credential values.

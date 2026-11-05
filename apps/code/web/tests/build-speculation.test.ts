@@ -169,7 +169,8 @@ describe("BuildSpeculation", () => {
       )
     )
     speculation.schedule()
-    await new Promise((resolve) => setTimeout(resolve, 30))
+    // Resolves once the run this schedule started has settled; the same content must not build again.
+    await speculation.claimOrWait(hash)
     expect(builder.builds).toHaveLength(1)
   })
 
@@ -208,9 +209,8 @@ describe("BuildSpeculation", () => {
       delay: 0,
     })
     speculation.schedule()
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(builder.builds).toHaveLength(0)
     expect(await speculation.claimOrWait(hash)).toBeNull()
+    expect(builder.builds).toHaveLength(0)
 
     builder.status.building = false
     speculation.schedule()
@@ -230,22 +230,29 @@ describe("BuildSpeculation", () => {
       delay: 0,
     })
     speculation.schedule()
-    await new Promise((resolve) => setTimeout(resolve, 30))
+    // Nothing is scheduled to build, so the pending run settles with no claim and no request.
+    expect(await speculation.claimOrWait("unbuilt")).toBeNull()
     expect(builder.requests).toEqual([])
   })
 
   it("stops without starting work after stop()", async () => {
-    const builder = fakeBuilder()
-    const speculation = new BuildSpeculation({
-      prepare: async () => ({ files: sources("int main() {}"), dirty: [] }),
-      request: builder.request,
-      warm: () => true,
-      delay: 50,
-    })
-    speculation.schedule()
-    speculation.stop()
-    await new Promise((resolve) => setTimeout(resolve, 80))
-    expect(builder.requests).toEqual([])
+    vi.useFakeTimers()
+    try {
+      const builder = fakeBuilder()
+      const speculation = new BuildSpeculation({
+        prepare: async () => ({ files: sources("int main() {}"), dirty: [] }),
+        request: builder.request,
+        warm: () => true,
+        delay: 50,
+      })
+      speculation.schedule()
+      speculation.stop()
+      // Advance past the debounce: a timer that stop() failed to clear would fire here.
+      await vi.advanceTimersByTimeAsync(100)
+      expect(builder.requests).toEqual([])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

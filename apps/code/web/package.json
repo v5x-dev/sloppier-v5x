@@ -20,7 +20,8 @@
     "test:e2e:workos": "node scripts/e2e-workos.mjs",
     "demo:visual": "node scripts/visual-demo.mjs",
     "benchmark:load": "playwright test --config playwright.benchmark.config.ts",
-    "test:e2e:editor": "node scripts/e2e-editor.mjs"
+    "test:e2e:editor": "node scripts/e2e-editor.mjs",
+    "test:e2e:all": "node scripts/e2e-all.mjs"
   },
   "dependencies": {
     "@convex-dev/workos": "^0.0.3",

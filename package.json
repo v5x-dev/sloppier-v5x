@@ -6,14 +6,17 @@
     "build": "turbo build",
     "dev": "turbo dev --ui=tui",
     "lint": "bun run check:boundaries && turbo lint",
-    "checks": "bun run check:boundaries && bun run test:tooling && turbo run lint typecheck test",
+    "checks": "bun run check:boundaries && bun run test:tooling && bun run check:tests && turbo run lint typecheck test",
     "test": "bun run test:tooling && turbo test",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "test:tooling": "node --test scripts/tests/*.test.mjs",
+    "check:tests": "node scripts/check-tests.mjs",
     "format:check": "prettier --check \"apps/*/*/src/**/*.{ts,tsx}\" \"apps/*/*/tests/**/*.ts\" \"apps/*/*/e2e/**/*.{ts,mjs}\" \"apps/*/*/scripts/*.mjs\" \"packages/*/src/**/*.{ts,tsx}\" \"packages/backend/convex/**/*.ts\" \"packages/backend/tests/**/*.ts\" \"scripts/**/*.mjs\"",
-    "doctor": "node scripts/doctor.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "test:affected": "turbo run test --affected",
+    "test:e2e": "bun run --cwd apps/code/web test:e2e:all"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
