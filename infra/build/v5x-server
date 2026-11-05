@@ -321,7 +321,9 @@ class Handler(BaseHTTPRequestHandler):
                     key = data['id']
                     if not isinstance(key, str) or len(key) > 128: raise ValueError('Invalid upload ID.')
                     if key not in UPLOADS:
-                        if len(UPLOADS) >= 4: raise ValueError('Too many uploads.')
+                        # Uploads are abandoned when a superseded or refreshed page never sends /build. When every
+                        # slot is taken, the oldest one is dropped so abandoned uploads never block a new upload.
+                        while len(UPLOADS) >= 4: del UPLOADS[next(iter(UPLOADS))]
                         UPLOADS[key] = {'data': bytearray(), 'expires': now + 300}
                     upload = UPLOADS[key]
                     if data['offset'] != len(upload['data']): raise ValueError('Invalid upload offset.')
