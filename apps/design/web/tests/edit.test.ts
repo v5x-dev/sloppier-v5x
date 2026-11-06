@@ -71,6 +71,7 @@ function twoChannelsAndAScrew() {
   const bPose = channelOnPin({ ...screwPose }, "screw-02", 0)
   const screwPart = {
     role: "screw" as const,
+    fit: screw.catalog.fit,
     id: "screw",
     snaps: screw.snapPoints,
     pose: screwPose,
@@ -192,6 +193,7 @@ describe("turning about a fastener", () => {
     const { doc, bPose } = twoChannelsAndAScrew()
     const pivot = pivotAxis({
       role: "screw",
+      fit: screw.catalog.fit,
       id: "screw",
       snaps: screw.snapPoints,
       pose: positionPose(doc, "screw"),
@@ -217,6 +219,7 @@ describe("turning about a fastener", () => {
     const screwPose = positionPose(doc, "screw")
     const pivot = pivotAxis({
       role: "screw",
+      fit: screw.catalog.fit,
       id: "screw",
       snaps: screw.snapPoints,
       pose: screwPose,
@@ -232,7 +235,13 @@ describe("turning about a fastener", () => {
     commitPlan(doc, plan)
     const turned = targetsOf(doc, ["a"])[0].pose
     const still = connectionsFor(
-      { role: "screw", id: "screw", snaps: screw.snapPoints, pose: screwPose },
+      {
+        role: "screw",
+        fit: screw.catalog.fit,
+        id: "screw",
+        snaps: screw.snapPoints,
+        pose: screwPose,
+      },
       [{ id: "a", snaps: channel.snapPoints, pose: turned }]
     )
     expect(still.map((d) => d.fastenerSnap)).toEqual(["screw-01"])

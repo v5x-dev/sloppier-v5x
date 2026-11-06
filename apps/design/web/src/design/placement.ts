@@ -7,6 +7,7 @@
 import { Quaternion, Vector3 } from "three"
 import type { SnapPoint, Vec3 } from "@/catalog/types"
 import {
+  findLineSnapAlongRay,
   findSnap,
   findSnapAlongRay,
   type Pose,
@@ -110,6 +111,19 @@ export function placementPose(
       )
     : null
   if (underPointer) return { pose: underPointer.pose, snap: underPointer }
+  // A shaft is a line, so a hole or axle that takes its fit slides on anywhere along it.
+  const onShaft = ray
+    ? findLineSnapAlongRay(
+        shape.snapPoints,
+        ray,
+        index.lines(),
+        SNAP_RADIUS_MM,
+        free,
+        turn.roll,
+        aboveGround
+      )
+    : null
+  if (onShaft) return { pose: onShaft.pose, snap: onShaft }
   const nearGround = findSnap(
     shape.snapPoints,
     free,

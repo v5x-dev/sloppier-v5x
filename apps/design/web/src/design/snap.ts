@@ -53,13 +53,37 @@ export function alignToSnap(
   }
 }
 
+/**
+ * A placed shaft's line in the world frame. A hole or axle that takes the shaft's fit can
+ * slide onto it anywhere along its length, so a line is not a point in the grid.
+ */
+export type ShaftLine = {
+  owner: string
+  origin: Vector3
+  /** Unit vector along the shaft. */
+  direction: Vector3
+  fit: string
+  lengthMm: number
+}
+
 /** Placed Snap Points in a uniform grid, so a query looks at a few cells, not every point. */
 export class SnapIndex {
   private readonly cells = new Map<string, WorldSnap[]>()
   private readonly everything: WorldSnap[] = []
+  private readonly shafts: ShaftLine[] = []
 
   constructor(private readonly cellMm: number) {
     if (!(cellMm > 0)) throw new RangeError("Cell size must be positive")
+  }
+
+  /** Adds a shaft that other Parts can slide onto. */
+  addLine(line: ShaftLine): void {
+    this.shafts.push(line)
+  }
+
+  /** Every shaft line in the index. */
+  lines(): readonly ShaftLine[] {
+    return this.shafts
   }
 
   add(entry: WorldSnap): void {
@@ -184,4 +208,83 @@ export function findSnapAlongRay(
     if (accept(pose)) return { candidate, target, distance, pose }
   }
   return null
+}
+
+/**
+ * The point on a shaft's line that a pointer ray passes nearest to, if the ray gets within
+ * `radius` of the shaft's length. A candidate hole or axle that takes the shaft's fit is
+ * placed on that point, facing along the shaft, so a Part can slide on anywhere along it.
+ */
+export function findLineSnapAlongRay(
+  candidates: readonly SnapPoint[],
+  ray: { origin: Vector3; direction: Vector3 },
+  lines: readonly ShaftLine[],
+  radius: number,
+  groundPose: Pose,
+  roll = 0,
+  accept: (pose: Pose) => boolean = () => true
+): SnapMatch | null {
+  const direction = ray.direction.clone().normalize()
+  let best: SnapMatch | null = null
+  for (const line of lines) {
+    const takers = candidates.filter(
+      (c) =>
+        (c.kind === "hole" || c.kind === "axle") &&
+        (c.accepts?.includes(line.fit) ?? false)
+    )
+    if (takers.length === 0) continue
+    const on = nearestOnLine(ray.origin, direction, line)
+    if (!on) continue
+    const q = line.origin.clone().addScaledVector(line.direction, on.along)
+    const reach = q.clone().sub(ray.origin)
+    const ahead = reach.dot(direction)
+    if (ahead <= 0) continue
+    const distance = reach.clone().addScaledVector(direction, -ahead).length()
+    if (distance > radius) continue
+    if (best && distance >= best.distance) continue
+    // The candidate taker nearest the line point decides which opening meets it.
+    let candidate = takers[0]
+    let nearest = Infinity
+    for (const c of takers) {
+      const at = toWorldSnap(c, groundPose).position.distanceTo(q)
+      if (at < nearest) {
+        nearest = at
+        candidate = c
+      }
+    }
+    // Face the shaft on the side the candidate already faces, so it does not flip over.
+    const facing =
+      toWorldSnap(candidate, groundPose).axis.dot(line.direction) >= 0 ? 1 : -1
+    const target: WorldSnap = {
+      owner: line.owner,
+      snapId: "shaft-line",
+      position: q,
+      axis: line.direction.clone().multiplyScalar(-facing),
+    }
+    const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
+    if (!accept(pose)) continue
+    best = { candidate, target, distance, pose }
+  }
+  return best
+}
+
+/** Where a ray passes nearest to a shaft's infinite line, clamped to the shaft's length. */
+function nearestOnLine(
+  origin: Vector3,
+  direction: Vector3,
+  line: ShaftLine
+): { along: number } | null {
+  const u = line.direction
+  const w0 = origin.clone().sub(line.origin)
+  const a = 1
+  const b = direction.dot(u)
+  const c = 1
+  const d = direction.dot(w0)
+  const e = u.dot(w0)
+  const denom = a * c - b * b
+  // A ray parallel to the shaft cannot pick out one point along it.
+  if (Math.abs(denom) < 1e-9) return null
+  const t = (a * e - b * d) / denom
+  const half = line.lengthMm / 2
+  return { along: Math.max(-half, Math.min(half, t)) }
 }

@@ -1,14 +1,21 @@
 // Connections: which Snap Points join a fastener to the Parts it passes through. Pure
 // functions, so the rules can be tested without a scene.
 //
-// A screw joins a hole when one of its end pins sits in the hole: the two are at the same
-// place (within CONNECT_TOLERANCE_MM), their axes face each other, and the screw fits
-// through the hole. A shaft joins a hole or an axle when that point lies on the shaft's
-// length and the hole runs along the shaft, and the shaft fits. Nothing else connects:
-// two holes side by side, or a Part that is merely touching another, make no Connection.
+// Fit comes from the catalog. A fastener has a fit token (a screw's thread, a shaft's
+// side), and an opening lists the tokens it takes. A fastener joins an opening only when
+// the opening takes its token and the two line up:
+//
+// - A screw joins every opening on its shank: its end pins sit in a hole, or a hole lies on
+//   the shank between them. So a screw joins a channel, a spacer, a second channel and a nut
+//   in one line, not only the two Parts at its ends.
+// - A shaft joins every opening whose axis runs along it and sits on its line, anywhere
+//   along its length. A wheel, gear, collar or spacer on that line is joined wherever it
+//   sits.
+//
+// Nothing else connects: two holes side by side, or a Part that is merely touching another.
 
 import { Quaternion, Vector3 } from "three"
-import type { SnapPoint, Vec3 } from "@/catalog/types"
+import type { FitToken, SnapPoint, Vec3 } from "@/catalog/types"
 import { toWorldSnap, type Pose } from "./snap"
 
 /** How far apart two Snap Points may be and still count as aligned. */
@@ -16,7 +23,10 @@ export const CONNECT_TOLERANCE_MM = 0.5
 /** Axes within about 10 degrees of parallel or anti-parallel count as aligned. */
 const ALIGNED_COS = 0.985
 
-/** A saved link. `fastenerSnap` is absent for a shaft, whose connection runs along its length. */
+/**
+ * A saved link. `fastenerSnap` is the screw's end pin when the link is an end-on joint, and
+ * absent when the link is a shank or shaft passing through the opening.
+ */
 export type Connection = {
   id: string
   fastener: string
@@ -31,12 +41,16 @@ export type FastenerPart =
   | {
       role: "screw"
       id: string
+      /** The screw's thread, such as "screw:8-32". Absent: the screw joins nothing. */
+      fit?: FitToken
       snaps: readonly SnapPoint[]
       pose: Pose
     }
   | {
       role: "shaft"
       id: string
+      /** The shaft's side, such as "shaft:1/8". Absent: the shaft joins nothing. */
+      fit?: FitToken
       /** Length along the shaft's own X axis, in millimetres. */
       lengthMm: number
       /** Width across the shaft, in millimetres. */
@@ -50,9 +64,17 @@ export type HostPart = {
   pose: Pose
 }
 
+/** Whether an opening takes a fit token. An absent token takes nothing. */
+export function takesFit(
+  opening: { accepts?: readonly FitToken[] },
+  fit: FitToken | undefined
+): boolean {
+  return fit !== undefined && (opening.accepts?.includes(fit) ?? false)
+}
+
 /**
- * Every Connection a fastener makes with the Parts around it. A screw's pins are checked
- * against the holes and axles of each host; a shaft's line against the same kinds of point.
+ * Every Connection a fastener makes with the Parts around it. A screw's shank is checked
+ * against every host opening along it; a shaft's line against every opening on it.
  */
 export function connectionsFor(
   fastener: FastenerPart,
@@ -62,35 +84,37 @@ export function connectionsFor(
   for (const host of hosts) {
     if (host.id === fastener.id) continue
     if (fastener.role === "screw") {
-      for (const pin of fastener.snaps) {
-        if (pin.kind !== "pin") continue
-        const at = toWorldSnap(pin, fastener.pose)
-        for (const hole of host.snaps) {
-          if (hole.kind !== "hole") continue
-          const there = toWorldSnap(hole, host.pose)
-          if (pinEntersHole(at, pin.diameterMm, there, hole.diameterMm))
-            found.push({
-              fastener: fastener.id,
-              host: host.id,
-              fastenerSnap: pin.id,
-              hostSnap: hole.id,
-            })
+      const shank = shankOf(fastener)
+      const pins = fastener.snaps.filter((snap) => snap.kind === "pin")
+      for (const hole of host.snaps) {
+        if (hole.kind !== "hole" || !takesFit(hole, fastener.fit)) continue
+        const there = toWorldSnap(hole, host.pose)
+        const endOn = pins.find((pin) =>
+          pinEntersHole(toWorldSnap(pin, fastener.pose), there)
+        )
+        if (endOn) {
+          found.push({
+            fastener: fastener.id,
+            host: host.id,
+            fastenerSnap: endOn.id,
+            hostSnap: hole.id,
+          })
+          continue
         }
+        if (shank && shankPasses(shank, there))
+          found.push({
+            fastener: fastener.id,
+            host: host.id,
+            hostSnap: hole.id,
+          })
       }
     } else {
       const line = shaftLine(fastener)
       for (const point of host.snaps) {
         if (point.kind !== "hole" && point.kind !== "axle") continue
+        if (!takesFit(point, fastener.fit)) continue
         const there = toWorldSnap(point, host.pose)
-        if (
-          shaftPasses(
-            line,
-            fastener.lengthMm,
-            fastener.sizeMm,
-            there,
-            point.diameterMm
-          )
-        )
+        if (shaftPasses(line, fastener.lengthMm, there))
           found.push({
             fastener: fastener.id,
             host: host.id,
@@ -102,17 +126,14 @@ export function connectionsFor(
   return found
 }
 
-/** Whether a screw's pin sits in a hole: aligned, facing, and the pin fits through. */
+/** Whether a screw's end pin sits in an opening: at the same place, with the axes facing. */
 export function pinEntersHole(
   pin: { position: Vector3; axis: Vector3 },
-  pinDiameterMm: number,
-  hole: { position: Vector3; axis: Vector3 },
-  holeDiameterMm: number
+  hole: { position: Vector3; axis: Vector3 }
 ): boolean {
   return (
     pin.position.distanceTo(hole.position) <= CONNECT_TOLERANCE_MM &&
-    pin.axis.dot(hole.axis) <= -ALIGNED_COS &&
-    pinDiameterMm <= holeDiameterMm + CONNECT_TOLERANCE_MM
+    pin.axis.dot(hole.axis) <= -ALIGNED_COS
   )
 }
 
@@ -129,22 +150,56 @@ export function shaftLine(shaft: { pose: Pose }): {
 }
 
 /**
- * Whether a shaft passes through a point: the point is on the shaft's line, within the
- * shaft's length, its hole runs along the shaft, and the shaft fits the hole.
+ * Whether a shaft passes through an opening: the opening's axis runs along the shaft, its
+ * centre lies on the shaft's line, and it is within the shaft's length. The shaft's own fit
+ * decides whether the opening takes it, so it is checked by the caller.
  */
 export function shaftPasses(
   line: { origin: Vector3; direction: Vector3 },
   lengthMm: number,
-  sizeMm: number,
-  point: { position: Vector3; axis: Vector3 },
-  diameterMm: number
+  point: { position: Vector3; axis: Vector3 }
 ): boolean {
   if (Math.abs(point.axis.dot(line.direction)) < ALIGNED_COS) return false
-  if (sizeMm > diameterMm + CONNECT_TOLERANCE_MM) return false
   const offset = point.position.clone().sub(line.origin)
   const along = offset.dot(line.direction)
   if (Math.abs(along) > lengthMm / 2 + CONNECT_TOLERANCE_MM) return false
   const across = offset.sub(line.direction.clone().multiplyScalar(along))
+  return across.length() <= CONNECT_TOLERANCE_MM
+}
+
+/** A screw's shank: the segment between its two end pins, in the world frame. */
+type Shank = { origin: Vector3; direction: Vector3; length: number }
+
+function shankOf(screw: {
+  snaps: readonly SnapPoint[]
+  pose: Pose
+}): Shank | undefined {
+  const pins = screw.snaps
+    .filter((snap) => snap.kind === "pin")
+    .map((snap) => toWorldSnap(snap, screw.pose).position)
+  if (pins.length !== 2) return undefined
+  const [a, b] = pins
+  const span = b.clone().sub(a)
+  const length = span.length()
+  if (length === 0) return undefined
+  return { origin: a, direction: span.normalize(), length }
+}
+
+/** Whether an opening lies on a screw's shank, with its axis along the shank. */
+function shankPasses(
+  shank: Shank,
+  point: { position: Vector3; axis: Vector3 }
+): boolean {
+  if (Math.abs(point.axis.dot(shank.direction)) < ALIGNED_COS) return false
+  const offset = point.position.clone().sub(shank.origin)
+  const along = offset.dot(shank.direction)
+  // An opening right at a tip belongs to its pin, so only openings strictly along the shank count.
+  if (
+    along < CONNECT_TOLERANCE_MM ||
+    along > shank.length - CONNECT_TOLERANCE_MM
+  )
+    return false
+  const across = offset.sub(shank.direction.clone().multiplyScalar(along))
   return across.length() <= CONNECT_TOLERANCE_MM
 }
 

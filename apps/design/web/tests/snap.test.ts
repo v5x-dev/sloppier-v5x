@@ -4,9 +4,11 @@ import type { SnapPoint } from "../src/catalog/types"
 import {
   SnapIndex,
   alignToSnap,
+  findLineSnapAlongRay,
   findSnap,
   findSnapAlongRay,
   toWorldSnap,
+  type ShaftLine,
   type WorldSnap,
 } from "../src/design/snap"
 
@@ -226,5 +228,73 @@ describe("findSnapAlongRay", () => {
     expect(
       findSnapAlongRay([far, close], down, index, 10, flat)?.candidate.id
     ).toBe("near")
+  })
+})
+
+describe("findLineSnapAlongRay", () => {
+  // A 1/8 in shaft along X, 50.8 mm long, centred at the origin.
+  const shaft: ShaftLine = {
+    owner: "shaft",
+    origin: new Vector3(0, 0, 0),
+    direction: new Vector3(1, 0, 0),
+    fit: "shaft:1/8",
+    lengthMm: 50.8,
+  }
+  // A wheel's axle: a hole at its centre, facing along its own axis.
+  const axle = snap({
+    kind: "axle",
+    position: [0, 0, 0],
+    axis: [0, 0, 1],
+    accepts: ["shaft:1/8"],
+  })
+  const flat = {
+    position: [0, 0, 0] as [number, number, number],
+    rotation: [0, 0, 0, 1] as [number, number, number, number],
+  }
+  // A ray from above, falling onto the shaft at x.
+  const above = (x: number) => ({
+    origin: new Vector3(x, 300, 0),
+    direction: new Vector3(0, -1, 0),
+  })
+
+  it("places a taker of the shaft's fit on the line under the pointer, anywhere along it", () => {
+    for (const x of [-20, 0, 17]) {
+      const match = findLineSnapAlongRay([axle], above(x), [shaft], 10, flat)
+      expect(match).not.toBeNull()
+      near(new Vector3(...match!.pose.position), new Vector3(x, 0, 0))
+      // The axle now runs along the shaft, so its axis is parallel to it.
+      const axis = toWorldSnap(axle, match!.pose).axis
+      expect(Math.abs(axis.dot(new Vector3(1, 0, 0)))).toBeCloseTo(1, 6)
+    }
+  })
+
+  it("ignores a candidate that does not take the shaft's fit", () => {
+    const quarterOnly = snap({
+      kind: "axle",
+      position: [0, 0, 0],
+      axis: [0, 0, 1],
+      accepts: ["shaft:1/4"],
+    })
+    expect(
+      findLineSnapAlongRay([quarterOnly], above(0), [shaft], 10, flat)
+    ).toBeNull()
+  })
+
+  it("passes over a ray that misses the shaft by more than the radius", () => {
+    const miss = {
+      origin: new Vector3(0, 300, 30),
+      direction: new Vector3(0, -1, 0),
+    }
+    expect(findLineSnapAlongRay([axle], miss, [shaft], 10, flat)).toBeNull()
+  })
+
+  it("clamps to the shaft's ends, so a ray past the end finds nothing", () => {
+    expect(
+      findLineSnapAlongRay([axle], above(40), [shaft], 10, flat)
+    ).toBeNull()
+    // Past the end but within the radius: the axle sits at the shaft's end, not beyond it.
+    const edge = findLineSnapAlongRay([axle], above(30), [shaft], 10, flat)
+    expect(edge).not.toBeNull()
+    near(new Vector3(...edge!.pose.position), new Vector3(25.4, 0, 0))
   })
 })

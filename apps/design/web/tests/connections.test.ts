@@ -9,6 +9,7 @@ import {
   pivotsFor,
   pinEntersHole,
   shaftPasses,
+  takesFit,
   type Edge,
   type FastenerPart,
   type HostPart,
@@ -17,6 +18,9 @@ import type { Pose } from "../src/design/snap"
 
 const ID: Pose["rotation"] = [0, 0, 0, 1]
 
+/** What a 3.2 mm channel's square hole takes: both screws, and a 1/8 in shaft. */
+const CHANNEL_HOLE = ["screw:6-32", "screw:8-32", "shaft:1/8"]
+
 const snap = (over: Partial<SnapPoint>): SnapPoint => ({
   id: "s",
   kind: "hole",
@@ -24,18 +28,21 @@ const snap = (over: Partial<SnapPoint>): SnapPoint => ({
   position: [0, 0, 0],
   axis: [1, 0, 0],
   diameterMm: 4.5,
+  accepts: CHANNEL_HOLE,
   ...over,
 })
 
-/** A 6-32 screw of 1/4 in length, as the catalog has it: pins at each end, facing out. */
+/** A screw as the catalog has it: pins at each end, facing out, 12.6 mm apart. */
 function screw(
   id: string,
   at: Vec3,
-  rotation: Pose["rotation"] = ID
+  rotation: Pose["rotation"] = ID,
+  fit: string = "screw:6-32"
 ): FastenerPart {
   return {
     role: "screw",
     id,
+    fit,
     pose: { position: at, rotation },
     snaps: [
       snap({
@@ -56,7 +63,7 @@ function screw(
   }
 }
 
-/** A host whose one hole sits at `at` on its own face, facing `axis`. */
+/** A host whose one hole sits at `at`, facing `axis`. */
 function host(
   id: string,
   at: Vec3,
@@ -70,10 +77,35 @@ function host(
   }
 }
 
+/** A shaft along X, 50.8 mm long, as the 1/8 in catalog entry has it. */
+function shaft(
+  at: Vec3,
+  rotation: Pose["rotation"] = ID,
+  fit = "shaft:1/8"
+): FastenerPart {
+  return {
+    role: "shaft",
+    id: "shaft",
+    fit,
+    lengthMm: 50.8,
+    sizeMm: 3.175,
+    pose: { position: at, rotation },
+  }
+}
+
 const near = (a: Vec3, b: Vec3) =>
   new Vector3(...a).distanceTo(new Vector3(...b))
 
-describe("which pins and holes connect", () => {
+describe("which fits an opening takes", () => {
+  it("takes a fit token only when the opening lists it", () => {
+    expect(takesFit({ accepts: CHANNEL_HOLE }, "shaft:1/8")).toBe(true)
+    expect(takesFit({ accepts: CHANNEL_HOLE }, "shaft:1/4")).toBe(false)
+    expect(takesFit({}, "screw:6-32")).toBe(false)
+    expect(takesFit({ accepts: CHANNEL_HOLE }, undefined)).toBe(false)
+  })
+})
+
+describe("which screw joins which openings", () => {
   it("connects a screw's pin to a facing hole it sits in", () => {
     // The screw's first pin points -X, so the hole it enters faces +X.
     const s = screw("screw", [0, 0, 0])
@@ -88,24 +120,24 @@ describe("which pins and holes connect", () => {
     ])
   })
 
-  it("does not connect when the hole faces the same way as the pin", () => {
+  it("does not connect at a tip when the hole faces the same way as the pin", () => {
     const s = screw("screw", [0, 0, 0])
     expect(
       connectionsFor(s, [host("channel", [-5.42, 0, 0], [-1, 0, 0])])
     ).toEqual([])
   })
 
-  it("does not connect when the hole is further than the tolerance", () => {
+  it("does not connect a tip hole that is further than the tolerance off the pin", () => {
     const s = screw("screw", [0, 0, 0])
     const off = host(
       "channel",
-      [-5.42 + CONNECT_TOLERANCE_MM + 0.1, 0, 0],
+      [-5.42 - CONNECT_TOLERANCE_MM - 0.1, 0, 0],
       [1, 0, 0]
     )
     expect(connectionsFor(s, [off])).toEqual([])
   })
 
-  it("connects within the tolerance", () => {
+  it("connects a tip hole within the tolerance of its pin", () => {
     const s = screw("screw", [0, 0, 0])
     const near_ = host(
       "channel",
@@ -115,24 +147,50 @@ describe("which pins and holes connect", () => {
     expect(connectionsFor(s, [near_])).toHaveLength(1)
   })
 
-  it("does not let a screw through a hole that is too small for it", () => {
-    // A 6-32 pin is 3.4 mm; the motor's manual holes are 2.2 mm.
-    const s = screw("screw", [0, 0, 0])
-    const small = host("motor", [-5.42, 0, 0], [1, 0, 0], { diameterMm: 2.2 })
-    expect(connectionsFor(s, [small])).toEqual([])
+  it("does not thread a 6-32 screw into a threaded 8-32 hole", () => {
+    // The motor's mounting holes are 8-32 threads: a 6-32 screw does not engage them.
+    const s = screw("screw", [0, 0, 0], ID, "screw:6-32")
+    const tapped = host("motor", [-5.42, 0, 0], [1, 0, 0], {
+      accepts: ["screw:8-32"],
+      diameterMm: 2.2,
+    })
+    expect(connectionsFor(s, [tapped])).toEqual([])
+  })
+
+  it("threads an 8-32 screw into an 8-32 hole, whatever the hole's diameter", () => {
+    const s = screw("screw", [0, 0, 0], ID, "screw:8-32")
+    const tapped = host("motor", [-5.42, 0, 0], [1, 0, 0], {
+      accepts: ["screw:8-32"],
+      diameterMm: 2.2,
+    })
+    expect(connectionsFor(s, [tapped])).toHaveLength(1)
+  })
+
+  it("joins nothing for a screw with no fit token", () => {
+    const s = { ...screw("screw", [0, 0, 0]), fit: undefined }
+    expect(
+      connectionsFor(s, [host("channel", [-5.42, 0, 0], [1, 0, 0])])
+    ).toEqual([])
   })
 
   it("never joins two holes, because neither is a fastener", () => {
     const a = host("a", [0, 0, 0], [1, 0, 0])
     const b = host("b", [0, 0, 0], [-1, 0, 0])
-    const shaft: FastenerPart = {
+    const line: FastenerPart = {
       role: "shaft",
       id: "shaft",
+      fit: "shaft:1/8",
       lengthMm: 100,
-      sizeMm: 6.35,
+      sizeMm: 3.175,
       pose: { position: [0, 0, 0], rotation: ID },
     }
-    expect(connectionsFor(shaft, [a, b])).toEqual([])
+    expect(connectionsFor(line, [a, b])).toHaveLength(2)
+    // Two holes side by side, both off the screw's shank, make no Connection.
+    const left = host("left", [0, 3, 0], [1, 0, 0])
+    const right = host("right", [0, -3, 0], [1, 0, 0])
+    expect(
+      connectionsFor(screw("screw", [0, 0, 0], ID, "screw:6-32"), [left, right])
+    ).toEqual([])
   })
 
   it("does not join a screw pin to a wheel's axle", () => {
@@ -147,6 +205,7 @@ describe("which pins and holes connect", () => {
           position: [0, 0, 0],
           axis: [-1, 0, 0],
           diameterMm: 6.35,
+          accepts: ["shaft:1/8"],
         }),
       ],
     }
@@ -182,98 +241,107 @@ describe("which pins and holes connect", () => {
       connectionsFor(s, [host("channel", [-5.42, 0, 0], [1, 0, 0])])
     ).toHaveLength(0)
   })
+
+  it("joins every opening along its shank, so a stack goes on one screw", () => {
+    // Screw, channel, spacer, channel, nut, from the pin at -5.42 to the pin at 7.18.
+    const s = screw("screw", [0, 0, 0], ID, "screw:8-32")
+    const hosts = [
+      host("channel-a", [-5.42, 0, 0], [1, 0, 0]),
+      host("channel-b", [0, 0, 0], [1, 0, 0]),
+      host("spacer", [2.5, 0, 0], [-1, 0, 0], { accepts: ["screw:8-32"] }),
+      host("nut", [7.18, 0, 0], [-1, 0, 0], { accepts: ["screw:8-32"] }),
+    ]
+    const found = connectionsFor(s, hosts)
+    expect(found.map((c) => c.host).sort()).toEqual([
+      "channel-a",
+      "channel-b",
+      "nut",
+      "spacer",
+    ])
+    // The two ends are end-on joints; the middle ones run along the shank.
+    expect(found.find((c) => c.host === "channel-a")?.fastenerSnap).toBe(
+      "pin-a"
+    )
+    expect(found.find((c) => c.host === "nut")?.fastenerSnap).toBe("pin-b")
+    expect(
+      found.find((c) => c.host === "channel-b")?.fastenerSnap
+    ).toBeUndefined()
+    expect(found.find((c) => c.host === "spacer")?.fastenerSnap).toBeUndefined()
+  })
+
+  it("does not join an opening off the shank, or one that runs across it", () => {
+    const s = screw("screw", [0, 0, 0])
+    expect(connectionsFor(s, [host("off", [1, 1, 0], [1, 0, 0])])).toEqual([])
+    expect(connectionsFor(s, [host("across", [0, 0, 0], [0, 1, 0])])).toEqual(
+      []
+    )
+  })
+
+  it("does not join an opening beyond the screw's ends", () => {
+    const s = screw("screw", [0, 0, 0])
+    expect(connectionsFor(s, [host("far", [20, 0, 0], [1, 0, 0])])).toEqual([])
+  })
+
+  it("does not join a shank opening that does not take its thread", () => {
+    const s = screw("screw", [0, 0, 0], ID, "screw:8-32")
+    expect(
+      connectionsFor(s, [
+        host("gusset", [0, 0, 0], [1, 0, 0], { accepts: ["screw:6-32"] }),
+      ])
+    ).toEqual([])
+  })
 })
 
 describe("which shafts pass through", () => {
-  const shaft = (at: Vec3, rotation: Pose["rotation"] = ID): FastenerPart => ({
-    role: "shaft",
-    id: "shaft",
-    lengthMm: 49.8,
-    sizeMm: 6.35,
-    pose: { position: at, rotation },
+  it("passes through an opening on its line, anywhere along its length", () => {
+    const s = shaft([0, 0, 0])
+    const found = connectionsFor(s, [
+      host("near-end", [20, 0, 0], [1, 0, 0]),
+      host("far-end", [-24, 0, 0], [-1, 0, 0]),
+    ])
+    expect(found.map((c) => c.host).sort()).toEqual(["far-end", "near-end"])
+    // A shaft's connections are along its line, so they carry no pin.
+    expect(found.every((c) => c.fastenerSnap === undefined)).toBe(true)
   })
 
-  it("passes through a hole on its line, along it, within its length", () => {
-    const line = {
-      origin: new Vector3(0, 0, 0),
-      direction: new Vector3(1, 0, 0),
-    }
+  it("does not pass through an opening beyond its ends", () => {
     expect(
-      shaftPasses(
-        line,
-        49.8,
-        6.35,
-        { position: new Vector3(10, 0, 0), axis: new Vector3(1, 0, 0) },
-        6.5
-      )
-    ).toBe(true)
+      connectionsFor(shaft([0, 0, 0]), [host("past", [-27, 0, 0], [1, 0, 0])])
+    ).toEqual([])
   })
 
-  it("does not pass through a hole that is off the line", () => {
-    const line = {
-      origin: new Vector3(0, 0, 0),
-      direction: new Vector3(1, 0, 0),
-    }
+  it("does not pass through an opening off the line", () => {
     expect(
-      shaftPasses(
-        line,
-        49.8,
-        6.35,
-        { position: new Vector3(10, 2, 0), axis: new Vector3(1, 0, 0) },
-        6.5
-      )
-    ).toBe(false)
+      connectionsFor(shaft([0, 0, 0]), [host("off", [10, 1.5, 0], [1, 0, 0])])
+    ).toEqual([])
   })
 
-  it("does not pass through a hole that runs across the shaft", () => {
-    const line = {
-      origin: new Vector3(0, 0, 0),
-      direction: new Vector3(1, 0, 0),
-    }
+  it("does not pass through an opening that runs across the shaft", () => {
     expect(
-      shaftPasses(
-        line,
-        49.8,
-        6.35,
-        { position: new Vector3(10, 0, 0), axis: new Vector3(0, 1, 0) },
-        6.5
-      )
-    ).toBe(false)
+      connectionsFor(shaft([0, 0, 0]), [host("across", [10, 0, 0], [0, 1, 0])])
+    ).toEqual([])
   })
 
-  it("does not pass through a hole beyond the shaft's ends", () => {
-    const line = {
-      origin: new Vector3(0, 0, 0),
-      direction: new Vector3(1, 0, 0),
-    }
+  it("passes only an opening that takes its fit", () => {
+    // A 1/4 in high-strength shaft does not fit a channel's 4.5 mm square hole.
+    const big = shaft([0, 0, 0], ID, "shaft:1/4")
     expect(
-      shaftPasses(
-        line,
-        49.8,
-        6.35,
-        { position: new Vector3(40, 0, 0), axis: new Vector3(1, 0, 0) },
-        6.5
-      )
-    ).toBe(false)
+      connectionsFor(big, [host("channel", [10, 0, 0], [1, 0, 0])])
+    ).toEqual([])
+    const bearing = host("bearing", [10, 0, 0], [1, 0, 0], {
+      accepts: ["shaft:1/4"],
+    })
+    expect(connectionsFor(big, [bearing])).toHaveLength(1)
   })
 
-  it("does not pass through a hole narrower than the shaft", () => {
-    const line = {
-      origin: new Vector3(0, 0, 0),
-      direction: new Vector3(1, 0, 0),
-    }
-    expect(
-      shaftPasses(
-        line,
-        49.8,
-        6.35,
-        { position: new Vector3(10, 0, 0), axis: new Vector3(1, 0, 0) },
-        4.5
-      )
-    ).toBe(false)
+  it("joins nothing for a shaft with no fit token", () => {
+    const s = { ...shaft([0, 0, 0]), fit: undefined }
+    expect(connectionsFor(s, [host("channel", [10, 0, 0], [1, 0, 0])])).toEqual(
+      []
+    )
   })
 
-  it("connects a wheel's axle that sits on the shaft's line", () => {
+  it("connects a wheel's axle that sits on the shaft's line, wherever along it", () => {
     const s = shaft([0, 0, 0])
     const wheel: HostPart = {
       id: "wheel",
@@ -285,12 +353,18 @@ describe("which shafts pass through", () => {
           position: [0, 0, 0],
           axis: [1, 0, 0],
           diameterMm: 6.35,
+          accepts: ["shaft:1/8", "shaft:1/4"],
         }),
       ],
     }
     expect(connectionsFor(s, [wheel])).toEqual([
       { fastener: "shaft", host: "wheel", hostSnap: "wheel-01" },
     ])
+    const moved: HostPart = {
+      ...wheel,
+      pose: { position: [-15, 0, 0], rotation: ID },
+    }
+    expect(connectionsFor(s, [moved])).toHaveLength(1)
   })
 
   it("passes through a shaft's line whatever way the shaft is turned", () => {
@@ -313,6 +387,7 @@ describe("which shafts pass through", () => {
           position: [0, 0, 0],
           axis: [0, 1, 0],
           diameterMm: 6.35,
+          accepts: ["shaft:1/8"],
         }),
       ],
     }
@@ -404,9 +479,27 @@ describe("pinEntersHole", () => {
   it("needs the pin to be within tolerance and facing", () => {
     const pin = { position: new Vector3(0, 0, 0), axis: new Vector3(-1, 0, 0) }
     const hole = { position: new Vector3(0, 0, 0), axis: new Vector3(1, 0, 0) }
-    expect(pinEntersHole(pin, 3.4, hole, 4.5)).toBe(true)
-    // The pin may be wider than the hole by the tolerance, and no more.
-    expect(pinEntersHole(pin, 4.5 + CONNECT_TOLERANCE_MM, hole, 4.5)).toBe(true)
-    expect(pinEntersHole(pin, 5.2, hole, 4.5)).toBe(false)
+    expect(pinEntersHole(pin, hole)).toBe(true)
+    expect(
+      pinEntersHole(pin, {
+        ...hole,
+        position: new Vector3(CONNECT_TOLERANCE_MM + 0.1, 0, 0),
+      })
+    ).toBe(false)
+  })
+})
+
+describe("shaftPasses", () => {
+  it("is false for an opening on the line with an axis that runs across it", () => {
+    const line = {
+      origin: new Vector3(0, 0, 0),
+      direction: new Vector3(1, 0, 0),
+    }
+    expect(
+      shaftPasses(line, 49.8, {
+        position: new Vector3(10, 0, 0),
+        axis: new Vector3(0, 1, 0),
+      })
+    ).toBe(false)
   })
 })

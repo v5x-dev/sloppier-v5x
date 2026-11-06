@@ -37,6 +37,8 @@ import {
   type WorldSnap,
 } from "@/design/snap"
 import { SNAP_RADIUS_MM } from "@/design/placement"
+import { fastenerOf } from "@/design/connect"
+import { shaftLine } from "@/design/connections"
 import { boxFor, type ModelLoader } from "./models"
 import type { SceneColors } from "./colors"
 
@@ -612,13 +614,17 @@ export class SceneStore {
     for (const part of parts) {
       const shape = partShape(part)
       const shown = this.previews.get(part.id) ?? part
+      const pose = { position: shown.position, rotation: shown.rotation }
       for (const snap of shape.snapPoints)
-        index.add(
-          worldEntry(part.id, snap, {
-            position: shown.position,
-            rotation: shown.rotation,
-          })
-        )
+        index.add(worldEntry(part.id, snap, pose))
+      const fastener = fastenerOf({ ...part, ...pose })
+      if (fastener?.role === "shaft" && fastener.fit)
+        index.addLine({
+          owner: part.id,
+          ...shaftLine({ pose }),
+          fit: fastener.fit,
+          lengthMm: fastener.lengthMm,
+        })
     }
     this.snapIndex = index
   }
