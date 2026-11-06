@@ -1,6 +1,6 @@
 // Checks the manifest before any STEP file is read, so a typo fails with the part's name.
 
-const SNAP_STRATEGIES = new Set(["bores", "ruled-bores", "shank", "probe", "bores+probe", "axle"]);
+const SNAP_STRATEGIES = new Set(["bores", "ruled-bores", "shank", "probe", "bores+probe", "through", "ends", "axle", "none"]);
 // Every family the catalog knows. The app's validator (apps/design/web/src/catalog/validate.ts)
 // must list the same families, and its tests check that both lists agree.
 export const FAMILIES = new Set([

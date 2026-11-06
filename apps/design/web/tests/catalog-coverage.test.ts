@@ -125,16 +125,17 @@ const KNOWN_MISSING: Record<string, string> = {
   rails:
     "The steel 2x1 chassis rail (275-1145, 275-1146) has a 12.7 x 24.13 mm profile. The Cut Part generator only draws channels, angles and square shafts.",
   "Linear Motion Kit rails and slides":
-    "Not in the vex-cad-download set or the SHU and Solidworks repos for V5. Only SolidWorks (.SLDPRT) and IQ parts were found. The VEX product page for the kit (276-6465) lists STEP files; not fetched.",
-  tubing: "No pneumatic tubing STEP in the sources checked.",
+    "Not in the vex-cad-download set, or in the SHU, SolidWorks or SJTU repos checked. VEX's product page for the kit (276-6465) returns HTTP 403 to automated fetching, so its STEP links were not read. Reseller pages do not host STEP files.",
+  tubing:
+    "VEX lists the V5 pneumatic tubing as 4 mm (275-0447, TUO425B). No STEP for it was found in the sources or by search, and no parametric model has been made yet.",
   solenoids:
-    "No solenoid STEP in the Pneumatics folders of the sources checked.",
+    "No solenoid STEP in the Pneumatics folders of the sources checked, and none found by search.",
   "High Stakes field":
-    "The Fusion (.f3d) and Inventor (.ipt) files are ShapeManager B-reps with no mesh; no readable STEP was found.",
+    "The Fusion (.f3d) and Inventor (.ipt) files are ShapeManager B-reps with no mesh; no readable STEP or mesh was found.",
   "Spin Up field":
-    "No STEP found in the sources. A stlfinder disc (third-party) and the SJTU SolidWorks library were found but not verified.",
+    "No STEP or mesh in the sources. The SJTU-VEX open-source repo has Spin Up field files only as SolidWorks; a stlfinder disc is third-party and was not checked. No parametric model has been made yet.",
   "Override field":
-    "Fusion (.f3d) files are binary B-reps. SHU-ROBOTICS has only pin and cup STL meshes. No STEP found.",
+    "No Override STEP or mesh found on GitHub or the VEX Forum. SHU-ROBOTICS has only pin and cup STL meshes, and the Fusion files are binary B-reps. No parametric model has been made yet.",
 }
 
 describe("the Catalog covers every kind a team needs", () => {

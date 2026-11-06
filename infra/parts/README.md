@@ -15,8 +15,14 @@ repositories pinned in `lib/sources.mjs`.
 bun install                       # from the repo root; this folder is a workspace
 bun run --cwd infra/parts build   # every part in manifest.json, ~80 seconds
 bun run --cwd infra/parts build -- --only motor-v5-smart-11w   # one part; does not rewrite catalog.json
+bun run --cwd infra/parts build -- --fresh                     # ignore the per-Part cache and rebuild everything
 bun run --cwd infra/parts test    # unit tests: holes, probes, lattice, mesh, GLB, manifest
 ```
+
+Each Part's output is cached in `.cache/parts/<id>.json`, keyed by the STEP file's bytes, the
+manifest entry, and a hash of this pipeline's code (`build.mjs` and `lib/`). A rebuild with
+nothing changed reuses the cached entry and its GLB, so a push that changes one Part rebuilds
+that Part only. The build prints how many Parts came from the cache and the total time.
 
 `build` does four things for each part:
 
@@ -61,7 +67,12 @@ Adding a Part is a manifest entry. For a fixed model:
 - `snap` picks the Snap Point strategy: `bores` (detected bore openings), `ruled-bores`
   (bores matched by a rule, for hand corrections), `shank` (a fastener's shank ends),
   `probe` (square openings on a 0.25 in lattice, for plates), `bores+probe` (both, for
-  flat parts), or `axle` (a computed axle for wheels).
+  flat parts), or `axle` (a computed axle for wheels). `through` finds every through-opening
+  along the three axes by ray probes on all bodies together, measures its edges on a fine
+  scan, and puts one point at each face (round openings take the cylinder's diameter). Use it
+  for gears, bearings, brackets, spacers and gussets. `ends` places two hand sockets at the
+  ends of the longest axis (`endDiameterMm`), for a Part whose drive socket is blind. `none`
+  is for a Part that does not attach to anything, with a `snapGap` reason.
 - `budgetTriangles` and `maxErrorMm` are the simplifier's target and error limit. The
   build reports what it achieved; a miss means the error limit was reached first.
 - `expectSizeMm` (optional) checks the bounding box against known sizes.

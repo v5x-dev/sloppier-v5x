@@ -34,7 +34,7 @@
         "path": "Motors/V5 Smart Motor (5.5W) (276-4842).step"
       },
       "material": "electronics",
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.3,
       "notes": [
@@ -677,7 +677,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/30 Degree Bent Gusset (276-7758-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -717,7 +717,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/45 Degree Bent Gusset (276-7759-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -777,7 +777,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/60 Degree Bent Gusset (276-7760-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -797,7 +797,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/90 Degree Bent Gusset (276-7761-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -837,7 +837,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/90-Degree Gusset Set - Plate (276-2577).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -857,7 +857,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/Angle Corner Gusset (276-2576).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -877,7 +877,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/Angle Coupler Gusset (276-2578).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -897,7 +897,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/C-Channel Coupler Gusset (276-2575).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -917,7 +917,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/Gusset Pack - Angle (276-1110).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.05,
       "sku": {
@@ -937,7 +937,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/Gusset Pack - Pivot (276-1110).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.05,
       "sku": {
@@ -957,7 +957,7 @@
         "repo": "vex-cad-download",
         "path": "Gussets/Gusset Pack - Plus (276-1110).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.05,
       "sku": {
@@ -1057,7 +1057,7 @@
         "repo": "vex-cad-download",
         "path": "Standoffs/4.00 Standoff (275-1021).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.1,
       "sku": {
@@ -1077,7 +1077,7 @@
         "repo": "vex-cad-download",
         "path": "Standoffs/5.00 Standoff (275-1022).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.1,
       "sku": {
@@ -1097,7 +1097,7 @@
         "repo": "vex-cad-download",
         "path": "Standoffs/6.00 Standoff (275-1023).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.1,
       "sku": {
@@ -1117,7 +1117,7 @@
         "repo": "vex-cad-download",
         "path": "Misc. Metal/Bevel Gearbox Bracket (275-1189).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -1137,7 +1137,7 @@
         "repo": "vex-cad-download",
         "path": "Misc. Metal/Rack Gearbox Bracket v2 (276-5771).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -1157,7 +1157,7 @@
         "repo": "vex-cad-download",
         "path": "Misc. Metal/Turntable Mounting Bracket (276-5652-007).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -1177,7 +1177,7 @@
         "repo": "vex-cad-download",
         "path": "Misc. Metal/Worm Gearbox Bracket (275-1187).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -1849,8 +1849,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -1873,8 +1873,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -1897,8 +1897,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -1921,8 +1921,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -1945,8 +1945,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -1969,8 +1969,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -1993,8 +1993,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -2017,8 +2017,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -2041,8 +2041,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -2065,8 +2065,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -2089,8 +2089,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 5,
-        "max": 7
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -2104,7 +2104,7 @@
         "repo": "vex-cad-download",
         "path": "Shafts (axles)/High Strength Shaft Adapter (1_8 Square Bore, 1_2 Long) (276-8235).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2184,7 +2184,7 @@
         "repo": "vex-cad-download",
         "path": "Shaft Collars/Low Profile High Strength Clamping Shaft Collar (276-7580).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2239,7 +2239,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/1_16 High Strength Shaft Spacer (276-3441-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2259,7 +2259,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/1_8 High Strength Shaft Spacer (276-3441-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2279,7 +2279,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/1_4 High Strength Shaft Spacer (276-3441-003).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2299,7 +2299,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/1_2 High Strength Shaft Spacer (276-3441-004).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2434,7 +2434,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/3_8 OD x #8 Click-On Spacer, 0.063 (276-8019-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2454,7 +2454,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/3_8 OD x #8 Click-On Spacer, 0.125 (276-8019-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2474,7 +2474,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/3_8 OD x #8 Click-On Spacer, 0.250 (276-8019-003).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2494,7 +2494,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/Metal Shaft Inserts (276-3881-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.05,
       "sku": {
@@ -2534,7 +2534,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/Rubber Shaft Collar (228-3510).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2554,7 +2554,7 @@
         "repo": "vex-cad-download",
         "path": "Spacers/Shaft Coupler (276-1843-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2674,7 +2674,7 @@
         "repo": "vex-cad-download",
         "path": "Bearings/Low Profile Bearing Flat (276-8023).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2694,7 +2694,7 @@
         "repo": "vex-cad-download",
         "path": "Bearings/Bearing Blocks (276-2016-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2729,7 +2729,7 @@
         "repo": "vex-cad-download",
         "path": "Bearings/High Strength Bearing Block Square Insert (276-7454-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1
     },
@@ -2744,7 +2744,7 @@
         "repo": "vex-cad-download",
         "path": "Bearings/High Strength Pillow Block Bearing (276-8383).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2819,7 +2819,7 @@
         "repo": "vex-cad-download",
         "path": "Ball (Flanged) Bearings/High Strength Ball Bearing Block Housing (276-7454-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1
     },
@@ -2834,7 +2834,7 @@
         "repo": "vex-cad-download",
         "path": "Ball (Flanged) Bearings/High Strength Shaft Ball Bearing Assembly (217-8402).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.1
     },
@@ -2889,7 +2889,7 @@
         "repo": "vex-cad-download",
         "path": "Retainers/1-Post Hex Nut Retainer (276-6482).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.1
     },
@@ -2904,7 +2904,7 @@
         "repo": "vex-cad-download",
         "path": "Retainers/4-Post Hex Nut Retainer (276-6483).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2944,7 +2944,7 @@
         "repo": "vex-cad-download",
         "path": "Retainers/1-Post Standoff Retainer (276-8020).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.1
     },
@@ -2959,7 +2959,7 @@
         "repo": "vex-cad-download",
         "path": "Retainers/4-Post Standoff Retainer (276-8022).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2979,7 +2979,7 @@
         "repo": "vex-cad-download",
         "path": "Screws and Nuts/Rubber Bumper (276-7499).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2999,7 +2999,7 @@
         "repo": "vex-cad-download",
         "path": "Unknown & Misc/Rubber Link (275-1029).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3039,7 +3039,7 @@
         "repo": "vex-cad-download",
         "path": "Unknown & Misc/Hinge (275-1272).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.1,
       "sku": {
@@ -3059,7 +3059,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/12T Gear (276-2169-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3079,7 +3079,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/36T Gear (276-2169-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3099,7 +3099,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/60T Gear (276-2169-003).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3174,7 +3174,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/48T High Strength Gear v2 (276-7573).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3194,7 +3194,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/60T High Strength Gear (276-5035).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2
     },
@@ -3209,7 +3209,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/60T High Strength Gear v2 (8-pack) (276-7748).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3229,7 +3229,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/72T High Strength Gear v2 (6-Pack) (276-7574).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3249,7 +3249,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/84T High Strength Gear (276-3438).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2
     },
@@ -3264,7 +3264,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/84T High Strength Gear v2 (4-pack) (276-7749).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3284,7 +3284,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/High Strength and Metal/12T High Strength Metal Pinion (276-2251).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3304,7 +3304,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/High Strength and Metal/12T Metal Gear (276-7368).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3324,7 +3324,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/High Strength and Metal/24T High Strength Gear v2 (276-7572).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3344,7 +3344,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Bevel/16t Bevel Gear (276-2045-051).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3364,7 +3364,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Bevel/24T Bevel Gear (276-2184-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3384,7 +3384,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Bevel/32t Bevel Gear (276-2045-052).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3424,7 +3424,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Rack Gear & Pinion (276-2184-003).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3444,7 +3444,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Rack Gear v2 (276-4782).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3464,7 +3464,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Worm Gear & Wheel (276-2184-004).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3484,7 +3484,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Drop Off Cam (276-2045-061).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3504,7 +3504,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Hand Crank (276-2045-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3524,7 +3524,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Intake Rollers (276-1499).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -3544,7 +3544,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Large Turntable Bearing (276-5652-000).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.05,
       "sku": {
@@ -3564,7 +3564,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/Small Turntable Bearing (276-5652-004).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.05,
       "sku": {
@@ -3617,8 +3617,8 @@
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
       "shankDiameterMm": {
-        "min": 2.5,
-        "max": 9
+        "min": 4.5,
+        "max": 5.2
       }
     },
     {
@@ -3632,7 +3632,7 @@
         "repo": "vex-cad-download",
         "path": "Joints/U-Joint (276-2045-020).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -3652,7 +3652,7 @@
         "repo": "vex-cad-download",
         "path": "Joints/Universal Joints (276-2723).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
@@ -3672,14 +3672,18 @@
         "repo": "vex-cad-download",
         "path": "Couplers/#8-32 x 0.500 Hex Drive Coupler (275-1000).step"
       },
-      "snap": "bores",
+      "snap": "ends",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
         "value": "275-1000",
         "source": "solidpython4vex-name",
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
-      }
+      },
+      "endDiameterMm": 4.2,
+      "notes": [
+        "Snap Points are hand corrections: a socket at each end of the body (4.2 mm). The hex or star drive is blind, so no bore reaches the outside in the STEP file."
+      ]
     },
     {
       "id": "coupler-8-32-hex-1",
@@ -3692,14 +3696,18 @@
         "repo": "vex-cad-download",
         "path": "Couplers/#8-32 x 1.000 Hex Drive Coupler (275-1001).step"
       },
-      "snap": "bores",
+      "snap": "ends",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
         "value": "275-1001",
         "source": "solidpython4vex-name",
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
-      }
+      },
+      "endDiameterMm": 4.2,
+      "notes": [
+        "Snap Points are hand corrections: a socket at each end of the body (4.2 mm). The hex or star drive is blind, so no bore reaches the outside in the STEP file."
+      ]
     },
     {
       "id": "coupler-8-32-star-1-2",
@@ -3712,14 +3720,18 @@
         "repo": "vex-cad-download",
         "path": "Couplers/#8-32 x 0.500 Star Drive Coupler (276-4989).step"
       },
-      "snap": "bores",
+      "snap": "ends",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
         "value": "276-4989",
         "source": "solidpython4vex-name",
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
-      }
+      },
+      "endDiameterMm": 4.2,
+      "notes": [
+        "Snap Points are hand corrections: a socket at each end of the body (4.2 mm). The hex or star drive is blind, so no bore reaches the outside in the STEP file."
+      ]
     },
     {
       "id": "coupler-8-32-star-1",
@@ -3732,14 +3744,18 @@
         "repo": "vex-cad-download",
         "path": "Couplers/#8-32 x 1.000 Star Drive Coupler (276-4988).step"
       },
-      "snap": "bores",
+      "snap": "ends",
       "budgetTriangles": 600,
       "maxErrorMm": 0.05,
       "sku": {
         "value": "276-4988",
         "source": "solidpython4vex-name",
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
-      }
+      },
+      "endDiameterMm": 4.2,
+      "notes": [
+        "Snap Points are hand corrections: a socket at each end of the body (4.2 mm). The hex or star drive is blind, so no bore reaches the outside in the STEP file."
+      ]
     },
     {
       "id": "sprocket-8t",
@@ -3752,7 +3768,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/8T Sprocket, 6P (276-8030).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3772,7 +3788,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/16T Sprocket, 6P (276-8328).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3792,7 +3808,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/24T Sprocket, 6P (276-8329).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3812,7 +3828,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/32T Sprocket, 6P (276-8330).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3832,7 +3848,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/40T Sprocket, 6P (276-8331).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3852,7 +3868,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/6T High Strength Sprocket (276-3876).stp"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3872,7 +3888,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/12T High Strength Sprocket (276-3877).stp"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3892,7 +3908,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/18T High Strength Sprocket (276-3878).stp"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3912,7 +3928,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/24T High Strength Sprocket (276-3879).stp"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3932,7 +3948,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/30T High Strength Sprocket (276-3880).stp"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3952,7 +3968,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/6T High Strength Sprocket (HS Bore) (276-3876).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 900,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3972,7 +3988,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/12T High Strength Sprocket (HS Bore) (276-3877).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -3992,7 +4008,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/18T High Strength Sprocket (HS Bore) (276-3878).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4012,7 +4028,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/24T High Strength Sprocket (HS Bore) (276-3879).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4032,7 +4048,7 @@
         "repo": "vex-cad-download",
         "path": "Sprockets/High Strength/30T High Strength Sprocket (HS Bore) (276-3880).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4052,7 +4068,7 @@
         "repo": "vex-cad-download",
         "path": "Chains/Conveyor-belt Base Links (276-2214-001).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4072,7 +4088,7 @@
         "repo": "vex-cad-download",
         "path": "Chains/Medium Conveyor-belt Inserts (276-2214-002).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4092,7 +4108,7 @@
         "repo": "vex-cad-download",
         "path": "Chains/Short Conveyor-belt Inserts (276-2214-003).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4112,7 +4128,7 @@
         "repo": "vex-cad-download",
         "path": "Chains/Tall Conveyor-belt Inserts (276-2214-004).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4132,7 +4148,7 @@
         "repo": "vex-cad-download",
         "path": "Chains/Tank Tread Traction Links (276-2214-005).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4152,7 +4168,7 @@
         "repo": "vex-cad-download",
         "path": "Chains/Tread Links (276-2168-004).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4315,9 +4331,9 @@
       "material": "nylon",
       "source": {
         "repo": "vex-cad-download",
-        "path": "Flex Wheel Inserts/1_2\u201d Hex Bore Plastic VersaHub (217-4009).step"
+        "path": "Flex Wheel Inserts/1_2” Hex Bore Plastic VersaHub (217-4009).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.05,
       "sku": {
@@ -4335,9 +4351,9 @@
       "material": "nylon",
       "source": {
         "repo": "vex-cad-download",
-        "path": "Flex Wheel Inserts/1_2\u201d Hex Bore Plastic VersaHub v2 (217-8079).step"
+        "path": "Flex Wheel Inserts/1_2” Hex Bore Plastic VersaHub v2 (217-8079).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.05,
       "sku": {
@@ -4357,7 +4373,7 @@
         "repo": "vex-cad-download",
         "path": "Flex Wheel Inserts/1_2 VersaHex Adapters (1_4 Square Bore, 1_4 Long) (6 Pack) (217-5950).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.05
     },
@@ -4372,7 +4388,7 @@
         "repo": "vex-cad-download",
         "path": "Flex Wheel Inserts/1_2 VersaHex Adapters (1_4 Square Bore, 1_8 Long) (6 Pack) (217-5949).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 400,
       "maxErrorMm": 0.05
     },
@@ -4448,7 +4464,7 @@
       "material": "nylon",
       "source": {
         "repo": "vex-cad-download",
-        "path": "Wheels/Omni/2\u201d Omni-Directional Wheel (276-9044).step"
+        "path": "Wheels/Omni/2” Omni-Directional Wheel (276-9044).step"
       },
       "snap": "axle",
       "budgetTriangles": 2200,
@@ -4469,7 +4485,7 @@
       "material": "nylon",
       "source": {
         "repo": "vex-cad-download",
-        "path": "Wheels/Mecanum/2\u201d Mecanum Wheels V2 (Left) (276-9041-801) .step"
+        "path": "Wheels/Mecanum/2” Mecanum Wheels V2 (Left) (276-9041-801) .step"
       },
       "snap": "axle",
       "budgetTriangles": 2200,
@@ -4490,7 +4506,7 @@
       "material": "nylon",
       "source": {
         "repo": "vex-cad-download",
-        "path": "Wheels/Mecanum/2\u201d Mecanum Wheels V2 (Right) (276-9041-802) .step"
+        "path": "Wheels/Mecanum/2” Mecanum Wheels V2 (Right) (276-9041-802) .step"
       },
       "snap": "axle",
       "budgetTriangles": 2200,
@@ -4763,7 +4779,7 @@
         "repo": "vex-cad-download",
         "path": "Motors/3-Wire Servo (276-2162).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.1,
       "sku": {
@@ -4783,7 +4799,7 @@
         "repo": "vex-cad-download",
         "path": "Sensors/V5 Robot Brain (276-4810).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 3000,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4823,7 +4839,7 @@
         "repo": "vex-cad-download",
         "path": "Plastic Containers/V5 Robot Brain Mounting Flange (Long) (276-4810-003).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.1,
       "sku": {
@@ -4903,7 +4919,7 @@
         "repo": "vex-cad-download",
         "path": "Sensors/V5 Controller (276-4820).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 2000,
       "maxErrorMm": 0.2,
       "sku": {
@@ -4983,7 +4999,7 @@
         "repo": "vex-cad-download",
         "path": "Sensors/V5 Inertial Sensor (276-4855).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.1,
       "sku": {
@@ -5223,7 +5239,7 @@
         "repo": "vex-cad-download",
         "path": "Sensors/V5 3-Wire Expander (276-5299).step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.1,
       "sku": {
@@ -5243,7 +5259,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/25mm Stroke Pneumatic Cylinder.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.1,
       "sku": {
@@ -5263,7 +5279,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/50mm Stroke Pneumatic Cylinder.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.1,
       "sku": null
@@ -5279,7 +5295,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/75mm Stroke Pneumatic Cylinder.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.1,
       "sku": {
@@ -5319,7 +5335,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/Straight Pneumatic Fitting.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.05,
       "sku": {
@@ -5399,7 +5415,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/Pneumatic Fitting Plug.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 300,
       "maxErrorMm": 0.05,
       "sku": {
@@ -5439,7 +5455,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/Pneumatic Hand Valve.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -5459,7 +5475,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/Pressure Regulator.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -5479,7 +5495,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/Air Pressure Regulator Mounting Bracket.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 600,
       "maxErrorMm": 0.1,
       "sku": {
@@ -5499,7 +5515,7 @@
         "repo": "vex-cad-download",
         "path": "Pneumatics/Pressure Gauge.step"
       },
-      "snap": "bores",
+      "snap": "through",
       "budgetTriangles": 800,
       "maxErrorMm": 0.1,
       "sku": {
@@ -6223,12 +6239,13 @@
         "path": "Field/Field Assembly - Field Wall.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 4000,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-foam-floor",
@@ -6242,12 +6259,13 @@
         "path": "Field/Field Assembly - Foam Floor.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 4000,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-tape-1",
@@ -6261,12 +6279,13 @@
         "path": "Field/Field Assembly - Tape 1.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-tape-2",
@@ -6280,12 +6299,13 @@
         "path": "Field/Field Assembly - Tape 2.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-center-goal-bottom",
@@ -6318,12 +6338,13 @@
         "path": "Field/Goal Parts/Field Assembly - Center Goal Top.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 2000,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-center-goal-leg",
@@ -6337,12 +6358,13 @@
         "path": "Field/Goal Parts/Field Assembly - Center Goal Support Leg.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1000,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-high-goal-center",
@@ -6356,12 +6378,13 @@
         "path": "Field/Goal Parts/Field Assembly - High Goal Center.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 2500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-high-goal-side",
@@ -6375,12 +6398,13 @@
         "path": "Field/Goal Parts/Field Assembly - High Goal Side.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 2500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-high-goal-beam",
@@ -6394,12 +6418,13 @@
         "path": "Field/Goal Parts/Field Assembly - High Goal Support Beam.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-high-goal-leg",
@@ -6413,12 +6438,13 @@
         "path": "Field/Goal Parts/Field Assembly - High Goal Support Leg.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-goal-tape",
@@ -6432,12 +6458,13 @@
         "path": "Field/Goal Parts/Tape/Field Assembly - Goal Tape Lines.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-loader-top",
@@ -6451,12 +6478,13 @@
         "path": "Field/Loader Parts/Field Assembly - Loader Top.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 2000,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-loader-tube",
@@ -6470,12 +6498,13 @@
         "path": "Field/Loader Parts/Field Assembly - Loader Tube.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-park-zone-blue",
@@ -6489,12 +6518,13 @@
         "path": "Field/Parking Zones/Field Assembly - Blue Parking Zone.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-park-zone-red",
@@ -6508,12 +6538,13 @@
         "path": "Field/Parking Zones/Field Assembly - Red Parking Zone.step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1500,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-block-blue",
@@ -6527,12 +6558,13 @@
         "path": "Field/Blocks/Blue/Field Assembly - Blue Block (1).step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1000,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     },
     {
       "id": "field-push-back-block-red",
@@ -6546,12 +6578,13 @@
         "path": "Field/Blocks/Red/Field Assembly - Red Block (1).step"
       },
       "sku": null,
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 1000,
       "maxErrorMm": 0.5,
       "notes": [
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
-      ]
+      ],
+      "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
     }
   ]
 }

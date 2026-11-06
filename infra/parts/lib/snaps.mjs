@@ -5,6 +5,8 @@
 
 import { add, scale } from "./linalg.mjs";
 import { stepToPartDirection, stepToPartPoint } from "./mesh.mjs";
+import { cylindersInMesh } from "./holes.mjs";
+import { findThroughHoles, hitsAt, rayIndex } from "./probe.mjs";
 
 // Chamfers shorten a bore's cylindrical faces, so an opening can sit up to this far
 // inside the bounding box.
@@ -97,6 +99,128 @@ export function probedSnaps(holes, bounds, axis) {
       axis: stepToPartDirection(normal),
       diameterMm: Math.min(h.widthMm, h.heightMm),
       openingMm: [h.widthMm, h.heightMm],
+    };
+  });
+}
+
+/**
+ * Snap Points for every through-opening: a straight channel that runs the whole length of
+ * the Part along one axis. Found by ray probes on all bodies together, so a hole that
+ * another body fills is not counted. Round openings take their diameter from the bore's
+ * cylinder; the rest take the probed width. A channel gets one point at each face, with
+ * the direction pointing out of that face, so a shaft or a screw can enter from either side.
+ */
+export function throughSnaps(meshes, bounds, { stepMm = 0.25, minMm = 1.5, maxMm = 26 } = {}) {
+  const combined = combineMeshes(meshes);
+  const cylinders = meshes
+    .flatMap((m) => m.brep_faces.flatMap((f) => cylindersInMesh({ ...m, brep_faces: [f] })))
+    .filter((c) => c.concave && 2 * c.radius >= minMm && 2 * c.radius <= maxMm);
+  const points = [];
+  for (let axis = 0; axis < 3; axis++) {
+    const b = (axis + 1) % 3, c = (axis + 2) % 3;
+    const index = rayIndex(combined, axis);
+    // The coarse grid finds each opening; the edges are then measured on a fine scan, so a
+    // 3.175 mm shaft is not read as a 3.0 mm bore.
+    const holes = findThroughHoles(index, stepMm)
+      .map((h) => refineOpening(index, h, stepMm))
+      .filter((h) => h && Math.min(h.widthMm, h.heightMm) >= minMm && Math.max(h.widthMm, h.heightMm) <= maxMm);
+    for (const h of holes) {
+      const round_ = cylinders.find(
+        (cyl) =>
+          Math.abs(Math.abs(cyl.axis[axis]) - 1) < 0.01 &&
+          Math.hypot(cyl.center[b] - h.u, cyl.center[c] - h.v) <= 0.6
+      );
+      const square = Math.abs(h.widthMm - h.heightMm) <= 0.3;
+      const diameterMm = round_ ? round(2 * round_.radius) : round(Math.min(h.widthMm, h.heightMm));
+      for (const sign of [-1, 1]) {
+        const at = [0, 0, 0];
+        at[b] = h.u;
+        at[c] = h.v;
+        at[axis] = sign < 0 ? bounds.min[axis] : bounds.max[axis];
+        const dir = [0, 0, 0];
+        dir[axis] = sign;
+        points.push({
+          kind: "hole",
+          source: round_ ? "detected" : "probed",
+          ...(round_ ? {} : { shape: square ? "square" : "rect" }),
+          position: stepToPartPoint(at, bounds),
+          axis: stepToPartDirection(dir),
+          diameterMm,
+          depthMm: round(bounds.max[axis] - bounds.min[axis]),
+          openingMm: [h.widthMm, h.heightMm],
+        });
+      }
+    }
+  }
+  return points;
+}
+
+const EDGE_STEP_MM = 0.02;
+
+/**
+ * Measures one coarse opening's edges along its two in-plane lines through the centre.
+ * Returns { u, v, widthMm, heightMm } in probe coordinates, or null when the centre is solid.
+ */
+function refineOpening(index, coarse, stepMm) {
+  const { u: u0, v: v0 } = coarse;
+  if (hitsAt(index, u0, v0).length) return null;
+  const reach = Math.max(coarse.sizeU, coarse.sizeV) + 2 * stepMm;
+  const edge = (du, dv) => {
+    for (let t = EDGE_STEP_MM; t <= reach; t += EDGE_STEP_MM)
+      if (hitsAt(index, u0 + du * t, v0 + dv * t).length) return t - EDGE_STEP_MM / 2;
+    return null;
+  };
+  const uPlus = edge(1, 0), uMinus = edge(-1, 0), vPlus = edge(0, 1), vMinus = edge(0, -1);
+  if ([uPlus, uMinus, vPlus, vMinus].includes(null)) return null;
+  return {
+    u: round(u0 + (uPlus - uMinus) / 2),
+    v: round(v0 + (vPlus - vMinus) / 2),
+    widthMm: round(uPlus + uMinus),
+    heightMm: round(vPlus + vMinus),
+  };
+}
+
+/** One indexed mesh holding every body, so probes see the union of all of them. */
+function combineMeshes(meshes) {
+  const positions = [];
+  const indices = [];
+  let offset = 0;
+  for (const m of meshes) {
+    const p = m.attributes.position.array;
+    for (let i = 0; i < p.length; i++) positions.push(p[i]);
+    for (const i of m.index.array) indices.push(i + offset);
+    offset += p.length / 3;
+  }
+  return {
+    attributes: { position: { array: Float64Array.from(positions) } },
+    index: { array: Uint32Array.from(indices) },
+    brep_faces: [],
+  };
+}
+
+const round = (x) => Math.round(x * 1000) / 1000;
+
+/**
+ * Two hand-placed sockets at the ends of a Part's longest axis, centred on its section.
+ * For a Part whose drive socket is blind, so no bore reaches the outside: the coupler's
+ * hex and star drives. The diameter is the manifest's, and the Part's notes say why.
+ */
+export function endSnaps(bounds, diameterMm) {
+  const sizes = [0, 1, 2].map((k) => bounds.max[k] - bounds.min[k]);
+  const axis = sizes.indexOf(Math.max(...sizes));
+  const at0 = [0, 1, 2].map((k) => (bounds.min[k] + bounds.max[k]) / 2);
+  return [-1, 1].map((sign) => {
+    const at = at0.slice();
+    at[axis] = sign < 0 ? bounds.min[axis] : bounds.max[axis];
+    const dir = [0, 0, 0];
+    dir[axis] = sign;
+    return {
+      kind: "hole",
+      source: "manual",
+      position: stepToPartPoint(at, bounds),
+      axis: stepToPartDirection(dir),
+      diameterMm,
+      depthMm: round(sizes[axis]),
     };
   });
 }
