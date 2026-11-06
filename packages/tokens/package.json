@@ -7,6 +7,7 @@
     "./code/web.css": "./src/code/web.css",
     "./film/web.css": "./src/film/web.css",
     "./design/web.css": "./src/design/web.css",
-    "./marketing/web.css": "./src/marketing/web.css"
+    "./marketing/web.css": "./src/marketing/web.css",
+    "./bin/web.css": "./src/bin/web.css"
   }
 }

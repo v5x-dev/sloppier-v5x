@@ -4,15 +4,17 @@ Tokens are organized by product; do not assume Design or Film uses Code's
 palette. Each product's web CSS defines its semantic colors. Consumers import
 the product export they need; shared UI does not select a product's palette.
 
+Bin's web colors come from shadcn preset `b1YnRHDyy` (zinc with a blue primary).
 Film's web colors come from shadcn preset `b3QxLIEcq` (olive and lime), and
 Design's come from `b43fOIaBs` (mauve and pink). The marketing site's come from
 `b5xuVmA0e` (neutral with a violet primary). Import
-`@v5x/tokens/film/web.css`, `@v5x/tokens/design/web.css`, or
-`@v5x/tokens/marketing/web.css` for the relevant product or site. Each file holds the preset's light and dark color tokens, plus the
+`@v5x/tokens/bin/web.css`, `@v5x/tokens/film/web.css`,
+`@v5x/tokens/design/web.css`, or `@v5x/tokens/marketing/web.css` for the relevant
+product or site. Each file holds the preset's light and dark color tokens, plus the
 suite tokens that shared UI reads and the presets omit: `--radius`,
-`--success`, `--field-border`, and the elevation tokens (`--highlight`,
+`--success`, and the elevation tokens (`--highlight`,
 `--shadow-color`, `--shadow-raised`, `--shadow-overlay`). They do not select
-fonts or component styles.
+fonts or component styles. Inputs take their outline from the preset's `--input`.
 
 Preset values that miss the suite visual rules stay as the preset defines them until a product owner changes them. Light-theme pairs that
 currently miss the rules: `--ring` on `--background` (Film 2.32:1, Design

@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bin-v5x",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-10-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+  "routes": [
+    {
+      "pattern": "bin.v5x.dev",
+      "custom_domain": true,
+    },
+  ],
+}

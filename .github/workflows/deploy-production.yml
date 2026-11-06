@@ -47,6 +47,15 @@ jobs:
           : "${VITE_WORKOS_REDIRECT_URI:?Missing VITE_WORKOS_REDIRECT_URI}"
           bun run build
         working-directory: apps/code/web
+      - name: Build bin web
+        env:
+          VITE_WORKOS_REDIRECT_URI: ${{ vars.BIN_WORKOS_REDIRECT_URI }}
+        run: |
+          : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
+          : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"
+          : "${VITE_WORKOS_REDIRECT_URI:?Missing BIN_WORKOS_REDIRECT_URI}"
+          bun run build
+        working-directory: apps/bin/web
 
   e2e-workos:
     # Fork pull requests cannot receive the dedicated test deployment secret.
@@ -196,6 +205,16 @@ jobs:
           : "${VITE_WORKOS_REDIRECT_URI:?Missing VITE_WORKOS_REDIRECT_URI}"
           bun run build
         working-directory: apps/code/web
+      - name: Build bin web
+        if: github.event_name != 'pull_request'
+        env:
+          VITE_WORKOS_REDIRECT_URI: ${{ vars.BIN_WORKOS_REDIRECT_URI }}
+        run: |
+          : "${VITE_CONVEX_URL:?Missing VITE_CONVEX_URL}"
+          : "${VITE_WORKOS_CLIENT_ID:?Missing VITE_WORKOS_CLIENT_ID}"
+          : "${VITE_WORKOS_REDIRECT_URI:?Missing BIN_WORKOS_REDIRECT_URI}"
+          bun run build
+        working-directory: apps/bin/web
       - name: Deploy Convex backend
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         working-directory: packages/backend
@@ -212,6 +231,9 @@ jobs:
           bun run deploy --typecheck enable \
             --cmd-url-env-var-name CONVEX_TARGET_URL \
             --cmd 'if [ "$CONVEX_TARGET_URL" != "$VITE_CONVEX_URL" ]; then echo "Convex deploy key does not match VITE_CONVEX_URL" >&2; exit 1; fi'
+          # Seed the bin parts catalog from the VEX legal-parts CSV. The seed matches
+          # rows by SKU, so running it on every deploy only changes what the CSV changed.
+          bunx convex run binCatalog:seed
       - name: Deploy Cloudflare Worker
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
@@ -221,5 +243,17 @@ jobs:
             --var "VITE_WORKOS_REDIRECT_URI:${VITE_WORKOS_REDIRECT_URI}"
         working-directory: apps/code/web
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy bin Worker
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          bunx wrangler deploy --keep-vars \
+            --var "VITE_CONVEX_URL:${VITE_CONVEX_URL}" \
+            --var "VITE_WORKOS_CLIENT_ID:${VITE_WORKOS_CLIENT_ID}" \
+            --var "VITE_WORKOS_REDIRECT_URI:${BIN_WORKOS_REDIRECT_URI}"
+        working-directory: apps/bin/web
+        env:
+          BIN_WORKOS_REDIRECT_URI: ${{ vars.BIN_WORKOS_REDIRECT_URI }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

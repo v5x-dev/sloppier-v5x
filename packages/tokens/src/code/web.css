@@ -18,8 +18,6 @@
   --border: oklch(0.9 0.006 80);
   --input: oklch(0.87 0.008 80);
   --ring: oklch(0.6 0.15 75);
-  /* Input outlines must reach 3:1 against the page (WCAG 1.4.11). */
-  --field-border: oklch(0.6 0.008 60);
   --chart-1: oklch(0.905 0.182 98.111);
   --chart-2: oklch(0.795 0.184 86.047);
   --chart-3: oklch(0.681 0.162 75.834);
@@ -73,7 +71,6 @@
   --border: oklch(0.29 0.007 60);
   --input: oklch(0.33 0.008 60);
   --ring: oklch(0.8 0.16 80);
-  --field-border: oklch(0.5 0.008 60);
   --chart-1: oklch(0.905 0.182 98.111);
   --chart-2: oklch(0.795 0.184 86.047);
   --chart-3: oklch(0.681 0.162 75.834);

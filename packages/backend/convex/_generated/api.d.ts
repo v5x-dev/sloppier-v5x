@@ -9,6 +9,9 @@
  */
 
 import type * as backups from "../backups.js";
+import type * as bin from "../bin.js";
+import type * as binCatalog from "../binCatalog.js";
+import type * as binCatalogData from "../binCatalogData.js";
 import type * as buildConnection from "../buildConnection.js";
 import type * as buildWorker from "../buildWorker.js";
 import type * as builds from "../builds.js";
@@ -18,13 +21,16 @@ import type * as crdt from "../crdt.js";
 import type * as diagnostics from "../diagnostics.js";
 import type * as files from "../files.js";
 import type * as lib_auth from "../lib/auth.js";
+import type * as lib_binSort from "../lib/binSort.js";
 import type * as lib_buildDependencies from "../lib/buildDependencies.js";
+import type * as lib_codeStorage_deletion from "../lib/codeStorage/deletion.js";
 import type * as lib_codeStorage_history from "../lib/codeStorage/history.js";
 import type * as lib_codeStorage_live from "../lib/codeStorage/live.js";
 import type * as lib_codeStorage_provision from "../lib/codeStorage/provision.js";
 import type * as lib_codeStorage_repository from "../lib/codeStorage/repository.js";
 import type * as lib_codeStorage_search from "../lib/codeStorage/search.js";
 import type * as lib_codeStorage_source from "../lib/codeStorage/source.js";
+import type * as lib_concurrency from "../lib/concurrency.js";
 import type * as lib_crdtBackup from "../lib/crdtBackup.js";
 import type * as lib_folderImport from "../lib/folderImport.js";
 import type * as lib_history from "../lib/history.js";
@@ -47,6 +53,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   backups: typeof backups;
+  bin: typeof bin;
+  binCatalog: typeof binCatalog;
+  binCatalogData: typeof binCatalogData;
   buildConnection: typeof buildConnection;
   buildWorker: typeof buildWorker;
   builds: typeof builds;
@@ -56,13 +65,16 @@ declare const fullApi: ApiFromModules<{
   diagnostics: typeof diagnostics;
   files: typeof files;
   "lib/auth": typeof lib_auth;
+  "lib/binSort": typeof lib_binSort;
   "lib/buildDependencies": typeof lib_buildDependencies;
+  "lib/codeStorage/deletion": typeof lib_codeStorage_deletion;
   "lib/codeStorage/history": typeof lib_codeStorage_history;
   "lib/codeStorage/live": typeof lib_codeStorage_live;
   "lib/codeStorage/provision": typeof lib_codeStorage_provision;
   "lib/codeStorage/repository": typeof lib_codeStorage_repository;
   "lib/codeStorage/search": typeof lib_codeStorage_search;
   "lib/codeStorage/source": typeof lib_codeStorage_source;
+  "lib/concurrency": typeof lib_concurrency;
   "lib/crdtBackup": typeof lib_crdtBackup;
   "lib/folderImport": typeof lib_folderImport;
   "lib/history": typeof lib_history;
