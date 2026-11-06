@@ -32,7 +32,9 @@ export class SlotTable {
   }
 
   /** Removes an id. Returns the freed slot and, if another id moved into it, that id. */
-  remove(id: string): { slot: number; moved?: { id: string; slot: number } } | undefined {
+  remove(
+    id: string
+  ): { slot: number; moved?: { id: string; slot: number } } | undefined {
     const slot = this.slots.get(id)
     if (slot === undefined) return undefined
     const last = this.ids.length - 1

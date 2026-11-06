@@ -5,7 +5,13 @@
 
 import { Quaternion, Vector3 } from "three"
 import type { SnapPoint, Vec3 } from "@/catalog/types"
-import { findSnap, findSnapAlongRay, type Pose, type SnapIndex, type SnapMatch } from "./snap"
+import {
+  findSnap,
+  findSnapAlongRay,
+  type Pose,
+  type SnapIndex,
+  type SnapMatch,
+} from "./snap"
 import { HOLE_PITCH_MM } from "./cut-length"
 import type { Quat } from "./model"
 
@@ -22,7 +28,10 @@ export type PlacementTurn = {
 export const START_TURN: PlacementTurn = { quarterTurns: 0, roll: 0 }
 
 export function turnQuaternion(quarterTurns: number): Quat {
-  const q = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), (quarterTurns * Math.PI) / 2)
+  const q = new Quaternion().setFromAxisAngle(
+    new Vector3(0, 1, 0),
+    (quarterTurns * Math.PI) / 2
+  )
   return [q.x, q.y, q.z, q.w]
 }
 
@@ -52,8 +61,25 @@ export function placementPose(
     position: [snapToGrid(ground.x), -shape.minY, snapToGrid(ground.z)] as Vec3,
     rotation: turnQuaternion(turn.quarterTurns),
   }
-  const underPointer = ray ? findSnapAlongRay(shape.snapPoints, ray, index, SNAP_RADIUS_MM, free, turn.roll) : null
+  const underPointer = ray
+    ? findSnapAlongRay(
+        shape.snapPoints,
+        ray,
+        index,
+        SNAP_RADIUS_MM,
+        free,
+        turn.roll
+      )
+    : null
   if (underPointer) return { pose: underPointer.pose, snap: underPointer }
-  const nearGround = findSnap(shape.snapPoints, free, index, SNAP_RADIUS_MM, turn.roll)
-  return nearGround ? { pose: nearGround.pose, snap: nearGround } : { pose: free, snap: null }
+  const nearGround = findSnap(
+    shape.snapPoints,
+    free,
+    index,
+    SNAP_RADIUS_MM,
+    turn.roll
+  )
+  return nearGround
+    ? { pose: nearGround.pose, snap: nearGround }
+    : { pose: free, snap: null }
 }

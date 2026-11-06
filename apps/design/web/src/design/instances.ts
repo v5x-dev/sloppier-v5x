@@ -4,5 +4,7 @@
 import type { PartRef } from "./model"
 
 export function groupKey(ref: PartRef): string {
-  return ref.lengthMm === undefined ? ref.catalogId : `${ref.catalogId}@${ref.lengthMm}`
+  return ref.lengthMm === undefined
+    ? ref.catalogId
+    : `${ref.catalogId}@${ref.lengthMm}`
 }

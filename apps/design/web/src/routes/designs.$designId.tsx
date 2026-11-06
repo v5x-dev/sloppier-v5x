@@ -24,7 +24,11 @@ import { Spinner } from "@v5x/ui/components/spinner"
 import { useQuery } from "convex/react"
 import { lazy, Suspense, useEffect, useMemo, useReducer, useState } from "react"
 import type * as Y from "yjs"
-import { PartsPanel, defaultDraft, type LengthDraft } from "@/panels/parts-panel"
+import {
+  PartsPanel,
+  defaultDraft,
+  type LengthDraft,
+} from "@/panels/parts-panel"
 import { partById } from "@/catalog/catalog"
 import type { CatalogPart } from "@/catalog/types"
 import { catalogPartName } from "@/design/catalog-view"
@@ -34,7 +38,11 @@ import type { PartRef, PlacedPart } from "@/design/model"
 import { readModelsBase } from "@/design/models-base"
 import { useDesignSync, type DesignSyncState } from "@/lib/use-design-sync"
 import { webglAvailable } from "@/viewport/webgl"
-import { INITIAL_STATUS, type Projection, type ViewportStatus } from "@/viewport/status"
+import {
+  INITIAL_STATUS,
+  type Projection,
+  type ViewportStatus,
+} from "@/viewport/status"
 
 // The 3D code is loaded only when a Design opens, so the rest of the app stays small.
 const DesignViewport = lazy(() => import("@/viewport/DesignViewport"))
@@ -70,10 +78,19 @@ function DesignPage() {
   return <DesignEditor designId={designId as Id<"designs">} userId={user.id} />
 }
 
-function DesignEditor({ designId, userId }: { designId: Id<"designs">; userId: string }) {
+function DesignEditor({
+  designId,
+  userId,
+}: {
+  designId: Id<"designs">
+  userId: string
+}) {
   const design = useQuery(api.designs.get, { designId })
   const { doc, state } = useDesignSync(designId, userId)
-  const modelsBase = useMemo(() => readModelsBase(import.meta.env.VITE_DESIGN_MODELS_URL), [])
+  const modelsBase = useMemo(
+    () => readModelsBase(import.meta.env.VITE_DESIGN_MODELS_URL),
+    []
+  )
 
   const [webgl, setWebgl] = useState<"checking" | "yes" | "no">("checking")
   useEffect(() => setWebgl(webglAvailable() ? "yes" : "no"), [])
@@ -92,7 +109,9 @@ function DesignEditor({ designId, userId }: { designId: Id<"designs">; userId: s
     if (part.kind !== "cut") return { catalogId: pickedId }
     if (!draft) return undefined
     const length = lengthFromInput(part, Number(draft.text))
-    return length.ok ? { catalogId: pickedId, lengthMm: length.lengthMm } : undefined
+    return length.ok
+      ? { catalogId: pickedId, lengthMm: length.lengthMm }
+      : undefined
   }, [pickedId, draft])
 
   const selected = useDocEntry(doc, selectedId)
@@ -121,10 +140,18 @@ function DesignEditor({ designId, userId }: { designId: Id<"designs">; userId: s
   return (
     <div className="flex h-svh flex-col">
       <header className="flex items-center gap-2 border-b border-border px-2 py-2">
-        <Button variant="ghost" size="icon" aria-label="Back to Designs" render={<Link to="/" />} nativeButton={false}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Back to Designs"
+          render={<Link to="/" />}
+          nativeButton={false}
+        >
           <ArrowLeftIcon />
         </Button>
-        <h1 className="min-w-0 flex-1 truncate font-serif text-lg">{design?.name}</h1>
+        <h1 className="min-w-0 flex-1 truncate font-serif text-lg">
+          {design?.name}
+        </h1>
         <SaveStatus state={state} />
       </header>
 
@@ -154,7 +181,11 @@ function DesignEditor({ designId, userId }: { designId: Id<"designs">; userId: s
                 onSelect={setSelectedId}
                 onCancelTool={() => pick(undefined)}
                 onDelete={onDelete}
-                onToggleProjection={() => setProjection((p) => (p === "perspective" ? "orthographic" : "perspective"))}
+                onToggleProjection={() =>
+                  setProjection((p) =>
+                    p === "perspective" ? "orthographic" : "perspective"
+                  )
+                }
                 onStatus={setStatus}
               />
             </Suspense>
@@ -195,7 +226,10 @@ function DesignEditor({ designId, userId }: { designId: Id<"designs">; userId: s
 }
 
 /** One Part from the document, re-read whenever the document changes. */
-function useDocEntry(doc: Y.Doc | undefined, id: string | undefined): PlacedPart | undefined {
+function useDocEntry(
+  doc: Y.Doc | undefined,
+  id: string | undefined
+): PlacedPart | undefined {
   const [, rerender] = useReducer((n: number) => n + 1, 0)
   useEffect(() => {
     if (!doc) return
@@ -207,17 +241,53 @@ function useDocEntry(doc: Y.Doc | undefined, id: string | undefined): PlacedPart
   return readPart(id, partsMap(doc).get(id))
 }
 
-function ViewNotices({ modelsBase, status }: { modelsBase: ReturnType<typeof readModelsBase>; status: ViewportStatus }) {
-  const notes: { key: string; tone: "muted" | "error"; text: string; spin?: boolean }[] = []
-  if (!modelsBase.ok) notes.push({ key: "base", tone: "error", text: modelsBase.message })
+function ViewNotices({
+  modelsBase,
+  status,
+}: {
+  modelsBase: ReturnType<typeof readModelsBase>
+  status: ViewportStatus
+}) {
+  const notes: {
+    key: string
+    tone: "muted" | "error"
+    text: string
+    spin?: boolean
+  }[] = []
+  if (!modelsBase.ok)
+    notes.push({ key: "base", tone: "error", text: modelsBase.message })
   if (status.modelsLoading > 0)
-    notes.push({ key: "loading", tone: "muted", text: `Loading ${status.modelsLoading} model${status.modelsLoading === 1 ? "" : "s"}…`, spin: true })
+    notes.push({
+      key: "loading",
+      tone: "muted",
+      text: `Loading ${status.modelsLoading} model${status.modelsLoading === 1 ? "" : "s"}…`,
+      spin: true,
+    })
   if (status.modelsFailed.length > 0) {
-    const names = status.modelsFailed.map((id) => catalogPartName(id)).join(", ")
-    notes.push({ key: "failed", tone: "error", text: `${status.modelsFailed.length} model${status.modelsFailed.length === 1 ? "" : "s"} did not load and show as boxes: ${names}.` })
+    const names = status.modelsFailed
+      .map((id) => catalogPartName(id))
+      .join(", ")
+    notes.push({
+      key: "failed",
+      tone: "error",
+      text:
+        status.modelsFailed.length === 1
+          ? `1 model did not load and shows as a box: ${names}.`
+          : `${status.modelsFailed.length} models did not load and show as boxes: ${names}.`,
+    })
   }
-  if (status.invalid > 0) notes.push({ key: "invalid", tone: "error", text: `${status.invalid} saved part${status.invalid === 1 ? "" : "s"} could not be read and ${status.invalid === 1 ? "is" : "are"} hidden. A newer version of this app may have saved ${status.invalid === 1 ? "it" : "them"}.` })
-  if (status.contextLost) notes.push({ key: "lost", tone: "error", text: "The 3D view stopped drawing. Reload this page to draw it again. Edits already made are kept." })
+  if (status.invalid > 0)
+    notes.push({
+      key: "invalid",
+      tone: "error",
+      text: `${status.invalid} saved part${status.invalid === 1 ? "" : "s"} could not be read and ${status.invalid === 1 ? "is" : "are"} hidden. A newer version of this app may have saved ${status.invalid === 1 ? "it" : "them"}.`,
+    })
+  if (status.contextLost)
+    notes.push({
+      key: "lost",
+      tone: "error",
+      text: "The 3D view stopped drawing. Reload this page to draw it again. Edits already made are kept.",
+    })
   if (notes.length === 0) return null
   return (
     <div className="pointer-events-none absolute top-3 left-3 flex max-w-md flex-col gap-2">
@@ -227,7 +297,9 @@ function ViewNotices({ modelsBase, status }: { modelsBase: ReturnType<typeof rea
           role={note.tone === "error" ? "alert" : "status"}
           className={
             "flex items-center gap-2 rounded-md border border-border bg-background/90 px-3 py-2 text-sm backdrop-blur-sm " +
-            (note.tone === "error" ? "text-destructive" : "text-muted-foreground")
+            (note.tone === "error"
+              ? "text-destructive"
+              : "text-muted-foreground")
           }
         >
           {note.spin && <Spinner className="size-3.5" />}
@@ -257,17 +329,25 @@ function Footer({
         {placing && tool ? (
           <p className="truncate">
             Placing {tool.name}
-            {status.snap && <span className="text-muted-foreground"> · snapped, R turns it about the shared axis</span>}
+            {status.snap && (
+              <span className="text-muted-foreground">
+                . Snapped: R turns it about the shared axis.
+              </span>
+            )}
           </p>
         ) : selected ? (
           <p className="flex items-center gap-3 truncate">
-            <span className="truncate">{catalogPartName(selected.catalogId)}</span>
+            <span className="truncate">
+              {catalogPartName(selected.catalogId)}
+            </span>
             <Button variant="ghost" size="sm" onClick={onDelete}>
               Delete
             </Button>
           </p>
         ) : (
-          <p className="text-muted-foreground">Pick a Part from the list to place it.</p>
+          <p className="text-muted-foreground">
+            Pick a Part from the list to place it.
+          </p>
         )}
       </div>
 
@@ -287,7 +367,9 @@ function Footer({
         )}
         <Hint keys={["F"]} label="frame" />
         <Hint keys={["O"]} label="view" />
-        <span className="tabular-nums">{status.parts} {status.parts === 1 ? "part" : "parts"}</span>
+        <span className="tabular-nums">
+          {status.parts} {status.parts === 1 ? "part" : "parts"}
+        </span>
       </div>
     </footer>
   )
@@ -322,8 +404,8 @@ function WebglUnavailable() {
         </EmptyMedia>
         <EmptyTitle>This browser cannot draw the 3D view</EmptyTitle>
         <EmptyDescription>
-          WebGL is off or unavailable here. Turn on hardware acceleration in the browser settings, or open this Design in
-          another browser.
+          WebGL is off or unavailable here. Turn on hardware acceleration in the
+          browser settings, or open this Design in another browser.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -339,7 +421,10 @@ function SaveStatus({ state }: { state: DesignSyncState }) {
     error: state.kind === "error" ? `Not saved: ${state.message}` : "",
   }[state.kind]
   return (
-    <p role="status" className="flex shrink-0 items-center gap-1.5 px-2 text-sm text-muted-foreground">
+    <p
+      role="status"
+      className="flex shrink-0 items-center gap-1.5 px-2 text-sm text-muted-foreground"
+    >
       {state.kind === "saved" && <CheckIcon />}
       {state.kind === "offline" && <CloudSlashIcon />}
       {state.kind === "error" && <WarningCircleIcon />}

@@ -33,7 +33,10 @@ export function readPlacedParts(doc: Y.Doc): ReadResult {
   return { parts, invalid }
 }
 
-export function readPart(id: string, entry: Y.Map<unknown> | undefined): PlacedPart | undefined {
+export function readPart(
+  id: string,
+  entry: Y.Map<unknown> | undefined
+): PlacedPart | undefined {
   if (!entry) return undefined
   const catalogId = entry.get("catalog")
   const position = entry.get("position")
@@ -43,7 +46,10 @@ export function readPart(id: string, entry: Y.Map<unknown> | undefined): PlacedP
   if (typeof catalogId !== "string" || catalogId === "") return undefined
   if (!isVec3(position) || !isQuat(rotation)) return undefined
   if (typeof color !== "string") return undefined
-  if (lengthMm !== undefined && !(typeof lengthMm === "number" && lengthMm > 0 && Number.isFinite(lengthMm)))
+  if (
+    lengthMm !== undefined &&
+    !(typeof lengthMm === "number" && lengthMm > 0 && Number.isFinite(lengthMm))
+  )
     return undefined
   const part: PlacedPart = { id, catalogId, position, rotation, color }
   if (lengthMm !== undefined) part.lengthMm = lengthMm
@@ -57,7 +63,11 @@ export type NewPart = PartRef & {
 }
 
 /** Adds a Part and returns its id. The id is random, so two people placing at once never collide. */
-export function placePart(doc: Y.Doc, part: NewPart, id: string = crypto.randomUUID()): string {
+export function placePart(
+  doc: Y.Doc,
+  part: NewPart,
+  id: string = crypto.randomUUID()
+): string {
   doc.transact(() => {
     const fields: [string, unknown][] = [
       ["catalog", part.catalogId],
@@ -79,7 +89,12 @@ export function removePart(doc: Y.Doc, id: string): void {
 }
 
 /** Moves a Part. Each field is written on its own; a missing Part is left alone. */
-export function setPose(doc: Y.Doc, id: string, position: Vec3, rotation: Quat): void {
+export function setPose(
+  doc: Y.Doc,
+  id: string,
+  position: Vec3,
+  rotation: Quat
+): void {
   const entry = partsMap(doc).get(id)
   if (!entry) return
   doc.transact(() => {
@@ -89,11 +104,15 @@ export function setPose(doc: Y.Doc, id: string, position: Vec3, rotation: Quat):
 }
 
 export function isVec3(value: unknown): value is Vec3 {
-  return Array.isArray(value) && value.length === 3 && value.every(isFiniteNumber)
+  return (
+    Array.isArray(value) && value.length === 3 && value.every(isFiniteNumber)
+  )
 }
 
 export function isQuat(value: unknown): value is Quat {
-  return Array.isArray(value) && value.length === 4 && value.every(isFiniteNumber)
+  return (
+    Array.isArray(value) && value.length === 4 && value.every(isFiniteNumber)
+  )
 }
 
 function isFiniteNumber(value: unknown): value is number {

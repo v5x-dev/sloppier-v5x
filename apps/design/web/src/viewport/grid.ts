@@ -8,7 +8,10 @@ import type { SceneColors } from "./colors"
 export const MINOR_MM = 12.7
 export const MAJOR_MM = 127
 
-export function createGrid(colors: SceneColors): { mesh: Mesh; setCamera: (at: Vector3) => void } {
+export function createGrid(colors: SceneColors): {
+  mesh: Mesh
+  setCamera: (at: Vector3) => void
+} {
   const material = new ShaderMaterial({
     transparent: true,
     depthWrite: false,

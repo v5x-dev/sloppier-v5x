@@ -9,6 +9,7 @@ export type SceneColors = {
   grid: Color
   gridMajor: Color
   accent: Color
+  snap: Color
   highlight: Color
   foreground: Color
 }
@@ -18,6 +19,7 @@ const FALLBACK: Record<keyof SceneColors, string> = {
   grid: "#3a3440",
   gridMajor: "#56505e",
   accent: "#c94b8e",
+  snap: "#f0569b",
   highlight: "#f2eef5",
   foreground: "#f2eef5",
 }
@@ -26,14 +28,19 @@ const TOKENS: Record<keyof SceneColors, string> = {
   background: "--background",
   grid: "--border",
   gridMajor: "--field-border",
-  accent: "--primary",
+  accent: "--sidebar-primary",
+  snap: "--sidebar-primary",
   highlight: "--foreground",
   foreground: "--foreground",
 }
 
-export function readSceneColors(root: HTMLElement = document.documentElement): SceneColors {
+export function readSceneColors(
+  root: HTMLElement = document.documentElement
+): SceneColors {
   const style = getComputedStyle(root)
-  const context = document.createElement("canvas").getContext("2d", { willReadFrequently: true })
+  const context = document
+    .createElement("canvas")
+    .getContext("2d", { willReadFrequently: true })
   const out = {} as SceneColors
   for (const key of Object.keys(TOKENS) as (keyof SceneColors)[]) {
     const token = style.getPropertyValue(TOKENS[key]).trim()
@@ -42,13 +49,17 @@ export function readSceneColors(root: HTMLElement = document.documentElement): S
   return out
 }
 
-function toHex(context: CanvasRenderingContext2D | null, cssColor: string): string | undefined {
+function toHex(
+  context: CanvasRenderingContext2D | null,
+  cssColor: string
+): string | undefined {
   if (!context || !cssColor) return undefined
   context.clearRect(0, 0, 1, 1)
   context.fillStyle = "#000000"
   context.fillStyle = cssColor
   // Chrome keeps a color it cannot parse as the previous value, so unchanged means invalid.
-  if (context.fillStyle === "#000000" && cssColor !== "#000000") return undefined
+  if (context.fillStyle === "#000000" && cssColor !== "#000000")
+    return undefined
   context.fillRect(0, 0, 1, 1)
   const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data
   if (a === 0) return undefined

@@ -24,7 +24,10 @@ export function mmToHoles(mm: number): number {
 }
 
 /** The stock length in the unit the team picks it in. */
-export function stockLength(part: CutPart): { value: number; unit: "holes" | "mm" } {
+export function stockLength(part: CutPart): {
+  value: number
+  unit: "holes" | "mm"
+} {
   const mm = stockLengthMm(part)
   return lengthUnit(part) === "holes"
     ? { value: Math.round(mm / HOLE_PITCH_MM), unit: "holes" }
@@ -38,7 +41,8 @@ export function lengthFromInput(
 ): { ok: true; lengthMm: number } | { ok: false; message: string } {
   if (!Number.isFinite(input)) return { ok: false, message: "Enter a number." }
   if (lengthUnit(part) === "holes") {
-    if (!Number.isInteger(input)) return { ok: false, message: "Use a whole number of holes." }
+    if (!Number.isInteger(input))
+      return { ok: false, message: "Use a whole number of holes." }
     if (input < MIN_HOLES || input > MAX_HOLES)
       return { ok: false, message: `Use ${MIN_HOLES} to ${MAX_HOLES} holes.` }
     return { ok: true, lengthMm: holesToMm(input) }

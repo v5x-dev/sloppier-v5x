@@ -25,18 +25,40 @@ export type PartShape = {
 
 const shapes = new Map<string, PartShape>()
 
+/** The longest Cut Part the app will generate, well past any stock length. */
+const MAX_CUT_MM = 5000
+
+/**
+ * Whether this app can draw a saved Part. A Part from a newer catalog, or one with an
+ * impossible length, is reported to the user instead of breaking the scene.
+ */
+export function canDraw(ref: PartRef): boolean {
+  const part = catalog.parts.find((entry) => entry.id === ref.catalogId)
+  if (!part) return false
+  return (
+    ref.lengthMm === undefined ||
+    (part.kind === "cut" && ref.lengthMm <= MAX_CUT_MM)
+  )
+}
+
 /** The shape of a placed Part, computed once per (Part, length). */
 export function partShape(ref: PartRef): PartShape {
   const key = groupKey(ref)
   const cached = shapes.get(key)
   if (cached) return cached
   const part = partById(ref.catalogId)
-  const shape = part.kind === "cut" ? cutShape(part, ref.lengthMm, key) : modelShape(part, key)
+  const shape =
+    part.kind === "cut"
+      ? cutShape(part, ref.lengthMm, key)
+      : modelShape(part, key)
   shapes.set(key, shape)
   return shape
 }
 
-function modelShape(part: Extract<CatalogPart, { kind: "model" }>, key: string): PartShape {
+function modelShape(
+  part: Extract<CatalogPart, { kind: "model" }>,
+  key: string
+): PartShape {
   return {
     key,
     catalog: part,
@@ -46,7 +68,11 @@ function modelShape(part: Extract<CatalogPart, { kind: "model" }>, key: string):
   }
 }
 
-function cutShape(part: CutPart, lengthMm: number | undefined, key: string): PartShape {
+function cutShape(
+  part: CutPart,
+  lengthMm: number | undefined,
+  key: string
+): PartShape {
   const length = lengthMm ?? stockLengthMm(part)
   const cut = generateCutPart(part, length)
   const minY = lowestY(cut)
@@ -85,9 +111,4 @@ function boundsSize(cut: GeneratedCutPart): Vec3 {
       if (p[i + k] > hi[k]) hi[k] = p[i + k]
     }
   return [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]]
-}
-
-/** Every Part in the catalog, in a stable order for the parts panel. */
-export function catalogParts(): CatalogPart[] {
-  return catalog.parts.slice()
 }

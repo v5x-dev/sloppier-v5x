@@ -3,8 +3,13 @@ import { catalog, partById } from "../src/catalog/catalog"
 import type { CutPart } from "../src/catalog/types"
 import { groupKey } from "../src/design/instances"
 import { groupCatalog } from "../src/design/catalog-view"
-import { holesToMm, lengthFromInput, mmToHoles, stockLength } from "../src/design/cut-length"
-import { partShape } from "../src/design/library"
+import {
+  holesToMm,
+  lengthFromInput,
+  mmToHoles,
+  stockLength,
+} from "../src/design/cut-length"
+import { canDraw, partShape } from "../src/design/library"
 import { readModelsBase } from "../src/design/models-base"
 
 const channel = partById("channel-1x2x1-aluminum") as CutPart
@@ -12,7 +17,10 @@ const shaft = partById("shaft-square-1-4") as CutPart
 
 describe("the models base", () => {
   it("accepts an https base and drops a trailing slash", () => {
-    expect(readModelsBase("https://models.example/")).toEqual({ ok: true, url: "https://models.example" })
+    expect(readModelsBase("https://models.example/")).toEqual({
+      ok: true,
+      url: "https://models.example",
+    })
   })
 
   it("allows http only on localhost", () => {
@@ -74,7 +82,19 @@ describe("Part shapes", () => {
     expect(partShape({ catalogId: channel.id, lengthMm: 127 })).toBe(
       partShape({ catalogId: channel.id, lengthMm: 127 })
     )
-    expect(groupKey({ catalogId: channel.id, lengthMm: 127 })).not.toBe(groupKey({ catalogId: channel.id }))
+    expect(groupKey({ catalogId: channel.id, lengthMm: 127 })).not.toBe(
+      groupKey({ catalogId: channel.id })
+    )
+  })
+})
+
+describe("saved Parts this app cannot draw", () => {
+  it("rejects an unknown catalog id, a length on a fixed Part, and an impossible length", () => {
+    expect(canDraw({ catalogId: channel.id, lengthMm: 444.5 })).toBe(true)
+    expect(canDraw({ catalogId: "screw-6-32-1-4" })).toBe(true)
+    expect(canDraw({ catalogId: "from-a-newer-catalog" })).toBe(false)
+    expect(canDraw({ catalogId: "screw-6-32-1-4", lengthMm: 10 })).toBe(false)
+    expect(canDraw({ catalogId: channel.id, lengthMm: 1e9 })).toBe(false)
   })
 })
 
@@ -84,7 +104,11 @@ describe("the parts panel's grouping", () => {
     expect(all.flatMap((g) => g.parts)).toHaveLength(catalog.parts.length)
     const screws = groupCatalog(catalog.parts, "screw 8-32")
     expect(screws.map((g) => g.family)).toEqual(["screw"])
-    expect(screws[0].parts.every((p) => p.family === "screw" && p.name.includes("8-32"))).toBe(true)
+    expect(
+      screws[0].parts.every(
+        (p) => p.family === "screw" && p.name.includes("8-32")
+      )
+    ).toBe(true)
     expect(groupCatalog(catalog.parts, "no such part")).toEqual([])
   })
 })

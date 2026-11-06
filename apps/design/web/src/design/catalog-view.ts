@@ -29,12 +29,20 @@ export const FAMILY_LABELS: Record<string, string> = {
   shaft: "Shafts",
 }
 
-export type FamilyGroup = { family: string; label: string; parts: CatalogPart[] }
+export type FamilyGroup = {
+  family: string
+  label: string
+  parts: CatalogPart[]
+}
 
-export function groupCatalog(parts: readonly CatalogPart[], query: string): FamilyGroup[] {
+export function groupCatalog(
+  parts: readonly CatalogPart[],
+  query: string
+): FamilyGroup[] {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const matches = (part: CatalogPart) => {
-    const text = `${part.name} ${part.sku.value} ${FAMILY_LABELS[part.family] ?? part.family}`.toLowerCase()
+    const text =
+      `${part.name} ${part.sku.value} ${FAMILY_LABELS[part.family] ?? part.family}`.toLowerCase()
     return terms.every((term) => text.includes(term))
   }
   return FAMILY_ORDER.map((family) => ({

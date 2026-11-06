@@ -18,9 +18,14 @@ export type WorldSnap = {
   axis: Vector3
 }
 
-export function toWorldSnap(local: SnapPoint, pose: Pose): { position: Vector3; axis: Vector3 } {
+export function toWorldSnap(
+  local: SnapPoint,
+  pose: Pose
+): { position: Vector3; axis: Vector3 } {
   const q = new Quaternion(...pose.rotation)
-  const position = new Vector3(...local.position).applyQuaternion(q).add(new Vector3(...pose.position))
+  const position = new Vector3(...local.position)
+    .applyQuaternion(q)
+    .add(new Vector3(...pose.position))
   const axis = new Vector3(...local.axis).applyQuaternion(q).normalize()
   return { position, axis }
 }
@@ -85,7 +90,11 @@ export class SnapIndex {
   }
 
   private cellOf(p: Vector3): [number, number, number] {
-    return [Math.floor(p.x / this.cellMm), Math.floor(p.y / this.cellMm), Math.floor(p.z / this.cellMm)]
+    return [
+      Math.floor(p.x / this.cellMm),
+      Math.floor(p.y / this.cellMm),
+      Math.floor(p.z / this.cellMm),
+    ]
   }
 
   private keyOf(p: Vector3): string {
@@ -113,7 +122,8 @@ export function findSnap(
   radius: number,
   roll = 0
 ): SnapMatch | null {
-  let best: { candidate: SnapPoint; target: WorldSnap; distance: number } | undefined
+  let best:
+    { candidate: SnapPoint; target: WorldSnap; distance: number } | undefined
   for (const candidate of candidates) {
     const at = toWorldSnap(candidate, pose).position
     for (const target of index.near(at, radius)) {
@@ -143,20 +153,29 @@ export function findSnapAlongRay(
   groundPose: Pose,
   roll = 0
 ): SnapMatch | null {
+  // Called on every pointer move against every placed Snap Point, so it allocates nothing.
   const direction = ray.direction.clone().normalize()
+  const { x: ox, y: oy, z: oz } = ray.origin
   let best: { target: WorldSnap; distance: number } | undefined
   for (const target of index.all()) {
-    const offset = target.position.clone().sub(ray.origin)
-    const along = offset.dot(direction)
+    const dx = target.position.x - ox
+    const dy = target.position.y - oy
+    const dz = target.position.z - oz
+    const along = dx * direction.x + dy * direction.y + dz * direction.z
     if (along <= 0) continue
-    const distance = offset.sub(direction.clone().multiplyScalar(along)).length()
-    if (distance <= radius && (!best || distance < best.distance)) best = { target, distance }
+    const distance = Math.sqrt(
+      Math.max(0, dx * dx + dy * dy + dz * dz - along * along)
+    )
+    if (distance <= radius && (!best || distance < best.distance))
+      best = { target, distance }
   }
   if (!best || candidates.length === 0) return null
   let candidate = candidates[0]
   let nearest = Infinity
   for (const c of candidates) {
-    const at = toWorldSnap(c, groundPose).position.distanceTo(best.target.position)
+    const at = toWorldSnap(c, groundPose).position.distanceTo(
+      best.target.position
+    )
     if (at < nearest) {
       nearest = at
       candidate = c

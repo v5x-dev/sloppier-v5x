@@ -3,8 +3,7 @@
 // Snap Points. Clicking selects a Part, or places the one being placed.
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import type {
-  PerspectiveCamera} from "three";
+import type { PerspectiveCamera } from "three"
 import {
   AxesHelper,
   DirectionalLight,
@@ -20,9 +19,13 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { useEffect, useRef } from "react"
 import type * as Y from "yjs"
 import { partsMap, placePart, readPlacedParts } from "@/design/document"
-import type { PartRef, Quat  } from "@/design/model"
-import { partShape } from "@/design/library"
-import { START_TURN, placementPose, type PlacementTurn } from "@/design/placement"
+import type { PartRef, Quat } from "@/design/model"
+import { canDraw, partShape } from "@/design/library"
+import {
+  START_TURN,
+  placementPose,
+  type PlacementTurn,
+} from "@/design/placement"
 import type { Vec3 } from "@/catalog/types"
 import type { WorldSnap } from "@/design/snap"
 import { readSceneColors } from "./colors"
@@ -56,12 +59,23 @@ const INITIAL_POSITION: [number, number, number] = [760, 640, 760]
 // Module-level so the canvas sees the same props on every render. A new object per render
 // would make react-three-fiber reconfigure the renderer.
 const GL_OPTIONS = { antialias: true, toneMapping: NeutralToneMapping }
-const CAMERA_OPTIONS = { fov: FOV, near: 1, far: 60000, position: INITIAL_POSITION }
+const CAMERA_OPTIONS = {
+  fov: FOV,
+  near: 1,
+  far: 60000,
+  position: INITIAL_POSITION,
+}
 const CANVAS_STYLE = { touchAction: "none" }
 
 export default function DesignViewport(props: ViewportProps) {
   return (
-    <Canvas frameloop="demand" dpr={[1, 2]} gl={GL_OPTIONS} camera={CAMERA_OPTIONS} style={CANVAS_STYLE}>
+    <Canvas
+      frameloop="demand"
+      dpr={[1, 2]}
+      gl={GL_OPTIONS}
+      camera={CAMERA_OPTIONS}
+      style={CANVAS_STYLE}
+    >
       <Workspace {...props} />
     </Canvas>
   )
@@ -86,9 +100,16 @@ type Live = {
 
 function Workspace(props: ViewportProps) {
   const { gl, scene, size, invalidate, camera, set } = useThree()
+  // The canvas's own camera. `camera` above changes when the projection switches, and the
+  // scene must not be rebuilt for that.
+  const perspectiveCamera = useRef(camera as PerspectiveCamera).current
   const latest = useRef(props)
   latest.current = props
-  const live = useRef<Live>({ frustumHeight: 1000, turn: START_TURN, status: INITIAL_STATUS })
+  const live = useRef<Live>({
+    frustumHeight: 1000,
+    turn: START_TURN,
+    status: INITIAL_STATUS,
+  })
 
   const emit = (patch: Partial<ViewportStatus>) => {
     const current = live.current.status
@@ -117,8 +138,10 @@ function Workspace(props: ViewportProps) {
     axes.position.y = 0.2
     scene.add(axes)
 
-    const perspective = camera as PerspectiveCamera
+    const perspective = perspectiveCamera
     const ortho = new OrthographicCamera(-500, 500, 500, -500, 1, 60000)
+    // Stops react-three-fiber resetting this frustum to pixel units on a resize.
+    Object.assign(ortho, { manual: true })
     state.perspective = perspective
     state.ortho = ortho
     state.active = perspective
@@ -134,8 +157,10 @@ function Workspace(props: ViewportProps) {
     controls.addEventListener("change", onChange)
     state.controls = controls
 
-    const loader = new ModelLoader(latest.current.modelsBase, (status: ModelStatus) =>
-      emit({ modelsLoading: status.loading, modelsFailed: status.failed })
+    const loader = new ModelLoader(
+      latest.current.modelsBase,
+      (status: ModelStatus) =>
+        emit({ modelsLoading: status.loading, modelsFailed: status.failed })
     )
     const store = new SceneStore(scene, colors, loader, () => invalidate())
     state.store = store
@@ -143,11 +168,25 @@ function Workspace(props: ViewportProps) {
     const map = partsMap(latest.current.doc)
     const sync = () => {
       const { parts, invalid } = readPlacedParts(latest.current.doc)
-      store.sync(parts)
-      emit({ parts: parts.length, invalid: invalid.length })
+      const drawable = parts.filter(canDraw)
+      store.sync(drawable)
+      emit({
+        parts: drawable.length,
+        invalid: invalid.length + parts.length - drawable.length,
+      })
     }
     sync()
     map.observeDeep(sync)
+    // For benchmarks/viewport.mjs: the dev server only, never a production build.
+    if (import.meta.env.DEV)
+      Object.assign(window, {
+        __designBench: {
+          doc: latest.current.doc,
+          renderer: gl,
+          store,
+          placePart,
+        },
+      })
 
     const onContextLost = (event: Event) => {
       event.preventDefault()
@@ -171,7 +210,7 @@ function Workspace(props: ViewportProps) {
       if (state.frame) cancelAnimationFrame(state.frame)
     }
     // Built once per canvas: the document, camera, and renderer do not change identity during a session.
-  }, [props.doc, gl, scene, camera, invalidate])
+  }, [props.doc, gl, scene, perspectiveCamera, invalidate])
 
   // Switches between perspective and orthographic, keeping the view the same.
   useEffect(() => {
@@ -188,11 +227,16 @@ function Workspace(props: ViewportProps) {
       setFrustum(ortho, height, aspect)
       ortho.lookAt(controls.target)
       state.active = ortho
-    } else if (props.projection === "perspective" && state.active !== perspective) {
+    } else if (
+      props.projection === "perspective" &&
+      state.active !== perspective
+    ) {
       const height = state.frustumHeight / ortho.zoom
       const distance = height / (2 * Math.tan((FOV * Math.PI) / 360))
       const direction = ortho.position.clone().sub(controls.target).normalize()
-      perspective.position.copy(controls.target).addScaledVector(direction, distance)
+      perspective.position
+        .copy(controls.target)
+        .addScaledVector(direction, distance)
       perspective.lookAt(controls.target)
       perspective.aspect = aspect
       perspective.updateProjectionMatrix()
@@ -208,7 +252,11 @@ function Workspace(props: ViewportProps) {
   useEffect(() => {
     const state = live.current
     if (!state.ortho) return
-    setFrustum(state.ortho, state.frustumHeight / state.ortho.zoom, size.width / Math.max(1, size.height))
+    setFrustum(
+      state.ortho,
+      state.frustumHeight,
+      size.width / Math.max(1, size.height)
+    )
     invalidate()
   }, [size, invalidate])
 
@@ -226,7 +274,7 @@ function Workspace(props: ViewportProps) {
         -((event.clientY - rect.top) / rect.height) * 2 + 1
       )
     }
-    const activeCamera = () => live.current.active ?? (camera)
+    const activeCamera = () => live.current.active ?? camera
 
     const refresh = () => {
       const state = live.current
@@ -251,9 +299,23 @@ function Workspace(props: ViewportProps) {
       const ground = store.groundAt(state.ndc, cam)
       if (!ground) return
       const shape = partShape(tool)
-      const result = placementPose(shape, ground, state.turn, store.index, store.rayAt(state.ndc, cam))
-      state.pose = { position: result.pose.position, rotation: result.pose.rotation }
-      store.setGhost(tool, result.pose, DEFAULT_COLORS[shape.catalog.material])
+      const result = placementPose(
+        shape,
+        ground,
+        state.turn,
+        store.index,
+        store.rayAt(state.ndc, cam)
+      )
+      state.pose = {
+        position: result.pose.position,
+        rotation: result.pose.rotation,
+      }
+      store.setGhost(
+        tool,
+        result.pose,
+        DEFAULT_COLORS[shape.catalog.material],
+        Boolean(result.snap)
+      )
       if (result.snap) {
         state.snapTarget = result.snap.target
         store.setSnapMarker(result.snap.target)
@@ -267,7 +329,8 @@ function Workspace(props: ViewportProps) {
     }
     const schedule = () => {
       const state = live.current
-      if (state.frame === undefined) state.frame = requestAnimationFrame(refresh)
+      if (state.frame === undefined)
+        state.frame = requestAnimationFrame(refresh)
     }
 
     const onMove = (event: PointerEvent) => {
@@ -281,14 +344,24 @@ function Workspace(props: ViewportProps) {
       const state = live.current
       const down = state.down
       state.down = undefined
-      if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > CLICK_SLOP_PX) return
+      if (
+        !down ||
+        Math.hypot(event.clientX - down.x, event.clientY - down.y) >
+          CLICK_SLOP_PX
+      )
+        return
       const store = state.store
       if (!store) return
       const tool = latest.current.tool
       if (tool) {
         if (!state.pose) return
         const color = DEFAULT_COLORS[partShape(tool).catalog.material]
-        placePart(latest.current.doc, { ...tool, position: state.pose.position, rotation: state.pose.rotation, color })
+        placePart(latest.current.doc, {
+          ...tool,
+          position: state.pose.position,
+          rotation: state.pose.rotation,
+          color,
+        })
         return
       }
       latest.current.onSelect(store.pick(ndcOf(event), activeCamera()))
@@ -338,7 +411,7 @@ function Workspace(props: ViewportProps) {
       window.removeEventListener("keydown", onKey)
     }
     // The handlers read the latest props through `latest` and the camera through `live`.
-  }, [gl, invalidate, camera])
+  }, [gl, invalidate, perspectiveCamera])
 
   // Selection and the placement tool are outside the document, so they update the scene here.
   useEffect(() => {
@@ -359,8 +432,7 @@ function Workspace(props: ViewportProps) {
   // A selected Part that another person deleted is no longer selected.
   useEffect(() => {
     if (!props.selectedId) return
-    const { parts } = readPlacedParts(props.doc)
-    if (!parts.some((p) => p.id === props.selectedId)) props.onSelect(undefined)
+    if (!partsMap(props.doc).has(props.selectedId)) props.onSelect(undefined)
   })
 
   return null
@@ -374,8 +446,12 @@ function Workspace(props: ViewportProps) {
     for (const p of parts) center.add(new Vector3(...p.position))
     center.divideScalar(parts.length)
     let radius = 150
-    for (const p of parts) radius = Math.max(radius, center.distanceTo(new Vector3(...p.position)) + 150)
-    const current = state.active ?? (camera)
+    for (const p of parts)
+      radius = Math.max(
+        radius,
+        center.distanceTo(new Vector3(...p.position)) + 150
+      )
+    const current = state.active ?? camera
     const direction = current.position.clone().sub(controls.target).normalize()
     controls.target.copy(center)
     if (current instanceof OrthographicCamera) {
@@ -384,7 +460,9 @@ function Workspace(props: ViewportProps) {
       state.frustumHeight = radius * 2
       setFrustum(current, radius * 2, size.width / Math.max(1, size.height))
     } else {
-      current.position.copy(center).addScaledVector(direction, radius / Math.sin((FOV * Math.PI) / 360))
+      current.position
+        .copy(center)
+        .addScaledVector(direction, radius / Math.sin((FOV * Math.PI) / 360))
     }
     controls.update()
     invalidate()
@@ -402,5 +480,8 @@ function setFrustum(ortho: OrthographicCamera, height: number, aspect: number) {
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
-  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+  return (
+    target.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+  )
 }

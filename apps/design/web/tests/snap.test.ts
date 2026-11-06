@@ -25,7 +25,10 @@ const yaw = (radians: number): [number, number, number, number] => {
   return [q.x, q.y, q.z, q.w]
 }
 
-const target = (position: [number, number, number], axis: [number, number, number]) => ({
+const target = (
+  position: [number, number, number],
+  axis: [number, number, number]
+) => ({
   position: new Vector3(...position),
   axis: new Vector3(...axis),
 })
@@ -66,8 +69,17 @@ describe("alignToSnap", () => {
 describe("findSnap", () => {
   it("finds nothing when no Snap Point is within the radius", () => {
     const index = new SnapIndex(10)
-    index.add({ owner: "a", snapId: "x", ...target([50, 0, 0], [0, 1, 0]) } satisfies WorldSnap)
-    const match = findSnap([snap()], { position: [0, 0, 0], rotation: [0, 0, 0, 1] }, index, 10)
+    index.add({
+      owner: "a",
+      snapId: "x",
+      ...target([50, 0, 0], [0, 1, 0]),
+    } satisfies WorldSnap)
+    const match = findSnap(
+      [snap()],
+      { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
+      index,
+      10
+    )
     expect(match).toBeNull()
   })
 
@@ -75,7 +87,12 @@ describe("findSnap", () => {
     const index = new SnapIndex(10)
     index.add({ owner: "far", snapId: "x", ...target([6, 0, 0], [0, 1, 0]) })
     index.add({ owner: "near", snapId: "y", ...target([3, 0, 0], [0, 1, 0]) })
-    const match = findSnap([snap()], { position: [0, 0, 0], rotation: [0, 0, 0, 1] }, index, 10)
+    const match = findSnap(
+      [snap()],
+      { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
+      index,
+      10
+    )
     expect(match?.target.owner).toBe("near")
     expect(match?.distance).toBeCloseTo(3, 9)
   })
@@ -83,8 +100,16 @@ describe("findSnap", () => {
   it("tries every Snap Point of the Part being placed", () => {
     const index = new SnapIndex(10)
     index.add({ owner: "a", snapId: "x", ...target([40, 0, 0], [0, 1, 0]) })
-    const candidates = [snap({ id: "left", position: [-30, 0, 0] }), snap({ id: "right", position: [38, 0, 0] })]
-    const match = findSnap(candidates, { position: [0, 0, 0], rotation: [0, 0, 0, 1] }, index, 10)
+    const candidates = [
+      snap({ id: "left", position: [-30, 0, 0] }),
+      snap({ id: "right", position: [38, 0, 0] }),
+    ]
+    const match = findSnap(
+      candidates,
+      { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
+      index,
+      10
+    )
     expect(match?.candidate.id).toBe("right")
   })
 
@@ -95,7 +120,10 @@ describe("findSnap", () => {
     const candidate = snap({ position: [5, 0, 0], axis: [0, 0, 1] })
     // Turned 90 degrees, the snap point sits at (0, 0, -5) from the Part's position. With the
     // Part at (0, 16, 5), that is (0, 16, 0), 4 mm from the target: inside the radius.
-    const pose = { position: [0, 16, 5] as [number, number, number], rotation: rotated }
+    const pose = {
+      position: [0, 16, 5] as [number, number, number],
+      rotation: rotated,
+    }
     const match = findSnap([candidate], pose, index, 10)
     expect(match).not.toBeNull()
     near(toWorldSnap(candidate, match!.pose).position, new Vector3(0, 20, 0))
@@ -105,7 +133,9 @@ describe("findSnap", () => {
 describe("SnapIndex", () => {
   it("returns the same points as a scan of every entry", () => {
     let seed = 7
-    const random = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648) * 400 - 200
+    const random = () =>
+      ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648) * 400 -
+      200
     const index = new SnapIndex(10)
     const all: WorldSnap[] = []
     for (let i = 0; i < 300; i++) {
@@ -133,34 +163,68 @@ describe("SnapIndex", () => {
 })
 
 describe("findSnapAlongRay", () => {
-  const down = { origin: new Vector3(0, 500, 0), direction: new Vector3(0, -1, 0) }
-  const flat = { position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0, 1] as [number, number, number, number] }
+  const down = {
+    origin: new Vector3(0, 500, 0),
+    direction: new Vector3(0, -1, 0),
+  }
+  const flat = {
+    position: [0, 0, 0] as [number, number, number],
+    rotation: [0, 0, 0, 1] as [number, number, number, number],
+  }
 
   it("snaps to a Snap Point the pointer's ray passes near", () => {
     const index = new SnapIndex(10)
-    index.add({ owner: "motor", snapId: "hole", ...target([0, 40, 0], [0, 0, 1]) })
-    const match = findSnapAlongRay([snap({ position: [0, 0, 0], axis: [0, 0, 1] })], down, index, 10, flat)
+    index.add({
+      owner: "motor",
+      snapId: "hole",
+      ...target([0, 40, 0], [0, 0, 1]),
+    })
+    const match = findSnapAlongRay(
+      [snap({ position: [0, 0, 0], axis: [0, 0, 1] })],
+      down,
+      index,
+      10,
+      flat
+    )
     expect(match?.target.owner).toBe("motor")
-    near(toWorldSnap(snap({ position: [0, 0, 0], axis: [0, 0, 1] }), match!.pose).position, new Vector3(0, 40, 0))
+    near(
+      toWorldSnap(snap({ position: [0, 0, 0], axis: [0, 0, 1] }), match!.pose)
+        .position,
+      new Vector3(0, 40, 0)
+    )
   })
 
   it("passes over a Snap Point that is farther than the radius from the ray", () => {
     const index = new SnapIndex(10)
-    index.add({ owner: "motor", snapId: "hole", ...target([30, 40, 0], [0, 0, 1]) })
+    index.add({
+      owner: "motor",
+      snapId: "hole",
+      ...target([30, 40, 0], [0, 0, 1]),
+    })
     expect(findSnapAlongRay([snap()], down, index, 10, flat)).toBeNull()
   })
 
   it("ignores a Snap Point behind the camera", () => {
     const index = new SnapIndex(10)
-    index.add({ owner: "behind", snapId: "hole", ...target([0, 600, 0], [0, 0, 1]) })
+    index.add({
+      owner: "behind",
+      snapId: "hole",
+      ...target([0, 600, 0], [0, 0, 1]),
+    })
     expect(findSnapAlongRay([snap()], down, index, 10, flat)).toBeNull()
   })
 
   it("mates the candidate Snap Point closest to the target", () => {
     const index = new SnapIndex(10)
-    index.add({ owner: "motor", snapId: "hole", ...target([0, 40, 0], [0, 0, 1]) })
+    index.add({
+      owner: "motor",
+      snapId: "hole",
+      ...target([0, 40, 0], [0, 0, 1]),
+    })
     const far = snap({ id: "far", position: [-60, 0, 0], axis: [0, 0, 1] })
-    const near = snap({ id: "near", position: [5, 0, 0], axis: [0, 0, 1] })
-    expect(findSnapAlongRay([far, near], down, index, 10, flat)?.candidate.id).toBe("near")
+    const close = snap({ id: "near", position: [5, 0, 0], axis: [0, 0, 1] })
+    expect(
+      findSnapAlongRay([far, close], down, index, 10, flat)?.candidate.id
+    ).toBe("near")
   })
 })

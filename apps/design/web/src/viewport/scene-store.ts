@@ -2,16 +2,14 @@
 // (Part, length). A change to the document updates the matrices of the instances that
 // changed, and nothing else, so no React component re-renders per frame.
 
-import type {
-  Camera,
-  Scene,
-  Vector2} from "three";
+import type { Camera, Scene, Vector2 } from "three"
 import {
-  AdditiveBlending,
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   Color,
+  DoubleSide,
+  DynamicDrawUsage,
   EdgesGeometry,
   Group,
   InstancedMesh,
@@ -19,6 +17,7 @@ import {
   LineSegments,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   Plane,
   Quaternion,
@@ -30,7 +29,12 @@ import type { Material as PartMaterial, SnapPoint, Vec3 } from "@/catalog/types"
 import { partShape, type PartShape } from "@/design/library"
 import { SlotTable } from "@/design/slots"
 import type { PartRef, PlacedPart, Quat } from "@/design/model"
-import { SnapIndex, toWorldSnap, type Pose, type WorldSnap } from "@/design/snap"
+import {
+  SnapIndex,
+  toWorldSnap,
+  type Pose,
+  type WorldSnap,
+} from "@/design/snap"
 import { SNAP_RADIUS_MM } from "@/design/placement"
 import { boxFor, type ModelLoader } from "./models"
 import type { SceneColors } from "./colors"
@@ -59,12 +63,13 @@ export const DEFAULT_COLORS: Record<PartMaterial, string> = {
   electronics: "#2d3138",
 }
 
-const SURFACE: Record<PartMaterial, { metalness: number; roughness: number }> = {
-  aluminum: { metalness: 0.85, roughness: 0.32 },
-  steel: { metalness: 0.75, roughness: 0.46 },
-  nylon: { metalness: 0.0, roughness: 0.62 },
-  electronics: { metalness: 0.15, roughness: 0.7 },
-}
+const SURFACE: Record<PartMaterial, { metalness: number; roughness: number }> =
+  {
+    aluminum: { metalness: 0.85, roughness: 0.32 },
+    steel: { metalness: 0.75, roughness: 0.46 },
+    nylon: { metalness: 0.0, roughness: 0.62 },
+    electronics: { metalness: 0.15, roughness: 0.7 },
+  }
 
 export class SceneStore {
   private readonly groups = new Map<string, PartGroup>()
@@ -80,6 +85,8 @@ export class SceneStore {
   private readonly highlights: Record<"hover" | "select", Highlight>
   private readonly snapMarker: Mesh
   private snapIndex = new SnapIndex(SNAP_RADIUS_MM)
+  private readonly scene: Scene
+  private readonly snapColor: Color
 
   constructor(
     scene: Scene,
@@ -87,17 +94,30 @@ export class SceneStore {
     private readonly loader: ModelLoader,
     private readonly invalidate: () => void
   ) {
+    this.scene = scene
+    this.snapColor = colors.snap
     this.root.name = "parts"
     scene.add(this.root)
 
-    this.ghost = new Mesh(undefined, new MeshStandardMaterial({ color: "#ffffff", transparent: true, opacity: 0.42, depthWrite: false }))
+    this.ghost = new Mesh(
+      undefined,
+      new MeshStandardMaterial({
+        color: "#ffffff",
+        transparent: true,
+        opacity: 0.42,
+        depthWrite: false,
+      })
+    )
     this.ghost.visible = false
     this.ghost.renderOrder = 2
     scene.add(this.ghost)
 
     const edges = new EdgesGeometry(new BoxGeometry(1, 1, 1))
     const outline = (color: Color) => {
-      const line = new LineSegments(edges, new LineBasicMaterial({ color, depthTest: false, transparent: true }))
+      const line = new LineSegments(
+        edges,
+        new LineBasicMaterial({ color, depthTest: false, transparent: true })
+      )
       line.visible = false
       line.renderOrder = 3
       scene.add(line)
@@ -109,8 +129,13 @@ export class SceneStore {
     }
 
     this.snapMarker = new Mesh(
-      new RingGeometry(3.6, 4.6, 40),
-      new LineBasicMaterial({ color: colors.accent, depthTest: false, transparent: true, blending: AdditiveBlending })
+      new RingGeometry(5, 6.5, 48),
+      new MeshBasicMaterial({
+        color: colors.snap,
+        depthTest: false,
+        transparent: true,
+        side: DoubleSide,
+      })
     )
     this.snapMarker.visible = false
     this.snapMarker.renderOrder = 4
@@ -122,13 +147,20 @@ export class SceneStore {
     const live = new Set<string>()
     for (const part of parts) {
       live.add(part.id)
-      const pose = { position: part.position, rotation: part.rotation, color: part.color }
+      const pose = {
+        position: part.position,
+        rotation: part.rotation,
+        color: part.color,
+      }
       const cur = this.poses.get(part.id)
       if (!cur) this.add(part, pose)
       else if (!samePose(cur, pose)) this.update(part.id, pose)
     }
     for (const id of [...this.poses.keys()]) if (!live.has(id)) this.remove(id)
     this.rebuildSnapIndex(parts)
+    // An outlined Part may have moved or been deleted by someone else.
+    this.drawHighlight("hover")
+    this.drawHighlight("select")
     this.invalidate()
   }
 
@@ -144,7 +176,10 @@ export class SceneStore {
   /** The ray from the camera through the pointer. */
   rayAt(ndc: Vector2, camera: Camera): { origin: Vector3; direction: Vector3 } {
     this.raycaster.setFromCamera(ndc, camera)
-    return { origin: this.raycaster.ray.origin.clone(), direction: this.raycaster.ray.direction.clone() }
+    return {
+      origin: this.raycaster.ray.origin.clone(),
+      direction: this.raycaster.ray.direction.clone(),
+    }
   }
 
   /** Points on the ground plane under the pointer, in world millimetres. */
@@ -157,7 +192,9 @@ export class SceneStore {
   /** The Part under the pointer, if any. */
   pick(ndc: Vector2, camera: Camera): string | undefined {
     this.raycaster.setFromCamera(ndc, camera)
-    const meshes = [...this.groups.values()].flatMap((g) => (g.mesh && g.slots.count > 0 ? [g.mesh] : []))
+    const meshes = [...this.groups.values()].flatMap((g) =>
+      g.mesh && g.slots.count > 0 ? [g.mesh] : []
+    )
     const hits = this.raycaster.intersectObjects(meshes, false)
     if (hits.length === 0) return undefined
     const hit = hits[0]
@@ -170,7 +207,12 @@ export class SceneStore {
   }
 
   /** Shows the Part being placed, or hides it. */
-  setGhost(ref: PartRef | undefined, pose: Pose | undefined, color: string | undefined): void {
+  setGhost(
+    ref: PartRef | undefined,
+    pose: Pose | undefined,
+    color: string | undefined,
+    snapped = false
+  ): void {
     if (!ref || !pose || color === undefined) {
       this.ghost.visible = false
       return
@@ -181,7 +223,10 @@ export class SceneStore {
       return
     }
     this.ghost.geometry = group.geometry
-    ;(this.ghost.material as MeshStandardMaterial).color.set(color)
+    const material = this.ghost.material as MeshStandardMaterial
+    material.color.set(color)
+    material.emissive.copy(this.snapColor)
+    material.emissiveIntensity = snapped ? 0.55 : 0
     this.ghost.position.set(...pose.position)
     this.ghost.quaternion.set(...pose.rotation)
     this.ghost.visible = true
@@ -195,28 +240,49 @@ export class SceneStore {
     }
     this.snapMarker.visible = true
     this.snapMarker.position.copy(target.position)
-    this.snapMarker.quaternion.setFromUnitVectors(new Vector3(0, 0, 1), target.axis)
+    this.snapMarker.quaternion.setFromUnitVectors(
+      new Vector3(0, 0, 1),
+      target.axis
+    )
     this.snapMarker.scale.setScalar(Math.max(1, diameterMm / 4))
   }
 
   /** Outlines a Part as hovered or selected, or clears the outline. */
   highlight(kind: "hover" | "select", id: string | undefined): void {
-    const cur = this.highlights[kind]
+    if (this.highlights[kind].id === id) return
+    this.highlights[kind].id = id
+    this.drawHighlight(kind)
+    this.invalidate()
+  }
+
+  private drawHighlight(kind: "hover" | "select"): void {
+    const { id, line } = this.highlights[kind]
     const pose = id ? this.poses.get(id) : undefined
-    if (!id || !pose) {
-      cur.line.visible = false
-      cur.id = undefined
-      this.invalidate()
+    const shape = pose ? this.groups.get(pose.key)?.shape : undefined
+    if (!pose || !shape) {
+      line.visible = false
       return
     }
-    const shape = this.groups.get(pose.key)?.shape
-    if (!shape) return
-    cur.id = id
-    cur.line.visible = true
-    cur.line.position.set(...pose.position)
-    cur.line.quaternion.set(...pose.rotation)
-    cur.line.scale.set(...shape.sizeMm)
-    this.invalidate()
+    line.visible = true
+    line.position.set(...pose.position)
+    line.quaternion.set(...pose.rotation)
+    line.scale.set(...shape.sizeMm)
+  }
+
+  /** Instanced meshes in use and the triangles they draw, for the benchmark. */
+  stats(): { meshes: number; instances: number; triangles: number } {
+    let meshes = 0
+    let instances = 0
+    let triangles = 0
+    for (const group of this.groups.values()) {
+      if (!group.mesh || group.slots.count === 0) continue
+      const position = group.geometry?.getAttribute("position").count ?? 0
+      const indices = group.geometry?.getIndex()?.count ?? position
+      meshes += 1
+      instances += group.slots.count
+      triangles += (indices / 3) * group.slots.count
+    }
+    return { meshes, instances, triangles }
   }
 
   dispose(): void {
@@ -227,6 +293,13 @@ export class SceneStore {
     this.groups.clear()
     this.poses.clear()
     this.loader.dispose()
+    this.scene.remove(
+      this.root,
+      this.ghost,
+      this.snapMarker,
+      this.highlights.hover.line,
+      this.highlights.select.line
+    )
   }
 
   // ---- Instances -----------------------------------------------------------
@@ -281,7 +354,10 @@ export class SceneStore {
     if (group.requested) return
     group.requested = true
     if (group.shape.cut) {
-      group.geometry = cutGeometry(group.shape.cut.geometry.positions, group.shape.cut.geometry.normals)
+      group.geometry = cutGeometry(
+        group.shape.cut.geometry.positions,
+        group.shape.cut.geometry.normals
+      )
       this.attach(group)
       return
     }
@@ -318,7 +394,7 @@ export class SceneStore {
     const mesh = new InstancedMesh(group.geometry, group.material, capacity)
     mesh.frustumCulled = true
     mesh.count = 0
-    mesh.instanceMatrix.setUsage(35048) // DynamicDrawUsage: matrices change as Parts move.
+    mesh.instanceMatrix.setUsage(DynamicDrawUsage) // Matrices change as Parts move.
     this.root.add(mesh)
     return mesh
   }
@@ -344,7 +420,13 @@ export class SceneStore {
     const mesh = group.mesh
     const pose = this.poses.get(id)
     const slot = group.slots.slotOf(id)
-    if (!mesh || !pose || slot === undefined || slot >= mesh.instanceMatrix.count) return
+    if (
+      !mesh ||
+      !pose ||
+      slot === undefined ||
+      slot >= mesh.instanceMatrix.count
+    )
+      return
     this.position.set(...pose.position)
     this.rotation.set(...pose.rotation)
     this.matrix.compose(this.position, this.rotation, ONE)
@@ -375,7 +457,13 @@ export class SceneStore {
     const index = new SnapIndex(SNAP_RADIUS_MM)
     for (const part of parts) {
       const shape = partShape(part)
-      for (const snap of shape.snapPoints) index.add(worldEntry(part.id, snap, { position: part.position, rotation: part.rotation }))
+      for (const snap of shape.snapPoints)
+        index.add(
+          worldEntry(part.id, snap, {
+            position: part.position,
+            rotation: part.rotation,
+          })
+        )
     }
     this.snapIndex = index
   }
@@ -385,7 +473,10 @@ function worldEntry(owner: string, snap: SnapPoint, pose: Pose): WorldSnap {
   return { owner, snapId: snap.id, ...toWorldSnap(snap, pose) }
 }
 
-function samePose(a: Pose3, b: { position: Vec3; rotation: Quat; color: string }): boolean {
+function samePose(
+  a: Pose3,
+  b: { position: Vec3; rotation: Quat; color: string }
+): boolean {
   return (
     a.color === b.color &&
     a.position.every((v, i) => v === b.position[i]) &&
@@ -393,7 +484,10 @@ function samePose(a: Pose3, b: { position: Vec3; rotation: Quat; color: string }
   )
 }
 
-function cutGeometry(positions: Float32Array, normals: Float32Array): BufferGeometry {
+function cutGeometry(
+  positions: Float32Array,
+  normals: Float32Array
+): BufferGeometry {
   const geometry = new BufferGeometry()
   geometry.setAttribute("position", new BufferAttribute(positions, 3))
   geometry.setAttribute("normal", new BufferAttribute(normals, 3))
@@ -405,4 +499,3 @@ function nextPowerOfTwo(n: number): number {
   while (p < n) p *= 2
   return p
 }
-
