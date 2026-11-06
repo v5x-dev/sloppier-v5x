@@ -15,7 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyseStep } from "./lib/analyse.mjs";
 import { estimateMass, DENSITY_G_PER_CM3 } from "./lib/mass.mjs";
-import { displayMesh } from "./lib/display.mjs";
+import { displayForPart } from "./lib/display.mjs";
 import { writeGlb } from "./lib/glb.mjs";
 import { SOURCES, ensureSource, readAt } from "./lib/sources.mjs";
 import { skuFromFileName } from "./lib/sku.mjs";
@@ -69,11 +69,7 @@ async function buildModel(part) {
 
   // The display mesh: visible surfaces only, feature edges kept, colours per region.
   // It is already in the Part frame. Volume and Snap Points above come from the full STEP.
-  const shown = await displayMesh(analysis.meshes, {
-    budgetTriangles: part.budgetTriangles,
-    maxErrorMm: part.maxErrorMm,
-    fallbackColor: MATERIAL_FALLBACK_COLOR[part.material],
-  });
+  const shown = await displayForPart(part, analysis.meshes, MATERIAL_FALLBACK_COLOR[part.material]);
   const glb = await writeGlb({
     positions: shown.positions,
     normals: shown.normals,

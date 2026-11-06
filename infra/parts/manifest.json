@@ -12,8 +12,8 @@
       },
       "material": "electronics",
       "snap": "ruled-bores",
-      "budgetTriangles": 24500,
-      "maxErrorMm": 0.15,
+      "budgetTriangles": 22000,
+      "maxErrorMm": 0.3,
       "boreRule": {
         "minDiameterMm": 2.0,
         "maxDiameterMm": 2.6,
@@ -52,8 +52,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 28000,
-      "maxErrorMm": 0.15,
+      "budgetTriangles": 24000,
+      "maxErrorMm": 0.3,
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
@@ -185,11 +185,13 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 400,
-      "maxErrorMm": 0.05,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-6-32-1-2",
@@ -211,11 +213,13 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 400,
-      "maxErrorMm": 0.05,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-8-32-1",
@@ -237,11 +241,13 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 400,
-      "maxErrorMm": 0.05,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-8-32-2",
@@ -263,11 +269,13 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 400,
-      "maxErrorMm": 0.05,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "nut-8-32-hex",

@@ -736,13 +736,13 @@
         "basis": "not estimated"
       },
       "model": {
-        "file": "models/motor-v5-smart-11w-ed27f4da.glb",
-        "sha256": "ed27f4da11d61c4b72600591a1f3012c21485d5c877a305e7ad1c4be8d537fc5",
-        "bytes": 673512,
-        "triangles": 26279,
+        "file": "models/motor-v5-smart-11w-54868fb8.glb",
+        "sha256": "54868fb8742d437ff27b1e1ace5f3c3894b008433f90b72d6e8225986e15ac6e",
+        "bytes": 622808,
+        "triangles": 23987,
         "rawTriangles": 57151,
-        "budgetTriangles": 24500,
-        "maxErrorMm": 0.149,
+        "budgetTriangles": 22000,
+        "maxErrorMm": 0.299,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10623,13 +10623,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-6-32-1-2-c4dd9546.glb",
-        "sha256": "c4dd954677daa17d5b55beb86eb0d0b1bf0188a379d79f2c05095715da0c7b56",
-        "bytes": 10576,
-        "triangles": 400,
+        "file": "models/screw-6-32-1-2-aff909c3.glb",
+        "sha256": "aff909c39e3f3ce0064a8ecc8f01bfadcf1cfa9c6c1973e592fe377a0eb28bf3",
+        "bytes": 4492,
+        "triangles": 192,
         "rawTriangles": 490,
-        "budgetTriangles": 400,
-        "maxErrorMm": 0.027,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10703,13 +10703,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-6-32-1-4-45534a70.glb",
-        "sha256": "45534a70225c971a4df09b5031b98e0df0047d671a591fec1fd8376d3dda5044",
-        "bytes": 10500,
-        "triangles": 400,
+        "file": "models/screw-6-32-1-4-b4f5101a.glb",
+        "sha256": "b4f5101ad80fd2434fceb8f72e3937631b264eb138e14fdd58eab8830534a901",
+        "bytes": 4500,
+        "triangles": 192,
         "rawTriangles": 490,
-        "budgetTriangles": 400,
-        "maxErrorMm": 0.027,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10783,13 +10783,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-8-32-1-fda22499.glb",
-        "sha256": "fda22499cde2a217a2c6f89b064caa9889cab3ff748b9d32020149f4170f4936",
-        "bytes": 10644,
-        "triangles": 400,
+        "file": "models/screw-8-32-1-370046b6.glb",
+        "sha256": "370046b65dc88b80c93c4b2c0ae5320cf5a268db574f8bb85c192bc188dc009a",
+        "bytes": 4300,
+        "triangles": 176,
         "rawTriangles": 490,
-        "budgetTriangles": 400,
-        "maxErrorMm": 0.031,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10863,13 +10863,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-8-32-2-3cbed64a.glb",
-        "sha256": "3cbed64a26fd58ba9d77ceffd7ecab60826ac01cdba50cd3b5a6b0c95f1541b1",
-        "bytes": 10692,
-        "triangles": 400,
+        "file": "models/screw-8-32-2-3d158bc1.glb",
+        "sha256": "3d158bc1250f0eab82bc1fbd8708b543b61a358e990ab3dd76341859194fe3fb",
+        "bytes": 4492,
+        "triangles": 192,
         "rawTriangles": 458,
-        "budgetTriangles": 400,
-        "maxErrorMm": 0.037,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -11352,13 +11352,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/wheel-omni-2-75-cda60ad8.glb",
-        "sha256": "cda60ad8afe65747e48c6c6da605c1f47fc9f92d0be5dbe1110eecdb5e01d5c7",
-        "bytes": 926680,
-        "triangles": 28004,
+        "file": "models/wheel-omni-2-75-d3dd9eb0.glb",
+        "sha256": "d3dd9eb074ce083d83355e90c6f8fbaf043be00cec5890748356673dc7278d88",
+        "bytes": 879136,
+        "triangles": 26070,
         "rawTriangles": 107880,
-        "budgetTriangles": 28000,
-        "maxErrorMm": 0.149,
+        "budgetTriangles": 24000,
+        "maxErrorMm": 0.299,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [

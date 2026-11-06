@@ -12,7 +12,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyseStep } from "../lib/analyse.mjs";
-import { displayMesh } from "../lib/display.mjs";
+import { displayForPart } from "../lib/display.mjs";
 import { writeGlb } from "../lib/glb.mjs";
 import { writeReferenceGlb } from "../lib/reference.mjs";
 import { SOURCES, ensureSource, readAt } from "../lib/sources.mjs";
@@ -33,13 +33,7 @@ for (const part of manifest.parts.filter((p) => p.kind === "model" && (!args.onl
   const analysis = await analyseStep(readAt(repo, part.source.path));
   const ref = join(outDir, `${part.id}-full.glb`);
   writeFileSync(ref, await writeReferenceGlb(analysis.meshes, analysis.bounds, part.id));
-  const shown = await displayMesh(analysis.meshes, {
-    budgetTriangles: part.budgetTriangles,
-    maxErrorMm: part.maxErrorMm,
-    creaseDeg: part.creaseDeg,
-    sealVoxels: part.sealVoxels,
-    normalWeight: part.normalWeight,
-  });
+  const shown = await displayForPart(part, analysis.meshes);
   const glb = join(outDir, `${part.id}-display.glb`);
   writeFileSync(glb, await writeGlb({
     positions: shown.positions, normals: shown.normals, colors: shown.colors, indices: shown.indices, name: part.id, compress: false,

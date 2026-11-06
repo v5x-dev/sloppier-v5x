@@ -47,6 +47,14 @@ The display mesh is the shape a viewer sees, not the solid. Its steps:
 - **Normals respect the crease** (`lib/normals.mjs`). Each corner averages only the faces
   within 35 degrees of its own, so curves shade smooth and edges stay hard.
 
+Solids of revolution take a different path (`lib/lathe.mjs`). A screw is a dome head and a
+shank, so its display mesh is the measured radius profile along its axis, simplified within
+`maxErrorMm` and revolved around the axis with `segments` sides (12). That gives about 300
+triangles where the visible-surface path, with its locked sharp edges, cannot get below 380.
+The manifest marks these entries with `"remodel": "lathe"`. Checked by hand on the 1-inch
+screw: the revolved volume is 407.8 mm³ against the STEP's 409.4 mm³. The build does not
+check this; `tests/lathe.test.mjs` covers the parts of the method on fixtures.
+
 Snap Points, volume and mass still come from the full STEP, before any of this runs.
 `bun run --cwd infra/parts review -- --only <id>` writes the full tessellation and the
 display mesh side by side under `.cache/review/`, rendered with Blender, for comparing by eye.

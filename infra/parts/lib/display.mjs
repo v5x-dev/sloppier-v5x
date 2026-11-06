@@ -17,6 +17,7 @@
 import { MeshoptSimplifier } from "meshoptimizer";
 import { classifyExterior, voxelSizeFor } from "./exterior.mjs";
 import { creaseNormals } from "./normals.mjs";
+import { radialProfile, revolutionAxis, revolve, simplifyProfile } from "./lathe.mjs";
 import { stepToPartDirection, stepToPartPoint } from "./mesh.mjs";
 
 export const DEFAULT_CREASE_DEG = 35;
@@ -291,4 +292,49 @@ export function joinRegions(regions) {
     i0 += r.indices.length;
   }
   return { positions, normals, colors, indices };
+}
+
+/**
+ * The display mesh for a solid of revolution, from its measured profile (lib/lathe.mjs).
+ * The result is in the Part frame, like displayMesh. The colour is the largest colour in
+ * the STEP solids, since a revolved solid has one material.
+ */
+export function latheDisplayMesh(meshes, { fallbackColor = [0.5, 0.5, 0.5], creaseDeg = DEFAULT_CREASE_DEG, segments = 12, toleranceMm = 0.03 } = {}) {
+  const welded = weldTagged(meshes, fallbackColor);
+  const axis = revolutionAxis(welded.bounds);
+  const profile = simplifyProfile(radialProfile(welded.indices, welded.positions, welded.bounds, axis.axis), toleranceMm);
+  const solid = revolve(profile, { axis: axis.axis, centre: welded.bounds.center }, segments, creaseDeg);
+  const colour = dominantColor(welded);
+  const colors = new Float32Array(solid.positions.length);
+  for (let v = 0; v < solid.positions.length / 3; v++) colors.set(colour, v * 3);
+  const merged = toPartFrame({ ...solid, colors }, welded.bounds);
+  const triangles = merged.indices.length / 3;
+  return {
+    ...merged,
+    triangles,
+    keptTriangles: triangles,
+    rawTriangles: welded.indices.length / 3,
+    errorMm: toleranceMm,
+    voxelMm: 0,
+    regions: [{ color: colour, triangles }],
+  };
+}
+
+/** The colour of the most triangles, so a Part's main material wins. */
+function dominantColor(welded) {
+  const counts = new Map();
+  for (let t = 0; t < welded.triColor.length; t++) counts.set(welded.triColor[t], (counts.get(welded.triColor[t]) ?? 0) + 1);
+  let best = 0;
+  for (const [ci, n] of counts) if (n > (counts.get(best) ?? -1)) best = ci;
+  return welded.palette[best];
+}
+
+/**
+ * The display mesh a manifest entry asks for: a lathe remodel for a solid of revolution, or
+ * the visible-surface mesh otherwise. Build and review both use this, so they cannot drift.
+ */
+export async function displayForPart(part, meshes, fallbackColor) {
+  if (part.remodel === "lathe")
+    return latheDisplayMesh(meshes, { fallbackColor, segments: part.segments ?? 12, toleranceMm: part.maxErrorMm });
+  return displayMesh(meshes, { budgetTriangles: part.budgetTriangles, maxErrorMm: part.maxErrorMm, fallbackColor });
 }
