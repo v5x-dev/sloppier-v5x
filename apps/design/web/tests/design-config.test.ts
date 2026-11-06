@@ -67,7 +67,7 @@ describe("Part shapes", () => {
     // One Snap Point per hole on each outside face: more than the 157 holes in the STEP web.
     expect(shape.snapPoints.length).toBeGreaterThan(157)
     expect(shape.sizeMm[0]).toBeCloseTo(444.5, 3)
-    expect(shape.minY).toBeCloseTo(-shape.sizeMm[1] / 2, 3)
+    expect(shape.bounds.lo[1]).toBeCloseTo(-shape.sizeMm[1] / 2, 3)
   })
 
   it("gives a fixed model its catalog Snap Points and size", () => {
@@ -75,7 +75,7 @@ describe("Part shapes", () => {
     if (screw.kind !== "model") throw new Error("expected a model")
     const shape = partShape({ catalogId: screw.id })
     expect(shape.snapPoints).toBe(screw.snapPoints)
-    expect(shape.minY).toBeCloseTo(-screw.sizeMm.z / 2, 9)
+    expect(shape.bounds.lo[1]).toBeCloseTo(-screw.sizeMm.z / 2, 9)
   })
 
   it("measures a fixed model in the Part frame, where its Snap Points are", () => {

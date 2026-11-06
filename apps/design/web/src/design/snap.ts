@@ -113,37 +113,36 @@ export type SnapMatch = {
 
 /**
  * The nearest pair of Snap Points within `radius`, if any. The candidate's Snap Points are
- * taken where the Part would sit at `pose` without snapping.
+ * taken where the Part would sit at `pose` without snapping. A pair whose aligned pose
+ * fails `accept` is skipped, so a snap that would sink the Part can yield to the next one.
  */
 export function findSnap(
   candidates: readonly SnapPoint[],
   pose: Pose,
   index: SnapIndex,
   radius: number,
-  roll = 0
+  roll = 0,
+  accept: (pose: Pose) => boolean = () => true
 ): SnapMatch | null {
-  let best:
-    { candidate: SnapPoint; target: WorldSnap; distance: number } | undefined
+  let best: SnapMatch | undefined
   for (const candidate of candidates) {
     const at = toWorldSnap(candidate, pose).position
     for (const target of index.near(at, radius)) {
       const distance = at.distanceTo(target.position)
-      if (distance <= radius && (!best || distance < best.distance)) {
-        best = { candidate, target, distance }
-      }
+      if (distance > radius || (best && distance >= best.distance)) continue
+      const aligned = alignToSnap(candidate, target, pose.rotation, roll)
+      if (!accept(aligned)) continue
+      best = { candidate, target, distance, pose: aligned }
     }
   }
-  if (!best) return null
-  return {
-    ...best,
-    pose: alignToSnap(best.candidate, best.target, pose.rotation, roll),
-  }
+  return best ?? null
 }
 
 /**
  * The Snap Point the pointer is over, if any: the placed Snap Point nearest to the pointer's
  * ray, within `radius`, in front of the camera. The candidate's Snap Point that sits closest
- * to it, at the ground pose, is the one that mates. The result is aligned to that pair.
+ * to it, at the ground pose, is the one that mates. The result is aligned to that pair. A
+ * pair whose aligned pose fails `accept` is skipped.
  */
 export function findSnapAlongRay(
   candidates: readonly SnapPoint[],
@@ -151,12 +150,14 @@ export function findSnapAlongRay(
   index: SnapIndex,
   radius: number,
   groundPose: Pose,
-  roll = 0
+  roll = 0,
+  accept: (pose: Pose) => boolean = () => true
 ): SnapMatch | null {
-  // Called on every pointer move against every placed Snap Point, so it allocates nothing.
+  if (candidates.length === 0) return null
+  // Called on every pointer move against every placed Snap Point, so it allocates little.
   const direction = ray.direction.clone().normalize()
   const { x: ox, y: oy, z: oz } = ray.origin
-  let best: { target: WorldSnap; distance: number } | undefined
+  const reached: { target: WorldSnap; distance: number }[] = []
   for (const target of index.all()) {
     const dx = target.position.x - ox
     const dy = target.position.y - oy
@@ -166,25 +167,21 @@ export function findSnapAlongRay(
     const distance = Math.sqrt(
       Math.max(0, dx * dx + dy * dy + dz * dz - along * along)
     )
-    if (distance <= radius && (!best || distance < best.distance))
-      best = { target, distance }
+    if (distance <= radius) reached.push({ target, distance })
   }
-  if (!best || candidates.length === 0) return null
-  let candidate = candidates[0]
-  let nearest = Infinity
-  for (const c of candidates) {
-    const at = toWorldSnap(c, groundPose).position.distanceTo(
-      best.target.position
-    )
-    if (at < nearest) {
-      nearest = at
-      candidate = c
+  reached.sort((a, b) => a.distance - b.distance)
+  for (const { target, distance } of reached) {
+    let candidate = candidates[0]
+    let nearest = Infinity
+    for (const c of candidates) {
+      const at = toWorldSnap(c, groundPose).position.distanceTo(target.position)
+      if (at < nearest) {
+        nearest = at
+        candidate = c
+      }
     }
+    const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
+    if (accept(pose)) return { candidate, target, distance, pose }
   }
-  return {
-    candidate,
-    target: best.target,
-    distance: best.distance,
-    pose: alignToSnap(candidate, best.target, groundPose.rotation, roll),
-  }
+  return null
 }
