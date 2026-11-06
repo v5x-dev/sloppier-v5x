@@ -71,7 +71,9 @@ For a Cut Part (a channel or angle at any length, or a square shaft), run
 the holes it finds, grouped by wall, to copy into the spec. Then run `build`, which checks
 the spec against the STEP file. The row fields are: `wall` (`web` for a plate normal to
 Z, `side` for one normal to Y), `across` (the hole's position across the wall, centred),
-`pitch` (12.7 for 0.5 in, 63.5 for 2.5 in), and `phase` (0, or 0.5 for a staggered row).
+`pitch` (12.7 for 0.5 in, 63.5 for 2.5 in), and `phase` (0, or 0.5 for a staggered row). If the file is drawn with its web normal to +Y, set
+`source.webNormal` to `"y"` and write the rows as if the web were normal to +Z: `rows.mjs` prints
+raw axes, so swap its two walls, and negate `across` on the web.
 
 ## Coordinates
 
@@ -92,10 +94,12 @@ the achieved counts against the raw ones. The simplifier keeps each collapse wit
 
 - Snap Points are not complete for every part. The V5 motor's mounting bores do not open
   onto the bounding box, so the motor has a hand-corrected rule (`ruled-bores`). The
-  5.5 W motor has no snap points yet.
-- The steel C-channel (276-2906) is the aluminum channel rotated 90 degrees, and its holes
-  are offset. A row spec needs an orientation field first, so it is not included.
-- The U-channel and the steel angle are not included as Cut Parts.
+  5.5 W motor has no snap points: its STEP file has no bore that opens on the outside, so
+  it needs a corrected file or measured positions.
+- The steel angle is not included as a Cut Part.
+- The steel plates miss their 1,200 triangle budget and keep 3,080 and 5,120. Each hole needs
+  four walls (8 triangles), and nothing collapses within 0.5 mm, so reaching the budget would
+  mean removing holes. The manifest notes give the numbers.
 - Wheels get a computed axle at their centre. The STEP hub bore could not be detected
   reliably, so the bore is not read.
 - Mass uses the STEP volume times a handbook density, not a measured weight. Electronics

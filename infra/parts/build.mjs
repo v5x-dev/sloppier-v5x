@@ -22,7 +22,7 @@ import { skuFromFileName } from "./lib/sku.mjs";
 import { checkExpectedSize, checkExpectedSorted } from "./lib/units.mjs";
 import { validateManifest } from "./lib/manifest.mjs";
 import { boreSnaps, probedSnaps, ruledBoreSnaps, shankSnaps, axleSnap, thinAxis } from "./lib/snaps.mjs";
-import { compareRows, latticeOpenings, probeAxis, WALL_AXIS } from "./lib/lattice.mjs";
+import { compareRows, latticeOpenings, probeAxis, rotateWebToZ, WALL_AXIS } from "./lib/lattice.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "../..");
@@ -117,7 +117,11 @@ async function buildCut(part) {
       ...probeAll(analysis.meshes, WALL_AXIS.web, 0.1),
       ...probeAll(analysis.meshes, WALL_AXIS.side, 0.1),
     ];
-    const result = compareRows(spec.rows, part.source.sampleLengthMm, probed, analysis.bounds.center);
+    const frame =
+      part.source.webNormal === "y"
+        ? rotateWebToZ(probed, analysis.bounds.center)
+        : { holes: probed, centre: analysis.bounds.center };
+    const result = compareRows(spec.rows, part.source.sampleLengthMm, frame.holes, frame.centre);
     verification = {
       checked: true,
       expectedHoles: result.expected,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { compareRows, rowPositions } from "../lib/lattice.mjs";
+import { compareRows, rotateWebToZ, rowPositions } from "../lib/lattice.mjs";
 
 const HALF_INCH = 12.7;
 const QUARTER_INCH_PAIR = 63.5;
@@ -38,4 +38,23 @@ test("compareRows matches expected holes to probed ones, and reports missing and
 
   const extra = compareRows(rows, 444.5, [...probed, { axis: 2, u: 0, v: 9 }], centre);
   assert.equal(extra.extra.length, 1);
+});
+
+test("rotateWebToZ lets rows written for a +Z web match a file drawn with a +Y web", () => {
+  const centre = [10, -5, 3];
+  const rows = [
+    { wall: "web", across: 6.35, pitch: 63.5, phase: 0.5 },
+    { wall: "side", across: 2, pitch: 63.5, phase: 0.5 },
+  ];
+  // Length 127 gives holes at -31.75 and 31.75. Web across 6.35 is raw z = 3 - 6.35; side across 2 is raw y = -5 + 2.
+  const probed = [-31.75, 31.75].flatMap((x) => [
+    { axis: 1, u: 3 - 6.35, v: 10 + x },
+    { axis: 2, u: 10 + x, v: -5 + 2 },
+  ]);
+  const frame = rotateWebToZ(probed, centre);
+  const result = compareRows(rows, 127, frame.holes, frame.centre);
+  assert.equal(result.matched, 4);
+  assert.equal(result.missing.length, 0);
+  assert.equal(result.extra.length, 0);
+  assert.equal(compareRows(rows, 127, probed, centre).matched, 0);
 });

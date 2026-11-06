@@ -416,6 +416,150 @@
       }
     },
     {
+      "id": "channel-1x2x1-steel",
+      "name": "1x2x1 Steel C-Channel",
+      "family": "channel",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Steel/1x2x1x35 Steel C-Channel (276-2906).step",
+        "sampleLengthMm": 444.5,
+        "webNormal": "y"
+      },
+      "material": "steel",
+      "cut": {
+        "widthMm": 25.4,
+        "depthMm": 13.868,
+        "thicknessMm": 1.168,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": -6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -0.584,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.516,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
+      "id": "channel-u-2x2x2-aluminum",
+      "name": "2x2x2 Aluminum U-Channel",
+      "family": "channel",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/U-Channel 2x2x2x20 (276-7285).step",
+        "sampleLengthMm": 254,
+        "webNormal": "y"
+      },
+      "material": "aluminum",
+      "cut": {
+        "widthMm": 29,
+        "depthMm": 25.832,
+        "thicknessMm": 1.6,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": 6.55,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 0.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -6.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": -7.766,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -1.366,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.934,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 10.384,
+            "pitch": 63.5,
+            "phase": 0
+          }
+        ]
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
       "id": "angle-1x1-aluminum",
       "name": "1x1 Aluminum Angle",
       "family": "angle",
