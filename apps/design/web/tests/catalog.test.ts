@@ -136,10 +136,18 @@ describe("the fits the build sets", () => {
   it("threads only 8-32 screws into the motor's mounting holes, and gives the output a socket", () => {
     const motor = partById("motor-v5-smart-11w")
     if (motor.kind !== "model") throw new Error("expected a fixed model")
+    // The 8-32 tap holes: 3.4 mm, at the four corners of each end face.
     const mounts = motor.snapPoints.filter(
-      (sp) => sp.kind === "hole" && sp.diameterMm < 3
+      (sp) => sp.kind === "hole" && sp.diameterMm === 3.4
     )
     expect(mounts).toHaveLength(8)
+    expect(
+      mounts.every(
+        (sp) =>
+          Math.abs(Math.abs(sp.position[0]) - 21.95) < 0.01 &&
+          Math.abs(Math.abs(sp.position[2]) - 14) < 0.01
+      )
+    ).toBe(true)
     expect(
       mounts.every(
         (sp) => sp.accepts?.length === 1 && sp.accepts[0] === "screw:8-32"

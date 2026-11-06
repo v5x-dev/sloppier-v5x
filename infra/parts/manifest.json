@@ -11,17 +11,13 @@
         "path": "Motors/V5 Smart Motor (276-4840).step"
       },
       "material": "electronics",
-      "snap": "ruled-bores",
+      "snap": "none",
       "budgetTriangles": 2000,
       "maxErrorMm": 1.5,
-      "boreRule": {
-        "minDiameterMm": 2.0,
-        "maxDiameterMm": 2.6,
-        "minDepthMm": 30
-      },
       "notes": [
-        "Snap points for the four mounting holes are hand corrections: the 2.2 mm bores through the motor body, found by the bore detector. Their openings are not on the bounding box, so the automatic opening test does not select them. They are 8-32 threaded holes (VEX mounting guide), so they take 8-32 screws only; the STEP's 2.2 mm is the modelled minor diameter.",
-        "The output socket is a hand-placed opening at the top of the output boss, where the STEP's 10.3 mm counterbore opens (manual). Its shafts are 1/8 in and 1/4 in square, per VEX's knowledge base; the STEP does not show the square socket cleanly, so only the opening's position and mouth are measured."
+        "Mounting holes: four 8-32 tapped holes at the corners of each end face, at (±21.95, ±14) mm in the STEP frame, measured from the circle edges of the STEP file (3.4 mm, the 8-32 tap drill). Each runs about 12 mm in from its end, and the two ends are not joined. The old 2.2 mm bores 27 mm apart were not these holes.",
+        "The four holes are 43.9 mm apart along X and 28.0 mm along Y. Neither is a multiple of the channel web lattice (12.7 mm along, 6.35 mm across), so one channel web lines up with one of the four holes at a time. Others meet a channel only where a second channel or another placement takes them.",
+        "The output socket is a hand-placed opening at the top of the output boss, where the STEP 10.3 mm counterbore opens (manual). Its shafts are 1/8 in and 1/4 in square, per VEX knowledge base; the STEP does not show the square socket cleanly, so only the opening position and mouth are measured."
       ],
       "snapAccepts": [
         "screw:8-32"
@@ -30,9 +26,137 @@
         {
           "kind": "hole",
           "position": [
+            21.95,
+            14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            21.95,
+            -14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            -14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            21.95,
+            14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            21.95,
+            -14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            -14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
             12.7,
             0,
-            34.0
+            34
           ],
           "axis": [
             0,
@@ -753,7 +877,7 @@
       "material": "nylon",
       "snap": "ruled-bores",
       "boreRule": {
-        "minDiameterMm": 4.0,
+        "minDiameterMm": 4,
         "maxDiameterMm": 4.4,
         "minDepthMm": 4
       },
@@ -780,7 +904,7 @@
       "material": "steel",
       "snap": "ruled-bores",
       "boreRule": {
-        "minDiameterMm": 4.0,
+        "minDiameterMm": 4,
         "maxDiameterMm": 4.4,
         "minDepthMm": 5
       },
