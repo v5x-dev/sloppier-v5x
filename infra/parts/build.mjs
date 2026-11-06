@@ -15,7 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyseStep } from "./lib/analyse.mjs";
 import { estimateMass, DENSITY_G_PER_CM3 } from "./lib/mass.mjs";
-import { flatTriangles, simplifyMesh, stepToPartPoint, weldMeshes } from "./lib/mesh.mjs";
+import { displayMesh } from "./lib/display.mjs";
 import { writeGlb } from "./lib/glb.mjs";
 import { SOURCES, ensureSource, readAt } from "./lib/sources.mjs";
 import { skuFromFileName } from "./lib/sku.mjs";
@@ -31,6 +31,8 @@ const modelsDir = join(cacheDir, "models");
 const catalogPath = join(repoRoot, "apps/design/web/src/catalog/catalog.json");
 const SCHEMA_VERSION = 1;
 const LATTICE_PITCH_MM = 6.35;
+// Colour for a solid the STEP file leaves uncoloured, so the Part keeps its material's look.
+const MATERIAL_FALLBACK_COLOR = { electronics: [0.18, 0.19, 0.21], steel: [0.5, 0.52, 0.55], aluminum: [0.77, 0.79, 0.83], nylon: [0.89, 0.85, 0.76] };
 
 const args = parseArgs(process.argv.slice(2));
 const manifest = JSON.parse(readFileSync(join(here, "manifest.json"), "utf8"));
@@ -65,13 +67,18 @@ async function buildModel(part) {
   const snaps = snapPoints(part, analysis);
   const mass = estimateMass(analysis.volumeMm3, part.material, part.publishedMassG ?? null);
 
-  const welded = weldMeshes(analysis.meshes);
-  const reduced = await simplifyMesh(welded, part.budgetTriangles, part.maxErrorMm);
-  const flat = flatTriangles(reduced);
-  // The GLB is in the Part frame: Y up, origin at the bounding-box centre.
+  // The display mesh: visible surfaces only, feature edges kept, colours per region.
+  // It is already in the Part frame. Volume and Snap Points above come from the full STEP.
+  const shown = await displayMesh(analysis.meshes, {
+    budgetTriangles: part.budgetTriangles,
+    maxErrorMm: part.maxErrorMm,
+    fallbackColor: MATERIAL_FALLBACK_COLOR[part.material],
+  });
   const glb = await writeGlb({
-    positions: alignedPositions(flat.positions, analysis.bounds),
-    normals: rotatedNormals(flat.normals),
+    positions: shown.positions,
+    normals: shown.normals,
+    colors: shown.colors,
+    indices: shown.indices,
     name: part.id,
   });
   const glbHash = createHash("sha256").update(glb).digest("hex");
@@ -94,10 +101,10 @@ async function buildModel(part) {
       file: modelFile,
       sha256: glbHash,
       bytes: glb.length,
-      triangles: reduced.indices.length / 3,
+      triangles: shown.triangles,
       rawTriangles: analysis.triangles,
       budgetTriangles: part.budgetTriangles,
-      maxErrorMm: round3(reduced.errorMm),
+      maxErrorMm: round3(shown.errorMm),
       coordinates: "mm, Y up, origin at the centre of the bounding box",
     },
     snapPoints: snaps,
@@ -231,28 +238,6 @@ function removeStaleModels(id, keep) {
 
 function probeAll(meshes, axis, step) {
   return meshes.filter((m) => m.brep_faces.length).flatMap((m) => probeAxis(m, axis, step));
-}
-
-// Cut Part and fixed-model frames: the STEP mesh is Z up; the GLB is Y up.
-function alignedPositions(flatPositions, bounds) {
-  const out = new Float32Array(flatPositions.length);
-  for (let i = 0; i < flatPositions.length; i += 3) {
-    const p = stepToPartPoint([flatPositions[i], flatPositions[i + 1], flatPositions[i + 2]], bounds);
-    out[i] = p[0];
-    out[i + 1] = p[1];
-    out[i + 2] = p[2];
-  }
-  return out;
-}
-
-function rotatedNormals(normals) {
-  const out = new Float32Array(normals.length);
-  for (let i = 0; i < normals.length; i += 3) {
-    out[i] = normals[i];
-    out[i + 1] = normals[i + 2];
-    out[i + 2] = -normals[i + 1];
-  }
-  return out;
 }
 
 /** The two cross-section sizes of a Cut Part spec. */

@@ -12,8 +12,8 @@
       },
       "material": "electronics",
       "snap": "ruled-bores",
-      "budgetTriangles": 2000,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 24500,
+      "maxErrorMm": 0.15,
       "boreRule": {
         "minDiameterMm": 2.0,
         "maxDiameterMm": 2.6,
@@ -34,8 +34,8 @@
       },
       "material": "electronics",
       "snap": "bores",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.3,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "notes": [
         "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
       ]
@@ -52,8 +52,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 2800,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 28000,
+      "maxErrorMm": 0.15,
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
@@ -71,8 +71,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 1600,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 12000,
+      "maxErrorMm": 0.1,
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
@@ -90,8 +90,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 2800,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 14500,
+      "maxErrorMm": 0.1,
       "expectSizeMm": {
         "x": 101.6,
         "z": 101.6
@@ -108,8 +108,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 6.35
       }
@@ -125,8 +125,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 12.7
       }
@@ -142,8 +142,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 25.4
       }
@@ -159,8 +159,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 50.8
       }
@@ -185,8 +185,8 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ]
@@ -211,8 +211,8 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ]
@@ -237,8 +237,8 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ]
@@ -263,8 +263,8 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ]
@@ -280,8 +280,8 @@
       },
       "material": "steel",
       "snap": "bores",
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.1
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05
     },
     {
       "id": "plate-5x15-steel",
@@ -294,8 +294,8 @@
       },
       "material": "steel",
       "snap": "probe",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "x": 63.5,
         "z": 190.5
@@ -317,8 +317,8 @@
       },
       "material": "steel",
       "snap": "probe",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "holeSquareMm": 4.5,
       "notes": [
         "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
@@ -336,7 +336,7 @@
       },
       "material": "steel",
       "snap": "bores+probe",
-      "budgetTriangles": 600,
+      "budgetTriangles": 1000,
       "maxErrorMm": 0.05
     },
     {
@@ -350,7 +350,7 @@
       },
       "material": "steel",
       "snap": "bores+probe",
-      "budgetTriangles": 600,
+      "budgetTriangles": 1000,
       "maxErrorMm": 0.05
     },
     {

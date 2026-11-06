@@ -29,9 +29,27 @@ bun run --cwd infra/parts test    # unit tests: holes, probes, lattice, mesh, GL
    cylindrical faces (`lib/holes.mjs`), and hole openings found by ray probes
    (`lib/probe.mjs`, `lib/lattice.mjs`).
 3. **Builds a model** (fixed Parts): snap points by the manifest's strategy, mass from
-   volume and density, then a welded mesh reduced to the triangle budget with
-   meshoptimizer, written as flat-shaded, meshopt-compressed GLB into `.cache/models/`.
+   volume and density, then the display mesh (`lib/display.mjs`), written as a
+   meshopt-compressed GLB with normals and per-region colours into `.cache/models/`.
    The file name carries the first eight hex digits of its hash.
+
+The display mesh is the shape a viewer sees, not the solid. Its steps:
+
+- **Visible surfaces only** (`lib/exterior.mjs`). The bounding box is voxelised and
+  flood-filled from outside, with a one-voxel seal so seams do not leak. Triangles that
+  touch no outside air are dropped. Gears and boards sealed inside a case go, and so do
+  faces hidden in a socket's depth only if no opening reaches them.
+- **Colours per region.** Each colour from the STEP solids is simplified on its own, so
+  colour boundaries are open edges and stay sharp. Colours go in as vertex colours.
+- **Feature edges are locked** (`lockedVertices`). Edges that turn more than 35 degrees,
+  open edges, and colour boundaries keep their vertices, so the simplifier cannot round
+  off a real edge. Everything else is reduced toward the budget under `maxErrorMm`.
+- **Normals respect the crease** (`lib/normals.mjs`). Each corner averages only the faces
+  within 35 degrees of its own, so curves shade smooth and edges stay hard.
+
+Snap Points, volume and mass still come from the full STEP, before any of this runs.
+`bun run --cwd infra/parts review -- --only <id>` writes the full tessellation and the
+display mesh side by side under `.cache/review/`, rendered with Blender, for comparing by eye.
 4. **Verifies a spec** (Cut Parts): the probed holes must match the `rows` in the manifest
    exactly, with no missing and no extra holes, or the build stops.
 
@@ -85,10 +103,15 @@ same numbers. glTF defines metres, so the app must not rescale them.
 
 ## Budgets and what they cost
 
-Raw STEP tessellations are large. The motor is 57,151 triangles and the omni wheel is
-107,880. Budgets are set per part in `manifest.json`. The table printed by `build` lists
-the achieved counts against the raw ones. The simplifier keeps each collapse within
-`maxErrorMm`, so a part with a budget it cannot reach stays above it, and the build says so.
+Budgets follow how often a Part appears in a robot. A rare Part can afford far more: the
+11W motor appears a dozen times, so it gets a budget in the tens of thousands. A screw
+appears hundreds of times and stays in the hundreds. Each budget is `budgetTriangles` in
+`manifest.json`, with `maxErrorMm` as the limit on surface error.
+
+The budget is a target, and a Part can miss it. Feature edges are locked, and an edge
+whose two ends are locked cannot collapse, so a Part with many sharp edges (the wheel's
+rollers) keeps a floor above its budget. The build prints the achieved count against the
+raw one, and nothing is hidden: a missed budget shows in the table.
 
 ## Known gaps
 
