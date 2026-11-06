@@ -39,10 +39,11 @@ describe("grouping the parts", () => {
       part(STEEL_CHANNEL, 127),
       part(STEEL_CHANNEL, 254),
     ])
+    // The panel shows structure first: channels, then standoffs.
     expect(list.rows.map((r) => [r.name, r.quantity, r.lengthMm])).toEqual([
-      ["1/2 in Standoff", 2, undefined],
       ["1x2x1 Steel C-Channel", 2, 127],
       ["1x2x1 Steel C-Channel", 1, 254],
+      ["1/2 in Standoff", 2, undefined],
     ])
   })
 
@@ -74,9 +75,9 @@ describe("grouping the parts", () => {
       part(MOTOR),
     ])
     expect(list.rows.map((r) => r.family)).toEqual([
-      "motor",
-      "standoff",
       "channel",
+      "standoff",
+      "motor",
     ])
   })
 

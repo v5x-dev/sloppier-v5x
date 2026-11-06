@@ -2,14 +2,30 @@
 // id instead of rendering a wrong model. Every entry needs an id, a SKU, and either a
 // model file (fixed Parts) or a generator spec (Cut Parts).
 
-import type { Catalog, CatalogPart, Material, SnapPoint, Vec3 } from "./types"
+import type {
+  Catalog,
+  CatalogPart,
+  Category,
+  Material,
+  SnapPoint,
+  Vec3,
+} from "./types"
 
 const MATERIALS: readonly Material[] = [
   "aluminum",
   "steel",
   "nylon",
   "electronics",
+  "other",
 ]
+const CATEGORIES: readonly Category[] = [
+  "structure",
+  "motion",
+  "electronics",
+  "pneumatics",
+  "field",
+]
+// Must match the FixedFamily and cut families in types.ts, and FAMILIES in infra/parts/lib/manifest.mjs.
 const FIXED_FAMILIES = [
   "motor",
   "wheel",
@@ -17,14 +33,46 @@ const FIXED_FAMILIES = [
   "screw",
   "nut",
   "plate",
+  "rail",
   "gusset",
-  "bearing",
+  "shaft",
+  "bracket",
   "collar",
   "spacer",
+  "washer",
+  "bearing",
+  "retainer",
+  "lock-bar",
+  "bumper",
+  "coupler",
+  "insert",
   "gear",
+  "rack",
+  "sprocket",
+  "chain",
+  "tread",
+  "brain",
+  "battery",
+  "radio",
+  "controller",
+  "sensor",
+  "switch",
+  "expander",
+  "cylinder",
+  "reservoir",
+  "fitting",
+  "valve",
+  "regulator",
+  "gauge",
+  "manifold",
+  "override",
+  "push-back",
+  "high-stakes",
+  "spin-up",
 ]
 const CUT_FAMILIES = ["channel", "angle", "shaft"]
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/
+const FIT_TOKEN = /^(screw:[0-9]+-[0-9]+|shaft:[0-9]+(?:\/[0-9]+)?)$/
 
 export type CatalogCheck =
   { ok: true; catalog: Catalog } | { ok: false; errors: string[] }
@@ -57,12 +105,23 @@ export function checkCatalog(value: unknown): CatalogCheck {
     seen.add(where)
     if (typeof part.name !== "string" || part.name === "")
       errors.push(`${where}: missing name`)
+    // A null SKU means no source publishes one. Anything else must carry a value.
     const sku = asRecord(part.sku)
-    if (!sku || typeof sku.value !== "string" || sku.value === "")
+    if (
+      part.sku !== null &&
+      (!sku || typeof sku.value !== "string" || sku.value === "")
+    )
       errors.push(`${where}: missing SKU`)
+    if (!CATEGORIES.includes(part.category as Category))
+      errors.push(`${where}: unknown category`)
     if (!MATERIALS.includes(part.material as Material))
       errors.push(`${where}: unknown material`)
     if (!asRecord(part.source)) errors.push(`${where}: missing source record`)
+    if (
+      part.fit !== undefined &&
+      (typeof part.fit !== "string" || !FIT_TOKEN.test(part.fit))
+    )
+      errors.push(`${where}: invalid fit token`)
 
     if (part.kind === "model") {
       if (!FIXED_FAMILIES.includes(String(part.family)))
@@ -72,14 +131,26 @@ export function checkCatalog(value: unknown): CatalogCheck {
         errors.push(`${where}: a model needs model.file`)
       if (!Array.isArray(part.snapPoints))
         errors.push(`${where}: snapPoints must be an array`)
-      else
+      else {
         for (const sp of part.snapPoints) errors.push(...snapErrors(where, sp))
+        // A Part without Snap Points must say why, so the gap is visible in the catalog.
+        if (part.snapPoints.length === 0 && typeof part.snapGap !== "string")
+          errors.push(`${where}: no snap points and no snapGap reason`)
+      }
     } else if (part.kind === "cut") {
       if (!CUT_FAMILIES.includes(String(part.family)))
         errors.push(`${where}: unknown cut family`)
       const cut = asRecord(part.cut)
       if (!cut || !Array.isArray(cut.rows))
         errors.push(`${where}: a cut part needs a generator spec with rows`)
+      if (
+        cut?.holeAccepts !== undefined &&
+        (!Array.isArray(cut.holeAccepts) ||
+          !cut.holeAccepts.every(
+            (token) => typeof token === "string" && FIT_TOKEN.test(token)
+          ))
+      )
+        errors.push(`${where}: holeAccepts must be a list of fit tokens`)
     } else {
       errors.push(`${where}: kind must be "model" or "cut"`)
     }
@@ -110,7 +181,7 @@ function snapErrors(where: string, value: unknown): string[] {
   if (
     sp.accepts !== undefined &&
     (!Array.isArray(sp.accepts) ||
-      !sp.accepts.every((t) => typeof t === "string"))
+      !sp.accepts.every((t) => typeof t === "string" && FIT_TOKEN.test(t)))
   )
     errors.push(`${where}/${sp.id}: accepts must be a list of fit tokens`)
   return errors

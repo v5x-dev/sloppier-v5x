@@ -79,6 +79,7 @@ export const DEFAULT_COLORS: Record<PartMaterial, string> = {
   steel: "#7f8691",
   nylon: "#e3dac3",
   electronics: "#2d3138",
+  other: "#a9a48f",
 }
 
 /**
@@ -98,6 +99,7 @@ const SURFACE: Record<PartMaterial, { metalness: number; roughness: number }> =
     steel: { metalness: 0.75, roughness: 0.46 },
     nylon: { metalness: 0.0, roughness: 0.62 },
     electronics: { metalness: 0.15, roughness: 0.7 },
+    other: { metalness: 0.0, roughness: 0.75 },
   }
 
 export class SceneStore {

@@ -4,7 +4,7 @@
 import { MagnifyingGlassIcon } from "@phosphor-icons/react"
 import { catalog, partById } from "@/catalog/catalog"
 import type { CutPart } from "@/catalog/types"
-import { groupCatalog } from "@/design/catalog-view"
+import { CATEGORY_LABELS, groupCatalog } from "@/design/catalog-view"
 import { lengthFromInput, lengthUnit, stockLength } from "@/design/cut-length"
 import { Button } from "@v5x/ui/components/button"
 import { Input } from "@v5x/ui/components/input"
@@ -62,14 +62,23 @@ export function PartsPanel({
             No Part matches “{query.trim()}”.
           </p>
         )}
-        {groups.map((group) => (
-          <section key={group.family} className="pb-2">
-            <h2 className="sticky top-0 z-10 bg-sidebar px-3 pt-3 pb-1 text-sm font-medium text-muted-foreground">
+        {groups.map((group, index) => (
+          <section
+            key={`${group.category}/${group.family}`}
+            className="pb-2"
+            aria-label={`${CATEGORY_LABELS[group.category]}: ${group.label}`}
+          >
+            {group.category !== groups[index - 1]?.category && (
+              <h2 className="sticky top-0 z-20 border-b border-border bg-sidebar px-3 pt-3 pb-1 text-xs font-semibold tracking-wide text-foreground uppercase">
+                {CATEGORY_LABELS[group.category]}
+              </h2>
+            )}
+            <h3 className="sticky top-7 z-10 bg-sidebar px-3 pt-2 pb-1 text-sm font-medium text-muted-foreground">
               {group.label}
               <span className="ml-2 text-xs tabular-nums">
                 {group.parts.length}
               </span>
-            </h2>
+            </h3>
             <ul>
               {group.parts.map((part) => {
                 const active = part.id === pickedId
@@ -88,9 +97,11 @@ export function PartsPanel({
                       <span className="min-w-0 flex-1 truncate">
                         {part.name}
                       </span>
-                      <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                        {part.sku.value}
-                      </span>
+                      {part.sku && (
+                        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                          {part.sku.value}
+                        </span>
+                      )}
                     </button>
                   </li>
                 )

@@ -122,3 +122,34 @@ export function latticeOpenings(meshes, axis, bounds, pitchMm = 6.35, inset = 0.
 }
 
 const round = (x) => Math.round(x * 1000) / 1000;
+
+/**
+ * Derives the HoleRow[] for a Cut Part from its STEP holes, in the same frame the build
+ * checks against (rotated first when the web's normal is +Y). Phase is kept as measured,
+ * because some channels drill their end holes a few tenths of a millimetre inside the
+ * half-pitch position. The build still verifies every row against the STEP file.
+ */
+export function deriveRows(holes, centre, webNormal) {
+  const frame = webNormal === "y" ? rotateWebToZ(holes, centre) : { holes, centre };
+  const c = frame.centre;
+  const groups = new Map();
+  for (const h of frame.holes) {
+    const wall = h.axis === WALL_AXIS.web ? "web" : "side";
+    const u = h.u - c[(h.axis + 1) % 3];
+    const v = h.v - c[(h.axis + 2) % 3];
+    const along = wall === "web" ? u : v;
+    const across = round(wall === "web" ? v : u);
+    const key = `${wall}|${across}`;
+    if (!groups.has(key)) groups.set(key, { wall, across, along: [] });
+    groups.get(key).along.push(along);
+  }
+  const rows = [];
+  for (const g of groups.values()) {
+    const sorted = g.along.slice().sort((a, b) => a - b);
+    const gaps = sorted.slice(1).map((x, i) => x - sorted[i]).filter((x) => x > 0.5);
+    const pitch = gaps.length ? round(Math.min(...gaps)) : 0;
+    const phase = pitch ? round((((sorted[0] / pitch) % 1) + 1) % 1) : 0;
+    rows.push({ wall: g.wall, across: g.across, pitch, phase });
+  }
+  return rows.sort((a, b) => a.wall.localeCompare(b.wall) || a.across - b.across);
+}

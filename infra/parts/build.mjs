@@ -10,7 +10,7 @@
 // pipeline only; the GLB files go to R2 with upload.mjs.
 
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyseStep } from "./lib/analyse.mjs";
@@ -22,8 +22,9 @@ import { SOURCES, ensureSource, readAt } from "./lib/sources.mjs";
 import { skuFromFileName } from "./lib/sku.mjs";
 import { checkExpectedSize, checkExpectedSorted } from "./lib/units.mjs";
 import { validateManifest } from "./lib/manifest.mjs";
-import { boreSnaps, probedSnaps, ruledBoreSnaps, shankSnaps, axleSnap, thinAxis } from "./lib/snaps.mjs";
+import { boreSnaps, probedSnaps, ruledBoreSnaps, shankSnaps, pinEndSnaps, axleSnap, thinAxis, throughSnaps, endSnaps } from "./lib/snaps.mjs";
 import { compareRows, latticeOpenings, probeAxis, rotateWebToZ, WALL_AXIS } from "./lib/lattice.mjs";
+import { parametricMesh } from "./lib/parametric.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "../..");
@@ -47,20 +48,42 @@ const sources = Object.fromEntries(
 const selected = manifest.parts.filter((p) => !args.only || args.only.includes(p.id));
 if (selected.length === 0) fail("No parts matched --only");
 
+// Each Part's output is cached under .cache/parts, keyed by the STEP bytes, the manifest
+// entry, and every pipeline source file. A rebuild with nothing changed reuses the cached
+// entry and GLB, so a push that touches one Part rebuilds that Part only. --fresh ignores it.
+const pipelineKey = hashPipeline();
+const partsCacheDir = join(cacheDir, "parts");
+mkdirSync(partsCacheDir, { recursive: true });
 const entries = [];
+let cachedCount = 0;
+const totalStarted = Date.now();
 for (const part of selected) {
   const started = Date.now();
-  const entry = part.kind === "model" ? await buildModel(part) : await buildCut(part);
+  const key = cacheKey(part);
+  const cached = args.fresh ? null : readCached(part, key);
+  let entry;
+  if (cached) {
+    entry = cached;
+    cachedCount++;
+  } else {
+    entry = part.kind === "model" ? await buildModel(part) : await buildCut(part);
+    writeFileSync(cachePath(part), JSON.stringify({ key, entry }));
+  }
   entries.push(entry);
-  console.log(`${part.id.padEnd(26)} ${entry.kind.padEnd(6)} ${summary(entry)} (${Date.now() - started} ms)`);
+  const tag = cached ? "cached" : `${Date.now() - started} ms`;
+  console.log(`${part.id.padEnd(26)} ${entry.kind.padEnd(6)} ${summary(entry)} (${tag})`);
 }
+console.log(`built ${selected.length} parts in ${((Date.now() - totalStarted) / 1000).toFixed(1)} s (${cachedCount} from cache)`);
 
+// A full build writes the whole catalog. --only rebuilds the named Parts and merges them
+// into catalog.json, so a long build can run in batches.
 if (!args.only) writeCatalog(entries);
-else console.log("--only given: catalog.json not written");
+else mergeCatalog(entries);
 
 // ----------------------------------------------------------------------------
 
 async function buildModel(part) {
+  if (part.parametric) return buildParametric(part);
   const { file, analysis, source } = await load(part);
   const sku = resolveSku(part, file);
   verifySize(part, analysis);
@@ -88,6 +111,7 @@ async function buildModel(part) {
     id: part.id,
     name: part.name,
     family: part.family,
+    category: part.category,
     sku,
     material: part.material,
     source,
@@ -105,8 +129,58 @@ async function buildModel(part) {
       coordinates: "mm, Y up, origin at the centre of the bounding box",
     },
     snapPoints: snaps,
+    ...snapGapFor(part, snaps),
     notes: part.notes ?? [],
     ...fitField(part),
+  };
+}
+
+/**
+ * A Part made from published dimensions, with no STEP file. The shapes are the manifest's;
+ * the GLB and the catalog entry follow the same rules as a converted model. Its source is
+ * the manual the dimensions come from, which the entry records.
+ */
+async function buildParametric(part) {
+  const mesh = parametricMesh(part.parametric.shapes);
+  const glb = await writeGlb({ positions: mesh.positions, normals: mesh.normals, name: part.id });
+  const glbHash = createHash("sha256").update(glb).digest("hex");
+  const modelFile = `models/${part.id}-${glbHash.slice(0, 8)}.glb`;
+  removeStaleModels(part.id, modelFile);
+  writeFileSync(join(cacheDir, modelFile), glb);
+  const specHash = createHash("sha256").update(JSON.stringify(part.parametric)).digest("hex");
+  return {
+    kind: "model",
+    id: part.id,
+    name: part.name,
+    family: part.family,
+    category: part.category,
+    sku: null,
+    material: part.material,
+    source: {
+      repo: part.parametric.source,
+      url: part.parametric.url,
+      commit: "not a repository",
+      path: part.parametric.dimensionSource,
+      sha256: specHash,
+      declaredUnit: "mm",
+    },
+    parametric: true,
+    sizeMm: round3(mesh.sizeMm),
+    volumeMm3: round3(mesh.volumeMm3),
+    mass: estimateMass(mesh.volumeMm3, part.material, null),
+    model: {
+      file: modelFile,
+      sha256: glbHash,
+      bytes: glb.length,
+      triangles: mesh.triangles,
+      rawTriangles: mesh.triangles,
+      budgetTriangles: mesh.triangles,
+      maxErrorMm: 0,
+      coordinates: "mm, Y up, origin at the centre of the bounding box",
+    },
+    snapPoints: [],
+    ...snapGapFor(part, []),
+    notes: part.notes ?? [],
   };
 }
 
@@ -146,6 +220,7 @@ async function buildCut(part) {
     id: part.id,
     name: part.name,
     family: part.family,
+    category: part.category,
     sku,
     material: part.material,
     source,
@@ -187,6 +262,8 @@ async function load(part) {
 }
 
 function resolveSku(part, file) {
+  // "sku": null means the Part has no published SKU in any source.
+  if (part.sku === null) return null;
   if (part.sku?.value) return { value: part.sku.value, source: part.sku.source, note: part.sku.note };
   const sku = skuFromFileName(file);
   if (!sku) fail(`${part.id}: no SKU in the file name and no sku override in the manifest`);
@@ -215,6 +292,7 @@ function snapPoints(part, analysis) {
   }
   if (part.snap === "bores" || part.snap === "bores+probe") points.push(...boreSnaps(analysis.bores, bounds));
   if (part.snap === "shank") points.push(...shankSnaps(analysis.pins, bounds, part.shankDiameterMm));
+  if (part.snap === "pins") points.push(...pinEndSnaps(analysis.pins, bounds, part.pinDiameterMm));
   if (part.snap === "ruled-bores") points.push(...ruledBoreSnaps(analysis.bores, bounds, part.boreRule));
   if (part.snap === "probe") points.push(...latticePlateSnaps(analysis, part));
   if (part.snap === "bores+probe") {
@@ -225,6 +303,8 @@ function snapPoints(part, analysis) {
     points.push(...probedSnaps(holes, bounds, axis));
   }
   if (part.snap === "axle") points.push(axleSnap(bounds, thinAxis(analysis.sizeMm), part.axleDiameterMm));
+  if (part.snap === "through") points.push(...throughSnaps(analysis.meshes, bounds));
+  if (part.snap === "ends") points.push(...endSnaps(bounds, part.endDiameterMm));
   // Openings take the manifest's fit tokens unless a point says what it takes itself. Pins
   // are a fastener's own ends, not openings.
   const takes = part.snapAccepts;
@@ -270,6 +350,26 @@ function profileSizes(spec) {
   return [spec.depthMm, spec.widthMm];
 }
 
+/**
+ * A Part with no Snap Points cannot be connected, so the catalog says why. The bore
+ * detector finds a cylinder only when a face covers 170 degrees within a 1.5 to 12 mm
+ * diameter, so some STEP files (B-spline holes, bores over 12 mm, or bores that do not
+ * open on the bounding box) give none. A hand-placed point is the fix, recorded as manual.
+ */
+function snapGapFor(part, snaps) {
+  if (snaps.length > 0) return {};
+  return { snapGap: part.snapGap ?? "No Snap Points: the STEP file's holes were not detected as openings on the outside. Hand-placed Snap Points are needed." };
+}
+
+function mergeCatalog(entries) {
+  const existing = JSON.parse(readFileSync(catalogPath, "utf8"));
+  const rebuilt = new Map(entries.map((e) => [e.id, e]));
+  const kept = existing.parts.filter((e) => !rebuilt.has(e.id));
+  const catalog = { ...existing, parts: [...kept, ...entries].sort((a, b) => a.id.localeCompare(b.id)) };
+  writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+  console.log(`merged ${entries.length} parts into ${catalogPath} (${catalog.parts.length} parts)`);
+}
+
 function writeCatalog(entries) {
   const sorted = entries.slice().sort((a, b) => a.id.localeCompare(b.id));
   const catalog = {
@@ -299,8 +399,44 @@ function parseArgs(list) {
   const out = {};
   for (let i = 0; i < list.length; i++) {
     if (list[i] === "--only") out.only = list[++i].split(",");
+    if (list[i] === "--fresh") out.fresh = true;
   }
   return out;
+}
+
+/** A hash of the pipeline's own code: this script and every module in lib/. */
+function hashPipeline() {
+  const hash = createHash("sha256").update(`schema ${SCHEMA_VERSION}\n`);
+  const files = [join(here, "build.mjs"), ...readdirSync(join(here, "lib")).map((n) => join(here, "lib", n))];
+  for (const file of files.sort()) hash.update(file.slice(here.length)).update(readFileSync(file));
+  return hash.digest("hex");
+}
+
+/** The cache key: the STEP bytes, the manifest entry, and the pipeline code. */
+function cacheKey(part) {
+  // A parametric Part's inputs are all in its manifest entry; a converted Part also keys on its STEP bytes.
+  const bytes = part.parametric ? Buffer.alloc(0) : readAt(sources[part.source.repo], part.source.path);
+  return createHash("sha256")
+    .update(pipelineKey)
+    .update(JSON.stringify(part))
+    .update(createHash("sha256").update(bytes).digest("hex"))
+    .digest("hex");
+}
+
+function cachePath(part) {
+  return join(partsCacheDir, `${part.id}.json`);
+}
+
+/** The cached catalog entry for this Part, or null when it must be built again. */
+function readCached(part, key) {
+  try {
+    const { key: stored, entry } = JSON.parse(readFileSync(cachePath(part), "utf8"));
+    if (stored !== key) return null;
+    if (entry.kind === "model" && !existsSync(join(cacheDir, entry.model.file))) return null;
+    return entry;
+  } catch {
+    return null;
+  }
 }
 
 function round3(value) {

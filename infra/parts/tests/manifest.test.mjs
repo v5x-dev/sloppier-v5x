@@ -14,8 +14,12 @@ test("the committed manifest is valid", () => {
   assert.deepEqual(validateManifest(manifest, repos), []);
 });
 
-test("every part's SKU is in the file name or given in the manifest", () => {
+test("every part's SKU is in the file name or given in the manifest, or is null", () => {
   for (const part of manifest.parts) {
+    // "sku": null says no source publishes a SKU for this Part.
+    if (part.sku === null) continue;
+    // A parametric Part has no file name to read a SKU from.
+    if (part.parametric) continue;
     const fromName = /\(\d{3}-\d{4}(-\d{3,4})?\)/.test(part.source.path);
     assert.ok(fromName || part.sku?.value, `${part.id} has no SKU`);
   }
@@ -32,4 +36,14 @@ test("catches a duplicate id, an unknown family, and an unknown source", () => {
   assert.match(errors, /duplicate id/);
   assert.match(errors, /unknown family/);
   assert.match(errors, /unknown source repo/);
+});
+
+test("requires a valid measured diameter range for detected pin ends", () => {
+  const link = manifest.parts.find((part) => part.id === "chain-rubber-link");
+  assert.ok(link);
+  const errors = validateManifest(
+    { parts: [{ ...link, pinDiameterMm: { min: 5, max: 4 } }] },
+    repos
+  ).join("\n");
+  assert.match(errors, /valid pinDiameterMm range/);
 });
