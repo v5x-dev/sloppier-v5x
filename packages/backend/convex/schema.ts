@@ -82,6 +82,33 @@ export default defineSchema({
     files: v.array(v.object({ path: v.string(), contents: v.bytes() })),
   }).index("by_import_sequence", ["importId", "sequence"]),
 
+  designs: defineTable({
+    workspaceId: v.id("workspaces"),
+    name: v.string(),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    /** Updated at most once a minute, so list subscribers are not woken by every edit. */
+    lastActivityAt: v.optional(v.number()),
+    archivedAt: v.optional(v.number()),
+    /** Set when permanent deletion starts. Hidden everywhere until the rows are removed. */
+    deletionStartedAt: v.optional(v.number()),
+    /** Set while a duplicate's updates are being copied. Edits wait until it clears. */
+    copyingFrom: v.optional(v.id("designs")),
+    /** Updates through this sequence are already merged as far as they can be. */
+    compactedThrough: v.optional(v.number()),
+  }).index("by_workspace", ["workspaceId"]),
+
+  designUpdates: defineTable({
+    designId: v.id("designs"),
+    sequence: v.number(),
+    updateId: v.string(),
+    actorId: v.string(),
+    bytes: v.bytes(),
+    createdAt: v.number(),
+  })
+    .index("by_design_sequence", ["designId", "sequence"])
+    .index("by_design_update", ["designId", "updateId"]),
+
   programs: defineTable({
     archivedAt: v.optional(v.number()),
     /** Set when permanent deletion starts. Hidden from listings until the row is removed. */

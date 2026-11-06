@@ -46,3 +46,17 @@ export async function requireProgramMembership(
   const access = await requireWorkspaceMembership(ctx, program.workspaceId)
   return { ...access, program }
 }
+
+export async function requireDesignMembership(
+  ctx: DbCtx,
+  designId: Id<"designs">
+) {
+  const design = await ctx.db.get(designId)
+
+  if (!design || design.deletionStartedAt) {
+    throw new ConvexError("Design not found.")
+  }
+
+  const access = await requireWorkspaceMembership(ctx, design.workspaceId)
+  return { ...access, design }
+}
