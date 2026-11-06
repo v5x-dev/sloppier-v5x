@@ -58,7 +58,7 @@ export function PartsListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85svh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[85svh] sm:max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Parts list</DialogTitle>
           <DialogDescription>

@@ -739,7 +739,7 @@ function ViewNotices({
     })
   if (notes.length === 0) return null
   return (
-    <div className="pointer-events-none absolute top-3 left-3 flex max-w-md flex-col gap-2">
+    <div className="pointer-events-none absolute top-16 left-3 flex max-w-md flex-col gap-2">
       {notes.map((note) => (
         <p
           key={note.key}
