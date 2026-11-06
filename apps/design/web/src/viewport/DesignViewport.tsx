@@ -124,17 +124,19 @@ function Workspace(props: ViewportProps) {
     const state = live.current
     const colors = readSceneColors()
     scene.background = colors.background
-    const hemi = new HemisphereLight(colors.highlight, colors.background, 1.1)
+    const hemi = new HemisphereLight(colors.highlight, colors.background, 0.6)
     // Key from above and to the front, and a softer fill from the opposite side, so a
     // Part's faces read as different planes instead of one flat shade.
-    const key = new DirectionalLight(0xffffff, 2.2)
+    const key = new DirectionalLight(0xffffff, 1.0)
     key.position.set(500, 900, 380)
-    const fill = new DirectionalLight(colors.highlight, 0.7)
+    const fill = new DirectionalLight(colors.highlight, 0.4)
     fill.position.set(-600, 400, -420)
     scene.add(hemi, key, fill)
     const pmrem = new PMREMGenerator(gl)
     const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     scene.environment = environment
+    // Image lighting sets the base brightness; the lamps above add form on top of it.
+    scene.environmentIntensity = 0.6
     pmrem.dispose()
     const grid = createGrid(colors)
     scene.add(grid.mesh)
