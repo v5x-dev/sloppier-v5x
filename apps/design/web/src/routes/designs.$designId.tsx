@@ -2,6 +2,8 @@ import {
   ArrowLeftIcon,
   CheckIcon,
   CloudSlashIcon,
+  KeyboardIcon,
+  ListBulletsIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
@@ -70,6 +72,13 @@ import {
   type ViewportStatus,
 } from "@/viewport/status"
 import { EditorToolbar } from "@/components/editor-chrome"
+import { PartsListDialog } from "@/components/parts-list-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@v5x/ui/components/dropdown-menu"
 import { KeyboardSettingsDialog } from "@/components/keyboard-settings"
 import {
   PALETTE,
@@ -138,6 +147,7 @@ function DesignEditor({
   const [angleStepDeg, setAngleStepDeg] = useState(15)
   const [notice, setNotice] = useState<string>()
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [partsOpen, setPartsOpen] = useState(false)
   const [projection, setProjection] = useState<Projection>("perspective")
   const [status, setStatus] = useState<ViewportStatus>(INITIAL_STATUS)
   const [history, setHistory] = useState<History>()
@@ -280,6 +290,25 @@ function DesignEditor({
         <h1 className="min-w-0 flex-1 truncate font-serif text-lg">
           {design?.name}
         </h1>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="sm" aria-label="Design menu" />
+            }
+          >
+            Design
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => setPartsOpen(true)}>
+              <ListBulletsIcon />
+              Parts list
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShortcutsOpen(true)}>
+              <KeyboardIcon />
+              Keyboard shortcuts
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <SaveStatus state={state} />
       </header>
 
@@ -458,6 +487,12 @@ function DesignEditor({
       <KeyboardSettingsDialog
         open={shortcutsOpen}
         onOpenChange={setShortcutsOpen}
+      />
+      <PartsListDialog
+        open={partsOpen}
+        onOpenChange={setPartsOpen}
+        parts={parts}
+        designName={design?.name ?? "design"}
       />
     </div>
   )
