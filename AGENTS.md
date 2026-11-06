@@ -16,6 +16,7 @@ collection of unrelated projects.
 
 - **One backend.** `packages/backend` is a Convex backend. All of the products use it.
 - **One sign-in.** Accounts use WorkOS AuthKit and work across the products.
+  `packages/auth` holds the sign-in code the apps share.
 - **One UI kit.** `packages/ui` holds the components the apps are built from.
 - **Design tokens.** `packages/tokens` holds the colors, type, and spacing values
   shared by the apps and the marketing site.
@@ -28,6 +29,7 @@ collection of unrelated projects.
 - `packages/`: code shared between apps.
 - `infra/`: the build server images and scripts for compiling V5 programs, and the
   generator for the editor's autocomplete data.
+- `GLOSSARY.md` and `docs/adr/`: the shared vocabulary and the decisions behind it.
 - `scripts/`: repo tooling, such as the boundary checker and the doctor script.
 - `.github/workflows/`: CI and deploys.
 
