@@ -216,6 +216,8 @@ export class SceneStore {
   /** Brings the scene in line with the Parts in the document. A preview overrides the document. */
   sync(parts: readonly PlacedPart[]): void {
     const live = new Set<string>()
+    const added: PlacedPart[] = []
+    let snapIndexNeedsRebuild = this.previews.size > 0
     for (const part of parts) {
       live.add(part.id)
       const shown = this.previews.get(part.id) ?? part
@@ -225,13 +227,36 @@ export class SceneStore {
         color: part.color,
       }
       const cur = this.poses.get(part.id)
-      if (!cur) this.add(part, pose)
-      else if (!samePose(cur, pose)) this.update(part.id, pose)
+      if (!cur) {
+        this.add(part, pose)
+        added.push(part)
+      } else if (cur.key !== partShape(part).key) {
+        const preview = this.previews.get(part.id)
+        this.remove(part.id)
+        if (preview) this.previews.set(part.id, preview)
+        this.add(part, pose)
+        snapIndexNeedsRebuild = true
+      } else if (!samePose(cur, pose)) {
+        if (!sameTransform(cur, pose)) snapIndexNeedsRebuild = true
+        this.update(part.id, pose)
+      }
     }
-    for (const id of [...this.poses.keys()]) if (!live.has(id)) this.remove(id)
+    for (const id of [...this.poses.keys()]) {
+      if (live.has(id)) continue
+      this.remove(id)
+      snapIndexNeedsRebuild = true
+    }
     for (const id of [...this.selected])
       if (!live.has(id)) this.selected.delete(id)
-    this.rebuildSnapIndex(parts)
+    if (snapIndexNeedsRebuild) this.rebuildSnapIndex(parts)
+    else {
+      for (const part of added)
+        this.addSnapEntries(
+          this.snapIndex,
+          part,
+          this.previews.get(part.id) ?? part
+        )
+    }
     this.drawHover()
     this.drawSelection()
     this.invalidate()
@@ -652,21 +677,29 @@ export class SceneStore {
   private rebuildSnapIndex(parts: readonly PlacedPart[]): void {
     const index = new SnapIndex(SNAP_RADIUS_MM)
     for (const part of parts) {
-      const shape = partShape(part)
       const shown = this.previews.get(part.id) ?? part
       const pose = { position: shown.position, rotation: shown.rotation }
-      for (const snap of shape.snapPoints)
-        index.add(worldEntry(part.id, snap, pose))
-      const fastener = fastenerOf({ ...part, ...pose })
-      if (fastener?.role === "shaft" && fastener.fit)
-        index.addLine({
-          owner: part.id,
-          ...shaftLine({ pose }),
-          fit: fastener.fit,
-          lengthMm: fastener.lengthMm,
-        })
+      this.addSnapEntries(index, part, pose)
     }
     this.snapIndex = index
+  }
+
+  private addSnapEntries(
+    index: SnapIndex,
+    part: PlacedPart,
+    pose: { position: Vec3; rotation: Quat }
+  ): void {
+    const shape = partShape(part)
+    for (const snap of shape.snapPoints)
+      index.add(worldEntry(part.id, snap, pose))
+    const fastener = fastenerOf({ ...part, ...pose })
+    if (fastener?.role === "shaft" && fastener.fit)
+      index.addLine({
+        owner: part.id,
+        ...shaftLine({ pose }),
+        fit: fastener.fit,
+        lengthMm: fastener.lengthMm,
+      })
   }
 }
 
@@ -693,8 +726,14 @@ function samePose(
   a: Pose3,
   b: { position: Vec3; rotation: Quat; color: string }
 ): boolean {
+  return a.color === b.color && sameTransform(a, b)
+}
+
+function sameTransform(
+  a: Pick<Pose3, "position" | "rotation">,
+  b: { position: Vec3; rotation: Quat }
+): boolean {
   return (
-    a.color === b.color &&
     a.position.every((v, i) => v === b.position[i]) &&
     a.rotation.every((v, i) => v === b.rotation[i])
   )
