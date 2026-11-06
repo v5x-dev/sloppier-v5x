@@ -658,7 +658,7 @@ function Workspace(
     const ray: Ray = store.rayAt(ndc, activeCamera())
     const step = GRID_MM
     const handle = drag.handle
-    let plan: Plan | { blocked: "ground" } | undefined
+    let plan: Plan | undefined
     if (handle.kind === "axis") {
       const t = closestOnAxis(ray, drag.pivot, drag.axis)
       const raw = t - (drag.startT ?? t)
@@ -690,20 +690,10 @@ function Workspace(
         [drag.pivot.x, drag.pivot.y, drag.pivot.z],
         [drag.axis.x, drag.axis.y, drag.axis.z],
         snapped,
-        {
-          alone: drag.alone,
-          liftAllowed: !drag.hinge,
-        }
+        { alone: drag.alone }
       )
-      if ("blocked" in plan) {
-        latest.current.onNotice(
-          "A turn about a screw or shaft cannot take a Part under the ground."
-        )
-        return
-      }
-      latest.current.onNotice(undefined)
     }
-    if ("blocked" in plan) return
+    if (!plan) return
     drag.plan = plan
     drag.moved = plan.changes.some((c, i) => {
       const t = drag.targets[i]

@@ -238,16 +238,12 @@ function DesignWorkspace({
   const turn = (degrees: number, axis: number) => {
     const unit: [number, number, number] = [0, 0, 0]
     unit[axis] = 1
-    const ok = turnBy(doc, selection, {
+    turnBy(doc, selection, {
       angle: (degrees * Math.PI) / 180,
       axis: unit,
       pivotFastener: pivot,
     })
-    setNotice(
-      ok
-        ? undefined
-        : "That turn would put a Part under the ground. Turn about the selection's centre, or move it up first."
-    )
+    setNotice(undefined)
   }
   const moveTo = (target: Vec3) => {
     if (selected.length !== 1) return

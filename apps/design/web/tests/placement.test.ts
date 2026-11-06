@@ -108,7 +108,7 @@ describe("how a Part rests on the ground", () => {
   })
 })
 
-describe("snapping never sinks a Part into the ground", () => {
+describe("the ground does not limit a snap", () => {
   // A block 20 mm tall whose bottom face has one Snap Point, facing down.
   // A family that keeps its catalog pose, so the snap stays where it is written.
   const block: PlacementShape = {
@@ -127,9 +127,9 @@ describe("snapping never sinks a Part into the ground", () => {
     ],
   }
 
-  it("refuses a snap that would hang the Part under the ground, and rests it instead", () => {
-    // A hole in the underside of a Part at height zero, facing down. A Part snapped to it
-    // from below would hang beneath the ground.
+  it("takes a snap that would hang the Part below the ground", () => {
+    // A hole in the table at height zero, facing down. The block snapped to it from below
+    // hangs beneath the ground, and that is allowed: the ground is only a reference.
     const index = new SnapIndex(10)
     index.add({
       owner: "table",
@@ -138,12 +138,12 @@ describe("snapping never sinks a Part into the ground", () => {
       axis: new Vector3(0, -1, 0),
     } satisfies WorldSnap)
     const result = placementPose(block, { x: 0, z: 0 }, START_TURN, index)
-    expect(result.snap).toBeNull()
-    expect(lowestWorldY(result.pose, block.bounds)).toBeCloseTo(0, 6)
+    expect(result.snap).not.toBeNull()
+    expect(lowestWorldY(result.pose, block.bounds)).toBeLessThan(0)
   })
 
-  it("takes a snap that keeps the Part above the ground", () => {
-    // A hole facing up at height 0: the block sits on it, above the ground.
+  it("takes a snap above the ground as well", () => {
+    // A hole facing up at height 0: the block sits on it.
     const index = new SnapIndex(10)
     index.add({
       owner: "table",
@@ -158,35 +158,33 @@ describe("snapping never sinks a Part into the ground", () => {
     )
   })
 
-  it("moves on to the next snap when the nearest would sink the Part", () => {
+  it("takes the nearest snap, even one that would sink the Part", () => {
     const index = new SnapIndex(10)
-    // Nearest: a hole facing down at the ground, which would sink the Part.
+    // Nearest: a hole facing down at the ground.
     index.add({
       owner: "low",
       snapId: "down",
       position: new Vector3(0, 0, 0),
       axis: new Vector3(0, -1, 0),
     } satisfies WorldSnap)
-    // Further: a hole facing up, which is fine.
+    // Further: a hole facing up.
     index.add({
       owner: "high",
       snapId: "up",
       position: new Vector3(0, 3, 0),
       axis: new Vector3(0, 1, 0),
     } satisfies WorldSnap)
-    // The block's snap sits right on the nearer hole, which would sink the block.
     const match = findSnap(
       block.snapPoints,
       { position: [0, 10, 0], rotation: [0, 0, 0, 1] },
       index,
       10,
-      0,
-      (pose) => lowestWorldY(pose, block.bounds) >= -1e-6
+      0
     )
-    expect(match?.target.owner).toBe("high")
+    expect(match?.target.owner).toBe("low")
   })
 
-  it("keeps the ground check for a snap picked from the pointer's ray too", () => {
+  it("takes a snap picked from the pointer's ray below the ground", () => {
     // Pointer straight down through a facing-down hole at the ground.
     const index = new SnapIndex(10)
     index.add({
@@ -200,8 +198,8 @@ describe("snapping never sinks a Part into the ground", () => {
       direction: new Vector3(0, -1, 0),
     }
     const result = placementPose(block, { x: 0, z: 0 }, START_TURN, index, ray)
-    expect(result.snap).toBeNull()
-    expect(lowestWorldY(result.pose, block.bounds)).toBeCloseTo(0, 6)
+    expect(result.snap).not.toBeNull()
+    expect(lowestWorldY(result.pose, block.bounds)).toBeLessThan(0)
   })
 })
 

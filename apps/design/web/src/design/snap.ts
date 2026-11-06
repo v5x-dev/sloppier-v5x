@@ -140,16 +140,15 @@ export type SnapMatch = {
 
 /**
  * The nearest pair of Snap Points within `radius`, if any. The candidate's Snap Points are
- * taken where the Part would sit at `pose` without snapping. A pair whose aligned pose
- * fails `accept` is skipped, so a snap that would sink the Part can yield to the next one.
+ * taken where the Part would sit at `pose` without snapping. Nothing is refused for where the
+ * aligned Part lands: the ground does not limit a snap.
  */
 export function findSnap(
   candidates: readonly SnapPoint[],
   pose: Pose,
   index: SnapIndex,
   radius: number,
-  roll = 0,
-  accept: (pose: Pose) => boolean = () => true
+  roll = 0
 ): SnapMatch | null {
   let best: SnapMatch | undefined
   for (const candidate of candidates) {
@@ -158,7 +157,6 @@ export function findSnap(
       const distance = at.distanceTo(target.position)
       if (distance > radius || (best && distance >= best.distance)) continue
       const aligned = alignToSnap(candidate, target, pose.rotation, roll)
-      if (!accept(aligned)) continue
       best = { candidate, target, distance, pose: aligned }
     }
   }
@@ -168,8 +166,7 @@ export function findSnap(
 /**
  * The Snap Point the pointer is over, if any: the placed Snap Point nearest to the pointer's
  * ray, within `radius`, in front of the camera. The candidate's Snap Point that sits closest
- * to it, at the ground pose, is the one that mates. The result is aligned to that pair. A
- * pair whose aligned pose fails `accept` is skipped.
+ * to it, at the ground pose, is the one that mates. The result is aligned to that pair.
  */
 export function findSnapAlongRay(
   candidates: readonly SnapPoint[],
@@ -177,8 +174,7 @@ export function findSnapAlongRay(
   index: SnapIndex,
   radius: number,
   groundPose: Pose,
-  roll = 0,
-  accept: (pose: Pose) => boolean = () => true
+  roll = 0
 ): SnapMatch | null {
   if (candidates.length === 0) return null
   // Called on every pointer move against every placed Snap Point, so it allocates little.
@@ -196,21 +192,20 @@ export function findSnapAlongRay(
     )
     if (distance <= radius) reached.push({ target, distance })
   }
+  if (reached.length === 0) return null
   reached.sort((a, b) => a.distance - b.distance)
-  for (const { target, distance } of reached) {
-    let candidate = candidates[0]
-    let nearest = Infinity
-    for (const c of candidates) {
-      const at = toWorldSnap(c, groundPose).position.distanceTo(target.position)
-      if (at < nearest) {
-        nearest = at
-        candidate = c
-      }
+  const { target, distance } = reached[0]
+  let candidate = candidates[0]
+  let nearest = Infinity
+  for (const c of candidates) {
+    const at = toWorldSnap(c, groundPose).position.distanceTo(target.position)
+    if (at < nearest) {
+      nearest = at
+      candidate = c
     }
-    const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
-    if (accept(pose)) return { candidate, target, distance, pose }
   }
-  return null
+  const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
+  return { candidate, target, distance, pose }
 }
 
 /**
@@ -224,8 +219,7 @@ export function findLineSnapAlongRay(
   lines: readonly ShaftLine[],
   radius: number,
   groundPose: Pose,
-  roll = 0,
-  accept: (pose: Pose) => boolean = () => true
+  roll = 0
 ): SnapMatch | null {
   const direction = ray.direction.clone().normalize()
   let best: SnapMatch | null = null
@@ -265,7 +259,6 @@ export function findLineSnapAlongRay(
       axis: line.direction.clone().multiplyScalar(-facing),
     }
     const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
-    if (!accept(pose)) continue
     best = { candidate, target, distance, pose }
   }
   return best

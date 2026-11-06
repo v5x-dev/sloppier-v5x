@@ -1,8 +1,9 @@
 // Where a Part goes while it is being placed. Without a snap, it rests on the ground, on the
 // half-inch grid, in the orientation its family sits in, turned by the team's quarter turns.
-// With a snap, the nearest pair of Snap Points within the radius decides the pose, as long
-// as the Part stays above the ground. Turns are about the vertical axis, plus a roll about
-// the snapped axis.
+// With a snap, the nearest pair of Snap Points within the radius decides the pose, wherever
+// that puts the Part. The ground is a visual reference, not a physical rule: a Part that
+// snaps below it is shown below it, because a wheel on a shaft near the floor is still a
+// valid assembly. Turns are about the vertical axis, plus a roll about the snapped axis.
 
 import { Quaternion, Vector3 } from "three"
 import type { SnapPoint, Vec3 } from "@/catalog/types"
@@ -17,12 +18,10 @@ import {
 import { HOLE_PITCH_MM } from "./cut-length"
 import type { Quat } from "./model"
 import { restingQuat } from "./orientation"
-import { lowestOffset, lowestWorldY, quatOf, type Bounds } from "./transform"
+import { lowestOffset, quatOf, type Bounds } from "./transform"
 
 export const SNAP_RADIUS_MM = 10
 export const GRID_MM = HOLE_PITCH_MM
-/** A snapped Part may touch the ground, but not sink into it, by more than this. */
-const GROUND_EPS_MM = 1e-6
 
 export type PlacementTurn = {
   /** Quarter turns about the vertical axis, counted from the resting orientation. */
@@ -86,8 +85,9 @@ export function freePose(
 
 /**
  * The pose for a Part under the pointer. A Snap Point under the pointer's ray wins. Failing
- * that, the Part sits on the ground at (x, z), and a Snap Point near that ground pose snaps.
- * A snap that would put any of the Part below the ground is not taken.
+ * that, a shaft's line takes a hole that fits it. Failing that, the Part sits on the ground
+ * at (x, z), and a Snap Point near that ground pose snaps. Nothing is refused for being
+ * below the ground.
  */
 export function placementPose(
   shape: PlacementShape,
@@ -97,8 +97,6 @@ export function placementPose(
   ray?: { origin: Vector3; direction: Vector3 }
 ): PlacementResult {
   const free = freePose(shape, ground, turn)
-  const aboveGround = (pose: Pose) =>
-    lowestWorldY(pose, shape.bounds) >= -GROUND_EPS_MM
   const underPointer = ray
     ? findSnapAlongRay(
         shape.snapPoints,
@@ -106,8 +104,7 @@ export function placementPose(
         index,
         SNAP_RADIUS_MM,
         free,
-        turn.roll,
-        aboveGround
+        turn.roll
       )
     : null
   if (underPointer) return { pose: underPointer.pose, snap: underPointer }
@@ -119,8 +116,7 @@ export function placementPose(
         index.lines(),
         SNAP_RADIUS_MM,
         free,
-        turn.roll,
-        aboveGround
+        turn.roll
       )
     : null
   if (onShaft) return { pose: onShaft.pose, snap: onShaft }
@@ -129,8 +125,7 @@ export function placementPose(
     free,
     index,
     SNAP_RADIUS_MM,
-    turn.roll,
-    aboveGround
+    turn.roll
   )
   return nearGround
     ? { pose: nearGround.pose, snap: nearGround }
