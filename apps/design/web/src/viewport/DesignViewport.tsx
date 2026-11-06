@@ -31,7 +31,7 @@ import type { WorldSnap } from "@/design/snap"
 import { readSceneColors } from "./colors"
 import { createGrid } from "./grid"
 import { ModelLoader, type ModelStatus } from "./models"
-import { DEFAULT_COLORS, SceneStore } from "./scene-store"
+import { defaultColorFor, SceneStore } from "./scene-store"
 import { INITIAL_STATUS, type Projection, type ViewportStatus } from "./status"
 
 export type { Projection, ViewportStatus } from "./status"
@@ -315,7 +315,7 @@ function Workspace(props: ViewportProps) {
       store.setGhost(
         tool,
         result.pose,
-        DEFAULT_COLORS[shape.catalog.material],
+        defaultColorFor(shape.catalog),
         Boolean(result.snap)
       )
       if (result.snap) {
@@ -357,7 +357,7 @@ function Workspace(props: ViewportProps) {
       const tool = latest.current.tool
       if (tool) {
         if (!state.pose) return
-        const color = DEFAULT_COLORS[partShape(tool).catalog.material]
+        const color = defaultColorFor(partShape(tool).catalog)
         placePart(latest.current.doc, {
           ...tool,
           position: state.pose.position,
