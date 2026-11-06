@@ -45,10 +45,17 @@ for (const part of manifest.parts.filter((p) => p.kind === "model" && (!args.onl
     positions: shown.positions, normals: shown.normals, colors: shown.colors, indices: shown.indices, name: part.id, compress: false,
   }));
   console.log(`${part.id}: display ${shown.triangles} tris (kept ${shown.keptTriangles} of raw ${shown.rawTriangles}), error ${shown.errorMm.toFixed(3)} mm, voxel ${shown.voxelMm.toFixed(3)} mm`);
+  // Snap Points overlaid on the display mesh, to check they still line up with it.
+  const overlayFile = join(outDir, `${part.id}-snaps.json`);
+  const catalog = JSON.parse(readFileSync(join(root, "../../apps/design/web/src/catalog/catalog.json"), "utf8"));
+  const entry = catalog.parts.find((p) => p.id === part.id);
+  const points = (entry?.snapPoints ?? []).map((s) => [...s.position, 0.1, 0.9, 0.3]);
+  writeFileSync(overlayFile, JSON.stringify({ points }));
   for (const [i, [yaw, pitch, dist]] of views.entries()) {
     for (const [kind, file] of [["full", ref], ["display", glb]]) {
-      const png = join(outDir, `${part.id}-${kind}-${i}.png`);
-      execFileSync(blender, ["--background", "--factory-startup", "--python", join(root, "tools/render.py"), "--", file, png, String(yaw), String(pitch), String(dist), String(args.pixels ?? 900)], { stdio: ["ignore", "ignore", "inherit"] });
+      const png = join(outDir, `${part.id}-${kind}-${i}${args.snaps && kind === "display" ? "-snaps" : ""}.png`);
+      const extra = args.snaps && kind === "display" ? [overlayFile] : [];
+      execFileSync(blender, ["--background", "--factory-startup", "--python", join(root, "tools/render.py"), "--", file, png, String(yaw), String(pitch), String(dist), String(args.pixels ?? 900), ...extra], { stdio: ["ignore", "ignore", "inherit"] });
       console.log(`  ${kind} view ${i} -> ${png}`);
     }
   }
@@ -60,6 +67,7 @@ function parseArgs(list) {
     if (list[i] === "--only") out.only = list[++i].split(",");
     if (list[i] === "--views") out.views = list[++i];
     if (list[i] === "--pixels") out.pixels = Number(list[++i]);
+    if (list[i] === "--snaps") out.snaps = true;
   }
   return out;
 }

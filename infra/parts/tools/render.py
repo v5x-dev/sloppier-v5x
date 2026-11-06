@@ -119,11 +119,13 @@ cam.rotation_euler = (center - cam.location).to_track_quat("-Z", "Y").to_euler()
 scene.camera = cam
 
 if overlay:
-    marker = bpy.data.meshes.new("marker")
+    # Points are in the glTF frame (Y up, mm). Blender's importer turns that into Z up,
+    # so each point is mapped the same way: (x, y, z) -> (x, -z, y).
     for i, p in enumerate(overlay["points"]):
         mat_m = bpy.data.materials.new(f"m{i}")
+        mat_m.use_nodes = False
         mat_m.diffuse_color = (p[3], p[4], p[5], 1.0)
-        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.9, location=(p[0], p[1], p[2]))
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=1.2, location=(p[0], -p[2], p[1]))
         sphere = bpy.context.active_object
         sphere.data.materials.append(mat_m)
         sphere.name = f"snap-{i}"
