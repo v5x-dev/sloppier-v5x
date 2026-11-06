@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { demoAccount } from "../src/lib/auth"
+import { demoAccount } from "../src/auth"
 
 const accounts = JSON.stringify([
   { id: "alice", name: "Alice", token: "signed-token" },
