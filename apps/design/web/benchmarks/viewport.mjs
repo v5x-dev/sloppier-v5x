@@ -148,6 +148,33 @@ const after = await page.evaluate(() => {
     stats: store.stats(),
   }
 })
+// The whole Design must save and come back from the server, not from this browser's copy.
+await page.getByRole("status").getByText("Saved").waitFor()
+const savedBytes = await page.evaluate(() =>
+  window.__designBench.documentBytes()
+)
+await page.evaluate(async () => {
+  const databases = await indexedDB.databases()
+  sessionStorage.setItem(
+    "bench-clear",
+    JSON.stringify(databases.map((d) => d.name))
+  )
+})
+await page.addInitScript(() => {
+  const names = JSON.parse(sessionStorage.getItem("bench-clear") ?? "[]")
+  for (const name of names) indexedDB.deleteDatabase(name)
+  sessionStorage.removeItem("bench-clear")
+})
+const reloadStarted = Date.now()
+await page.reload()
+await page.waitForFunction(
+  (n) =>
+    (document.querySelector("footer")?.textContent ?? "").includes(
+      `${n} parts`
+    ),
+  load.parts
+)
+const reloadFromServerMs = Date.now() - reloadStarted
 if (process.env.BENCH_SHOT)
   await page.screenshot({ path: process.env.BENCH_SHOT, timeout: 120_000 })
 
@@ -159,6 +186,8 @@ console.log(
       cpuThrottle: throttle,
       parts: load.parts,
       insertAndSyncMs: Math.round(load.insertAndSyncMs),
+      savedBytes,
+      reloadFromServerMs,
       placeOnePartWith2000Ms: Math.round(after.placeOneMs * 10) / 10,
       drawCalls: after.drawCalls,
       trianglesPerFrame: after.trianglesPerFrame,

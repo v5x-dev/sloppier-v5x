@@ -17,7 +17,7 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
 import { useEffect, useRef } from "react"
-import type * as Y from "yjs"
+import * as Y from "yjs"
 import { partsMap, placePart, readPlacedParts } from "@/design/document"
 import type { PartRef, Quat } from "@/design/model"
 import { canDraw, partShape } from "@/design/library"
@@ -185,6 +185,8 @@ function Workspace(props: ViewportProps) {
           renderer: gl,
           store,
           placePart,
+          documentBytes: () =>
+            Y.encodeStateAsUpdate(latest.current.doc).byteLength,
         },
       })
 
