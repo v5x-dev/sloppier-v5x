@@ -20,8 +20,8 @@ cross-section and hole rows, and `cut-part.ts` generates them at any length.
 
 - `cut-part.ts` builds Cut Parts in the Part frame: Y up, origin at the centre. Each
   hole gets one Snap Point on its outside face.
-- `modelUrl(part, base)` builds a GLB's URL from the bucket's public base. The base is
-  an output of the alchemy stack, `modelsBaseUrl`.
+- `modelUrl(part, base)` builds a GLB's URL from the bucket's public base. The stack's
+  `modelsBaseUrl` output is a host name without a scheme, so pass `https://<host>`.
 
 To change the catalog, edit `infra/parts/manifest.json` and run the pipeline. See
 `infra/parts/README.md`.

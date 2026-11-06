@@ -36,8 +36,9 @@ export default Alchemy.Stack(
     return {
       websiteUrl: website.url.as<string>(),
       modelsBucket: models.bucketName.as<string>(),
-      // The r2.dev host is rate-limited and meant for development. Production needs a
-      // custom domain on the bucket before launch.
+      // A host name with no scheme: a model's URL is https://<host>/<file>. The r2.dev host
+      // is rate-limited and meant for development. Production needs a custom domain on the
+      // bucket before launch.
       modelsBaseUrl: models.publicDomain.as<string | undefined>(),
     }
   })
