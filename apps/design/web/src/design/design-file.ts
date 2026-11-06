@@ -455,7 +455,8 @@ function lengthOf(q: Quat | readonly number[]): number {
   return Math.hypot(q[0], q[1], q[2], q[3])
 }
 
-function cleanName(name: string): string {
+/** A Design name cut to one line of printable text, at most 120 characters. */
+export function cleanName(name: string): string {
   // Keep it to one line of printable text.
   return Array.from(name, (char) => {
     const code = char.charCodeAt(0)
