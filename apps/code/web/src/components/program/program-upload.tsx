@@ -125,7 +125,6 @@ export function ProgramUpload({
   dirty,
   programId,
   currentSha,
-  onActivityChange,
   onOpen,
 }: {
   name: string
@@ -141,9 +140,6 @@ export function ProgramUpload({
     isInstalled: (sha: string) => Promise<boolean>
   ) => Promise<ProgramData | null>
   dirty: boolean
-  onActivityChange: (
-    activity: { label: string; value: number | null } | null
-  ) => void
 }) {
   const recordUpload = useMutation(api.uploads.record)
   const preparation = useRef<AbortController | null>(null)
@@ -424,7 +420,6 @@ export function ProgramUpload({
         const controller = new AbortController()
         preparation.current = controller
         const targetSlot = slot
-        onActivityChange({ label: "Preparing upload", value: null })
         setProgress(null)
         setMessage("Checking connection…")
         let preparing = false
@@ -447,10 +442,7 @@ export function ProgramUpload({
           const program = await prepareProgram(
             controller.signal,
             (stage) => {
-              if (mounted.current) {
-                setMessage(stage)
-                onActivityChange({ label: stage, value: null })
-              }
+              if (mounted.current) setMessage(stage)
             },
             async (sha) => {
               await verified
@@ -480,7 +472,6 @@ export function ProgramUpload({
           }
           await verifyBrain(selected.connection)
           setProgress(0)
-          onActivityChange({ label: "Uploading Program", value: 0 })
           await uploadProgram(selected.connection, program, {
             slot: targetSlot,
             name,
@@ -495,10 +486,6 @@ export function ProgramUpload({
                 `Uploading ${file === "ini" ? "program details" : file === "lib" ? "library" : "program"}…`
               )
               setProgress(Math.round(percent))
-              onActivityChange({
-                label: `Uploading ${file === "ini" ? "program details" : file === "lib" ? "library" : "Program"}`,
-                value: Math.round(percent),
-              })
             },
           })
           if (
@@ -541,7 +528,6 @@ export function ProgramUpload({
           throw err
         } finally {
           preparation.current = null
-          onActivityChange(null)
           if (mounted.current) setProgress(null)
         }
       },
@@ -1014,7 +1000,11 @@ function UploadRing({ value }: { value: number }) {
   const radius = 8
   const length = 2 * Math.PI * radius
   return (
-    <svg viewBox="0 0 20 20" aria-hidden="true" className="size-5 -rotate-90">
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      className="size-3.75 -rotate-90"
+    >
       <circle
         cx="10"
         cy="10"
