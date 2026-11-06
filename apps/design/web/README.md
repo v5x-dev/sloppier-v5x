@@ -36,9 +36,14 @@ To change the catalog, edit `infra/parts/manifest.json` and run the pipeline. Se
   environment keeps its own state, for example `--stage pr-12`.
 - `bun run alchemy:destroy --stage <name>` removes a stage's resources.
 
-Sign-in only works on a callback URL that WorkOS allows. The preview client allows
-`https://pr-*.design-preview.v5x.dev/callback`, so deploy a pull request's stage with
-`DESIGN_DOMAIN=pr-<number>.design-preview.v5x.dev`.
+Every pull request gets its own preview at `https://pr-<number>.design-preview.v5x.dev`,
+with its own Convex backend and models bucket, from `.github/workflows/design-pr-preview.yml`.
+It runs for any base branch, so each layer of a stack has one, and closing the PR removes it.
+
+To deploy a stage by hand, set `VITE_CONVEX_URL`, `VITE_WORKOS_CLIENT_ID`, and
+`DESIGN_DOMAIN`. Without them the site returns a 500. Sign-in only works on a callback
+URL that WorkOS allows, and the preview client allows
+`https://pr-*.design-preview.v5x.dev/callback`.
 
 Cloudflare credentials come from `alchemy profile edit --add Cloudflare`, which
 stores them in `~/.alchemy/profiles.json`. The stack also defines the `DesignModels` R2 bucket, which serves the GLB files. Its
