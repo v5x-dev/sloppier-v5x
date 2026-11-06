@@ -61,10 +61,15 @@ export function partShape(ref: PartRef): PartShape {
   return shape
 }
 
-function modelShape(
-  part: Extract<CatalogPart, { kind: "model" }>,
-  key: string
-): PartShape {
+/**
+ * A fixed model's size in the Part frame. The catalog records `sizeMm` along the STEP file's
+ * axes, and the Part frame maps STEP (x, y, z) to (x, z, -y), so its height is the STEP z.
+ */
+export function modelSizeInPartFrame(part: ModelPart): Vec3 {
+  return [part.sizeMm.x, part.sizeMm.z, part.sizeMm.y]
+}
+
+function modelShape(part: ModelPart, key: string): PartShape {
   return {
     key,
     catalog: part,
