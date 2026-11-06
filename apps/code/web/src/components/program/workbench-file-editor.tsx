@@ -36,7 +36,7 @@ export function FileEditor({
   programId: Id<"programs">
   viewId: string
   path: string
-  loaded: LoadedFile
+  loaded: LoadedFile | undefined
   onFormatChange: FormatChange
   diagnosticTarget?: DiagnosticTarget
   active: boolean
@@ -61,19 +61,21 @@ export function FileEditor({
   const file = useMemo(
     () => ({
       name: path,
-      contents: loaded.contents,
+      contents: loaded?.contents ?? "",
       cacheKey: `${programId}:${path}`,
     }),
-    [loaded.contents, path, programId]
+    [loaded?.contents, path, programId]
   )
 
   const tooLarge =
-    new TextEncoder().encode(loaded.contents).byteLength > MAX_SOURCE_BYTES
+    new TextEncoder().encode(loaded?.contents ?? "").byteLength >
+    MAX_SOURCE_BYTES
   const binary =
-    loaded.contents.includes("\0") || loaded.contents.includes("\ufffd")
+    !!loaded &&
+    (loaded.contents.includes("\0") || loaded.contents.includes("\ufffd"))
   return (
     <div ref={container} className="min-h-full">
-      {loaded.truncated || tooLarge || binary ? (
+      {loaded && (loaded.truncated || tooLarge || binary) ? (
         <>
           <p className="border-b px-4 py-2 text-xs text-muted-foreground">
             {binary

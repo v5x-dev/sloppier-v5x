@@ -189,7 +189,7 @@ export function WorkbenchEditors({
             <TabsContent
               // Each file owns its scroll container and stays mounted while
               // inactive, retaining its selection, draft, and undo history.
-              key={loaded[path]?.editorKey ?? path}
+              key={loaded[path]?.editorKey ?? `${programId}:${path}`}
               value={path}
               keepMounted
               ref={(panel) => {
@@ -216,7 +216,7 @@ export function WorkbenchEditors({
                     <EmptyDescription>{readError[path]}</EmptyDescription>
                   </EmptyHeader>
                 </Empty>
-              ) : loaded[path] ? (
+              ) : (
                 <FileEditor
                   programId={programId}
                   viewId={group.id}
@@ -240,10 +240,6 @@ export function WorkbenchEditors({
                   onReplacementAction={source.setReplacementAction}
                   onQuickFixAction={source.setQuickFixAction}
                 />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Spinner className="text-muted-foreground" />
-                </div>
               )}
             </TabsContent>
           ))}

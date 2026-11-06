@@ -1,6 +1,6 @@
 import { internal } from "./_generated/api"
 import { internalMutation, query } from "./_generated/server"
-import { v } from "convex/values"
+import { ConvexError, v } from "convex/values"
 import { requireProgramMembership } from "./lib/auth"
 import { validateRepositoryPath } from "./lib/paths"
 
@@ -12,7 +12,9 @@ const fileChangeValidator = v.union(
 export const listByProgram = query({
   args: { programId: v.id("programs") },
   handler: async (ctx, args) => {
-    await requireProgramMembership(ctx, args.programId)
+    const { program } = await requireProgramMembership(ctx, args.programId)
+    if (program.repositoryStatus !== "ready")
+      throw new ConvexError("Program repository is not ready.")
 
     return ctx.db
       .query("files")

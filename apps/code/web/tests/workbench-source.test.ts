@@ -126,12 +126,18 @@ describe("workbench source", () => {
     expect(prefetched).toBeDefined()
     live.resolve("doc" as Id<"crdtDocuments">)
     expect(await prefetched).toBe("doc")
+    source.setDraft("src/main.cpp", "early edit")
     read.resolve({
       bytes: new TextEncoder().encode("source").buffer,
       contentRange: null,
       contentType: "text/plain",
     })
     await Promise.resolve()
+    expect(source.getDrafts().get("src/main.cpp")).toBe("early edit")
+    expect(source.getSnapshot().dirtyPaths).toEqual(["src/main.cpp"])
+    expect(source.getSnapshot().loaded["src/main.cpp"]?.editorKey).toBe(
+      "program:src/main.cpp"
+    )
   })
 
   it("does not reopen a live document when activating an already-open tab", async () => {
