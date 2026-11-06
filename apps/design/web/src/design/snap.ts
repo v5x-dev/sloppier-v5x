@@ -42,7 +42,10 @@ export function alignToSnap(
 ): Pose {
   const q0 = new Quaternion(...base)
   const from = new Vector3(...candidate.axis).applyQuaternion(q0).normalize()
-  const facing = target.axis.clone().normalize().negate()
+  // A fastener's end pin goes into an opening, so its body runs into the Part: the pin's
+  // axis lines up with the opening's. Other Snap Points face the opening.
+  const along = target.axis.clone().normalize()
+  const facing = candidate.kind === "pin" ? along : along.negate()
   const q1 = new Quaternion().setFromUnitVectors(from, facing).multiply(q0)
   const q2 = new Quaternion().setFromAxisAngle(facing, roll).multiply(q1)
   const offset = new Vector3(...candidate.position).applyQuaternion(q2)

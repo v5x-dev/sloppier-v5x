@@ -126,14 +126,16 @@ export function connectionsFor(
   return found
 }
 
-/** Whether a screw's end pin sits in an opening: at the same place, with the axes facing. */
+/** Whether a screw's end pin sits in an opening: at the same place, along the same axis. */
 export function pinEntersHole(
   pin: { position: Vector3; axis: Vector3 },
   hole: { position: Vector3; axis: Vector3 }
 ): boolean {
+  // A pin's end sits in an opening whichever way the opening faces, so its axis is either
+  // parallel or anti-parallel to the opening's.
   return (
     pin.position.distanceTo(hole.position) <= CONNECT_TOLERANCE_MM &&
-    pin.axis.dot(hole.axis) <= -ALIGNED_COS
+    Math.abs(pin.axis.dot(hole.axis)) >= ALIGNED_COS
   )
 }
 

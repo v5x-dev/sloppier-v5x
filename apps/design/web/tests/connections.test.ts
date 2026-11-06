@@ -120,11 +120,17 @@ describe("which screw joins which openings", () => {
     ])
   })
 
-  it("does not connect at a tip when the hole faces the same way as the pin", () => {
+  it("connects a pin that sits in an opening, whichever way the opening faces", () => {
     const s = screw("screw", [0, 0, 0])
-    expect(
-      connectionsFor(s, [host("channel", [-5.42, 0, 0], [-1, 0, 0])])
-    ).toEqual([])
+    const sameWay = host("channel", [-5.42, 0, 0], [-1, 0, 0])
+    expect(connectionsFor(s, [sameWay])).toEqual([
+      {
+        fastener: "screw",
+        host: "channel",
+        fastenerSnap: "pin-a",
+        hostSnap: "hole-1",
+      },
+    ])
   })
 
   it("does not connect a tip hole that is further than the tolerance off the pin", () => {

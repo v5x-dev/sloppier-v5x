@@ -298,3 +298,18 @@ describe("findLineSnapAlongRay", () => {
     near(new Vector3(...edge!.pose.position), new Vector3(25.4, 0, 0))
   })
 })
+
+describe("alignToSnap for a fastener's end pin", () => {
+  it("lines the pin up along the opening, so the body runs into the Part", () => {
+    // A screw's end pin points -X out of its body. The opening faces +X, so the pin turns to
+    // +X, pointing into the Part along the opening, and the body sits on the other side.
+    const pin = snap({ kind: "pin", position: [0, 0, 0], axis: [-1, 0, 0] })
+    const opening = {
+      position: new Vector3(10, 0, 0),
+      axis: new Vector3(1, 0, 0),
+    }
+    const pose = alignToSnap(pin, opening, [0, 0, 0, 1])
+    const axis = toWorldSnap(pin, pose).axis
+    expect(axis.x).toBeCloseTo(1, 6)
+  })
+})
