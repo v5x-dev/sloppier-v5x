@@ -2,6 +2,9 @@ import {
   ArrowLeftIcon,
   CheckIcon,
   CloudSlashIcon,
+  DownloadSimpleIcon,
+  KeyboardIcon,
+  ListBulletsIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
@@ -57,6 +60,15 @@ import {
   turnBy,
 } from "@/design/actions"
 import { fastenerOf } from "@/design/connect"
+import { keyStore } from "@/design/key-store"
+import {
+  DESIGN_FILE_EXTENSION,
+  designFileOf,
+  designFileText,
+} from "@/design/design-file"
+import { downloadText, safeFileName } from "@/lib/download"
+import { actionForEvent, primaryLabel, type Bindings } from "@/design/keys"
+import { useKeyBindings } from "@/lib/use-key-bindings"
 import { pivotsFor } from "@/design/connections"
 import { useDesignSync, type DesignSyncState } from "@/lib/use-design-sync"
 import { webglAvailable } from "@/viewport/webgl"
@@ -66,7 +78,15 @@ import {
   type Projection,
   type ViewportStatus,
 } from "@/viewport/status"
-import { EditorToolbar, ShortcutsDialog } from "@/components/editor-chrome"
+import { EditorToolbar } from "@/components/editor-chrome"
+import { PartsListDialog } from "@/components/parts-list-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@v5x/ui/components/dropdown-menu"
+import { KeyboardSettingsDialog } from "@/components/keyboard-settings"
 import {
   PALETTE,
   SelectionPanel,
@@ -155,6 +175,8 @@ function DesignWorkspace({
   const [angleStepDeg, setAngleStepDeg] = useState(15)
   const [notice, setNotice] = useState<string>()
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [partsOpen, setPartsOpen] = useState(false)
+
   const [projection, setProjection] = useState<Projection>("perspective")
   const [status, setStatus] = useState<ViewportStatus>(INITIAL_STATUS)
   const [history, setHistory] = useState<History>()
@@ -265,6 +287,7 @@ function DesignWorkspace({
     remove,
     recolor,
   }
+  const bindings = useKeyBindings()
   useKeys(keys, setSelection, setMode, setLocal, setShortcutsOpen, pick)
 
   return (
@@ -282,6 +305,42 @@ function DesignWorkspace({
         <h1 className="min-w-0 flex-1 truncate font-serif text-lg">
           {design?.name}
         </h1>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="sm" aria-label="Design menu" />
+            }
+          >
+            Design
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => setPartsOpen(true)}>
+              <ListBulletsIcon />
+              Parts list
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const file = designFileOf(doc, design?.name ?? "Design")
+                try {
+                  downloadText(
+                    `${safeFileName(file.name)}${DESIGN_FILE_EXTENSION}`,
+                    designFileText(file),
+                    "application/json"
+                  )
+                } catch {
+                  setNotice("This browser could not start the download.")
+                }
+              }}
+            >
+              <DownloadSimpleIcon />
+              Export Design file
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShortcutsOpen(true)}>
+              <KeyboardIcon />
+              Keyboard shortcuts
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <SaveStatus state={state} />
       </header>
 
@@ -343,6 +402,7 @@ function DesignWorkspace({
                 onUndo={undo}
                 onRedo={redo}
                 onShortcuts={() => setShortcutsOpen(true)}
+                bindings={bindings}
               />
             </div>
 
@@ -394,13 +454,13 @@ function DesignWorkspace({
                 <ContextMenuItem onClick={duplicate}>
                   Duplicate{" "}
                   <span className="ml-auto pl-6 text-muted-foreground">
-                    <Kbd>Ctrl D</Kbd>
+                    <Kbd>{primaryLabel(bindings, "duplicate")}</Kbd>
                   </span>
                 </ContextMenuItem>
                 <ContextMenuItem onClick={remove}>
                   Delete{" "}
                   <span className="ml-auto pl-6 text-muted-foreground">
-                    <Kbd>Del</Kbd>
+                    <Kbd>{primaryLabel(bindings, "delete")}</Kbd>
                   </span>
                 </ContextMenuItem>
                 <ContextMenuSeparator />
@@ -439,7 +499,7 @@ function DesignWorkspace({
               >
                 Select all{" "}
                 <span className="ml-auto pl-6 text-muted-foreground">
-                  <Kbd>Ctrl A</Kbd>
+                  <Kbd>{primaryLabel(bindings, "selectAll")}</Kbd>
                 </span>
               </ContextMenuItem>
             )}
@@ -453,9 +513,19 @@ function DesignWorkspace({
         onDelete={remove}
         status={status}
         placing={Boolean(pickedId)}
+        bindings={bindings}
       />
 
-      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <KeyboardSettingsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+      />
+      <PartsListDialog
+        open={partsOpen}
+        onOpenChange={setPartsOpen}
+        parts={parts}
+        designName={design?.name ?? "design"}
+      />
     </div>
   )
 }
@@ -524,7 +594,10 @@ function pivotChoices(
   })
 }
 
-/** Keyboard shortcuts for the editor. The viewport keeps the keys for placing and framing. */
+/**
+ * Keyboard shortcuts for the editor. Each key is looked up in the registry, so a rebound key
+ * works here without a change. The viewport handles the keys for placing and framing.
+ */
 function useKeys(
   keys: {
     doc: Y.Doc
@@ -547,41 +620,53 @@ function useKeys(
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (isTyping(event.target)) return
-      const mod = event.ctrlKey || event.metaKey
-      const key = event.key.toLowerCase()
-      if (mod && key === "z") {
-        event.preventDefault()
-        if (event.shiftKey) keys.redo()
-        else keys.undo()
-      } else if (mod && key === "y") {
-        event.preventDefault()
-        keys.redo()
-      } else if (mod && key === "d") {
-        event.preventDefault()
-        keys.duplicate()
-      } else if (mod && key === "a") {
-        event.preventDefault()
-        setSelection(new Set(keys.parts.map((p) => p.id)))
-      } else if (event.key === "Delete" || event.key === "Backspace") {
-        if (keys.selection.size > 0 && !keys.tool) {
+      const action = actionForEvent(event, keyStore.get())
+      if (action === undefined) return
+      const editing = keys.selection.size > 0 && !keys.tool
+      switch (action) {
+        case "undo":
           event.preventDefault()
-          keys.remove()
+          keys.undo()
+          break
+        case "redo":
+          event.preventDefault()
+          keys.redo()
+          break
+        case "duplicate":
+          event.preventDefault()
+          keys.duplicate()
+          break
+        case "selectAll":
+          event.preventDefault()
+          setSelection(new Set(keys.parts.map((p) => p.id)))
+          break
+        case "delete":
+          if (editing) {
+            event.preventDefault()
+            keys.remove()
+          }
+          break
+        case "cancel":
+          if (keys.tool) pick(undefined)
+          else setSelection(new Set())
+          break
+        case "moveMode":
+          setMode("move")
+          break
+        case "turnMode":
+          setMode("rotate")
+          break
+        case "localAxes":
+          setLocal((v) => !v)
+          break
+        case "shortcuts":
+          setShortcutsOpen(true)
+          break
+        default: {
+          const swatch = /^recolor([1-8])$/.exec(action)
+          if (swatch && editing)
+            keys.recolor(PALETTE[Number(swatch[1]) - 1].color)
         }
-      } else if (event.key === "Escape") {
-        if (keys.tool) pick(undefined)
-        else setSelection(new Set())
-      } else if (mod) {
-        return
-      } else if (key === "w") setMode("move")
-      else if (key === "e") setMode("rotate")
-      else if (key === "l") setLocal((v) => !v)
-      else if (event.key === "?") setShortcutsOpen(true)
-      else if (
-        /^[1-8]$/.test(event.key) &&
-        keys.selection.size > 0 &&
-        !keys.tool
-      ) {
-        keys.recolor(PALETTE[Number(event.key) - 1].color)
       }
     }
     window.addEventListener("keydown", onKey)
@@ -650,7 +735,7 @@ function ViewNotices({
     })
   if (notes.length === 0) return null
   return (
-    <div className="pointer-events-none absolute top-3 left-3 flex max-w-md flex-col gap-2">
+    <div className="pointer-events-none absolute top-16 left-3 flex max-w-md flex-col gap-2">
       {notes.map((note) => (
         <p
           key={note.key}
@@ -676,12 +761,14 @@ function Footer({
   onDelete,
   status,
   placing,
+  bindings,
 }: {
   tool: CatalogPart | undefined
   selectionCount: number
   onDelete: () => void
   status: ViewportStatus
   placing: boolean
+  bindings: Bindings
 }) {
   return (
     <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border px-3 py-2 text-sm">
@@ -691,7 +778,8 @@ function Footer({
             Placing {tool.name}
             {status.snap && (
               <span className="text-muted-foreground">
-                . Snapped: R turns it about the shared axis.
+                . Snapped: {primaryLabel(bindings, "turnPlacing")} turns it
+                about the shared axis.
               </span>
             )}
           </p>
@@ -713,17 +801,23 @@ function Footer({
         {placing ? (
           <>
             <Hint keys={["Click"]} label="place" />
-            <Hint keys={["R"]} label="turn" />
-            <Hint keys={["Esc"]} label="stop placing" />
+            <Hint keys={[primaryLabel(bindings, "turnPlacing")]} label="turn" />
+            <Hint
+              keys={[primaryLabel(bindings, "cancel")]}
+              label="stop placing"
+            />
           </>
         ) : (
           <>
             <Hint keys={["Click"]} label="select" />
-            <Hint keys={["?"]} label="all shortcuts" />
+            <Hint
+              keys={[primaryLabel(bindings, "shortcuts")]}
+              label="all shortcuts"
+            />
           </>
         )}
-        <Hint keys={["F"]} label="frame" />
-        <Hint keys={["O"]} label="view" />
+        <Hint keys={[primaryLabel(bindings, "frame")]} label="frame" />
+        <Hint keys={[primaryLabel(bindings, "projection")]} label="view" />
         <span className="tabular-nums">
           {status.parts} {status.parts === 1 ? "part" : "parts"}
         </span>

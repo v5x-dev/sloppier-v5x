@@ -53,6 +53,8 @@ import { Gizmo, type GizmoMode, type Handle } from "./gizmo"
 import { angleOnRing, closestOnAxis, rayPlaneHit, type Ray } from "./gizmo-math"
 import { defaultColorFor, SceneStore } from "./scene-store"
 import { INITIAL_STATUS, type Projection, type ViewportStatus } from "./status"
+import { keyStore } from "@/design/key-store"
+import { actionForEvent } from "@/design/keys"
 
 export type { Projection, ViewportStatus } from "./status"
 
@@ -573,16 +575,17 @@ function Workspace(
       if (isTyping(event.target)) return
       const p = latest.current
       const state = live.current
-      if (event.key === "r" || event.key === "R") {
+      const action = actionForEvent(event, keyStore.get())
+      if (action === "turnPlacing") {
         if (!p.tool) return
         const turn = state.turn
         state.turn = state.snapTarget
           ? { ...turn, roll: turn.roll + Math.PI / 2 }
           : { ...turn, quarterTurns: (turn.quarterTurns + 1) % 4 }
         schedule()
-      } else if (event.key === "f" || event.key === "F") {
+      } else if (action === "frame") {
         frameAll()
-      } else if (event.key === "o" || event.key === "O") {
+      } else if (action === "projection") {
         p.onToggleProjection()
       } else if (!event.ctrlKey && !event.metaKey && !event.altKey) {
         const view = AXIS_VIEW_KEYS[event.code]
