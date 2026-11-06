@@ -232,7 +232,9 @@ export function Workbench({
         }
       >
         <Sidebar variant="floating">
-          <SidebarHeader className="flex-row items-center gap-1 p-1 text-muted-foreground">
+          {/* Matches the editor tab row (8px inset, 2px tray padding), so the
+              logo and the file tabs share a top and bottom edge. */}
+          <SidebarHeader className="flex-row items-center gap-1 px-1 py-0.5 text-muted-foreground">
             <Button
               variant="ghost"
               size="icon-sm"
