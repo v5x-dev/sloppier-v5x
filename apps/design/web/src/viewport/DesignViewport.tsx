@@ -96,6 +96,16 @@ const CAMERA_OPTIONS = {
 }
 const CANVAS_STYLE = { touchAction: "none" }
 
+/**
+ * The keys that look straight along an axis: 1 along Z, 2 along X, 3 along Y, from the
+ * positive side. Shift looks from the negative side. A web or a face is square to the view.
+ */
+const AXIS_VIEW_KEYS: Record<string, Vector3 | undefined> = {
+  Digit1: new Vector3(0, 0, 1),
+  Digit2: new Vector3(1, 0, 0),
+  Digit3: new Vector3(0, 1, 0),
+}
+
 export default function DesignViewport(props: ViewportProps) {
   const box = useRef<HTMLDivElement>(null)
   return (
@@ -556,6 +566,10 @@ function Workspace(
         frameAll()
       } else if (event.key === "o" || event.key === "O") {
         p.onToggleProjection()
+      } else if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+        const view = AXIS_VIEW_KEYS[event.code]
+        if (view)
+          lookAlong(view.clone().multiplyScalar(event.shiftKey ? -1 : 1))
       }
     }
     window.addEventListener("keydown", onKey)
@@ -860,6 +874,23 @@ function Workspace(
         ? new Set([...latest.current.selection, ...inside])
         : new Set(inside)
     latest.current.onSelection(next)
+  }
+
+  /** Looks straight along `dir` at the orbit target, from the same distance as now. */
+  function lookAlong(dir: Vector3) {
+    const controls = live.current.controls
+    if (!controls) return
+    const cam = activeCamera()
+    const distance = cam.position.distanceTo(controls.target)
+    // Looking straight down needs a sliver of tilt, or the camera's up vector degenerates.
+    const tilt =
+      Math.abs(dir.y) > 0.99 ? new Vector3(0.001, 0, 0.001) : new Vector3()
+    cam.position
+      .copy(controls.target)
+      .addScaledVector(dir.clone().normalize(), distance)
+      .add(tilt)
+    controls.update()
+    invalidate()
   }
 
   /**
