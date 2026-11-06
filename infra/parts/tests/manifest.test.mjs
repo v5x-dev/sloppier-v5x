@@ -18,6 +18,8 @@ test("every part's SKU is in the file name or given in the manifest, or is null"
   for (const part of manifest.parts) {
     // "sku": null says no source publishes a SKU for this Part.
     if (part.sku === null) continue;
+    // A parametric Part has no file name to read a SKU from.
+    if (part.parametric) continue;
     const fromName = /\(\d{3}-\d{4}(-\d{3,4})?\)/.test(part.source.path);
     assert.ok(fromName || part.sku?.value, `${part.id} has no SKU`);
   }

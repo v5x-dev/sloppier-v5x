@@ -73,7 +73,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: infra/parts/.cache
-          key: design-parts-${{ hashFiles('infra/parts/**', '!infra/parts/.cache/**') }}
+          # The build caches each Part on its own (infra/parts/build.mjs), so a push restores
+          # the newest cache and rebuilds only the Parts that changed. A key that hashed every
+          # file here missed on any edit and rebuilt all 296 Parts.
+          key: design-parts-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            design-parts-
       - name: Build and upload models, then point the site at them
         if: hashFiles('infra/parts/manifest.json') != ''
         working-directory: apps/design/web

@@ -75,6 +75,7 @@ export type FixedFamily =
   | "screw"
   | "nut"
   | "plate"
+  | "rail"
   | "gusset"
   | "shaft"
   | "bracket"

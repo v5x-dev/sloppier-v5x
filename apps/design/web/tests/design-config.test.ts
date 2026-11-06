@@ -131,6 +131,6 @@ describe("the parts panel's grouping", () => {
     const fields = groupCatalog(catalog.parts, "")
       .filter((g) => g.category === "field")
       .map((g) => g.family)
-    expect(fields).toEqual(["push-back"])
+    expect(fields).toEqual(["override", "push-back"])
   })
 })

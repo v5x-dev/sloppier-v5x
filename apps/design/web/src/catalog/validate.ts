@@ -33,6 +33,7 @@ const FIXED_FAMILIES = [
   "screw",
   "nut",
   "plate",
+  "rail",
   "gusset",
   "shaft",
   "bracket",

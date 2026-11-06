@@ -24,6 +24,7 @@ import { checkExpectedSize, checkExpectedSorted } from "./lib/units.mjs";
 import { validateManifest } from "./lib/manifest.mjs";
 import { boreSnaps, probedSnaps, ruledBoreSnaps, shankSnaps, axleSnap, thinAxis, throughSnaps, endSnaps } from "./lib/snaps.mjs";
 import { compareRows, latticeOpenings, probeAxis, rotateWebToZ, WALL_AXIS } from "./lib/lattice.mjs";
+import { parametricMesh } from "./lib/parametric.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "../..");
@@ -82,6 +83,7 @@ else mergeCatalog(entries);
 // ----------------------------------------------------------------------------
 
 async function buildModel(part) {
+  if (part.parametric) return buildParametric(part);
   const { file, analysis, source } = await load(part);
   const sku = resolveSku(part, file);
   verifySize(part, analysis);
@@ -130,6 +132,55 @@ async function buildModel(part) {
     ...snapGapFor(part, snaps),
     notes: part.notes ?? [],
     ...fitField(part),
+  };
+}
+
+/**
+ * A Part made from published dimensions, with no STEP file. The shapes are the manifest's;
+ * the GLB and the catalog entry follow the same rules as a converted model. Its source is
+ * the manual the dimensions come from, which the entry records.
+ */
+async function buildParametric(part) {
+  const mesh = parametricMesh(part.parametric.shapes);
+  const glb = await writeGlb({ positions: mesh.positions, normals: mesh.normals, name: part.id });
+  const glbHash = createHash("sha256").update(glb).digest("hex");
+  const modelFile = `models/${part.id}-${glbHash.slice(0, 8)}.glb`;
+  removeStaleModels(part.id, modelFile);
+  writeFileSync(join(cacheDir, modelFile), glb);
+  const specHash = createHash("sha256").update(JSON.stringify(part.parametric)).digest("hex");
+  return {
+    kind: "model",
+    id: part.id,
+    name: part.name,
+    family: part.family,
+    category: part.category,
+    sku: null,
+    material: part.material,
+    source: {
+      repo: part.parametric.source,
+      url: part.parametric.url,
+      commit: "not a repository",
+      path: part.parametric.dimensionSource,
+      sha256: specHash,
+      declaredUnit: "mm",
+    },
+    parametric: true,
+    sizeMm: round3(mesh.sizeMm),
+    volumeMm3: round3(mesh.volumeMm3),
+    mass: estimateMass(mesh.volumeMm3, part.material, null),
+    model: {
+      file: modelFile,
+      sha256: glbHash,
+      bytes: glb.length,
+      triangles: mesh.triangles,
+      rawTriangles: mesh.triangles,
+      budgetTriangles: mesh.triangles,
+      maxErrorMm: 0,
+      coordinates: "mm, Y up, origin at the centre of the bounding box",
+    },
+    snapPoints: [],
+    ...snapGapFor(part, []),
+    notes: part.notes ?? [],
   };
 }
 
@@ -362,7 +413,8 @@ function hashPipeline() {
 
 /** The cache key: the STEP bytes, the manifest entry, and the pipeline code. */
 function cacheKey(part) {
-  const bytes = readAt(sources[part.source.repo], part.source.path);
+  // A parametric Part's inputs are all in its manifest entry; a converted Part also keys on its STEP bytes.
+  const bytes = part.parametric ? Buffer.alloc(0) : readAt(sources[part.source.repo], part.source.path);
   return createHash("sha256")
     .update(pipelineKey)
     .update(JSON.stringify(part))

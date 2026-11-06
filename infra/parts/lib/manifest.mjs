@@ -32,12 +32,24 @@ export function validateManifest(manifest, knownRepos) {
     if (!FAMILIES.has(part.family)) errors.push(`${where}: unknown family "${part.family}"`);
     if (!CATEGORIES.has(part.category)) errors.push(`${where}: unknown category "${part.category}"`);
     if (!MATERIALS.has(part.material)) errors.push(`${where}: unknown material "${part.material}"`);
-    if (!knownRepos.includes(part.source?.repo)) errors.push(`${where}: unknown source repo "${part.source?.repo}"`);
+    if (part.parametric) {
+      // A parametric Part has no STEP file: its shapes are in the manifest, with the
+      // published dimensions it was made from.
+      if (part.kind !== "model") errors.push(`${where}: a parametric Part must be kind "model"`);
+      if (!Array.isArray(part.parametric.shapes) || part.parametric.shapes.length === 0) errors.push(`${where}: a parametric Part needs shapes`);
+      if (!part.parametric.dimensionSource) errors.push(`${where}: a parametric Part must name its dimension source`);
+      if (!part.parametric.source || !part.parametric.url) errors.push(`${where}: a parametric Part must cite its source`);
+      if (!SNAP_STRATEGIES.has(part.snap)) errors.push(`${where}: unknown snap strategy "${part.snap}"`);
+    } else {
+      if (!knownRepos.includes(part.source?.repo)) errors.push(`${where}: unknown source repo "${part.source?.repo}"`);
+      if (!part.source?.path) errors.push(`${where}: missing source path`);
+    }
     if (part.fit !== undefined && !FIT.test(part.fit)) errors.push(`${where}: fit "${part.fit}" must be screw:<thread> or shaft:<side>`);
     for (const token of part.snapAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: snapAccepts token "${token}" is not a fit`);
     for (const token of part.cut?.holeAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: holeAccepts token "${token}" is not a fit`);
-    if (!part.source?.path) errors.push(`${where}: missing source path`);
-    if (part.kind === "model") {
+    if (part.parametric) {
+      // Checked above: a parametric Part needs no budget, since it is built from its shapes.
+    } else if (part.kind === "model") {
       if (!SNAP_STRATEGIES.has(part.snap)) errors.push(`${where}: unknown snap strategy "${part.snap}"`);
       if (!(part.budgetTriangles > 0)) errors.push(`${where}: budgetTriangles must be a positive number`);
       if (!(part.maxErrorMm > 0)) errors.push(`${where}: maxErrorMm must be a positive number`);

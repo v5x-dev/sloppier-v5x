@@ -2492,17 +2492,12 @@
         "repo": "vex-cad-download",
         "path": "Shaft Collars/Shaft Collar (276-2010).step"
       },
-      "snap": "ruled-bores",
+      "snap": "bores",
       "budgetTriangles": 400,
       "maxErrorMm": 0.05,
       "snapAccepts": [
         "shaft:1/8"
-      ],
-      "boreRule": {
-        "minDiameterMm": 4,
-        "maxDiameterMm": 4.4,
-        "minDepthMm": 5
-      }
+      ]
     },
     {
       "id": "spacer-hs-1-16",
@@ -2954,7 +2949,7 @@
         "repo": "vex-cad-download",
         "path": "Bearings/Low Profile Bearing Flat (276-8023).step"
       },
-      "snap": "ruled-bores",
+      "snap": "through",
       "budgetTriangles": 1000,
       "maxErrorMm": 0.1,
       "sku": {
@@ -2967,11 +2962,6 @@
         "screw:8-32",
         "shaft:1/8"
       ],
-      "boreRule": {
-        "minDiameterMm": 4,
-        "maxDiameterMm": 4.4,
-        "minDepthMm": 4
-      },
       "notes": [
         "Three 4.2 mm bores at 1/2 in pitch. They screw down to a channel's holes, and a 1/8 in shaft turns in them. Ends are taken for both openings because the bores stop short of the outline."
       ]
@@ -3372,7 +3362,7 @@
         "repo": "vex-cad-download",
         "path": "Gears & Pinions/36T Gear (276-2169-002).step"
       },
-      "snap": "none",
+      "snap": "through",
       "budgetTriangles": 1200,
       "maxErrorMm": 0.1,
       "sku": {
@@ -3380,27 +3370,11 @@
         "source": "solidpython4vex-name",
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       },
-      "extraSnaps": [
-        {
-          "kind": "hole",
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "axis": [
-            0,
-            0,
-            1
-          ],
-          "diameterMm": 3.175,
-          "accepts": [
-            "shaft:1/8"
-          ]
-        }
-      ],
       "notes": [
-        "The STEP file has no bore that the detector can read, so the 1/8 in bore is a hand placement at the gear's centre (manual)."
+        "The 1/8 in square bore is found by through-opening probes and accepts a 1/8 in shaft."
+      ],
+      "snapAccepts": [
+        "shaft:1/8"
       ]
     },
     {
@@ -6904,6 +6878,182 @@
         "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
       ],
       "snapGap": "Field element: a game object placed for reference. It does not attach to other Parts, so it has no Snap Points."
+    },
+    {
+      "id": "override-pin",
+      "name": "Override Pin",
+      "family": "override",
+      "category": "field",
+      "material": "other",
+      "snap": "none",
+      "snapGap": "A Scoring Object that is not fixed to the Field or to other Parts, so it has no Snap Points.",
+      "parametric": {
+        "source": "VEX V5RC Override Game Manual, version 1.1 (2026), Innovation First / VEX Robotics",
+        "url": "https://content.vexrobotics.com/docs/2026-2027/override/files/override-v1.1-obs.pdf",
+        "dimensionSource": "Glossary entry \"Pin\" (manual p. 120): approximately 1.6 in (40 mm) diameter and 6.5 in (165 mm) tall. Each Pin has two halves, one red, blue or yellow; this Part is the whole Pin.",
+        "shapes": [
+          {
+            "kind": "cylinder",
+            "diameterMm": 40,
+            "heightMm": 165,
+            "sides": 48
+          }
+        ]
+      },
+      "kind": "model"
+    },
+    {
+      "id": "override-cup",
+      "name": "Override Cup",
+      "family": "override",
+      "category": "field",
+      "material": "other",
+      "snap": "none",
+      "snapGap": "A Scoring Object that is not fixed to the Field or to other Parts, so it has no Snap Points.",
+      "parametric": {
+        "source": "VEX V5RC Override Game Manual, version 1.1 (2026), Innovation First / VEX Robotics",
+        "url": "https://content.vexrobotics.com/docs/2026-2027/override/files/override-v1.1-obs.pdf",
+        "dimensionSource": "Glossary entry \"Cup\" (manual p. 115): approximately 3.15 in (80 mm) diameter and 6.5 in (164.5 mm) tall.",
+        "shapes": [
+          {
+            "kind": "cylinder",
+            "diameterMm": 80,
+            "heightMm": 164.5,
+            "sides": 64
+          }
+        ]
+      },
+      "kind": "model"
+    },
+    {
+      "id": "override-toggle",
+      "name": "Override Toggle",
+      "family": "override",
+      "category": "field",
+      "material": "other",
+      "snap": "none",
+      "snapGap": "A Field Element placed for reference. It is not fixed to other Parts in a Design, so it has no Snap Points.",
+      "parametric": {
+        "source": "VEX V5RC Override Game Manual, version 1.1 (2026), Innovation First / VEX Robotics",
+        "url": "https://content.vexrobotics.com/docs/2026-2027/override/files/override-v1.1-obs.pdf",
+        "dimensionSource": "Glossary entry \"Toggle\" (manual p. 123): 25.8 in (656.2 mm) long, each face of the triangle about 2.05 in (52.2 mm) wide.",
+        "shapes": [
+          {
+            "kind": "triangle-prism",
+            "sideMm": 52.2,
+            "heightMm": 656.2
+          }
+        ]
+      },
+      "kind": "model"
+    },
+    {
+      "id": "override-goal-center",
+      "name": "Override Center Goal",
+      "family": "override",
+      "category": "field",
+      "material": "other",
+      "snap": "none",
+      "snapGap": "A Field Element placed for reference. It is not fixed to other Parts in a Design, so it has no Snap Points.",
+      "notes": [
+        "Footprint: the manual gives the heights but not the width (Figure G-1 is not dimensioned). 300 mm across flats is an estimate; check it against the official Override STEP file when it is found."
+      ],
+      "parametric": {
+        "source": "VEX V5RC Override Game Manual, version 1.1 (2026), Innovation First / VEX Robotics",
+        "url": "https://content.vexrobotics.com/docs/2026-2027/override/files/override-v1.1-obs.pdf",
+        "dimensionSource": "Glossary entry \"Goal\" (manual p. 117): octagonal; center 8.7 in (222.7 mm) tall. Footprint: the manual gives the heights but not the width (Figure G-1 is not dimensioned). 300 mm across flats is an estimate; check it against the official Override STEP file when it is found.",
+        "shapes": [
+          {
+            "kind": "polygon-prism",
+            "sides": 8,
+            "acrossFlatsMm": 300,
+            "heightMm": 222.7
+          }
+        ]
+      },
+      "kind": "model"
+    },
+    {
+      "id": "override-goal-neutral",
+      "name": "Override Neutral Goal",
+      "family": "override",
+      "category": "field",
+      "material": "other",
+      "snap": "none",
+      "snapGap": "A Field Element placed for reference. It is not fixed to other Parts in a Design, so it has no Snap Points.",
+      "notes": [
+        "Footprint: the manual gives the heights but not the width (Figure G-1 is not dimensioned). 300 mm across flats is an estimate; check it against the official Override STEP file when it is found."
+      ],
+      "parametric": {
+        "source": "VEX V5RC Override Game Manual, version 1.1 (2026), Innovation First / VEX Robotics",
+        "url": "https://content.vexrobotics.com/docs/2026-2027/override/files/override-v1.1-obs.pdf",
+        "dimensionSource": "Glossary entry \"Goal\" (manual p. 117): octagonal; neutral Goals in Quadrants 5.8 in (146.5 mm) tall. Footprint: the manual gives the heights but not the width (Figure G-1 is not dimensioned). 300 mm across flats is an estimate; check it against the official Override STEP file when it is found.",
+        "shapes": [
+          {
+            "kind": "polygon-prism",
+            "sides": 8,
+            "acrossFlatsMm": 300,
+            "heightMm": 146.5
+          }
+        ]
+      },
+      "kind": "model"
+    },
+    {
+      "id": "override-goal-alliance",
+      "name": "Override Alliance Goal",
+      "family": "override",
+      "category": "field",
+      "material": "other",
+      "snap": "none",
+      "snapGap": "A Field Element placed for reference. It is not fixed to other Parts in a Design, so it has no Snap Points.",
+      "notes": [
+        "Footprint: the manual gives the heights but not the width (Figure G-1 is not dimensioned). 300 mm across flats is an estimate; check it against the official Override STEP file when it is found."
+      ],
+      "parametric": {
+        "source": "VEX V5RC Override Game Manual, version 1.1 (2026), Innovation First / VEX Robotics",
+        "url": "https://content.vexrobotics.com/docs/2026-2027/override/files/override-v1.1-obs.pdf",
+        "dimensionSource": "Glossary entry \"Goal\" (manual p. 117): octagonal; Alliance-specific Goals 3.25 in (82.5 mm) tall. Footprint: the manual gives the heights but not the width (Figure G-1 is not dimensioned). 300 mm across flats is an estimate; check it against the official Override STEP file when it is found.",
+        "shapes": [
+          {
+            "kind": "polygon-prism",
+            "sides": 8,
+            "acrossFlatsMm": 300,
+            "heightMm": 82.5
+          }
+        ]
+      },
+      "kind": "model"
+    },
+    {
+      "id": "rail-2x1-25",
+      "name": "2x1 Steel Chassis Rail, 25 in",
+      "family": "rail",
+      "category": "structure",
+      "material": "steel",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chassis Rails/2x1x25 Steel Chassis Rail (275-1145).step"
+      },
+      "snap": "through",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05
+    },
+    {
+      "id": "rail-2x1-35",
+      "name": "2x1 Steel Chassis Rail, 35 in",
+      "family": "rail",
+      "category": "structure",
+      "material": "steel",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chassis Rails/2x1x35 Steel Chassis Rail (275-1146).step"
+      },
+      "snap": "through",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05
     }
   ]
 }
