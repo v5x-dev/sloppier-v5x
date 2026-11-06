@@ -14,7 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PREVIEW_API_TOKEN }}
+  # Separate from Code's preview token, which cannot use alchemy's state store.
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_DESIGN_PREVIEW_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
 
@@ -45,7 +46,7 @@ jobs:
       - name: Validate preview settings
         shell: bash
         run: |
-          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_PREVIEW_API_TOKEN}"
+          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_DESIGN_PREVIEW_API_TOKEN}"
           : "${CLOUDFLARE_ACCOUNT_ID:?Missing CLOUDFLARE_ACCOUNT_ID}"
           : "${VITE_WORKOS_CLIENT_ID:?Missing PREVIEW_WORKOS_CLIENT_ID}"
           : "${PRODUCTION_CONVEX_URL:?Missing VITE_CONVEX_URL}"
@@ -64,6 +65,8 @@ jobs:
             --cmd 'if [ "$PREVIEW_CONVEX_URL" = "$PRODUCTION_CONVEX_URL" ]; then echo "Preview must not use production Convex" >&2; exit 1; fi; printf "VITE_CONVEX_URL=%s\n" "$PREVIEW_CONVEX_URL" >> "$GITHUB_ENV"'
       - name: Deploy the stage
         working-directory: apps/design/web
+        # Bash here turns on pipefail, so a failed deploy is not hidden by tee.
+        shell: bash
         run: bunx alchemy deploy --stage "pr-${PR_NUMBER}" --no-input --yes 2>&1 | tee "$RUNNER_TEMP/deploy.log"
       - name: Cache converted models
         if: hashFiles('infra/parts/manifest.json') != ''
