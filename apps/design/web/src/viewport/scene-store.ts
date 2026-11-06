@@ -67,8 +67,11 @@ export const DEFAULT_COLORS: Record<PartMaterial, string> = {
  * The colour a new Part is placed in. A fixed model carries its own colours in its GLB, so
  * it is placed untinted; a Cut Part has one colour and takes its material's.
  */
-export function defaultColorFor(catalog: { kind: string; material: PartMaterial }): string {
-  return catalog.kind === "model" ? "#ffffff" : DEFAULT_COLORS[catalog.material];
+export function defaultColorFor(catalog: {
+  kind: string
+  material: PartMaterial
+}): string {
+  return catalog.kind === "model" ? "#ffffff" : DEFAULT_COLORS[catalog.material]
 }
 
 const SURFACE: Record<PartMaterial, { metalness: number; roughness: number }> =
@@ -533,5 +536,5 @@ function nextPowerOfTwo(n: number): number {
 }
 
 function hasVertexColors(geometry: BufferGeometry): boolean {
-  return geometry.getAttribute("color") !== undefined
+  return "color" in geometry.attributes
 }
