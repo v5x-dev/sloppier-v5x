@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Delete the Convex preview for a closed Code PR, if it exists."""
+"""Delete the Convex preview for a closed PR, if it exists."""
 import json
 import os
 import re
@@ -10,7 +10,8 @@ import urllib.request
 number = os.environ["PR_NUMBER"]
 if not re.fullmatch(r"[1-9][0-9]*", number):
     raise ValueError("Invalid PR number")
-reference = f"preview/code-pr-{number}"
+prefix = os.environ.get("CONVEX_PREVIEW_PREFIX", "code-pr")
+reference = f"preview/{prefix}-{number}"
 token = os.environ["CONVEX_MANAGEMENT_TOKEN"]
 base = "https://api.convex.dev/v1"
 headers = {"Authorization": f"Bearer {token}"}
