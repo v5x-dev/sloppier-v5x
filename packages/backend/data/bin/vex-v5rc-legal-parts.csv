@@ -1,0 +1,421 @@
+sku,name,part_type,alternate_skus,retrieved_at
+217-5830,".302"" (1/4"" ThunderSquare) ID x 0.875"" OD x 0.28"" WD (Flanged Bearing)",Motion,,2026-11-06
+217-7400,"2"" Mecanum Wheel",Wheel,,2026-11-06
+217-8004-001,"Plastic 1/2"" VersaHex Adapters v2 (1/4"" Square Bore, 1/8"" Long)",Motion,,2026-11-06
+217-8005-001,"Plastic 1/2"" VersaHex Adapters v2 (1/4"" Square Bore, 1/4"" Long)",Motion,,2026-11-06
+228-2500-117,"2x Pitch (1"") Shaft",Motion,,2026-11-06
+228-2500-118,"2.5x Pitch (1.125"") Shaft",Motion,,2026-11-06
+228-2500-119,"3x Pitch (1.5"") Shaft",Motion,,2026-11-06
+228-2500-120,"4x Pitch (2"") Shaft",Motion,,2026-11-06
+228-2500-121,"5x Pitch (2.5"") Shaft",Motion,,2026-11-06
+228-2500-122,"6x Pitch (3"") Shaft",Motion,,2026-11-06
+228-2500-123,"7x Pitch (3.5"") Shaft",Motion,,2026-11-06
+228-2500-124,"8x Pitch (4"") Shaft",Motion,,2026-11-06
+228-2500-2219,"2x Pitch (1"") Capped Shaft",Motion,,2026-11-06
+228-2500-2221,"3x Pitch (1.5"") Capped Shaft",Motion,,2026-11-06
+228-2500-2223,"4x Pitch (2"") Capped Shaft",Motion,,2026-11-06
+228-2500-2225,"5x Pitch (2.5"") Capped Shaft",Motion,,2026-11-06
+228-2500-2226,"6x Pitch (3"") Capped Shaft",Motion,,2026-11-06
+228-2500-2227,"7x Pitch (3.5"") Capped Shaft",Motion,,2026-11-06
+228-2500-2228,"8x Pitch (4"") Capped Shaft",Motion,,2026-11-06
+228-2500-2229,"9x Pitch (4.5"") Capped Shaft",Motion,,2026-11-06
+228-2500-2230,"10x Pitch (5"") Capped Shaft",Motion,,2026-11-06
+228-2500-2231,"11x Pitch (5.5"") Capped Shaft",Motion,,2026-11-06
+228-2500-2232,"12x Pitch (6"") Capped Shaft",Motion,,2026-11-06
+228-2500-260,"9x Pitch (4.5"") Shaft",Motion,,2026-11-06
+228-2500-261,"10x Pitch (5"") Shaft",Motion,,2026-11-06
+228-2500-262,"11x Pitch (5.5"") Shaft",Motion,,2026-11-06
+228-2500-263,"12x Pitch (6"") Shaft",Motion,,2026-11-06
+228-2500-264,"14x Pitch (7"") Shaft",Motion,,2026-11-06
+228-2500-265,"16x Pitch (8"") Shaft",Motion,,2026-11-06
+228-2500-266,"18x Pitch (9"") Shaft",Motion,,2026-11-06
+228-2500-267,"20x Pitch (10"") Shaft",Motion,,2026-11-06
+228-2500-268,"22x Pitch (11"") Shaft",Motion,,2026-11-06
+228-2500-269,"24x Pitch (12"") Shaft",Motion,,2026-11-06
+228-3510,Rubber Shaft Collar,Motion,,2026-11-06
+228-6633,Silicone Rubber Band #32,Consumable,,2026-11-06
+228-6634,Silicone Rubber Band #64,Consumable,,2026-11-06
+275-0120,Thick Anti-Slip Mat,Consumable,,2026-11-06
+275-0121,Thin Anti-Slip Mat,Consumable,,2026-11-06
+275-0125,"11"" Zip Ties",Consumable,,2026-11-06
+275-0447,Pneumatics Tubing (5'),Pneumatics,,2026-11-06
+275-0659,"1/4"" Hex Screw (#6-32)",Fastener,,2026-11-06
+275-1000,"0.5"" Hex Drive Coupler",Fastener,,2026-11-06
+275-1001,"1"" Hex Drive Coupler",Fastener,,2026-11-06
+275-1002,"1/4"" Hex Screw",Fastener,,2026-11-06
+275-1003,"3/8"" Hex Screw",Fastener,,2026-11-06
+275-1004,"1/2"" Hex Screw",Fastener,,2026-11-06
+275-1005,"5/8"" Hex Screw",Fastener,,2026-11-06
+275-1006,"3/4"" Hex Screw",Fastener,,2026-11-06
+275-1007,"7/8"" Hex Screw",Fastener,,2026-11-06
+275-1008,"1"" Hex Screw",Fastener,,2026-11-06
+275-1009,"1.25"" Hex Screw",Fastener,,2026-11-06
+275-1010,"1.5"" Hex Screw",Fastener,,2026-11-06
+275-1011,"1.75"" Hex Screw",Fastener,,2026-11-06
+275-1012,"2"" Hex Screw",Fastener,,2026-11-06
+275-1013,"1/4"" Standoff",Fastener,,2026-11-06
+275-1014,"1/2"" Standoff",Fastener,,2026-11-06
+275-1015,"3/4"" Standoff",Fastener,,2026-11-06
+275-1016,"1"" Standoff",Fastener,,2026-11-06
+275-1017,"1.5"" Standoff",Fastener,,2026-11-06
+275-1018,"2"" Standoff",Fastener,,2026-11-06
+275-1019,"2.5"" Standoff",Fastener,,2026-11-06
+275-1020,"3"" Standoff",Fastener,,2026-11-06
+275-1021,"4"" Standoff",Fastener,,2026-11-06
+275-1022,"5"" Standoff",Fastener,,2026-11-06
+275-1023,"6"" Standoff",Fastener,,2026-11-06
+275-1024,Steel Washer,Fastener,,2026-11-06
+275-1025,Teflon Washer,Fastener,,2026-11-06
+275-1026,#8-32 Keps Nut,Fastener,,2026-11-06
+275-1027,#8-32 Nylock Nut,Fastener,,2026-11-06
+275-1028,#8-32 Hex Nut,Fastener,,2026-11-06
+275-1029,Rubber Link,Fastener,,2026-11-06
+275-1065,Drive Shaft Bar Lock,Motion,,2026-11-06
+275-1066-001,"1/2"" OD x #8 Nylon Spacer, 0.125""",Fastener,,2026-11-06
+275-1066-002,"1/2"" OD x #8 Nylon Spacer, 0.25""",Fastener,,2026-11-06
+275-1066-003,"1/2"" OD x #8 Nylon Spacer, 0.375""",Fastener,,2026-11-06
+275-1066-004,"1/2"" OD x #8 Nylon Spacer, 0.5""",Fastener,,2026-11-06
+275-1089,Synthetic Rubber Band #32,Consumable,,2026-11-06
+275-1138,1x5x1x25 Steel C-Channel,Structure,,2026-11-06
+275-1139,1x5x1x35 Steel C-Channel,Structure,,2026-11-06
+275-1140,5x25 Steel Plate,Structure,,2026-11-06
+275-1141,1 x 25 Steel Bar,Structure,,2026-11-06
+275-1142,2x2x25 Steel Angle,Structure,,2026-11-06
+275-1143,2x2x35 Steel Angle,Structure,,2026-11-06
+275-1144,3x3x35 Steel Angle,Structure,,2026-11-06
+275-1145,2x1x25 Steel Chassis Rail,Structure,,2026-11-06
+275-1146,2x1x35 Steel Chassis Rail,Structure,,2026-11-06
+275-1169,"1/2"" Hex Screw (#6-32)",Fastener,,2026-11-06
+275-1186,45-Degree Gusset,Structure,,2026-11-06
+275-1187,Worm Gearbox Bracket,Structure,,2026-11-06
+275-1189,Bevel Gearbox Bracket,Structure,,2026-11-06
+275-1254,Adhesive Foam,Consumable,,2026-11-06
+275-1257,Hook & Loop Adhesive Strip (5'),Consumable,,2026-11-06
+275-1258,Cinch Strap,Consumable,,2026-11-06
+275-1259,Hook & Loop Strap (5'),Consumable,,2026-11-06
+275-1260,"1/4"" Locking Screw",Fastener,,2026-11-06
+275-1261,"1/2"" Locking Screw",Fastener,,2026-11-06
+275-1262,Latex Tubing (10'),Consumable,,2026-11-06
+275-1272,Hinge,Structure,,2026-11-06
+275-1417,Driver Cable for an SMC Solenoid,Pneumatics,,2026-11-06
+275-1485,"1/2"" Thumbscrew",Fastener,,2026-11-06
+275-2023,5x15 Steel Plate,Structure,,2026-11-06
+276-1032,"4"" Zip Ties",Consumable,,2026-11-06
+276-1110-001,Plus Gusset,Structure,,2026-11-06
+276-1110-002,90-Degree Gusset,Structure,,2026-11-06
+276-1110-003,Angle Gusset,Structure,,2026-11-06
+276-1149,"12"" Drive Shaft",Motion,,2026-11-06
+276-1209,Bearing Flat,Motion,,2026-11-06
+276-1341,15 x 30 Base Plate,Structure,,2026-11-06
+276-1408,#8-32 Shoulder Screws,Fastener,,2026-11-06
+276-1423,"3-Wire ""Y""-Cable 6""",Electronics,,2026-11-06
+276-1426,"3-Wire Extension Cable 12""",Electronics,,2026-11-06
+276-1427,"3-Wire Extension Cable 6""",Electronics,,2026-11-06
+276-1430,"2-Wire Extension Cable 36""",Electronics,,2026-11-06
+276-1431,"2-Wire Extension Cable 24""",Electronics,,2026-11-06
+276-1432,"2-Wire Extension Cable 12""",Electronics,,2026-11-06
+276-1433,"2-Wire Extension Cable 6""",Electronics,,2026-11-06
+276-1447,"4"" Mecanum Wheel",Wheel,,2026-11-06
+276-1489,"4"" High Traction Tire",Wheel,,2026-11-06
+276-1496,"2.75"" Wheel",Wheel,,2026-11-06
+276-1498,"5"" Wheel",Wheel,,2026-11-06
+276-3525,"3.25"" Traction Wheel",Wheel,,2026-11-06
+276-1499,Intake Roller,Motion,,2026-11-06
+276-1546,Winch and Pulley Kit,Motion,,2026-11-06
+276-1546-002,Winch Drum,Motion,,2026-11-06
+276-1546-003,Ratchet Gear,Motion,,2026-11-06
+276-1546-004,Winch Pawl,Motion,,2026-11-06
+276-1546-005,"Rope, 4ft",Motion,,2026-11-06
+276-1546-006,Pulley,Motion,,2026-11-06
+276-1579,Serial Y-Cable,Electronics,,2026-11-06
+276-1810-001,Large Turntable Bearing Assembly,Motion,,2026-11-06
+276-1810-005,Small Turntable Bearing Assembly,Motion,,2026-11-06
+276-2177-020,"Vex 1/8"" Shaft Coupler",Motion,,2026-11-06
+276-2177-021,Shaft Coupler Shaft,Motion,,2026-11-06
+276-1902,"2.75"" Omni-Directional Wheel - Double Roller",Wheel,,2026-11-06
+276-1926-001,Linear Slide Track,Motion,,2026-11-06
+276-1926-002,Linear Slide Bracket,Motion,,2026-11-06
+276-1926-003,Inner Slide Truck,Motion,,2026-11-06
+276-1926-004,Outer Slide Truck,Motion,,2026-11-06
+276-1926-005,Longer Linear Slide Track,Motion,,2026-11-06
+276-1958,"1/2"" Locking Screw (#6-32)",Fastener,,2026-11-06
+276-1976,"3-Wire Extension Cable 36""",Electronics,,2026-11-06
+276-2010,Shaft Collar,Motion,,2026-11-06
+276-2016,Pillow Block Bearing & Lock Bar Pack,Motion,,2026-11-06
+276-2018,4.6mm Plastic Spacer,Fastener,,2026-11-06
+276-2019,8mm Plastic Spacer,Fastener,,2026-11-06
+276-2026,Intake Roller,Motion,,2026-11-06
+276-2045,Advanced Mechanics and Motion Kit,Motion,,2026-11-06
+276-2045-001,Hand Crank,Motion,,2026-11-06
+276-2045-031,Lead Screw Nut,Motion,,2026-11-06
+276-2045-061,Drop Off Cam,Motion,,2026-11-06
+276-2045-066,Cam Follower,Motion,,2026-11-06
+276-2045-064,Cam Follower Bracket,Motion,,2026-11-06
+276-2045-033,Lead Screw Bracket,Motion,,2026-11-06
+276-2045-020,U-Joint,Motion,,2026-11-06
+276-2045-051,16t Bevel Gear,Motion,,2026-11-06
+276-2045-052,32t Bevel Gear,Motion,,2026-11-06
+276-2045-032,Lead Screw,Motion,,2026-11-06
+276-2154,Line Tracker,Electronics,,2026-11-06
+276-2155,Ultrasonic Range Finder,Electronics,,2026-11-06
+276-2156,Optical Shaft Encoder,Electronics,,2026-11-06
+276-2158,Light Sensor,Electronics,,2026-11-06
+276-2159,Bumper Switch,Electronics,,2026-11-06
+228-2500-1160,Chain Link,Motion,,2026-11-06
+276-2166-002,10t Sprocket,Motion,,2026-11-06
+276-2166-003,15t Sprocket,Motion,,2026-11-06
+276-2166-004,24t Sprocket,Motion,,2026-11-06
+276-2166-005,40t Sprocket,Motion,,2026-11-06
+276-2166-006,48t Sprocket,Motion,,2026-11-06
+276-2168-002,Tank Tread Link,Motion,,2026-11-06
+276-2168-003,Tank Tread Sprocket,Motion,,2026-11-06
+276-2168-004,Single Bogie Wheel,Motion,,2026-11-06
+276-2168-005,Double Bogie Wheel,Motion,,2026-11-06
+276-2169-003,60t Gear,Motion,,2026-11-06
+276-2169-001,12t Gear,Motion,,2026-11-06
+276-2169-002,36t Gear,Motion,,2026-11-06
+276-2169-004,84t Gear,Motion,,2026-11-06
+276-2172,Additional High Strength Chain,Motion,,2026-11-06
+276-2174,Limit Switch,Electronics,,2026-11-06
+276-2179,"1/4"" Pitch Bearing Flat",Motion,,2026-11-06
+276-2184-001,Differential Housing,Motion,,2026-11-06
+276-2232-041,12T Gear,Motion,,2026-11-06
+276-2184-002,Worm Wheel,Motion,,2026-11-06
+276-2184-004,Bevel Gear,Motion,,2026-11-06
+276-2184-003,Worm Gear,Motion,,2026-11-06
+276-4782-001,Rack Gear,Motion,,2026-11-06
+276-2185,"4"" Omni-Directional Wheel",Wheel,,2026-11-06
+276-2212,Claw Kit,Motion,,2026-11-06
+276-2214-001,Tank Tread Traction Links,Motion,,2026-11-06
+276-2214-002,Conveyor-belt Base Links,Motion,,2026-11-06
+276-2214-003,Short Conveyor-belt Inserts,Motion,,2026-11-06
+276-2214-004,Medium Conveyor-belt Inserts,Motion,,2026-11-06
+276-2214-005,Tall Conveyor-belt Inserts,Motion,,2026-11-06
+276-2215,Bearing Attachment Rivet,Fastener,,2026-11-06
+276-2216,Potentiometer,Electronics,,2026-11-06
+276-2218,"6"" Wheel Leg",Motion,,2026-11-06
+276-2251-001,12T Metal Pinions,Motion,,2026-11-06
+276-2251-002,12T Pinion Gear Inserts,Motion,,2026-11-06
+276-2288,1x2x1x25 Aluminum C-Channel,Structure,,2026-11-06
+276-2289,1x2x1x35 Aluminum C-Channel,Structure,,2026-11-06
+276-2290,1x5x1x25 Aluminum C-Channel,Structure,,2026-11-06
+276-2298,1x5x1x35 Aluminum C-Channel,Structure,,2026-11-06
+276-2304,2x2x35 Aluminum Angle,Structure,,2026-11-06
+276-2307,1x25 Aluminum Bar,Structure,,2026-11-06
+276-2311,5x25 Aluminum Plate,Structure,,2026-11-06
+276-2333,Yaw Rate Gyroscope Sensor V1.0,Electronics,,2026-11-06
+276-2385,"0.125"" Set Screw",Fastener,,2026-11-06
+276-2395,"F-F 3-Wire Adapter Cable 12""",Electronics,,2026-11-06
+276-2575,C-Channel Coupler Gusset,Structure,,2026-11-06
+276-2576,Angle Corner Gusset,Structure,,2026-11-06
+276-2577-001,90-Degree Gusset Angle,Structure,,2026-11-06
+276-2577-002,90-Degree Gusset Plate,Structure,,2026-11-06
+276-2578,Angle Coupler Gusset,Structure,,2026-11-06
+276-2723,Universal Joint,Motion,,2026-11-06
+276-2906,1x2x1x35 Steel C-Channel,Structure,,2026-11-06
+276-3438,84T High Strength Gear,Motion,,2026-11-06
+276-3440,"2"" High Strength Shaft",Motion,,2026-11-06
+276-3441,High Strength Shaft Spacer Kit,Motion,,2026-11-06
+276-3520,High Strength Clamping Shaft Collar,Motion,,2026-11-06
+276-3521,High Strength Shaft Bearing,Motion,,2026-11-06
+276-3522,"3"" High Strength Shaft",Motion,,2026-11-06
+276-3523,"4"" High Strength Shaft",Motion,,2026-11-06
+276-3524,"12"" High Strength Shaft",Motion,,2026-11-06
+276-3526,"3.25"" Omni-Directional Wheel",Wheel,,2026-11-06
+276-3876,6T High Strength Sprocket,Motion,,2026-11-06
+276-3877,12T High Strength Sprocket,Motion,,2026-11-06
+276-3878,18T High Strength Sprocket,Motion,,2026-11-06
+276-3879,24T High Strength Sprocket,Motion,,2026-11-06
+276-3880,30T High Strength Sprocket,Motion,,2026-11-06
+276-3881,High Strength Shaft Insert Kit,Motion,,2026-11-06
+276-3891,Clamping Shaft Collar,Motion,,2026-11-06
+276-3990,Synthetic Rubber Band #64,Consumable,,2026-11-06
+276-4128,Extension Cable Retaining Clip,Electronics,,2026-11-06
+276-4359,1x3x1x35 Aluminum C-Channel,Structure,,2026-11-06
+276-4489,Linear Motion Additional Truck Kit,Motion,,2026-11-06
+276-4782,Rack Gear v2,Motion,,2026-11-06
+276-4810,V5 Robot Brain,Electronics,,2026-11-06
+276-4811,V5 Robot Battery Li-Ion 1100mAh,Electronics,,2026-11-06
+276-4817-100,V5 Power Cable - 180mm,Electronics,,2026-11-06
+276-4820,V5 Controller,Electronics,,2026-11-06
+276-4831,V5 Robot Radio,Electronics,,2026-11-06
+276-4840,V5 Smart Motor (11W),Electronics,,2026-11-06
+276-4842,Smart Motor (5.5W),Electronics,,2026-11-06
+276-4850,Vision Sensor,Electronics,,2026-11-06
+276-4852,Distance Sensor,Electronics,,2026-11-06
+276-4855,Inertial Sensor,Electronics,,2026-11-06
+276-4858,Bumper Switch v2,Electronics,,2026-11-06
+276-4860-010,V5 Smart Cable - 200mm,Electronics,,2026-11-06
+276-4860-020,V5 Smart Cable - 300mm,Electronics,,2026-11-06
+276-4860-030,V5 Smart Cable - 600mm,Electronics,,2026-11-06
+276-4861-010,V5 Smart Cable - 900mm,Electronics,,2026-11-06
+276-4861-020,V5 Smart Cable - 1200mm,Electronics,,2026-11-06
+276-4861-030,V5 Smart Cable - 1500mm,Electronics,,2026-11-06
+276-4988,"1"" Star Drive Coupler",Fastener,,2026-11-06
+276-4989,"0.5"" Star Drive Coupler",Fastener,,2026-11-06
+276-4990,"1/4"" Star Drive Screw",Fastener,,2026-11-06
+276-4991,"3/8"" Star Drive Screw",Fastener,,2026-11-06
+276-4992,"1/2"" Star Drive Screw",Fastener,,2026-11-06
+276-4993,"5/8"" Star Drive Screw",Fastener,,2026-11-06
+276-4994,"3/4"" Star Drive Screw",Fastener,,2026-11-06
+276-4995,"7/8"" Star Drive Screw",Fastener,,2026-11-06
+276-4996,"1"" Star Drive Screw",Fastener,,2026-11-06
+276-4997,"1.25"" Star Drive Screw",Fastener,,2026-11-06
+276-4998,"1.5"" Star Drive Screw",Fastener,,2026-11-06
+276-4999,"1.75"" Star Drive Screw",Fastener,,2026-11-06
+276-5004,"2"" Star Drive Screw",Fastener,,2026-11-06
+276-5006,"1/4"" Locking Star Drive Screw",Fastener,,2026-11-06
+276-5007,"1/2"" Locking Star Drive Screw",Fastener,,2026-11-06
+276-5034,36T High Strength Gear,Motion,,2026-11-06
+276-5035,60T High Strength Gear,Motion,,2026-11-06
+276-5299,3-Wire Expander,Electronics,,2026-11-06
+276-5652-000,Large Turntable Bearing V2 Assembly,Motion,,2026-11-06
+276-5652-004,Small Turntable Bearing V2 Assembly,Motion,,2026-11-06
+276-5652-007,Turntable Mounting Bracket,Structure,,2026-11-06
+276-5771,Rack Gearbox Bracket v2,Structure,,2026-11-06
+276-5774,Smart Cable Stock (8m),Electronics,,2026-11-06
+276-5775,Smart Cable Connectors,Electronics,,2026-11-06
+276-5840,Smart Motor 36:1 Cartridge (100 RPM),Electronics,,2026-11-06
+276-5841,Smart Motor 18:1 Cartridge (200 RPM),Electronics,,2026-11-06
+276-5842,Smart Motor 6:1 Cartridge (600 RPM),Electronics,,2026-11-06
+276-6010,Claw Kit v2,Motion,,2026-11-06
+276-6020,V5 Battery Clip,Electronics,,2026-11-06
+276-6050,Rotation Sensor,Electronics,,2026-11-06
+276-6098,"0.125"" Star Drive Set Screw",Fastener,,2026-11-06
+276-6101,Star Drive Clamping Shaft Collar,Motion,,2026-11-06
+276-6102,High Strength Star Drive Clamping Shaft Collar,Motion,,2026-11-06
+276-6103,Star Drive Shaft Collar,Motion,,2026-11-06
+276-6340-001,"3/8"" OD x #8 Nylon Spacer, 0.125""",Fastener,,2026-11-06
+276-6340-002,"3/8"" OD x #8 Nylon Spacer, 0.25""",Fastener,,2026-11-06
+276-6340-003,"3/8"" OD x #8 Nylon Spacer, 0.375""",Fastener,,2026-11-06
+276-6340-004,"3/8"" OD x #8 Nylon Spacer, 0.5""",Fastener,,2026-11-06
+276-6364,Smart Cables,Electronics,,2026-11-06
+276-6465-001,Inner Slide Truck,Motion,,2026-11-06
+276-6465-002,Outer Slide Truck,Motion,,2026-11-06
+276-6481,1-Post Hex Nut Retainer w/ Bearing Flat,Motion,,2026-11-06
+276-6482,1-Post Hex Nut Retainer,Structure,,2026-11-06
+276-6483,4-Post Hex Nut Retainer,Structure,,2026-11-06
+276-6484,1x1x35 Aluminum Angle,Structure,,2026-11-06
+276-2168-302,Tank Tread Link,Motion,,2026-11-06
+276-6780,Smart Motor Cap Replacement,Structure,,2026-11-06
+276-6781,Smart Motor #8-32 Threaded Inserts,Fastener,,2026-11-06
+276-7043,Optical Sensor,Electronics,,2026-11-06
+276-7141,High Strength Conveyor Chain,Motion,,2026-11-06
+276-7285,2x2x2x20 Aluminum U-Channel,Structure,,2026-11-06
+276-7368,12T Metal Gear,Motion,,2026-11-06
+276-7405,V5 GPS Sensor,Electronics,,2026-11-06
+276-7417,Potentiometer V2,Electronics,,2026-11-06
+276-7465,"24"" High Strength Shaft",Motion,,2026-11-06
+276-7499,Rubber Bumper,Fastener,,2026-11-06
+276-7572,24T High Strength Gear V2,Motion,,2026-11-06
+276-7573,48T High Strength Gear v2,Motion,,2026-11-06
+276-7574,72T High Strength Gear v2,Motion,,2026-11-06
+276-7578,High Strength Chain Attachment Link Kit,Motion,,2026-11-06
+276-7580,Low Profile High Strength Clamping Shaft Collar,Motion,,2026-11-06
+276-7582-001,"High Strength Shaft Bushing, 1/8"" Thick",Motion,,2026-11-06
+276-7582-002,"High Strength Shaft Bushing, 5/16"" Thick",Motion,,2026-11-06
+276-7747,36T High Strength Gear v2,Motion,,2026-11-06
+276-7748,60T High Strength Gear v2,Motion,,2026-11-06
+276-7749,84T High Strength Gear v2,Motion,,2026-11-06
+276-7758-001,30 Degree Flat Gussets,Structure,,2026-11-06
+276-7758-002,30 Degree Bent Gussets,Structure,,2026-11-06
+276-7759-001,45 Degree Flat Gussets,Structure,,2026-11-06
+276-7759-002,45 Degree Bent Gussets,Structure,,2026-11-06
+276-7760-001,60 Degree Flat Gussets,Structure,,2026-11-06
+276-7760-002,60 Degree Bent Gussets,Structure,,2026-11-06
+276-7761-001,90 Degree Flat Gussets,Structure,,2026-11-06
+276-7761-002,90 Degree Bent Gussets,Structure,,2026-11-06
+276-7767,#8-32 Low Profile Nut,Fastener,,2026-11-06
+276-7771,"3.25"" (260mm Travel) Anti-Static Wheel",Wheel,,2026-11-06
+276-8010,Bumper Switch 6N,Electronics,,2026-11-06
+276-8015,"2.25"" Star Drive Screw",Fastener,,2026-11-06
+276-8016,"2.5"" Star Drive Screw",Fastener,,2026-11-06
+276-8019-001,"3/8"" OD x #8 Click-On Spacer, 0.063""",Fastener,,2026-11-06
+276-8019-002,"3/8"" OD x #8 Click-On Spacer, 0.125""",Fastener,,2026-11-06
+276-8019-003,"3/8"" OD x #8 Click-On Spacer, 0.25""",Fastener,,2026-11-06
+276-8020,1-Post Standoff Retainer,Structure,,2026-11-06
+276-8021,1-Post Standoff Retainer with Bearing Flat,Motion,,2026-11-06
+276-8022,4-Post Standoff Retainer,Structure,,2026-11-06
+276-8023,Low Profile Bearing Flat,Structure,,2026-11-06
+276-8024,Shaft Collar Retainer with Bearing Flat,Structure,,2026-11-06
+276-8026,"3.25"" (260mm Travel) Omni-Directional Anti-Static Wheel",Wheel,,2026-11-06
+276-8030,"8T Sprocket, 6P",Motion,,2026-11-06
+276-8034,"High Strength Shaft Adapter (#8 Round Bore, 1/2"" Long)",Motion,,2026-11-06
+276-8076,EPDM Elastic Bands #32,Consumable,,2026-11-06
+276-8077,EPDM Elastic Bands #64,Consumable,,2026-11-06
+276-8083,"V5 Pneumatic Tubing (Black, 3m)",Pneumatics,,2026-11-06
+276-8098,"2.75"" (220mm Travel) Anti-Static Wheel",Wheel,,2026-11-06
+276-8103,"4"" (320mm Travel) Anti-Static Wheel",Wheel,,2026-11-06
+276-8106,"2.75"" (220mm Travel) Omni-Directional Anti-Static Wheel",Wheel,,2026-11-06
+276-8107,"4"" (320mm Travel) Omni-Directional Anti-Static Wheel",Wheel,,2026-11-06
+276-8235,"High Strength Shaft Adapter (1/8"" Square Bore, 1/2"" Long)",Motion,,2026-11-06
+276-8328,"16T Sprocket, 6P",Motion,,2026-11-06
+276-8329,"24T Sprocket, 6P",Motion,,2026-11-06
+276-8330,"32T Sprocket, 6P",Motion,,2026-11-06
+276-8331,"40T Sprocket, 6P",Motion,,2026-11-06
+228-2500-230,VEX IQ Chain,Motion,,2026-11-06
+276-8341-001,2x12 PET Sheets,Structure,,2026-11-06
+276-8341-002,6x6 PET Sheets,Structure,,2026-11-06
+276-8341-003,6x12 PET Sheets,Structure,,2026-11-06
+276-8383,High Strength Pillow Block,Motion,,2026-11-06
+276-8402,High Strength Shaft Ball Bearing,Motion,,2026-11-06
+276-8636,Straight Pneumatic Fitting Kit,Pneumatics,,2026-11-06
+276-8637,Elbow Fitting Kit,Pneumatics,,2026-11-06
+276-8638,VEX “T” Pneumatic Fittings,Pneumatics,,2026-11-06
+276-8639,Assorted Pneumatic Fittings,Pneumatics,,2026-11-06
+276-8642,"Dual Acting Cylinder, 10mm Bore, 25mm Stroke",Pneumatics,,2026-11-06
+276-8644,"Dual Acting Cylinder, 10mm Bore, 50mm Stroke",Pneumatics,,2026-11-06
+276-8646,"Dual Acting Cylinder, 10mm Bore, 75mm Stroke",Pneumatics,,2026-11-06
+276-8659,AI Vision Sensor,Electronics,,2026-11-06
+276-8748,Pneumatic Pressure Regulator,Pneumatics,,2026-11-06
+276-8749,Air Tank 200ml,Pneumatics,,2026-11-06
+276-8752,Double Acting Solenoid,Pneumatics,,2026-11-06
+276-8755,Shut-off Valve Fitting,Pneumatics,,2026-11-06
+276-8794,V5 Flywheel Weight,Motion,,2026-11-06
+276-9041,"2"" Mecanum Wheels V2",Wheel,,2026-11-06
+276-9044,2' Omni-Directional Wheel,Wheel,,2026-11-06
+276-8880,"2"" Compression Wheel - 30A Durometer",Wheel,,2026-11-06
+276-8881,"2"" Compression Wheel - 40A Durometer",Wheel,,2026-11-06
+276-8882,"2"" Compression Wheel - 60A Durometer",Wheel,,2026-11-06
+276-8877,"1.625"" Compression Wheel - 30A Durometer",Wheel,,2026-11-06
+276-8878,"1.625"" Compression Wheel - 40A Durometer",Wheel,,2026-11-06
+276-8879,"1.625"" Compression Wheel - 60A Durometer",Wheel,,2026-11-06
+217-6350,"Straight Flex Wheel (1.625"" OD x 1/2"" WD, 1/2"" Hex Bore, 30A)",Wheel,,2026-11-06
+217-6353,"Straight Flex Wheel (2"" OD x 1/2"" WD, 1/2"" Hex Bore, 30A)",Wheel,,2026-11-06
+217-6447,"Straight Flex Wheel (3"" OD x 1"" WD, 1-1/8"" ID, 30A)",Wheel,,2026-11-06
+217-6450,"Straight Flex Wheel (4"" OD x 1"" WD, 1-1/8"" ID, 30A)",Wheel,,2026-11-06
+217-6351,"Straight Flex Wheel (1.625"" OD x 1/2"" WD, 1/2"" Hex Bore, 40A)",Wheel,,2026-11-06
+217-6354,"Straight Flex Wheel (2"" OD x 1/2"" WD, 1/2"" Hex Bore, 40A)",Wheel,,2026-11-06
+217-6448,"Straight Flex Wheel (3"" OD x 1"" WD, 1-1/8"" ID, 40A)",Wheel,,2026-11-06
+217-6451,"Straight Flex Wheel (4"" OD x 1"" WD, 1-1/8"" ID, 40A)",Wheel,,2026-11-06
+217-6352,"Straight Flex Wheel (1.625"" OD x 1/2"" WD, 1/2"" Hex Bore, 60A)",Wheel,,2026-11-06
+217-6446,"Straight Flex Wheel (2"" OD x 1/2"" WD, 1/2"" Hex Bore, 60A)",Wheel,,2026-11-06
+217-6449,"Straight Flex Wheel (3"" OD x 1"" WD, 1-1/8"" ID, 60A)",Wheel,,2026-11-06
+217-6452,"Straight Flex Wheel (4"" OD x 1"" WD, 1-1/8"" ID, 60A)",Wheel,,2026-11-06
+217-5949,"1/2"" VersaHex Adapters (1/4"" Square Bore, 1/8"" Long)",Motion,,2026-11-06
+217-5950,"1/2"" VersaHex Adapters (1/4"" Square Bore, 1/4"" Long)",Motion,,2026-11-06
+217-7946,"1/2"" VersaHex Adapters v2 (1/4"" Square Bore, 1/8"" Long)",Motion,,2026-11-06
+217-7947,"1/2"" VersaHex Adapters v2 (1/4"" Square Bore, 1/8"" Long)",Motion,,2026-11-06
+217-2591,1.125” Bearing Bore Plastic VersaHub Spacer (1/2” Wide),Motion,,2026-11-06
+217-2592,1/2” Hex Bore Aluminum VersaHub,Motion,,2026-11-06
+217-3234,"1.125"" Bearing Pilot Plastic VersaHub (1/4"" Wide, w/ Plate Sprocket Mount)",Motion,,2026-11-06
+217-4009,1/2” Hex Bore Plastic VersaHub,Motion,,2026-11-06
+217-8079,1/2” Hex Bore Plastic VersaHub v2,Motion,,2026-11-06
+US14227-S0400,Reservoir,Pneumatics,,2026-11-06
+NCJ2D10-200S,Cylinder Single Acting,Pneumatics,,2026-11-06
+NCJ2D10-200,Cylinder Double Acting,Pneumatics,,2026-11-06
+SYJ3120-SMO-M3-F,"Solenoid Fwd, Reverse ( 5/2 Single Solenoid Valve, 5VDC)",Pneumatics,,2026-11-06
+SY113-SMO-PM3-F,"Solenoid On/Off (3/2 Solenoid Valve, 5VDC)",Pneumatics,,2026-11-06
+275-1417,"Solenoid Driver (Cable w/Driver, Connects one VEX I/O Port to one Solenoid)",Pneumatics,,2026-11-06
+TUO425B,Tubing,Pneumatics,275-0447,2026-11-06
+AS1201F-M5-04T,Flow Meter,Pneumatics,,2026-11-06
+KJS04-M3,Fittings for Valves,Pneumatics,KJL04-M3; KQ2S04-M3G; KQ2L04-M3G,2026-11-06
+KQ2H03-34S,Fittings for Reservoirs,Pneumatics,KQ2H03-34AS,2026-11-06
+KQ2S04-M5,Tire Pump Fitting,Pneumatics,KQ2S04-M5A,2026-11-06
+8090410075,Tire Pump Fitting (2x),Pneumatics,,2026-11-06
+276-8823,"Hubbed Compression Wheel 4-Pack Kit (2"" OD 1/4"" Square Bore Hub, 30A)",Wheel,,2026-11-06
+US3729,On/Off Switch,Pneumatics,,2026-11-06
+A-474-0000005,Pressure Regulator,Pneumatics,,2026-11-06
+KQ2T04-00,"""T"" Fitting",Pneumatics,KQ2T04-00A,2026-11-06
+CYLINDER-MOUNT,Cylinder Mount,Pneumatics,,2026-11-06
+CYLINDER-ROD-PIVOT,Cylinder Rod Pivot,Pneumatics,,2026-11-06

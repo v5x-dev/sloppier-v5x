@@ -215,4 +215,74 @@ export default defineSchema({
     ])
     .index("by_session_token", ["sessionToken"])
     .index("by_file_seen", ["programId", "path", "createdAt"]),
+
+  // bin: parts inventory. The catalog is global and read-only; everything
+  // below it belongs to one workspace.
+  binCatalogParts: defineTable({
+    sku: v.string(),
+    name: v.string(),
+    partType: v.string(),
+    alternateSkus: v.array(v.string()),
+    retrievedAt: v.string(),
+  }).index("by_sku", ["sku"]),
+
+  binParts: defineTable({
+    workspaceId: v.id("workspaces"),
+    catalogPartId: v.optional(v.id("binCatalogParts")),
+    name: v.string(),
+    sku: v.optional(v.string()),
+    partType: v.string(),
+    minQuantity: v.optional(v.number()),
+    createdBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_workspace_catalog_part", ["workspaceId", "catalogPartId"]),
+
+  binLocations: defineTable({
+    workspaceId: v.id("workspaces"),
+    name: v.string(),
+    createdAt: v.number(),
+  }).index("by_workspace", ["workspaceId"]),
+
+  // On-hand quantity of one part at one location.
+  binStock: defineTable({
+    workspaceId: v.id("workspaces"),
+    partId: v.id("binParts"),
+    locationId: v.id("binLocations"),
+    quantity: v.number(),
+  })
+    .index("by_part_location", ["partId", "locationId"])
+    .index("by_workspace", ["workspaceId"]),
+
+  // A member taking parts out of a location until they return them.
+  binLoans: defineTable({
+    workspaceId: v.id("workspaces"),
+    partId: v.id("binParts"),
+    locationId: v.id("binLocations"),
+    quantity: v.number(),
+    borrowerId: v.string(),
+    borrowedAt: v.number(),
+    returnedAt: v.optional(v.number()),
+    returnedBy: v.optional(v.string()),
+  })
+    .index("by_workspace", ["workspaceId"])
+    .index("by_part", ["partId"]),
+
+  binMovements: defineTable({
+    workspaceId: v.id("workspaces"),
+    partId: v.id("binParts"),
+    locationId: v.id("binLocations"),
+    kind: v.union(
+      v.literal("adjust"),
+      v.literal("borrow"),
+      v.literal("return")
+    ),
+    delta: v.number(),
+    actorId: v.string(),
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_part", ["partId"])
+    .index("by_workspace", ["workspaceId"]),
 })

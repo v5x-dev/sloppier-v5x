@@ -10,6 +10,8 @@ collection of unrelated projects.
   Programs are compiled on a remote build farm.
 - **Design** (design.v5x.dev) is CAD software for V5 robots.
 - **Film** (film.v5x.dev) is a match and skills review platform, similar to Hudl.
+- **bin** (bin.v5x.dev) tracks a workspace's parts inventory: stock by location,
+  and members borrowing and returning parts.
 - **Marketing** (v5x.dev) is the public website.
 
 ## What is shared
@@ -23,7 +25,7 @@ collection of unrelated projects.
 
 ## Where things live
 
-- `apps/code/web`, `apps/design/web`, `apps/film/web`: the three product apps.
+- `apps/code/web`, `apps/design/web`, `apps/film/web`, `apps/bin/web`: the product apps.
 - `apps/marketing`: the marketing site.
 - `packages/`: code shared between apps.
 - `infra/`: the build server images and scripts for compiling V5 programs, and the

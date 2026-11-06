@@ -37,8 +37,6 @@
   /* Suite tokens. */
   --radius: 0.5rem;
   --success: oklch(0.5 0.13 150);
-  /* Input outlines must reach 3:1 against the page (WCAG 1.4.11). */
-  --field-border: oklch(0.6 0.01 323);
 
   /* Elevation, as in the Code tokens, tinted toward this palette's hue. */
   --highlight: oklch(1 0 0 / 70%);
@@ -86,7 +84,6 @@
 
   /* Suite tokens. */
   --success: oklch(0.76 0.15 152);
-  --field-border: oklch(0.5 0.01 323);
 
   --highlight: oklch(1 0 0 / 6%);
   --shadow-color: oklch(0 0 0 / 45%);
