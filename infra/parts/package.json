@@ -1,0 +1,19 @@
+{
+  "name": "@v5x/parts-pipeline",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Dev-time pipeline that turns VEX STEP files into browser-ready Part models and the Design catalog. Never shipped to users.",
+  "dependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
+    "meshoptimizer": "1.3.0",
+    "occt-import-js": "0.0.23"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "upload": "node upload.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

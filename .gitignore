@@ -32,3 +32,6 @@ test-results/
 
 # Public setup templates
 !**/.env.example
+
+# Parts pipeline: fetched sources and converted models, never committed.
+infra/parts/.cache/

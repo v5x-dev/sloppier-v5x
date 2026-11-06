@@ -11,7 +11,7 @@
     "format": "turbo format",
     "typecheck": "turbo typecheck",
     "check:boundaries": "node scripts/check-boundaries.mjs",
-    "test:tooling": "node --test scripts/tests/*.test.mjs",
+    "test:tooling": "node --test scripts/tests/*.test.mjs && node --test infra/parts/tests/*.test.mjs",
     "check:tests": "node scripts/check-tests.mjs",
     "format:check": "prettier --check \"apps/*/*/src/**/*.{ts,tsx}\" \"apps/*/*/tests/**/*.ts\" \"apps/*/*/e2e/**/*.{ts,mjs}\" \"apps/*/*/scripts/*.mjs\" \"packages/*/src/**/*.{ts,tsx}\" \"packages/backend/convex/**/*.ts\" \"packages/backend/tests/**/*.ts\" \"scripts/**/*.mjs\"",
     "doctor": "node scripts/doctor.mjs",
@@ -30,6 +30,7 @@
   },
   "workspaces": [
     "apps/*/*",
-    "packages/*"
+    "packages/*",
+    "infra/parts"
   ]
 }

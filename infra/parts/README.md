@@ -1,0 +1,116 @@
+# Part pipeline
+
+Turns VEX's STEP CAD files into the Part models and the catalog that the Design app
+uses. It runs at dev time only. Git keeps the pipeline and `catalog.json`. The converted
+models (compressed GLB) go to Cloudflare R2, never to git. `occt-import-js` is LGPL and
+is used here at build time only; it never ships to users.
+
+The rule from [ADR 0001](../../docs/adr/0001-design-is-built-independently-of-protobot.md)
+applies: nothing here reads or copies Protobot-Rebuilt. The only sources are the public
+repositories pinned in `lib/sources.mjs`.
+
+## Running it
+
+```sh
+bun install                       # from the repo root; this folder is a workspace
+bun run --cwd infra/parts build   # every part in manifest.json, ~80 seconds
+bun run --cwd infra/parts build -- --only motor-v5-smart-11w   # one part; does not rewrite catalog.json
+bun run --cwd infra/parts test    # unit tests: holes, probes, lattice, mesh, GLB, manifest
+```
+
+`build` does four things for each part:
+
+1. **Reads the STEP file** from the pinned commit with `git show`, from a blobless clone
+   kept in `.cache/sources/`. It checks the declared length unit and the bounding box
+   against `expectSizeMm` in the manifest. A file in inches that is read as millimetres
+   fails here.
+2. **Measures it** with occt: triangle count at the tessellation the raw budgets were
+   measured with (linear 0.2 mm, angular 0.5 rad), solid volume, bores and pins from
+   cylindrical faces (`lib/holes.mjs`), and hole openings found by ray probes
+   (`lib/probe.mjs`, `lib/lattice.mjs`).
+3. **Builds a model** (fixed Parts): snap points by the manifest's strategy, mass from
+   volume and density, then a welded mesh reduced to the triangle budget with
+   meshoptimizer, written as flat-shaded, meshopt-compressed GLB into `.cache/models/`.
+   The file name carries the first eight hex digits of its hash.
+4. **Verifies a spec** (Cut Parts): the probed holes must match the `rows` in the manifest
+   exactly, with no missing and no extra holes, or the build stops.
+
+`catalog.json` is written to `apps/design/web/src/catalog/`. The app validates it when it
+loads (`checkCatalog`), and its tests check it again.
+
+## Adding a part
+
+Adding a Part is a manifest entry. For a fixed model:
+
+```json
+{
+  "id": "gusset-60-flat",
+  "name": "60 Degree Flat Gusset",
+  "family": "gusset",
+  "kind": "model",
+  "source": { "repo": "vex-cad-download", "path": "Gussets/60 Degree Flat Gusset (276-7760-001).step" },
+  "material": "steel",
+  "snap": "bores+probe",
+  "budgetTriangles": 600,
+  "maxErrorMm": 0.05
+}
+```
+
+- `source.path` is the path inside the repo. The SKU comes from the file name. If the file
+  has no SKU, give one in `"sku": { "value": "...", "source": "solidpython4vex-name", "note": "..." }`.
+- `snap` picks the Snap Point strategy: `bores` (detected bore openings), `ruled-bores`
+  (bores matched by a rule, for hand corrections), `shank` (a fastener's shank ends),
+  `probe` (square openings on a 0.25 in lattice, for plates), `bores+probe` (both, for
+  flat parts), or `axle` (a computed axle for wheels).
+- `budgetTriangles` and `maxErrorMm` are the simplifier's target and error limit. The
+  build reports what it achieved; a miss means the error limit was reached first.
+- `expectSizeMm` (optional) checks the bounding box against known sizes.
+
+For a Cut Part (a channel or angle at any length, or a square shaft), run
+`node rows.mjs <id>` after adding the entry with `"cut": {...}` and `"rows": []`. It prints
+the holes it finds, grouped by wall, to copy into the spec. Then run `build`, which checks
+the spec against the STEP file. The row fields are: `wall` (`web` for a plate normal to
+Z, `side` for one normal to Y), `across` (the hole's position across the wall, centred),
+`pitch` (12.7 for 0.5 in, 63.5 for 2.5 in), and `phase` (0, or 0.5 for a staggered row).
+
+## Coordinates
+
+Every catalog number is in millimetres. Positions and directions are in the Part frame:
+Y up, origin at the centre of the Part's bounding box. The pipeline reads STEP's Z-up
+frame and rotates it about X by -90 degrees, `(x, y, z) -> (x, z, -y)`, which is a proper
+rotation. Cut Parts use the same frame, with the length along X. The GLB files use the
+same numbers. glTF defines metres, so the app must not rescale them.
+
+## Budgets and what they cost
+
+Raw STEP tessellations are large. The motor is 57,151 triangles and the omni wheel is
+107,880. Budgets are set per part in `manifest.json`. The table printed by `build` lists
+the achieved counts against the raw ones. The simplifier keeps each collapse within
+`maxErrorMm`, so a part with a budget it cannot reach stays above it, and the build says so.
+
+## Known gaps
+
+- Snap Points are not complete for every part. The V5 motor's mounting bores do not open
+  onto the bounding box, so the motor has a hand-corrected rule (`ruled-bores`). The
+  5.5 W motor has no snap points yet.
+- The steel C-channel (276-2906) is the aluminum channel rotated 90 degrees, and its holes
+  are offset. A row spec needs an orientation field first, so it is not included.
+- The U-channel and the steel angle are not included as Cut Parts.
+- Wheels get a computed axle at their centre. The STEP hub bore could not be detected
+  reliably, so the bore is not read.
+- Mass uses the STEP volume times a handbook density, not a measured weight. Electronics
+  have no density, so motor mass stays null until a published figure is recorded.
+- The model's corner overlaps (the channel's web and sides, and the angle's legs) are
+  kept as separate plates, so the mesh is slightly larger than the solid it describes.
+  The overlapping faces are hidden inside the Part.
+
+## Sources and credit
+
+- `vex-cad-download`: TlorschCode/VEX-V5-Parts-Solidworks-Download, pinned in
+  `lib/sources.mjs`. The repo describes its files as unchanged from VEX's CAD downloads.
+- `solidpython4vex`: UTCSheffield/SolidPython4VEX (MIT), `catalog.json`, for SKU metadata.
+  Used to name the screws' SKUs, which are not in their file names. Those SKUs are
+  inferred by name and shank size, and the catalog records that.
+
+The SHU-ROBOTICS/VEX-CAD-FILES repo was not needed in this PR, since every part in the
+first set is in the primary source.

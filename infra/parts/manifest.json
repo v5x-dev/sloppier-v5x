@@ -1,0 +1,465 @@
+{
+  "$comment": "Every Part the pipeline builds. Adding a Part is adding an entry here, then running `bun run build`. Fixed models are converted from a STEP file; Cut Parts are generated in the browser and are described by a row spec that this pipeline verifies against the STEP file.",
+  "parts": [
+    {
+      "id": "motor-v5-smart-11w",
+      "name": "V5 Smart Motor (11W)",
+      "family": "motor",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Motors/V5 Smart Motor (276-4840).step"
+      },
+      "material": "electronics",
+      "snap": "ruled-bores",
+      "budgetTriangles": 2000,
+      "maxErrorMm": 1.5,
+      "boreRule": {
+        "minDiameterMm": 2.0,
+        "maxDiameterMm": 2.6,
+        "minDepthMm": 30
+      },
+      "notes": [
+        "Snap points are hand corrections: the four 2.2 mm mounting bores through the motor body, found by the bore detector. Their ends are not on the bounding box, so the automatic opening test does not select them."
+      ]
+    },
+    {
+      "id": "motor-v5-smart-5-5w",
+      "name": "V5 Smart Motor (5.5W)",
+      "family": "motor",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Motors/V5 Smart Motor (5.5W) (276-4842).step"
+      },
+      "material": "electronics",
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.3
+    },
+    {
+      "id": "wheel-omni-2-75",
+      "name": "2.75 in Omni-Directional Anti-Static Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Omni/2.75 (220mm Travel) Omni-Directional Anti-Static Wheel (276-8106).step"
+      },
+      "material": "nylon",
+      "snap": "axle",
+      "axleDiameterMm": 6.35,
+      "budgetTriangles": 2800,
+      "maxErrorMm": 1.5,
+      "expectSizeMm": {
+        "x": 69.85,
+        "z": 69.85
+      }
+    },
+    {
+      "id": "wheel-normal-2-75",
+      "name": "2.75 in Anti-Static Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Normal/2.75 (220mm Travel) Anti-Static Wheel (276-8098).step"
+      },
+      "material": "nylon",
+      "snap": "axle",
+      "axleDiameterMm": 6.35,
+      "budgetTriangles": 1600,
+      "maxErrorMm": 1.5,
+      "expectSizeMm": {
+        "x": 69.85,
+        "z": 69.85
+      }
+    },
+    {
+      "id": "wheel-omni-4",
+      "name": "4 in Omni-Directional Anti-Static Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Omni/4 (320mm Travel) Omni-Directional Anti-Static Wheel (276-8107).step"
+      },
+      "material": "nylon",
+      "snap": "axle",
+      "axleDiameterMm": 6.35,
+      "budgetTriangles": 2800,
+      "maxErrorMm": 1.5,
+      "expectSizeMm": {
+        "x": 101.6,
+        "z": 101.6
+      }
+    },
+    {
+      "id": "standoff-1-4",
+      "name": "1/4 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/1_4 Standoff (275-1013).step"
+      },
+      "material": "aluminum",
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "expectSizeMm": {
+        "y": 6.35
+      }
+    },
+    {
+      "id": "standoff-1-2",
+      "name": "1/2 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/1_2 Standoff (275-1014).step"
+      },
+      "material": "aluminum",
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "expectSizeMm": {
+        "y": 12.7
+      }
+    },
+    {
+      "id": "standoff-1",
+      "name": "1 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/1.00 Standoff (275-1016).step"
+      },
+      "material": "aluminum",
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "expectSizeMm": {
+        "y": 25.4
+      }
+    },
+    {
+      "id": "standoff-2",
+      "name": "2 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/2.00 Standoff  (275-1018).step"
+      },
+      "material": "aluminum",
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "expectSizeMm": {
+        "y": 50.8
+      }
+    },
+    {
+      "id": "screw-6-32-1-4",
+      "name": "6-32 x 1/4 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.25 Inch Screw.step"
+      },
+      "sku": {
+        "value": "275-0659",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to '6_32_x_1_4_Screw' in SolidPython4VEX. The STEP shank is 3.4 mm, which fits 6-32."
+      },
+      "material": "steel",
+      "snap": "shank",
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      },
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.02
+    },
+    {
+      "id": "screw-6-32-1-2",
+      "name": "6-32 x 1/2 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.50 Inch Screw.step"
+      },
+      "sku": {
+        "value": "275-1169",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to '6_32_x_1_2_Screw' in SolidPython4VEX. The STEP shank is 3.4 mm, which fits 6-32."
+      },
+      "material": "steel",
+      "snap": "shank",
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      },
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.02
+    },
+    {
+      "id": "screw-8-32-1",
+      "name": "8-32 x 1 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/1.00 Inch Screw.step"
+      },
+      "sku": {
+        "value": "275-1008",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to '8_32_x_1_000_Screw' in SolidPython4VEX. The STEP shank is 4.2 mm, which fits 8-32."
+      },
+      "material": "steel",
+      "snap": "shank",
+      "shankDiameterMm": {
+        "min": 3.5,
+        "max": 5
+      },
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.02
+    },
+    {
+      "id": "screw-8-32-2",
+      "name": "8-32 x 2 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/2.00 Inch Screw.step"
+      },
+      "sku": {
+        "value": "275-1012",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to '8_32_x_2_000_Screw' in SolidPython4VEX. The STEP shank is 4.2 mm, which fits 8-32."
+      },
+      "material": "steel",
+      "snap": "shank",
+      "shankDiameterMm": {
+        "min": 3.5,
+        "max": 5
+      },
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.02
+    },
+    {
+      "id": "nut-8-32-hex",
+      "name": "#8-32 Hex Nut",
+      "family": "nut",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Nuts/#8-32 Hex Nut (275-1028).step"
+      },
+      "material": "steel",
+      "snap": "bores",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "plate-5x15-steel",
+      "name": "5x15 Steel Plate",
+      "family": "plate",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Plates/5x15 Steel Plate (275-2023).step"
+      },
+      "material": "steel",
+      "snap": "probe",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "expectSizeMm": {
+        "x": 63.5,
+        "z": 190.5
+      },
+      "holeSquareMm": 4.5,
+      "notes": [
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+      ]
+    },
+    {
+      "id": "plate-5x25-steel",
+      "name": "5x25 Steel Plate",
+      "family": "plate",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Plates/5x25 Steel Plate (275-1140).step"
+      },
+      "material": "steel",
+      "snap": "probe",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "holeSquareMm": 4.5,
+      "notes": [
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+      ]
+    },
+    {
+      "id": "gusset-30-flat",
+      "name": "30 Degree Flat Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/30 Degree Flat Gusset (276-7758-001).step"
+      },
+      "material": "steel",
+      "snap": "bores+probe",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05
+    },
+    {
+      "id": "gusset-90-flat",
+      "name": "90 Degree Flat Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/90 Degree Flat Gusset (276-7761-001).step"
+      },
+      "material": "steel",
+      "snap": "bores+probe",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05
+    },
+    {
+      "id": "channel-1x2x1-aluminum",
+      "name": "1x2x1 Aluminum C-Channel",
+      "family": "channel",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Aluminum/1x2x1x35 Aluminum C-Channel (276-2289).step",
+        "sampleLengthMm": 444.5
+      },
+      "material": "aluminum",
+      "cut": {
+        "widthMm": 25.4,
+        "depthMm": 13.97,
+        "thicknessMm": 1.5875,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": -6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -10.16,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 10.16,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -0.635,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.445,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "angle-1x1-aluminum",
+      "name": "1x1 Aluminum Angle",
+      "family": "angle",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Angles/Aluminum/1x1x35 Aluminum Angle (217-6484).step",
+        "sampleLengthMm": 444.5
+      },
+      "material": "aluminum",
+      "cut": {
+        "legMm": 12.7,
+        "thicknessMm": 1.5875,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": -1.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 3.85,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 1.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": -3.8,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      },
+      "notes": [
+        "The outer corner fillet is not modelled."
+      ]
+    },
+    {
+      "id": "shaft-square-1-4",
+      "name": "1/4 in Square Shaft",
+      "family": "shaft",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/High Strength/2 High Strength Shaft (276-3440).step",
+        "sampleLengthMm": 49.8
+      },
+      "material": "steel",
+      "cut": {
+        "sizeMm": 6.35,
+        "cornerRadiusMm": 0,
+        "rows": []
+      }
+    }
+  ]
+}
