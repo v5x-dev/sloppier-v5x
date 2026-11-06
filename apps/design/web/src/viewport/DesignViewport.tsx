@@ -125,9 +125,13 @@ function Workspace(props: ViewportProps) {
     const colors = readSceneColors()
     scene.background = colors.background
     const hemi = new HemisphereLight(colors.highlight, colors.background, 1.1)
-    const key = new DirectionalLight(0xffffff, 1.4)
+    // Key from above and to the front, and a softer fill from the opposite side, so a
+    // Part's faces read as different planes instead of one flat shade.
+    const key = new DirectionalLight(0xffffff, 2.2)
     key.position.set(500, 900, 380)
-    scene.add(hemi, key)
+    const fill = new DirectionalLight(colors.highlight, 0.7)
+    fill.position.set(-600, 400, -420)
+    scene.add(hemi, key, fill)
     const pmrem = new PMREMGenerator(gl)
     const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     scene.environment = environment
@@ -204,7 +208,7 @@ function Workspace(props: ViewportProps) {
       controls.dispose()
       store.dispose()
       grid.mesh.geometry.dispose()
-      scene.remove(hemi, key, grid.mesh, axes)
+      scene.remove(hemi, key, fill, grid.mesh, axes)
       scene.environment = null
       environment.dispose()
       state.store = undefined
