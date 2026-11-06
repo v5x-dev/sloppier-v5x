@@ -1285,9 +1285,51 @@
         "maxErrorMm": 0.235,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
-      "snapPoints": [],
+      "snapPoints": [
+        {
+          "id": "motor-01",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            0,
+            3.1499999999999875,
+            32.21750000000001
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.45,
+          "note": "8-32 tap hole at the end face, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
+        },
+        {
+          "id": "motor-02",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            0,
+            15.849999999999987,
+            32.21750000000001
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.45,
+          "note": "8-32 tap hole at the end face, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
+        }
+      ],
       "notes": [
-        "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
+        "Mounting holes: two 8-32 tapped holes on the end face at STEP y = -40.13, at x = 0 and z = 3.15 and 15.85. They are 12.7 mm (0.5 in) apart, so both line up with one channel web row. Each runs about 19 mm in, to a shelf at y = -21.1. Measured from the STEP circle edges (3.45 mm, the 8-32 tap drill).",
+        "No other openings are measured on this motor yet. The 5.5 W STEP is 84 edges open in places, so only the end face holes are used."
       ]
     },
     {
@@ -13261,6 +13303,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -5.4227950000000025,
@@ -13278,6 +13321,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             7.179204999999998,
@@ -13342,6 +13386,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -2.2477950000000004,
@@ -13359,6 +13404,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             4.004204999999999,
@@ -13423,6 +13469,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -11.595320000000001,
@@ -13440,6 +13487,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             13.332680000000002,
@@ -13504,6 +13552,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -24.295319999999993,
@@ -13521,6 +13570,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             26.03268000000001,

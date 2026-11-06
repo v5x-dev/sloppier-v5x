@@ -17,6 +17,11 @@ export type FitToken = string
 export type SnapPoint = {
   id: string
   kind: "hole" | "pin" | "axle"
+  /**
+   * For a fastener's pins: the head end, which is set into an opening head first, or the tip.
+   * Absent for every other Snap Point.
+   */
+  role?: "head" | "tip"
   /** detected: read from a STEP cylinder. probed: a square opening found by ray probes. lattice: a site on the plate lattice. computed: derived from the Part's size. manual: a hand correction. */
   source: "detected" | "probed" | "lattice" | "computed" | "manual"
   shape?: "square" | "rect"
