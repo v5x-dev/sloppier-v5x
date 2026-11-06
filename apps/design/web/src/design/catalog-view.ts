@@ -1,5 +1,6 @@
 // The parts panel's view of the catalog: Parts grouped by family, filtered by a search.
 
+import { catalog } from "@/catalog/catalog"
 import type { CatalogPart } from "@/catalog/types"
 
 export const FAMILY_ORDER = [
@@ -41,4 +42,9 @@ export function groupCatalog(parts: readonly CatalogPart[], query: string): Fami
     label: FAMILY_LABELS[family] ?? family,
     parts: parts.filter((part) => part.family === family && matches(part)),
   })).filter((group) => group.parts.length > 0)
+}
+
+/** The name of a catalog entry, or its id if the catalog does not have it. */
+export function catalogPartName(id: string): string {
+  return catalog.parts.find((part) => part.id === id)?.name ?? id
 }

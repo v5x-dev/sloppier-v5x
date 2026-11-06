@@ -46,7 +46,7 @@ export function readPart(id: string, entry: Y.Map<unknown> | undefined): PlacedP
   if (lengthMm !== undefined && !(typeof lengthMm === "number" && lengthMm > 0 && Number.isFinite(lengthMm)))
     return undefined
   const part: PlacedPart = { id, catalogId, position, rotation, color }
-  if (lengthMm !== undefined) part.lengthMm = lengthMm as number
+  if (lengthMm !== undefined) part.lengthMm = lengthMm
   return part
 }
 

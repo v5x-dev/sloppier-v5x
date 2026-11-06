@@ -5,6 +5,7 @@ import {
   SnapIndex,
   alignToSnap,
   findSnap,
+  findSnapAlongRay,
   toWorldSnap,
   type WorldSnap,
 } from "../src/design/snap"
@@ -128,5 +129,38 @@ describe("SnapIndex", () => {
         if (inCube) expect(found.has(entry.owner)).toBe(true)
       }
     }
+  })
+})
+
+describe("findSnapAlongRay", () => {
+  const down = { origin: new Vector3(0, 500, 0), direction: new Vector3(0, -1, 0) }
+  const flat = { position: [0, 0, 0] as [number, number, number], rotation: [0, 0, 0, 1] as [number, number, number, number] }
+
+  it("snaps to a Snap Point the pointer's ray passes near", () => {
+    const index = new SnapIndex(10)
+    index.add({ owner: "motor", snapId: "hole", ...target([0, 40, 0], [0, 0, 1]) })
+    const match = findSnapAlongRay([snap({ position: [0, 0, 0], axis: [0, 0, 1] })], down, index, 10, flat)
+    expect(match?.target.owner).toBe("motor")
+    near(toWorldSnap(snap({ position: [0, 0, 0], axis: [0, 0, 1] }), match!.pose).position, new Vector3(0, 40, 0))
+  })
+
+  it("passes over a Snap Point that is farther than the radius from the ray", () => {
+    const index = new SnapIndex(10)
+    index.add({ owner: "motor", snapId: "hole", ...target([30, 40, 0], [0, 0, 1]) })
+    expect(findSnapAlongRay([snap()], down, index, 10, flat)).toBeNull()
+  })
+
+  it("ignores a Snap Point behind the camera", () => {
+    const index = new SnapIndex(10)
+    index.add({ owner: "behind", snapId: "hole", ...target([0, 600, 0], [0, 0, 1]) })
+    expect(findSnapAlongRay([snap()], down, index, 10, flat)).toBeNull()
+  })
+
+  it("mates the candidate Snap Point closest to the target", () => {
+    const index = new SnapIndex(10)
+    index.add({ owner: "motor", snapId: "hole", ...target([0, 40, 0], [0, 0, 1]) })
+    const far = snap({ id: "far", position: [-60, 0, 0], axis: [0, 0, 1] })
+    const near = snap({ id: "near", position: [5, 0, 0], axis: [0, 0, 1] })
+    expect(findSnapAlongRay([far, near], down, index, 10, flat)?.candidate.id).toBe("near")
   })
 })

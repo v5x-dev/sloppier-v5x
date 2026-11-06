@@ -51,16 +51,23 @@ export function alignToSnap(
 /** Placed Snap Points in a uniform grid, so a query looks at a few cells, not every point. */
 export class SnapIndex {
   private readonly cells = new Map<string, WorldSnap[]>()
+  private readonly everything: WorldSnap[] = []
 
   constructor(private readonly cellMm: number) {
     if (!(cellMm > 0)) throw new RangeError("Cell size must be positive")
   }
 
   add(entry: WorldSnap): void {
+    this.everything.push(entry)
     const key = this.keyOf(entry.position)
     const cell = this.cells.get(key)
     if (cell) cell.push(entry)
     else this.cells.set(key, [entry])
+  }
+
+  /** Every entry in the index. */
+  all(): readonly WorldSnap[] {
+    return this.everything
   }
 
   /** Every entry whose cell touches the cube of half-width `radius` around `point`. */
@@ -120,5 +127,45 @@ export function findSnap(
   return {
     ...best,
     pose: alignToSnap(best.candidate, best.target, pose.rotation, roll),
+  }
+}
+
+/**
+ * The Snap Point the pointer is over, if any: the placed Snap Point nearest to the pointer's
+ * ray, within `radius`, in front of the camera. The candidate's Snap Point that sits closest
+ * to it, at the ground pose, is the one that mates. The result is aligned to that pair.
+ */
+export function findSnapAlongRay(
+  candidates: readonly SnapPoint[],
+  ray: { origin: Vector3; direction: Vector3 },
+  index: SnapIndex,
+  radius: number,
+  groundPose: Pose,
+  roll = 0
+): SnapMatch | null {
+  const direction = ray.direction.clone().normalize()
+  let best: { target: WorldSnap; distance: number } | undefined
+  for (const target of index.all()) {
+    const offset = target.position.clone().sub(ray.origin)
+    const along = offset.dot(direction)
+    if (along <= 0) continue
+    const distance = offset.sub(direction.clone().multiplyScalar(along)).length()
+    if (distance <= radius && (!best || distance < best.distance)) best = { target, distance }
+  }
+  if (!best || candidates.length === 0) return null
+  let candidate = candidates[0]
+  let nearest = Infinity
+  for (const c of candidates) {
+    const at = toWorldSnap(c, groundPose).position.distanceTo(best.target.position)
+    if (at < nearest) {
+      nearest = at
+      candidate = c
+    }
+  }
+  return {
+    candidate,
+    target: best.target,
+    distance: best.distance,
+    pose: alignToSnap(candidate, best.target, groundPose.rotation, roll),
   }
 }
