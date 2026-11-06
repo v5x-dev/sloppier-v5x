@@ -4,12 +4,14 @@ import {
   CubeIcon,
   PlusIcon,
   SignOutIcon,
+  UploadSimpleIcon,
 } from "@phosphor-icons/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useAuth } from "@v5x/auth"
 import { AuthGate } from "@v5x/auth/gate"
 import { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
+import { errorMessage } from "@v5x/backend/errors"
 import { Avatar, AvatarFallback, AvatarImage } from "@v5x/ui/components/avatar"
 import { Button } from "@v5x/ui/components/button"
 import {
@@ -31,9 +33,11 @@ import {
 import { Skeleton } from "@v5x/ui/components/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@v5x/ui/components/toggle-group"
 import { useMutation, useQuery } from "convex/react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { DesignRow } from "@/components/design-row"
 import { NameDialog } from "@/components/name-dialog"
+import { DESIGN_FILE_EXTENSION, parseDesignFile } from "@/design/design-file"
+import { importKey } from "@/design/import-handoff"
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -164,6 +168,32 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const generateName = useMutation(api.designs.generateName)
   const [suggestedName, setSuggestedName] = useState<string>()
   const [view, setView] = useState<"active" | "archived">("active")
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [importProblems, setImportProblems] = useState<string[]>()
+
+  // The file is checked before anything is created, so a bad file leaves no empty Design.
+  async function importFile(file: File) {
+    setImportProblems(undefined)
+    let text: string
+    try {
+      text = await file.text()
+    } catch {
+      setImportProblems(["The file could not be read."])
+      return
+    }
+    const parsed = parseDesignFile(text)
+    if (!parsed.ok) {
+      setImportProblems(parsed.problems)
+      return
+    }
+    try {
+      const designId = await create({ workspaceId, name: parsed.design.name })
+      window.sessionStorage.setItem(importKey(designId), text)
+      await navigate({ to: "/designs/$designId", params: { designId } })
+    } catch (caught) {
+      setImportProblems([errorMessage(caught)])
+    }
+  }
 
   const shown = designs
     ?.filter((design) => Boolean(design.archivedAt) === (view === "archived"))
@@ -203,9 +233,39 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
               <ToggleGroupItem value="archived">Archived</ToggleGroupItem>
             </ToggleGroup>
           )}
+          <Button variant="outline" onClick={() => fileInput.current?.click()}>
+            <UploadSimpleIcon data-icon="inline-start" />
+            Import
+          </Button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={`${DESIGN_FILE_EXTENSION},.json,application/json`}
+            className="hidden"
+            aria-label="Choose a Design file to import"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ""
+              if (file) void importFile(file)
+            }}
+          />
           {newDesign}
         </div>
       </div>
+
+      {importProblems && (
+        <div
+          role="alert"
+          className="flex flex-col gap-1 rounded-md border border-border px-3 py-2 text-sm text-destructive"
+        >
+          <p>This file could not be imported. Nothing was created.</p>
+          <ul className="list-disc pl-5">
+            {importProblems.map((problem) => (
+              <li key={problem}>{problem}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {!shown ? (
         <ListSkeleton />

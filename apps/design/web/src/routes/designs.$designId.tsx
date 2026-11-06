@@ -2,6 +2,7 @@ import {
   ArrowLeftIcon,
   CheckIcon,
   CloudSlashIcon,
+  DownloadSimpleIcon,
   KeyboardIcon,
   ListBulletsIcon,
   WarningCircleIcon,
@@ -60,6 +61,15 @@ import {
 } from "@/design/actions"
 import { fastenerOf } from "@/design/connect"
 import { keyStore } from "@/design/key-store"
+import {
+  DESIGN_FILE_EXTENSION,
+  applyDesignFile,
+  designFileOf,
+  designFileText,
+  parseDesignFile,
+} from "@/design/design-file"
+import { importKey } from "@/design/import-handoff"
+import { downloadText, safeFileName } from "@/lib/download"
 import { actionForEvent, primaryLabel, type Bindings } from "@/design/keys"
 import { useKeyBindings } from "@/lib/use-key-bindings"
 import { pivotsFor } from "@/design/connections"
@@ -148,6 +158,29 @@ function DesignEditor({
   const [notice, setNotice] = useState<string>()
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [partsOpen, setPartsOpen] = useState(false)
+
+  // A Design opened from "Import" starts with the file's Parts. The file was checked when it
+  // was chosen; this checks it again, and only fills a Design that is still empty.
+  useEffect(() => {
+    if (!doc) return
+    const key = importKey(designId)
+    let text: string | null = null
+    try {
+      text = window.sessionStorage.getItem(key)
+      window.sessionStorage.removeItem(key)
+    } catch {
+      text = null
+    }
+    if (text === null) return
+    const parsed = parseDesignFile(text)
+    if (!parsed.ok) {
+      setNotice(
+        `The imported file could not be read: ${parsed.problems.join(" ")}`
+      )
+      return
+    }
+    applyDesignFile(doc, parsed.design)
+  }, [doc, designId])
   const [projection, setProjection] = useState<Projection>("perspective")
   const [status, setStatus] = useState<ViewportStatus>(INITIAL_STATUS)
   const [history, setHistory] = useState<History>()
@@ -302,6 +335,23 @@ function DesignEditor({
             <DropdownMenuItem onClick={() => setPartsOpen(true)}>
               <ListBulletsIcon />
               Parts list
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                const file = designFileOf(doc, design?.name ?? "Design")
+                try {
+                  downloadText(
+                    `${safeFileName(file.name)}${DESIGN_FILE_EXTENSION}`,
+                    designFileText(file),
+                    "application/json"
+                  )
+                } catch {
+                  setNotice("This browser could not start the download.")
+                }
+              }}
+            >
+              <DownloadSimpleIcon />
+              Export Design file
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShortcutsOpen(true)}>
               <KeyboardIcon />
