@@ -35,7 +35,10 @@
       "material": "electronics",
       "snap": "bores",
       "budgetTriangles": 1200,
-      "maxErrorMm": 0.3
+      "maxErrorMm": 0.3,
+      "notes": [
+        "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
+      ]
     },
     {
       "id": "wheel-omni-2-75",
@@ -183,7 +186,10 @@
         "max": 5
       },
       "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "maxErrorMm": 0.25,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "id": "screw-6-32-1-2",
@@ -206,7 +212,10 @@
         "max": 5
       },
       "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "maxErrorMm": 0.25,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "id": "screw-8-32-1",
@@ -229,7 +238,10 @@
         "max": 5
       },
       "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "maxErrorMm": 0.25,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "id": "screw-8-32-2",
@@ -252,7 +264,10 @@
         "max": 5
       },
       "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "maxErrorMm": 0.25,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "id": "nut-8-32-hex",
@@ -287,7 +302,8 @@
       },
       "holeSquareMm": 4.5,
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 1,368 for 171 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {
@@ -305,7 +321,8 @@
       "maxErrorMm": 0.1,
       "holeSquareMm": 4.5,
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 2,248 for 281 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {

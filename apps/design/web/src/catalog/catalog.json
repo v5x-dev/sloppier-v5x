@@ -737,7 +737,9 @@
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [],
-      "notes": []
+      "notes": [
+        "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
+      ]
     },
     {
       "kind": "model",
@@ -4449,7 +4451,8 @@
         }
       ],
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 1,368 for 171 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {
@@ -10395,7 +10398,8 @@
         }
       ],
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 2,248 for 281 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {
@@ -10429,13 +10433,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-6-32-1-2-40a5e993.glb",
-        "sha256": "40a5e993e7623652b6a2d3175bcf67c8270f865442a996530164b9045ef9f087",
-        "bytes": 16792,
-        "triangles": 386,
+        "file": "models/screw-6-32-1-2-daaef58a.glb",
+        "sha256": "daaef58ac8c748796149263a732923cfe1f73969dfdb8e94e0debe2e6535cf78",
+        "bytes": 7908,
+        "triangles": 150,
         "rawTriangles": 490,
         "budgetTriangles": 150,
-        "maxErrorMm": 0.02,
+        "maxErrorMm": 0.152,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10474,7 +10478,9 @@
           "depthMm": 12.602
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "model",
@@ -10507,13 +10513,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-6-32-1-4-c235e932.glb",
-        "sha256": "c235e9326e1ebdef12c615ac8d6cebd54a9caeffddd7edae0996a7ff3923e8da",
-        "bytes": 16956,
-        "triangles": 390,
+        "file": "models/screw-6-32-1-4-78bfeff7.glb",
+        "sha256": "78bfeff7f39e0a3b1236a018a146c8d1452a49ed31825b0f5959f32c1e495834",
+        "bytes": 7924,
+        "triangles": 150,
         "rawTriangles": 490,
         "budgetTriangles": 150,
-        "maxErrorMm": 0.02,
+        "maxErrorMm": 0.145,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10552,7 +10558,9 @@
           "depthMm": 6.252
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "model",
@@ -10585,13 +10593,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-8-32-1-93bf2ea9.glb",
-        "sha256": "93bf2ea939af87f759b161cd26f4dfe51bb0759629194f9207c5437d5e1c2f3b",
-        "bytes": 17000,
-        "triangles": 402,
+        "file": "models/screw-8-32-1-02b71cd7.glb",
+        "sha256": "02b71cd7cb67a9435dc8bb441df844d4c5cee65370e71d8dab17b8510883af91",
+        "bytes": 7876,
+        "triangles": 150,
         "rawTriangles": 490,
         "budgetTriangles": 150,
-        "maxErrorMm": 0.018,
+        "maxErrorMm": 0.204,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10630,7 +10638,9 @@
           "depthMm": 24.928
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "model",
@@ -10663,13 +10673,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-8-32-2-315762b4.glb",
-        "sha256": "315762b488c5bab2e1be9ad6fb2d83df52170f8ab0407d0e2249bc2301ffaf66",
-        "bytes": 17200,
-        "triangles": 398,
+        "file": "models/screw-8-32-2-9c669bab.glb",
+        "sha256": "9c669baba7e1c6ddcb389957105d0f3bd126c6a5fb100b852621b38e654b5242",
+        "bytes": 8032,
+        "triangles": 150,
         "rawTriangles": 458,
         "budgetTriangles": 150,
-        "maxErrorMm": 0.017,
+        "maxErrorMm": 0.213,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10708,7 +10718,9 @@
           "depthMm": 50.328
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "cut",
@@ -10874,13 +10886,13 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            -0.0008780934116564306,
-            -1.2408687910806767e-11,
+            -0.0008780934116564308,
+            -1.2408687989787049e-11,
             -6.222846906485687
           ],
           "axis": [
-            -0.000146057398898211,
-            -2.060212909364798e-12,
+            -0.00014605739889821104,
+            -2.0602129220567676e-12,
             -0.9999999893336181
           ],
           "diameterMm": 4.191,
@@ -10891,13 +10903,13 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            0.0009397369750307037,
-            1.3232721959147508e-11,
+            0.0009397369750307039,
+            1.323272203813148e-11,
             6.223152960760524
           ],
           "axis": [
-            0.000146057398898211,
-            2.060212909364798e-12,
+            0.00014605739889821104,
+            2.0602129220567676e-12,
             0.9999999893336181
           ],
           "diameterMm": 4.191,
@@ -11028,14 +11040,14 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            -0.0008781885313020083,
-            -1.868103855422163e-14,
-            25.2735001371881
+            -0.0008781885313044122,
+            -1.8524160325025664e-14,
+            25.273500137188094
           ],
           "axis": [
-            -0.00014458206956138473,
-            -3.757000178719485e-15,
-            0.9999999895480126
+            -0.0001445820695613847,
+            -3.75698748674966e-15,
+            0.9999999895480124
           ],
           "diameterMm": 4.191,
           "depthMm": 50.547
@@ -11045,14 +11057,14 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            0.006430001338817305,
-            1.7122404947951217e-13,
-            -25.27349933449529
+            0.0064300013388149,
+            1.713802861677094e-13,
+            -25.273499334495284
           ],
           "axis": [
-            0.00014458206956138473,
-            3.757000178719485e-15,
-            -0.9999999895480126
+            0.0001445820695613847,
+            3.75698748674966e-15,
+            -0.9999999895480124
           ],
           "diameterMm": 4.191,
           "depthMm": 50.547
