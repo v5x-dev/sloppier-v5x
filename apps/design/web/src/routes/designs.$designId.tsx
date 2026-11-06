@@ -57,6 +57,9 @@ import {
   turnBy,
 } from "@/design/actions"
 import { fastenerOf } from "@/design/connect"
+import { keyStore } from "@/design/key-store"
+import { actionForEvent, primaryLabel, type Bindings } from "@/design/keys"
+import { useKeyBindings } from "@/lib/use-key-bindings"
 import { pivotsFor } from "@/design/connections"
 import { useDesignSync, type DesignSyncState } from "@/lib/use-design-sync"
 import { webglAvailable } from "@/viewport/webgl"
@@ -66,7 +69,8 @@ import {
   type Projection,
   type ViewportStatus,
 } from "@/viewport/status"
-import { EditorToolbar, ShortcutsDialog } from "@/components/editor-chrome"
+import { EditorToolbar } from "@/components/editor-chrome"
+import { KeyboardSettingsDialog } from "@/components/keyboard-settings"
 import {
   PALETTE,
   SelectionPanel,
@@ -258,6 +262,7 @@ function DesignEditor({
     remove,
     recolor,
   }
+  const bindings = useKeyBindings()
   useKeys(keys, setSelection, setMode, setLocal, setShortcutsOpen, pick)
 
   return (
@@ -336,6 +341,7 @@ function DesignEditor({
                 onUndo={undo}
                 onRedo={redo}
                 onShortcuts={() => setShortcutsOpen(true)}
+                bindings={bindings}
               />
             </div>
 
@@ -387,13 +393,13 @@ function DesignEditor({
                 <ContextMenuItem onClick={duplicate}>
                   Duplicate{" "}
                   <span className="ml-auto pl-6 text-muted-foreground">
-                    <Kbd>Ctrl D</Kbd>
+                    <Kbd>{primaryLabel(bindings, "duplicate")}</Kbd>
                   </span>
                 </ContextMenuItem>
                 <ContextMenuItem onClick={remove}>
                   Delete{" "}
                   <span className="ml-auto pl-6 text-muted-foreground">
-                    <Kbd>Del</Kbd>
+                    <Kbd>{primaryLabel(bindings, "delete")}</Kbd>
                   </span>
                 </ContextMenuItem>
                 <ContextMenuSeparator />
@@ -432,7 +438,7 @@ function DesignEditor({
               >
                 Select all{" "}
                 <span className="ml-auto pl-6 text-muted-foreground">
-                  <Kbd>Ctrl A</Kbd>
+                  <Kbd>{primaryLabel(bindings, "selectAll")}</Kbd>
                 </span>
               </ContextMenuItem>
             )}
@@ -446,9 +452,13 @@ function DesignEditor({
         onDelete={remove}
         status={status}
         placing={Boolean(pickedId)}
+        bindings={bindings}
       />
 
-      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <KeyboardSettingsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+      />
     </div>
   )
 }
@@ -517,7 +527,10 @@ function pivotChoices(
   })
 }
 
-/** Keyboard shortcuts for the editor. The viewport keeps the keys for placing and framing. */
+/**
+ * Keyboard shortcuts for the editor. Each key is looked up in the registry, so a rebound key
+ * works here without a change. The viewport handles the keys for placing and framing.
+ */
 function useKeys(
   keys: {
     doc: Y.Doc
@@ -540,41 +553,53 @@ function useKeys(
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (isTyping(event.target)) return
-      const mod = event.ctrlKey || event.metaKey
-      const key = event.key.toLowerCase()
-      if (mod && key === "z") {
-        event.preventDefault()
-        if (event.shiftKey) keys.redo()
-        else keys.undo()
-      } else if (mod && key === "y") {
-        event.preventDefault()
-        keys.redo()
-      } else if (mod && key === "d") {
-        event.preventDefault()
-        keys.duplicate()
-      } else if (mod && key === "a") {
-        event.preventDefault()
-        setSelection(new Set(keys.parts.map((p) => p.id)))
-      } else if (event.key === "Delete" || event.key === "Backspace") {
-        if (keys.selection.size > 0 && !keys.tool) {
+      const action = actionForEvent(event, keyStore.get())
+      if (action === undefined) return
+      const editing = keys.selection.size > 0 && !keys.tool
+      switch (action) {
+        case "undo":
           event.preventDefault()
-          keys.remove()
+          keys.undo()
+          break
+        case "redo":
+          event.preventDefault()
+          keys.redo()
+          break
+        case "duplicate":
+          event.preventDefault()
+          keys.duplicate()
+          break
+        case "selectAll":
+          event.preventDefault()
+          setSelection(new Set(keys.parts.map((p) => p.id)))
+          break
+        case "delete":
+          if (editing) {
+            event.preventDefault()
+            keys.remove()
+          }
+          break
+        case "cancel":
+          if (keys.tool) pick(undefined)
+          else setSelection(new Set())
+          break
+        case "moveMode":
+          setMode("move")
+          break
+        case "turnMode":
+          setMode("rotate")
+          break
+        case "localAxes":
+          setLocal((v) => !v)
+          break
+        case "shortcuts":
+          setShortcutsOpen(true)
+          break
+        default: {
+          const swatch = /^recolor([1-8])$/.exec(action)
+          if (swatch && editing)
+            keys.recolor(PALETTE[Number(swatch[1]) - 1].color)
         }
-      } else if (event.key === "Escape") {
-        if (keys.tool) pick(undefined)
-        else setSelection(new Set())
-      } else if (mod) {
-        return
-      } else if (key === "w") setMode("move")
-      else if (key === "e") setMode("rotate")
-      else if (key === "l") setLocal((v) => !v)
-      else if (event.key === "?") setShortcutsOpen(true)
-      else if (
-        /^[1-8]$/.test(event.key) &&
-        keys.selection.size > 0 &&
-        !keys.tool
-      ) {
-        keys.recolor(PALETTE[Number(event.key) - 1].color)
       }
     }
     window.addEventListener("keydown", onKey)
@@ -669,12 +694,14 @@ function Footer({
   onDelete,
   status,
   placing,
+  bindings,
 }: {
   tool: CatalogPart | undefined
   selectionCount: number
   onDelete: () => void
   status: ViewportStatus
   placing: boolean
+  bindings: Bindings
 }) {
   return (
     <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border px-3 py-2 text-sm">
@@ -684,7 +711,8 @@ function Footer({
             Placing {tool.name}
             {status.snap && (
               <span className="text-muted-foreground">
-                . Snapped: R turns it about the shared axis.
+                . Snapped: {primaryLabel(bindings, "turnPlacing")} turns it
+                about the shared axis.
               </span>
             )}
           </p>
@@ -706,17 +734,23 @@ function Footer({
         {placing ? (
           <>
             <Hint keys={["Click"]} label="place" />
-            <Hint keys={["R"]} label="turn" />
-            <Hint keys={["Esc"]} label="stop placing" />
+            <Hint keys={[primaryLabel(bindings, "turnPlacing")]} label="turn" />
+            <Hint
+              keys={[primaryLabel(bindings, "cancel")]}
+              label="stop placing"
+            />
           </>
         ) : (
           <>
             <Hint keys={["Click"]} label="select" />
-            <Hint keys={["?"]} label="all shortcuts" />
+            <Hint
+              keys={[primaryLabel(bindings, "shortcuts")]}
+              label="all shortcuts"
+            />
           </>
         )}
-        <Hint keys={["F"]} label="frame" />
-        <Hint keys={["O"]} label="view" />
+        <Hint keys={[primaryLabel(bindings, "frame")]} label="frame" />
+        <Hint keys={[primaryLabel(bindings, "projection")]} label="view" />
         <span className="tabular-nums">
           {status.parts} {status.parts === 1 ? "part" : "parts"}
         </span>
