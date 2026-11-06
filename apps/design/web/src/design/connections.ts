@@ -37,6 +37,17 @@ export type Connection = {
 
 export type ConnectionDraft = Omit<Connection, "id">
 
+/** A Connection's physical opening, independent of which face of a through-hole is used. */
+export function connectionKey(
+  connection: Pick<ConnectionDraft, "fastener" | "host" | "hostSnap">
+): string {
+  return JSON.stringify([
+    connection.fastener,
+    connection.host,
+    openingId(connection.hostSnap),
+  ])
+}
+
 export type FastenerPart =
   | {
       role: "screw"
@@ -138,7 +149,12 @@ export function connectionsFor(
 
 /** The opening a Snap Point belongs to: a hole's two faces share one key. */
 function openingKey(snap: SnapPoint): string {
-  return snap.id.replace(/-in$/, "")
+  return openingId(snap.id)
+}
+
+/** The two face Snap Points of a through-hole share their id without `-in`. */
+export function openingId(snapId: string): string {
+  return snapId.replace(/-in$/, "")
 }
 
 /** Whether a screw's end pin sits in an opening: at the same place, along the same axis. */
