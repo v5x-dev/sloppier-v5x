@@ -12,8 +12,8 @@
       },
       "material": "electronics",
       "snap": "none",
-      "budgetTriangles": 2000,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 22000,
+      "maxErrorMm": 0.3,
       "notes": [
         "Mounting holes: four 8-32 tapped holes at the corners of each end face, at (±21.95, ±14) mm in the STEP frame, measured from the circle edges of the STEP file (3.4 mm, the 8-32 tap drill). Each runs about 12 mm in from its end, and the two ends are not joined. The old 2.2 mm bores 27 mm apart were not these holes.",
         "The four holes are 43.9 mm apart along X and 28.0 mm along Y. Neither is a multiple of the channel web lattice (12.7 mm along, 6.35 mm across), so one channel web lines up with one of the four holes at a time. Others meet a channel only where a second channel or another placement takes them.",
@@ -182,8 +182,8 @@
       },
       "material": "electronics",
       "snap": "none",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.3,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "notes": [
         "Mounting holes: two 8-32 tapped holes on the end face at STEP y = -40.13, at x = 0 and z = 3.15 and 15.85. They are 12.7 mm (0.5 in) apart, so both line up with one channel web row. Each runs about 19 mm in, to a shelf at y = -21.1. Measured from the STEP circle edges (3.45 mm, the 8-32 tap drill).",
         "No other openings are measured on this motor yet. The 5.5 W STEP is 84 edges open in places, so only the end face holes are used."
@@ -238,8 +238,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 2800,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 24000,
+      "maxErrorMm": 0.3,
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
@@ -261,8 +261,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 1600,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 12000,
+      "maxErrorMm": 0.1,
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
@@ -284,8 +284,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 2800,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 14500,
+      "maxErrorMm": 0.1,
       "expectSizeMm": {
         "x": 101.6,
         "z": 101.6
@@ -306,8 +306,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 6.35
       },
@@ -327,8 +327,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 12.7
       },
@@ -348,8 +348,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 25.4
       },
@@ -369,8 +369,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 50.8
       },
@@ -399,12 +399,14 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
-      "fit": "screw:6-32"
+      "fit": "screw:6-32",
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-6-32-1-2",
@@ -426,12 +428,14 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
-      "fit": "screw:6-32"
+      "fit": "screw:6-32",
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-8-32-1",
@@ -453,12 +457,14 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
-      "fit": "screw:8-32"
+      "fit": "screw:8-32",
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-8-32-2",
@@ -480,12 +486,14 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.25,
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
-      "fit": "screw:8-32"
+      "fit": "screw:8-32",
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "nut-8-32-hex",
@@ -498,8 +506,8 @@
       },
       "material": "steel",
       "snap": "bores",
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05,
       "snapAccepts": [
         "screw:8-32"
       ]
@@ -515,8 +523,8 @@
       },
       "material": "steel",
       "snap": "probe",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "x": 63.5,
         "z": 190.5
@@ -543,8 +551,8 @@
       },
       "material": "steel",
       "snap": "probe",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "holeSquareMm": 4.5,
       "notes": [
         "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
@@ -567,7 +575,7 @@
       },
       "material": "steel",
       "snap": "bores+probe",
-      "budgetTriangles": 600,
+      "budgetTriangles": 1000,
       "maxErrorMm": 0.05,
       "snapAccepts": [
         "screw:6-32",
@@ -585,7 +593,7 @@
       },
       "material": "steel",
       "snap": "bores+probe",
-      "budgetTriangles": 600,
+      "budgetTriangles": 1000,
       "maxErrorMm": 0.05,
       "snapAccepts": [
         "screw:6-32",
