@@ -58,7 +58,7 @@ describe("the committed Part catalog", () => {
       cutParts()
         .map((p) => p.family)
         .sort()
-    ).toEqual(["angle", "channel", "shaft"])
+    ).toEqual(["angle", "channel", "channel", "channel", "shaft"])
   })
 })
 

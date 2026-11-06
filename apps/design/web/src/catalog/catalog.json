@@ -166,6 +166,196 @@
       "notes": []
     },
     {
+      "kind": "cut",
+      "id": "channel-1x2x1-steel",
+      "name": "1x2x1 Steel C-Channel",
+      "family": "channel",
+      "sku": {
+        "value": "276-2906",
+        "source": "filename"
+      },
+      "material": "steel",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "C Channels/Steel/1x2x1x35 Steel C-Channel (276-2906).step",
+        "sha256": "4eac3a6095ac521a01f65aefc4a8295e3451bf253dc0abaf595768b9e03450dc",
+        "declaredUnit": "inch"
+      },
+      "sampleSizeMm": {
+        "x": 444.5,
+        "y": 13.868,
+        "z": 25.4
+      },
+      "mass": {
+        "densityGPerCm3": 7.85,
+        "basis": "profile area x length x density, computed in the app"
+      },
+      "cut": {
+        "widthMm": 25.4,
+        "depthMm": 13.868,
+        "thicknessMm": 1.168,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": -6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -0.584,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.516,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      },
+      "verification": {
+        "checked": true,
+        "expectedHoles": 157,
+        "probedHoles": 157,
+        "matched": 157,
+        "missing": 0,
+        "extra": 0
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
+      "kind": "cut",
+      "id": "channel-u-2x2x2-aluminum",
+      "name": "2x2x2 Aluminum U-Channel",
+      "family": "channel",
+      "sku": {
+        "value": "276-7285",
+        "source": "filename"
+      },
+      "material": "aluminum",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "C Channels/U-Channel 2x2x2x20 (276-7285).step",
+        "sha256": "15363d9d86750ead36e321e5f2b9cb50e91cf33d80e52d32e4a5fa12d50754fb",
+        "declaredUnit": "inch"
+      },
+      "sampleSizeMm": {
+        "x": 254,
+        "y": 25.832,
+        "z": 29
+      },
+      "mass": {
+        "densityGPerCm3": 2.7,
+        "basis": "profile area x length x density, computed in the app"
+      },
+      "cut": {
+        "widthMm": 29,
+        "depthMm": 25.832,
+        "thicknessMm": 1.6,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": 6.55,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 0.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -6.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": -7.766,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -1.366,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.934,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 10.384,
+            "pitch": 63.5,
+            "phase": 0
+          }
+        ]
+      },
+      "verification": {
+        "checked": true,
+        "expectedHoles": 127,
+        "probedHoles": 127,
+        "matched": 127,
+        "missing": 0,
+        "extra": 0
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
       "kind": "model",
       "id": "gusset-30-flat",
       "name": "30 Degree Flat Gusset",
