@@ -244,7 +244,10 @@ function fitsOpening(
   fit: FitToken | undefined
 ): boolean {
   if (candidate.kind !== "pin" || fit === undefined) return true
-  return target.kind === "hole" && (target.accepts?.includes(fit) ?? false)
+  const acceptsPin =
+    target.kind === "hole" ||
+    (target.kind === "axle" && fit.startsWith("shaft:"))
+  return acceptsPin && (target.accepts?.includes(fit) ?? false)
 }
 
 /**
