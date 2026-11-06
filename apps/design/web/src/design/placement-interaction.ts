@@ -23,13 +23,14 @@ export type PlacementPointerScene = {
 /** Whether a down/up sequence is a primary-button click rather than a drag or secondary click. */
 export function isPrimaryClick(
   button: number,
-  down: { x: number; y: number } | undefined,
+  down: { x: number; y: number; button: number } | undefined,
   up: { x: number; y: number },
   slopPx: number
 ): boolean {
   return (
     button === 0 &&
     down !== undefined &&
+    down.button === 0 &&
     Math.hypot(up.x - down.x, up.y - down.y) <= slopPx
   )
 }

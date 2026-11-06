@@ -162,7 +162,7 @@ type Live = {
   controls?: OrbitControls
   frustumHeight: number
   ndc?: Vector2
-  down?: { x: number; y: number }
+  down?: { x: number; y: number; button: number }
   turn: PlacementTurn
   pose?: { position: Vec3; rotation: Quat }
   snapTarget?: WorldSnap
@@ -454,7 +454,11 @@ function Workspace(
     }
     const onDown = (event: PointerEvent) => {
       const state = live.current
-      state.down = { x: event.clientX, y: event.clientY }
+      state.down = {
+        x: event.clientX,
+        y: event.clientY,
+        button: event.button,
+      }
       const ndc = ndcOf(event)
       state.ndc = ndc
       if (latest.current.tool || event.button !== 0) return
