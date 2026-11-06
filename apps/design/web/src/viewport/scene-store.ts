@@ -38,6 +38,7 @@ import {
 import { SNAP_RADIUS_MM } from "@/design/placement"
 import { boxFor, type ModelLoader } from "./models"
 import type { SceneColors } from "./colors"
+import { withEdgeLines } from "./edge-lines"
 
 type Pose3 = { position: Vec3; rotation: Quat; color: string }
 
@@ -481,11 +482,13 @@ export class SceneStore {
 
   private materialFor(shape: PartShape): MeshStandardMaterial {
     const surface = SURFACE[shape.catalog.material]
-    return new MeshStandardMaterial({
-      color: "#ffffff",
-      metalness: surface.metalness,
-      roughness: surface.roughness,
-    })
+    return withEdgeLines(
+      new MeshStandardMaterial({
+        color: "#ffffff",
+        metalness: surface.metalness,
+        roughness: surface.roughness,
+      })
+    )
   }
 
   private rebuildSnapIndex(parts: readonly PlacedPart[]): void {
