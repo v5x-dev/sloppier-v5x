@@ -29,12 +29,11 @@ import {
 } from "@/design/document"
 import type { PartRef, PlacedPart, Quat } from "@/design/model"
 import { canDraw, partShape } from "@/design/library"
+import { START_TURN, GRID_MM, type PlacementTurn } from "@/design/placement"
 import {
-  START_TURN,
-  GRID_MM,
-  placementPose,
-  type PlacementTurn,
-} from "@/design/placement"
+  isPrimaryClick,
+  placementPoseAtPointer,
+} from "@/design/placement-interaction"
 import type { Vec3 } from "@/catalog/types"
 import { toWorldSnap, type WorldSnap } from "@/design/snap"
 import { connectionsForNew, hingeOf } from "@/design/connect"
@@ -403,16 +402,15 @@ function Workspace(
       }
       canvas.style.cursor = "crosshair"
       store.highlight(undefined)
-      const ground = store.groundAt(state.ndc, cam)
-      if (!ground) return
       const shape = partShape(tool)
-      const result = placementPose(
+      const result = placementPoseAtPointer(
         shape,
-        ground,
+        state.ndc,
+        cam,
         state.turn,
-        store.index,
-        store.rayAt(state.ndc, cam)
+        store
       )
+      if (!result) return
       state.pose = {
         position: result.pose.position,
         rotation: result.pose.rotation,
@@ -457,12 +455,11 @@ function Workspace(
     const onDown = (event: PointerEvent) => {
       const state = live.current
       state.down = { x: event.clientX, y: event.clientY }
+      const ndc = ndcOf(event)
+      state.ndc = ndc
       if (latest.current.tool || event.button !== 0) return
       const store = state.store
-      const handle =
-        store && state.ndc
-          ? state.gizmo?.pick(state.ndc, activeCamera())
-          : undefined
+      const handle = store ? state.gizmo?.pick(ndc, activeCamera()) : undefined
       if (handle && store && state.gizmo) {
         // A handle takes the pointer: orbit does not start, and the click does not select.
         event.stopImmediatePropagation()
@@ -475,8 +472,7 @@ function Workspace(
       if (
         event.shiftKey &&
         store &&
-        state.ndc &&
-        store.pick(state.ndc, activeCamera()) === undefined
+        store.pick(ndc, activeCamera()) === undefined
       ) {
         // Shift on empty space: a box that selects the Parts inside it.
         event.stopImmediatePropagation()
@@ -513,20 +509,32 @@ function Workspace(
       const down = state.down
       state.down = undefined
       if (
-        !down ||
-        Math.hypot(event.clientX - down.x, event.clientY - down.y) >
+        !isPrimaryClick(
+          event.button,
+          down,
+          { x: event.clientX, y: event.clientY },
           CLICK_SLOP_PX
+        )
       )
         return
       const store = state.store
       if (!store) return
+      const ndc = ndcOf(event)
+      state.ndc = ndc
       const tool = latest.current.tool
       if (tool) {
-        if (!state.pose) return
-        placeTool(tool, state.pose)
+        const pose = placementPoseAtPointer(
+          partShape(tool),
+          ndc,
+          activeCamera(),
+          state.turn,
+          store
+        )?.pose
+        if (!pose) return
+        placeTool(tool, pose)
         return
       }
-      const hit = store.pick(ndcOf(event), activeCamera())
+      const hit = store.pick(ndc, activeCamera())
       const current = latest.current.selection
       if (event.shiftKey) {
         if (hit === undefined) return
