@@ -62,7 +62,10 @@ export function turnBy(
   const pivot: Vec3 = hinge
     ? [hinge.point.x, hinge.point.y, hinge.point.z]
     : centre
-  const plan = planTurn(targets, pivot, options.axis, options.angle, {
+  const axis: Vec3 = hinge
+    ? [hinge.direction.x, hinge.direction.y, hinge.direction.z]
+    : options.axis
+  const plan = planTurn(targets, pivot, axis, options.angle, {
     alone: options.alone,
   })
   commitPlan(doc, plan)

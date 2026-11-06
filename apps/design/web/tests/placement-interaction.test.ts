@@ -14,15 +14,18 @@ const IDENTITY: Pose["rotation"] = [0, 0, 0, 1]
 
 describe("placing a Part at the pointer", () => {
   it("does not place on a secondary-button click", () => {
-    const down = { x: 10, y: 10 }
+    const down = { x: 10, y: 10, button: 0 }
+    const secondaryDown = { x: 10, y: 10, button: 2 }
     const up = { x: 10, y: 10 }
 
     expect(isPrimaryClick(0, down, up, 5)).toBe(true)
     expect(isPrimaryClick(1, down, up, 5)).toBe(false)
     expect(isPrimaryClick(2, down, up, 5)).toBe(false)
+    expect(isPrimaryClick(0, secondaryDown, up, 5)).toBe(false)
   })
 
   it("places a screw into the hole under pointer-up and connects it", () => {
+    const pointerA = new Vector2(-1, 0)
     const pointerB = new Vector2(1, 0)
     const camera = new OrthographicCamera(-1, 1, 1, -1, 1, 1000)
     const index = new SnapIndex(10)
@@ -55,7 +58,17 @@ describe("placing a Part at the pointer", () => {
     })
     const store = { index, groundAt, rayAt }
 
+    const poseAt = (pointer: Vector2) =>
+      placementPoseAtPointer(
+        screw,
+        pointer,
+        camera,
+        { quarterTurns: 0, roll: 0 },
+        store
+      )
+
     // The last rendered preview is still at A; the click itself has reached B.
+    expect(poseAt(pointerA)?.snap?.target.snapId).toBe(holeA.id)
     const result = placementPoseAtPointer(
       screw,
       pointerB,
@@ -67,13 +80,13 @@ describe("placing a Part at the pointer", () => {
     expect(groundAt).toHaveBeenCalledWith(pointerB, camera)
     expect(rayAt).toHaveBeenCalledWith(pointerB, camera)
     expect(result?.snap?.target.snapId).toBe(holeB.id)
-    expect(result).not.toBeUndefined()
+    if (!result) throw new Error("expected the pointer-up position to snap")
 
     const added = {
       id: "screw",
       catalogId: SCREW,
-      position: result!.pose.position,
-      rotation: result!.pose.rotation,
+      position: result.pose.position,
+      rotation: result.pose.rotation,
       color: "#fff",
     }
     const existing = {
