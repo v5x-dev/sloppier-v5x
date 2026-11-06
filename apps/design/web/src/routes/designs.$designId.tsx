@@ -114,8 +114,29 @@ function DesignEditor({
   designId: Id<"designs">
   userId: string
 }) {
-  const design = useQuery(api.designs.get, { designId })
   const { doc, state } = useDesignSync(designId, userId)
+  if (!doc) {
+    return (
+      <div className="flex h-svh items-center justify-center gap-3">
+        <Spinner className="size-5 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Opening the Design…</p>
+      </div>
+    )
+  }
+  return <DesignWorkspace designId={designId} doc={doc} state={state} />
+}
+
+/** The editor once the Design's document has loaded. Every hook runs on every render. */
+function DesignWorkspace({
+  designId,
+  doc,
+  state,
+}: {
+  designId: Id<"designs">
+  doc: Y.Doc
+  state: DesignSyncState
+}) {
+  const design = useQuery(api.designs.get, { designId })
   const modelsBase = useMemo(
     () => readModelsBase(import.meta.env.VITE_DESIGN_MODELS_URL),
     []
@@ -153,7 +174,6 @@ function DesignEditor({
   }, [pickedId, draft])
 
   useEffect(() => {
-    if (!doc) return
     const next = createHistory(doc)
     setHistory(next)
     const off = next.subscribe(rerender)
@@ -180,15 +200,6 @@ function DesignEditor({
     () => pivotChoices(parts, connections, selection),
     [parts, connections, selection]
   )
-
-  if (!doc) {
-    return (
-      <div className="flex h-svh items-center justify-center gap-3">
-        <Spinner className="size-5 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Opening the Design…</p>
-      </div>
-    )
-  }
 
   const pick = (id: string | undefined) => {
     setSelection(new Set())
