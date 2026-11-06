@@ -23,6 +23,7 @@ export function fastenerOf(part: PlacedPart): FastenerPart | undefined {
     return {
       role: "screw",
       id: part.id,
+      fit: shape.catalog.fit,
       snaps: shape.snapPoints,
       pose: pose(part),
     }
@@ -31,6 +32,7 @@ export function fastenerOf(part: PlacedPart): FastenerPart | undefined {
     return {
       role: "shaft",
       id: part.id,
+      fit: entry.fit,
       lengthMm: shape.sizeMm[0],
       sizeMm: Math.max(shape.sizeMm[1], shape.sizeMm[2]),
       pose: pose(part),

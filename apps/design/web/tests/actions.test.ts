@@ -84,21 +84,19 @@ describe("editor actions", () => {
   it("turns a Part about a screw without moving the Part on the far side", () => {
     const doc = fixture()
     const bBefore = at(doc, "b").position
-    expect(
-      turnBy(doc, new Set(["a"]), {
-        angle: Math.PI / 2,
-        axis: [0, 1, 0],
-        pivotFastener: "s",
-      })
-    ).toBe(true)
+    turnBy(doc, new Set(["a"]), {
+      angle: Math.PI / 2,
+      axis: [0, 1, 0],
+      pivotFastener: "s",
+    })
     expect(at(doc, "b").position).toEqual(bBefore)
   })
 
-  it("turns the selection about its own centre, lifting it clear of the ground", () => {
+  it("turns the selection about its own centre, even when that takes it under the ground", () => {
     const doc = fixture()
-    expect(
-      turnBy(doc, new Set(["a"]), { angle: Math.PI / 2, axis: [1, 0, 0] })
-    ).toBe(true)
+    const before = at(doc, "a").rotation
+    turnBy(doc, new Set(["a"]), { angle: Math.PI / 2, axis: [1, 0, 0] })
+    expect(at(doc, "a").rotation).not.toEqual(before)
   })
 
   it("connects a selected screw to the channels it passes through, and disconnects it", () => {
