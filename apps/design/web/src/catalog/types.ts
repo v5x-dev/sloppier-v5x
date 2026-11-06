@@ -6,6 +6,13 @@ export type Vec3 = readonly [number, number, number]
 
 export type Material = "aluminum" | "steel" | "nylon" | "electronics"
 
+/**
+ * A fit token says what a fastener is or what an opening takes. `screw:6-32` and `screw:8-32`
+ * are screws of that thread; `shaft:1/8` and `shaft:1/4` are square shafts of that side.
+ * A hole takes a fastener only when its `accepts` list has the fastener's token.
+ */
+export type FitToken = string
+
 /** Snap Points are where another Part can line up: a hole's opening, a shank's end, or an axle. */
 export type SnapPoint = {
   id: string
@@ -19,6 +26,8 @@ export type SnapPoint = {
   diameterMm: number
   depthMm?: number
   openingMm?: readonly [number, number]
+  /** The fit tokens this opening takes, such as ["screw:8-32", "shaft:1/8"]. Holes and axles only. */
+  accepts?: readonly FitToken[]
 }
 
 export type Sku = {
@@ -52,11 +61,24 @@ type PartCommon = {
   material: Material
   source: SourceRecord
   notes: string[]
+  /** What this Part is as a fastener: a screw's thread, or a shaft's side. Absent for other Parts. */
+  fit?: FitToken
 }
 
 export type ModelPart = PartCommon & {
   kind: "model"
-  family: "motor" | "wheel" | "standoff" | "screw" | "nut" | "plate" | "gusset"
+  family:
+    | "motor"
+    | "wheel"
+    | "standoff"
+    | "screw"
+    | "nut"
+    | "plate"
+    | "gusset"
+    | "bearing"
+    | "collar"
+    | "spacer"
+    | "gear"
   /** Along the STEP file's axes, not the Part frame. See modelSizeInPartFrame. */
   sizeMm: Size
   volumeMm3: number
@@ -93,6 +115,8 @@ export type ChannelSpec = {
   thicknessMm: number
   holeMm: number
   rows: HoleRow[]
+  /** The fit tokens every hole in this Part takes. */
+  holeAccepts?: FitToken[]
 }
 
 export type AngleSpec = {
@@ -100,6 +124,7 @@ export type AngleSpec = {
   thicknessMm: number
   holeMm: number
   rows: HoleRow[]
+  holeAccepts?: FitToken[]
 }
 
 export type ShaftSpec = {

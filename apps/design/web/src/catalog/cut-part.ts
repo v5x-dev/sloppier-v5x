@@ -68,7 +68,7 @@ export function generateCutPart(
   return {
     lengthMm,
     geometry: toPartFrame(mesh),
-    snapPoints: plates.flatMap((plate) => holeSnaps(plate)),
+    snapPoints: snapPointsOf(part, plates, lengthMm),
     volumeMm3: cutVolume(part, lengthMm),
     mass: massFor(part, cutVolume(part, lengthMm)),
   }
@@ -380,6 +380,45 @@ function toPartFrame(mesh: Mesh): CutGeometry {
 }
 
 // ---- Snap Points and mass --------------------------------------------------
+
+/**
+ * A channel's or angle's holes, each taking the fit tokens its spec lists. A shaft has no
+ * holes: it gets a pin at each end, so it can be set into an opening end first.
+ */
+function snapPointsOf(
+  part: CutPart,
+  plates: Plate[],
+  lengthMm: number
+): SnapPoint[] {
+  if (part.family === "shaft") {
+    const half = lengthMm / 2
+    const size = part.cut.sizeMm
+    return [
+      {
+        id: "pin-start",
+        kind: "pin",
+        source: "computed",
+        position: [-half, 0, 0],
+        axis: [-1, 0, 0],
+        diameterMm: size,
+      },
+      {
+        id: "pin-end",
+        kind: "pin",
+        source: "computed",
+        position: [half, 0, 0],
+        axis: [1, 0, 0],
+        diameterMm: size,
+      },
+    ]
+  }
+  const accepts = part.cut.holeAccepts
+  return plates.flatMap((plate) =>
+    holeSnaps(plate).map((snap) =>
+      accepts ? { ...snap, accepts: [...accepts] } : snap
+    )
+  )
+}
 
 /** One Snap Point per hole, on the outside face of its wall, pointing out of the Part. */
 function holeSnaps(plate: Plate): SnapPoint[] {

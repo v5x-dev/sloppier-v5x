@@ -8,6 +8,7 @@ import {
   rawCatalog,
 } from "../src/catalog/catalog"
 import { checkCatalog } from "../src/catalog/validate"
+import { partShape } from "../src/design/library"
 
 describe("the committed Part catalog", () => {
   it("passes validation", () => {
@@ -58,7 +59,7 @@ describe("the committed Part catalog", () => {
       cutParts()
         .map((p) => p.family)
         .sort()
-    ).toEqual(["angle", "channel", "channel", "channel", "shaft"])
+    ).toEqual(["angle", "channel", "channel", "channel", "shaft", "shaft"])
   })
 })
 
@@ -116,5 +117,52 @@ describe("checkCatalog", () => {
 
   it("rejects an unknown schema version", () => {
     expect(checkCatalog({ ...good, schemaVersion: 2 }).ok).toBe(false)
+  })
+})
+
+describe("the fits the build sets", () => {
+  it("lets a 1/8 in shaft into a channel's square hole, and not a 1/4 in shaft", () => {
+    const holes = partShape({
+      catalogId: "channel-1x2x1-aluminum",
+      lengthMm: 444.5,
+    }).snapPoints.filter((sp) => sp.kind === "hole")
+    expect(holes.length).toBeGreaterThan(0)
+    expect(holes.every((sp) => sp.accepts?.includes("shaft:1/8"))).toBe(true)
+    expect(holes.some((sp) => sp.accepts?.includes("shaft:1/4"))).toBe(false)
+    expect(partById("shaft-square-1-8")).toMatchObject({ fit: "shaft:1/8" })
+    expect(partById("shaft-square-1-4")).toMatchObject({ fit: "shaft:1/4" })
+  })
+
+  it("threads only 8-32 screws into the motor's mounting holes, and gives the output a socket", () => {
+    const motor = partById("motor-v5-smart-11w")
+    if (motor.kind !== "model") throw new Error("expected a fixed model")
+    const mounts = motor.snapPoints.filter(
+      (sp) => sp.kind === "hole" && sp.diameterMm < 3
+    )
+    expect(mounts).toHaveLength(8)
+    expect(
+      mounts.every(
+        (sp) => sp.accepts?.length === 1 && sp.accepts[0] === "screw:8-32"
+      )
+    ).toBe(true)
+    const socket = motor.snapPoints.find(
+      (sp) => sp.source === "manual" && sp.accepts?.includes("shaft:1/8")
+    )
+    expect(socket?.accepts).toEqual(["shaft:1/8", "shaft:1/4"])
+  })
+
+  it("gives each screw its thread, and each new Part the fit it needs to join", () => {
+    expect(partById("screw-6-32-1-4")).toMatchObject({ fit: "screw:6-32" })
+    expect(partById("screw-8-32-2")).toMatchObject({ fit: "screw:8-32" })
+    const collar = partById("shaft-collar-1-8")
+    expect(
+      collar.kind === "model" &&
+        collar.snapPoints.every((sp) => sp.accepts?.includes("shaft:1/8"))
+    ).toBe(true)
+    const spacer = partById("spacer-1-8-nylon")
+    expect(
+      spacer.kind === "model" &&
+        spacer.snapPoints.every((sp) => sp.accepts?.includes("screw:8-32"))
+    ).toBe(true)
   })
 })

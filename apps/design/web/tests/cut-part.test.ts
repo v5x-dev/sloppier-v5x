@@ -73,7 +73,11 @@ describe("Cut Part geometry", () => {
     const { geometry, volumeMm3, snapPoints } = generateCutPart(shaft, 100)
     expect(volumeMm3).toBeCloseTo(6.35 * 6.35 * 100, 6)
     expect(signedVolume(geometry.positions)).toBeCloseTo(volumeMm3, 0)
-    expect(snapPoints).toEqual([])
+    // A shaft has no holes, only a pin at each end, so it can be set into an opening.
+    expect(snapPoints.map((p) => [p.kind, p.position[0]])).toEqual([
+      ["pin", -50],
+      ["pin", 50],
+    ])
   })
 
   it("rejects a length that is not positive", () => {

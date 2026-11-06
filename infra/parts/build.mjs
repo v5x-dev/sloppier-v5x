@@ -15,7 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyseStep } from "./lib/analyse.mjs";
 import { estimateMass, DENSITY_G_PER_CM3 } from "./lib/mass.mjs";
-import { flatTriangles, simplifyMesh, stepToPartPoint, weldMeshes } from "./lib/mesh.mjs";
+import { flatTriangles, simplifyMesh, stepToPartDirection, stepToPartPoint, weldMeshes } from "./lib/mesh.mjs";
 import { writeGlb } from "./lib/glb.mjs";
 import { SOURCES, ensureSource, readAt } from "./lib/sources.mjs";
 import { skuFromFileName } from "./lib/sku.mjs";
@@ -102,6 +102,7 @@ async function buildModel(part) {
     },
     snapPoints: snaps,
     notes: part.notes ?? [],
+    ...fitField(part),
   };
 }
 
@@ -149,7 +150,13 @@ async function buildCut(part) {
     cut: spec,
     verification,
     notes: part.notes ?? [],
+    ...fitField(part),
   };
+}
+
+/** A Part's fit token, when the manifest gives one: a screw's thread or a shaft's side. */
+function fitField(part) {
+  return part.fit ? { fit: part.fit } : {};
 }
 
 async function load(part) {
@@ -190,6 +197,18 @@ function verifySize(part, analysis) {
 function snapPoints(part, analysis) {
   const points = [];
   const { bounds } = analysis;
+  // Hand-placed openings, given in STEP millimetres and converted to the Part frame.
+  for (const extra of part.extraSnaps ?? []) {
+    points.push({
+      kind: extra.kind,
+      source: "manual",
+      position: stepToPartPoint(extra.position, bounds),
+      axis: stepToPartDirection(extra.axis),
+      diameterMm: extra.diameterMm,
+      ...(extra.accepts ? { accepts: extra.accepts } : {}),
+      ...(extra.note ? { note: extra.note } : {}),
+    });
+  }
   if (part.snap === "bores" || part.snap === "bores+probe") points.push(...boreSnaps(analysis.bores, bounds));
   if (part.snap === "shank") points.push(...shankSnaps(analysis.pins, bounds, part.shankDiameterMm));
   if (part.snap === "ruled-bores") points.push(...ruledBoreSnaps(analysis.bores, bounds, part.boreRule));
@@ -202,7 +221,14 @@ function snapPoints(part, analysis) {
     points.push(...probedSnaps(holes, bounds, axis));
   }
   if (part.snap === "axle") points.push(axleSnap(bounds, thinAxis(analysis.sizeMm), part.axleDiameterMm));
-  return points.map((p, i) => ({ id: `${part.family}-${String(i + 1).padStart(2, "0")}`, ...p }));
+  // Openings take the manifest's fit tokens unless a point says what it takes itself. Pins
+  // are a fastener's own ends, not openings.
+  const takes = part.snapAccepts;
+  return points.map((p, i) => ({
+    id: `${part.family}-${String(i + 1).padStart(2, "0")}`,
+    ...p,
+    ...(takes && p.kind !== "pin" && !p.accepts ? { accepts: takes } : {}),
+  }));
 }
 
 /**

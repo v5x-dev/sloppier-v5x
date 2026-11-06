@@ -1,7 +1,11 @@
 // Checks the manifest before any STEP file is read, so a typo fails with the part's name.
 
-const SNAP_STRATEGIES = new Set(["bores", "ruled-bores", "shank", "probe", "bores+probe", "axle"]);
-const FAMILIES = new Set(["motor", "wheel", "standoff", "screw", "nut", "plate", "gusset", "channel", "angle", "shaft"]);
+const SNAP_STRATEGIES = new Set(["none", "bores", "ruled-bores", "shank", "probe", "bores+probe", "axle"]);
+const FAMILIES = new Set([
+  "motor", "wheel", "standoff", "screw", "nut", "plate", "gusset", "bearing", "collar", "spacer", "gear",
+  "channel", "angle", "shaft",
+]);
+const FIT = /^(screw:[0-9]+-[0-9]+|shaft:[0-9/]+)$/;
 const MATERIALS = new Set(["aluminum", "steel", "nylon", "electronics"]);
 
 export function validateManifest(manifest, knownRepos) {
@@ -16,6 +20,9 @@ export function validateManifest(manifest, knownRepos) {
     if (!FAMILIES.has(part.family)) errors.push(`${where}: unknown family "${part.family}"`);
     if (!MATERIALS.has(part.material)) errors.push(`${where}: unknown material "${part.material}"`);
     if (!knownRepos.includes(part.source?.repo)) errors.push(`${where}: unknown source repo "${part.source?.repo}"`);
+    if (part.fit !== undefined && !FIT.test(part.fit)) errors.push(`${where}: fit "${part.fit}" must be screw:<thread> or shaft:<side>`);
+    for (const token of part.snapAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: snapAccepts token "${token}" is not a fit`);
+    for (const token of part.cut?.holeAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: holeAccepts token "${token}" is not a fit`);
     if (!part.source?.path) errors.push(`${where}: missing source path`);
     if (part.kind === "model") {
       if (!SNAP_STRATEGIES.has(part.snap)) errors.push(`${where}: unknown snap strategy "${part.snap}"`);
