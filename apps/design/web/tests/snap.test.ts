@@ -4,9 +4,11 @@ import type { SnapPoint } from "../src/catalog/types"
 import {
   SnapIndex,
   alignToSnap,
+  findLineSnapAlongRay,
   findSnap,
   findSnapAlongRay,
   toWorldSnap,
+  type ShaftLine,
   type WorldSnap,
 } from "../src/design/snap"
 
@@ -172,6 +174,58 @@ describe("findSnapAlongRay", () => {
     rotation: [0, 0, 0, 1] as [number, number, number, number],
   }
 
+  it("sets a fastener pin only into an opening that takes its fit", () => {
+    const index = new SnapIndex(10)
+    index.add({
+      owner: "motor",
+      snapId: "screw-hole",
+      kind: "hole",
+      accepts: ["screw:8-32"],
+      ...target([0, 0, 0], [0, 1, 0]),
+    })
+    const pin = snap({ kind: "pin", role: "end", axis: [0, -1, 0] })
+    expect(
+      findSnapAlongRay([pin], down, index, 10, flat, 0, "shaft:1/8")
+    ).toBeNull()
+    const screw = findSnapAlongRay(
+      [pin],
+      down,
+      index,
+      10,
+      flat,
+      0,
+      "screw:8-32"
+    )
+    expect(screw?.target.snapId).toBe("screw-hole")
+  })
+
+  it("takes the opening that faces the pointer when a ray passes both faces of a hole", () => {
+    // A through-hole: one opening faces up, the other down, at the same point.
+    const index = new SnapIndex(10)
+    index.add({ owner: "web", snapId: "top", ...target([0, 0, 0], [0, 1, 0]) })
+    index.add({
+      owner: "web",
+      snapId: "bottom",
+      ...target([0, -1.6, 0], [0, -1, 0]),
+    })
+    const fromAbove = findSnapAlongRay(
+      [snap({ axis: [0, -1, 0] })],
+      down,
+      index,
+      10,
+      flat
+    )
+    expect(fromAbove?.target.snapId).toBe("top")
+    const fromBelow = findSnapAlongRay(
+      [snap({ axis: [0, 1, 0] })],
+      { origin: new Vector3(0, -500, 0), direction: new Vector3(0, 1, 0) },
+      index,
+      10,
+      flat
+    )
+    expect(fromBelow?.target.snapId).toBe("bottom")
+  })
+
   it("snaps to a Snap Point the pointer's ray passes near", () => {
     const index = new SnapIndex(10)
     index.add({
@@ -226,5 +280,104 @@ describe("findSnapAlongRay", () => {
     expect(
       findSnapAlongRay([far, close], down, index, 10, flat)?.candidate.id
     ).toBe("near")
+  })
+})
+
+describe("findLineSnapAlongRay", () => {
+  // A 1/8 in shaft along X, 50.8 mm long, centred at the origin.
+  const shaft: ShaftLine = {
+    owner: "shaft",
+    origin: new Vector3(0, 0, 0),
+    direction: new Vector3(1, 0, 0),
+    fit: "shaft:1/8",
+    lengthMm: 50.8,
+  }
+  // A wheel's axle: a hole at its centre, facing along its own axis.
+  const axle = snap({
+    kind: "axle",
+    position: [0, 0, 0],
+    axis: [0, 0, 1],
+    accepts: ["shaft:1/8"],
+  })
+  const flat = {
+    position: [0, 0, 0] as [number, number, number],
+    rotation: [0, 0, 0, 1] as [number, number, number, number],
+  }
+  // A ray from above, falling onto the shaft at x.
+  const above = (x: number) => ({
+    origin: new Vector3(x, 300, 0),
+    direction: new Vector3(0, -1, 0),
+  })
+
+  it("places a taker of the shaft's fit on the line under the pointer, anywhere along it", () => {
+    for (const x of [-20, 0, 17]) {
+      const match = findLineSnapAlongRay([axle], above(x), [shaft], 10, flat)
+      expect(match).not.toBeNull()
+      near(new Vector3(...match!.pose.position), new Vector3(x, 0, 0))
+      // The axle now runs along the shaft, so its axis is parallel to it.
+      const axis = toWorldSnap(axle, match!.pose).axis
+      expect(Math.abs(axis.dot(new Vector3(1, 0, 0)))).toBeCloseTo(1, 6)
+    }
+  })
+
+  it("ignores a candidate that does not take the shaft's fit", () => {
+    const quarterOnly = snap({
+      kind: "axle",
+      position: [0, 0, 0],
+      axis: [0, 0, 1],
+      accepts: ["shaft:1/4"],
+    })
+    expect(
+      findLineSnapAlongRay([quarterOnly], above(0), [shaft], 10, flat)
+    ).toBeNull()
+  })
+
+  it("passes over a ray that misses the shaft by more than the radius", () => {
+    const miss = {
+      origin: new Vector3(0, 300, 30),
+      direction: new Vector3(0, -1, 0),
+    }
+    expect(findLineSnapAlongRay([axle], miss, [shaft], 10, flat)).toBeNull()
+  })
+
+  it("clamps to the shaft's ends, so a ray past the end finds nothing", () => {
+    expect(
+      findLineSnapAlongRay([axle], above(40), [shaft], 10, flat)
+    ).toBeNull()
+    // Past the end but within the radius: the axle sits at the shaft's end, not beyond it.
+    const edge = findLineSnapAlongRay([axle], above(30), [shaft], 10, flat)
+    expect(edge).not.toBeNull()
+    near(new Vector3(...edge!.pose.position), new Vector3(25.4, 0, 0))
+  })
+})
+
+describe("alignToSnap for a fastener's end pin", () => {
+  it("lines the pin up along the opening, so the body runs into the Part", () => {
+    // A screw's end pin points -X out of its body. The opening faces +X, so the pin turns to
+    // +X, pointing into the Part along the opening, and the body sits on the other side.
+    const pin = snap({ kind: "pin", position: [0, 0, 0], axis: [-1, 0, 0] })
+    const opening = {
+      position: new Vector3(10, 0, 0),
+      axis: new Vector3(1, 0, 0),
+    }
+    const pose = alignToSnap(pin, opening, [0, 0, 0, 1])
+    const axis = toWorldSnap(pin, pose).axis
+    expect(axis.x).toBeCloseTo(1, 6)
+  })
+
+  it("lines a shaft end up the other way, so the shaft runs out of the opening", () => {
+    // A shaft end sits inside the opening it is set into, and its body runs out of it.
+    const end = snap({
+      kind: "pin",
+      role: "end",
+      position: [0, 0, 0],
+      axis: [-1, 0, 0],
+    })
+    const opening = {
+      position: new Vector3(10, 0, 0),
+      axis: new Vector3(1, 0, 0),
+    }
+    const pose = alignToSnap(end, opening, [0, 0, 0, 1])
+    expect(toWorldSnap(end, pose).axis.x).toBeCloseTo(-1, 6)
   })
 })

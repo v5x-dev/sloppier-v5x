@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest"
 import * as Y from "yjs"
 import {
+  breakConnections,
+  duplicateParts,
   partsMap,
   placePart,
+  readConnections,
   readPlacedParts,
   removePart,
+  setColors,
   setPose,
 } from "../src/design/document"
 import { IDENTITY } from "../src/design/model"
@@ -145,5 +149,71 @@ describe("the Design document", () => {
     exchange(a, b)
     expect(readPlacedParts(a).parts).toEqual([])
     expect(readPlacedParts(b).parts).toEqual([])
+  })
+})
+
+describe("duplicating, recolouring and breaking Connections", () => {
+  const join = (fastener: string, host: string) => ({
+    fastener,
+    host,
+    hostSnap: "hole-1",
+    fastenerSnap: "pin-a",
+  })
+
+  it("copies Parts under new ids and keeps the Connections between copied Parts", () => {
+    const doc = new Y.Doc()
+    placePart(doc, PART, "screw")
+    placePart(doc, PART, "channel", [join("screw", "channel")])
+    placePart(doc, PART, "other")
+    const [screwCopy, channelCopy] = duplicateParts(
+      doc,
+      ["screw", "channel"],
+      [12.7, 0, 0]
+    )
+    expect(new Set([screwCopy, channelCopy]).size).toBe(2)
+    expect(["screw", "channel", "other"]).not.toContain(screwCopy)
+    const copies = readPlacedParts(doc).parts.filter(
+      (p) => p.id === screwCopy || p.id === channelCopy
+    )
+    expect(copies.map((p) => p.position[0])).toEqual([
+      PART.position[0] + 12.7,
+      PART.position[0] + 12.7,
+    ])
+    expect(readConnections(doc).map((c) => [c.fastener, c.host])).toEqual(
+      expect.arrayContaining([
+        ["screw", "channel"],
+        [screwCopy, channelCopy],
+      ])
+    )
+  })
+
+  it("does not copy a Connection to a Part that was not copied", () => {
+    const doc = new Y.Doc()
+    placePart(doc, PART, "screw")
+    placePart(doc, PART, "channel", [join("screw", "channel")])
+    const [copy] = duplicateParts(doc, ["screw"], [0, 0, 0])
+    expect(readConnections(doc).map((c) => c.host)).toEqual(["channel"])
+    expect(readConnections(doc).some((c) => c.fastener === copy)).toBe(false)
+  })
+
+  it("breaks every Connection that touches the chosen Parts, and only those", () => {
+    const doc = new Y.Doc()
+    placePart(doc, PART, "screw")
+    placePart(doc, PART, "a", [join("screw", "a")])
+    placePart(doc, PART, "b", [join("screw", "b")])
+    breakConnections(doc, ["a"])
+    expect(readConnections(doc).map((c) => c.host)).toEqual(["b"])
+    expect(readPlacedParts(doc).parts).toHaveLength(3)
+  })
+
+  it("recolours several Parts at once", () => {
+    const doc = new Y.Doc()
+    placePart(doc, PART, "a")
+    placePart(doc, PART, "b")
+    setColors(doc, ["a", "b"], "#ff0000")
+    expect(readPlacedParts(doc).parts.map((p) => p.color)).toEqual([
+      "#ff0000",
+      "#ff0000",
+    ])
   })
 })

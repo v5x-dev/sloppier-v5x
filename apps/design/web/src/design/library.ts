@@ -13,6 +13,7 @@ import type {
 } from "@/catalog/types"
 import { groupKey } from "./instances"
 import type { PartRef } from "./model"
+import type { Bounds } from "./transform"
 
 /** Everything that depends only on the Part and its length, not on where it is. */
 export type PartShape = {
@@ -23,8 +24,10 @@ export type PartShape = {
   snapPoints: readonly SnapPoint[]
   /** Size along each axis, in the Part frame. */
   sizeMm: Vec3
-  /** Lowest point of the Part in the Part frame. Lifting by -minY puts it on the ground. */
-  minY: number
+  /** The Part's extent in its own frame. */
+  bounds: Bounds
+  /** The catalog family, such as "screw" or "channel". */
+  family: string
   /** Only for Cut Parts: the generated mesh. Fixed models load their mesh separately. */
   cut?: GeneratedCutPart
 }
@@ -70,12 +73,15 @@ export function modelSizeInPartFrame(part: ModelPart): Vec3 {
 }
 
 function modelShape(part: ModelPart, key: string): PartShape {
+  const size = modelSizeInPartFrame(part)
+  const half = size.map((v) => v / 2) as unknown as Vec3
   return {
     key,
     catalog: part,
+    family: part.family,
     snapPoints: part.snapPoints,
-    sizeMm: modelSizeInPartFrame(part),
-    minY: -modelSizeInPartFrame(part)[1] / 2,
+    sizeMm: size,
+    bounds: { lo: [-half[0], -half[1], -half[2]], hi: half },
   }
 }
 
@@ -86,15 +92,19 @@ function cutShape(
 ): PartShape {
   const length = lengthMm ?? stockLengthMm(part)
   const cut = generateCutPart(part, length)
-  const minY = lowestY(cut)
-  const size = boundsSize(cut)
+  const bounds = boundsOf(cut)
   return {
     key,
     catalog: part,
+    family: part.family,
     lengthMm: length,
     snapPoints: cut.snapPoints,
-    sizeMm: size,
-    minY,
+    sizeMm: [
+      bounds.hi[0] - bounds.lo[0],
+      bounds.hi[1] - bounds.lo[1],
+      bounds.hi[2] - bounds.lo[2],
+    ],
+    bounds,
     cut,
   }
 }
@@ -105,21 +115,14 @@ export function stockLengthMm(part: CutPart): number {
   return Math.max(x, y, z)
 }
 
-function lowestY(cut: GeneratedCutPart): number {
-  let min = Infinity
-  const p = cut.geometry.positions
-  for (let i = 1; i < p.length; i += 3) if (p[i] < min) min = p[i]
-  return Number.isFinite(min) ? min : 0
-}
-
-function boundsSize(cut: GeneratedCutPart): Vec3 {
-  const lo = [Infinity, Infinity, Infinity]
-  const hi = [-Infinity, -Infinity, -Infinity]
+function boundsOf(cut: GeneratedCutPart): Bounds {
+  const lo: [number, number, number] = [Infinity, Infinity, Infinity]
+  const hi: [number, number, number] = [-Infinity, -Infinity, -Infinity]
   const p = cut.geometry.positions
   for (let i = 0; i < p.length; i += 3)
     for (let k = 0; k < 3; k++) {
       if (p[i + k] < lo[k]) lo[k] = p[i + k]
       if (p[i + k] > hi[k]) hi[k] = p[i + k]
     }
-  return [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]]
+  return { lo, hi }
 }

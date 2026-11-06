@@ -12,6 +12,16 @@ import type { Id } from "@v5x/backend/dataModel"
 import { errorMessage } from "@v5x/backend/errors"
 import { Button } from "@v5x/ui/components/button"
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@v5x/ui/components/context-menu"
+import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -30,19 +40,38 @@ import {
   type LengthDraft,
 } from "@/panels/parts-panel"
 import { partById } from "@/catalog/catalog"
-import type { CatalogPart } from "@/catalog/types"
+import type { CatalogPart, Vec3 } from "@/catalog/types"
 import { catalogPartName } from "@/design/catalog-view"
 import { lengthFromInput } from "@/design/cut-length"
-import { partsMap, readPart, removePart } from "@/design/document"
+import { readConnections, readPlacedParts } from "@/design/document"
 import type { PartRef, PlacedPart } from "@/design/model"
 import { readModelsBase } from "@/design/models-base"
+import { createHistory, type History } from "@/design/history"
+import {
+  connectSelection,
+  deleteSelection,
+  disconnectSelection,
+  duplicateSelection,
+  moveBy,
+  recolorSelection,
+  turnBy,
+} from "@/design/actions"
+import { fastenerOf } from "@/design/connect"
+import { pivotsFor } from "@/design/connections"
 import { useDesignSync, type DesignSyncState } from "@/lib/use-design-sync"
 import { webglAvailable } from "@/viewport/webgl"
+import type { GizmoMode } from "@/viewport/gizmo"
 import {
   INITIAL_STATUS,
   type Projection,
   type ViewportStatus,
 } from "@/viewport/status"
+import { EditorToolbar, ShortcutsDialog } from "@/components/editor-chrome"
+import {
+  PALETTE,
+  SelectionPanel,
+  type SelectionFacts,
+} from "@/components/selection-panel"
 
 // The 3D code is loaded only when a Design opens, so the rest of the app stays small.
 const DesignViewport = lazy(() => import("@/viewport/DesignViewport"))
@@ -85,8 +114,29 @@ function DesignEditor({
   designId: Id<"designs">
   userId: string
 }) {
-  const design = useQuery(api.designs.get, { designId })
   const { doc, state } = useDesignSync(designId, userId)
+  if (!doc) {
+    return (
+      <div className="flex h-svh items-center justify-center gap-3">
+        <Spinner className="size-5 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Opening the Design…</p>
+      </div>
+    )
+  }
+  return <DesignWorkspace designId={designId} doc={doc} state={state} />
+}
+
+/** The editor once the Design's document has loaded. Every hook runs on every render. */
+function DesignWorkspace({
+  designId,
+  doc,
+  state,
+}: {
+  designId: Id<"designs">
+  doc: Y.Doc
+  state: DesignSyncState
+}) {
+  const design = useQuery(api.designs.get, { designId })
   const modelsBase = useMemo(
     () => readModelsBase(import.meta.env.VITE_DESIGN_MODELS_URL),
     []
@@ -98,9 +148,18 @@ function DesignEditor({
   const [query, setQuery] = useState("")
   const [pickedId, setPickedId] = useState<string>()
   const [draft, setDraft] = useState<LengthDraft>()
-  const [selectedId, setSelectedId] = useState<string>()
+  const [selection, setSelection] = useState<Set<string>>(() => new Set())
+  const [mode, setMode] = useState<GizmoMode>("move")
+  const [local, setLocal] = useState(false)
+  const [pivot, setPivot] = useState<string>()
+  const [angleStepDeg, setAngleStepDeg] = useState(15)
+  const [notice, setNotice] = useState<string>()
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [projection, setProjection] = useState<Projection>("perspective")
   const [status, setStatus] = useState<ViewportStatus>(INITIAL_STATUS)
+  const [history, setHistory] = useState<History>()
+  const [, rerender] = useReducer((n: number) => n + 1, 0)
+  const { parts, connections } = useDocSnapshot(doc)
 
   // Memoized so the viewport only resets its ghost when the choice actually changes.
   const tool = useMemo<PartRef | undefined>(() => {
@@ -114,28 +173,99 @@ function DesignEditor({
       : undefined
   }, [pickedId, draft])
 
-  const selected = useDocEntry(doc, selectedId)
+  useEffect(() => {
+    const next = createHistory(doc)
+    setHistory(next)
+    const off = next.subscribe(rerender)
+    return () => {
+      off()
+      next.destroy()
+    }
+  }, [doc])
 
-  if (!doc) {
-    return (
-      <div className="flex h-svh items-center justify-center gap-3">
-        <Spinner className="size-5 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Opening the Design…</p>
-      </div>
-    )
-  }
+  // A turn centre that someone else deleted is no longer offered.
+  useEffect(() => {
+    if (pivot && !parts.some((p) => p.id === pivot)) setPivot(undefined)
+  }, [parts, pivot])
+
+  const selected = useMemo(
+    () => parts.filter((p) => selection.has(p.id)),
+    [parts, selection]
+  )
+  const facts = useMemo(
+    () => selectionFacts(selected, selection, connections),
+    [selected, selection, connections]
+  )
+  const pivots = useMemo(
+    () => pivotChoices(parts, connections, selection),
+    [parts, connections, selection]
+  )
 
   const pick = (id: string | undefined) => {
-    setSelectedId(undefined)
+    setSelection(new Set())
     setPickedId(id)
     const part = id ? partById(id) : undefined
     setDraft(part?.kind === "cut" ? defaultDraft(part) : undefined)
   }
 
-  const onDelete = (id: string) => {
-    removePart(doc, id)
-    setSelectedId(undefined)
+  const undo = () => history?.undo()
+  const redo = () => history?.redo()
+  const duplicate = () => {
+    if (selection.size === 0) return
+    setSelection(new Set(duplicateSelection(doc, selection)))
   }
+  const remove = () => {
+    if (selection.size === 0) return
+    deleteSelection(doc, selection)
+    setSelection(new Set())
+  }
+  const recolor = (color: string) => {
+    if (selection.size === 0) return
+    recolorSelection(doc, selection, color)
+  }
+  const connect = () => {
+    const made = connectSelection(doc, selection)
+    setNotice(
+      made === 0
+        ? "Nothing to connect. A screw or shaft joins the Parts it passes through once their holes line up."
+        : undefined
+    )
+  }
+  const disconnect = () => {
+    disconnectSelection(doc, selection)
+    setNotice(undefined)
+  }
+  const turn = (degrees: number, axis: number) => {
+    const unit: [number, number, number] = [0, 0, 0]
+    unit[axis] = 1
+    turnBy(doc, selection, {
+      angle: (degrees * Math.PI) / 180,
+      axis: unit,
+      pivotFastener: pivot,
+    })
+    setNotice(undefined)
+  }
+  const moveTo = (target: Vec3) => {
+    if (selected.length !== 1) return
+    const [single] = selected
+    const [x, y, z] = single.position
+    moveBy(doc, selection, [target[0] - x, target[1] - y, target[2] - z])
+  }
+
+  // Keys for the editor. Typing in a field never triggers them.
+  const keys = {
+    doc,
+    history,
+    selection,
+    tool,
+    parts,
+    undo,
+    redo,
+    duplicate,
+    remove,
+    recolor,
+  }
+  useKeys(keys, setSelection, setMode, setLocal, setShortcutsOpen, pick)
 
   return (
     <div className="flex h-svh flex-col">
@@ -167,86 +297,315 @@ function DesignEditor({
           />
         </aside>
 
-        <section className="relative min-h-0 min-w-0 flex-1">
-          {webgl === "no" ? (
-            <WebglUnavailable />
-          ) : webgl === "yes" ? (
-            <Suspense fallback={<LoadingView label="Loading the 3D view…" />}>
-              <DesignViewport
-                doc={doc}
-                modelsBase={modelsBase.ok ? modelsBase.url : undefined}
-                tool={tool}
-                selectedId={selectedId}
-                projection={projection}
-                onSelect={setSelectedId}
-                onCancelTool={() => pick(undefined)}
-                onDelete={onDelete}
-                onToggleProjection={() =>
-                  setProjection((p) =>
-                    p === "perspective" ? "orthographic" : "perspective"
-                  )
-                }
-                onStatus={setStatus}
+        <ContextMenu>
+          <ContextMenuTrigger className="relative min-h-0 min-w-0 flex-1">
+            {webgl === "no" ? (
+              <WebglUnavailable />
+            ) : webgl === "yes" ? (
+              <Suspense fallback={<LoadingView label="Loading the 3D view…" />}>
+                <DesignViewport
+                  doc={doc}
+                  modelsBase={modelsBase.ok ? modelsBase.url : undefined}
+                  tool={tool}
+                  selection={selection}
+                  onSelection={setSelection}
+                  mode={mode}
+                  local={local}
+                  pivot={pivot}
+                  angleStep={(angleStepDeg * Math.PI) / 180}
+                  projection={projection}
+                  onCancelTool={() => pick(undefined)}
+                  onToggleProjection={() =>
+                    setProjection((p) =>
+                      p === "perspective" ? "orthographic" : "perspective"
+                    )
+                  }
+                  onStatus={setStatus}
+                  onNotice={setNotice}
+                />
+              </Suspense>
+            ) : null}
+
+            <ViewNotices
+              modelsBase={modelsBase}
+              status={status}
+              notice={notice}
+            />
+
+            <div className="absolute top-3 left-1/2 -translate-x-1/2">
+              <EditorToolbar
+                mode={mode}
+                onMode={setMode}
+                local={local}
+                onLocal={() => setLocal((v) => !v)}
+                canUndo={history?.canUndo() ?? false}
+                canRedo={history?.canRedo() ?? false}
+                onUndo={undo}
+                onRedo={redo}
+                onShortcuts={() => setShortcutsOpen(true)}
               />
-            </Suspense>
-          ) : null}
+            </div>
 
-          <ViewNotices modelsBase={modelsBase} status={status} />
+            <div className="absolute top-3 right-3 flex gap-1 rounded-lg border border-border bg-background/85 p-1 backdrop-blur-sm">
+              <Button
+                size="sm"
+                variant={projection === "perspective" ? "secondary" : "ghost"}
+                aria-pressed={projection === "perspective"}
+                onClick={() => setProjection("perspective")}
+              >
+                Perspective
+              </Button>
+              <Button
+                size="sm"
+                variant={projection === "orthographic" ? "secondary" : "ghost"}
+                aria-pressed={projection === "orthographic"}
+                onClick={() => setProjection("orthographic")}
+              >
+                Orthographic
+              </Button>
+            </div>
 
-          <div className="absolute top-3 right-3 flex gap-1 rounded-lg border border-border bg-background/85 p-1 backdrop-blur-sm">
-            <Button
-              size="sm"
-              variant={projection === "perspective" ? "secondary" : "ghost"}
-              aria-pressed={projection === "perspective"}
-              onClick={() => setProjection("perspective")}
-            >
-              Perspective
-            </Button>
-            <Button
-              size="sm"
-              variant={projection === "orthographic" ? "secondary" : "ghost"}
-              aria-pressed={projection === "orthographic"}
-              onClick={() => setProjection("orthographic")}
-            >
-              Orthographic
-            </Button>
-          </div>
-        </section>
+            {selection.size > 0 && !tool && (
+              <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
+                <div className="pointer-events-auto w-full max-w-3xl">
+                  <SelectionPanel
+                    facts={facts}
+                    pivots={pivots}
+                    pivot={pivot}
+                    onPivot={setPivot}
+                    angleStepDeg={angleStepDeg}
+                    onAngleStep={setAngleStepDeg}
+                    onMoveBy={(delta) => moveBy(doc, selection, delta)}
+                    onMoveTo={moveTo}
+                    onTurn={turn}
+                    onDuplicate={duplicate}
+                    onDelete={remove}
+                    onRecolor={recolor}
+                    onConnect={connect}
+                    onDisconnect={disconnect}
+                  />
+                </div>
+              </div>
+            )}
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            {selection.size > 0 ? (
+              <>
+                <ContextMenuItem onClick={duplicate}>
+                  Duplicate{" "}
+                  <span className="ml-auto pl-6 text-muted-foreground">
+                    <Kbd>Ctrl D</Kbd>
+                  </span>
+                </ContextMenuItem>
+                <ContextMenuItem onClick={remove}>
+                  Delete{" "}
+                  <span className="ml-auto pl-6 text-muted-foreground">
+                    <Kbd>Del</Kbd>
+                  </span>
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+                {facts.fastener && (
+                  <ContextMenuItem onClick={connect}>Connect</ContextMenuItem>
+                )}
+                {facts.connections > 0 && (
+                  <ContextMenuItem onClick={disconnect}>
+                    Disconnect
+                  </ContextMenuItem>
+                )}
+                <ContextMenuItem onClick={() => turn(90, 1)}>
+                  Turn 90° about Y
+                </ContextMenuItem>
+                <ContextMenuSub>
+                  <ContextMenuSubTrigger>Colour</ContextMenuSubTrigger>
+                  <ContextMenuSubContent>
+                    {PALETTE.map((swatch) => (
+                      <ContextMenuItem
+                        key={swatch.color}
+                        onClick={() => recolor(swatch.color)}
+                      >
+                        <span
+                          className="mr-2 inline-block size-3 rounded-full border border-border"
+                          style={{ backgroundColor: swatch.color }}
+                        />
+                        {swatch.name}
+                      </ContextMenuItem>
+                    ))}
+                  </ContextMenuSubContent>
+                </ContextMenuSub>
+              </>
+            ) : (
+              <ContextMenuItem
+                onClick={() => setSelection(new Set(parts.map((p) => p.id)))}
+              >
+                Select all{" "}
+                <span className="ml-auto pl-6 text-muted-foreground">
+                  <Kbd>Ctrl A</Kbd>
+                </span>
+              </ContextMenuItem>
+            )}
+          </ContextMenuContent>
+        </ContextMenu>
       </div>
 
       <Footer
         tool={pickedId ? partById(pickedId) : undefined}
-        selected={selected}
-        onDelete={() => selected && onDelete(selected.id)}
+        selectionCount={selection.size}
+        onDelete={remove}
         status={status}
         placing={Boolean(pickedId)}
       />
+
+      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   )
 }
 
-/** One Part from the document, re-read whenever the document changes. */
-function useDocEntry(
-  doc: Y.Doc | undefined,
-  id: string | undefined
-): PlacedPart | undefined {
-  const [, rerender] = useReducer((n: number) => n + 1, 0)
+/** The Parts and Connections of the document, re-read whenever either changes. */
+function useDocSnapshot(doc: Y.Doc | undefined): {
+  parts: PlacedPart[]
+  connections: { fastener: string; host: string }[]
+} {
+  const [version, bump] = useReducer((n: number) => n + 1, 0)
   useEffect(() => {
     if (!doc) return
-    const map = partsMap(doc)
-    map.observeDeep(rerender)
-    return () => map.unobserveDeep(rerender)
+    const parts = doc.getMap("parts")
+    const links = doc.getMap("connections")
+    parts.observeDeep(bump)
+    links.observeDeep(bump)
+    return () => {
+      parts.unobserveDeep(bump)
+      links.unobserveDeep(bump)
+    }
   }, [doc])
-  if (!doc || !id) return undefined
-  return readPart(id, partsMap(doc).get(id))
+  return useMemo(() => {
+    if (!doc) return { parts: [], connections: [] }
+    return {
+      parts: readPlacedParts(doc).parts,
+      connections: readConnections(doc),
+    }
+    // `version` changes when the document does; reading it here keeps the memo honest.
+  }, [doc, version])
+}
+
+function selectionFacts(
+  selected: PlacedPart[],
+  selection: ReadonlySet<string>,
+  connections: { fastener: string; host: string }[]
+): SelectionFacts {
+  const ids = selection
+  const touching = connections.filter(
+    (c) => ids.has(c.fastener) || ids.has(c.host)
+  )
+  const single = selected.length === 1 ? selected[0] : undefined
+  return {
+    count: selection.size,
+    connections: touching.length,
+    fastener: selected.some((p) => fastenerOf(p) !== undefined),
+    position: single?.position,
+    title:
+      single !== undefined
+        ? catalogPartName(single.catalogId)
+        : `${selection.size} Parts`,
+  }
+}
+
+/** Fasteners that join the selection to Parts outside it, labelled for the turn choice. */
+function pivotChoices(
+  parts: PlacedPart[],
+  connections: { fastener: string; host: string }[],
+  selection: ReadonlySet<string>
+): { id: string; label: string }[] {
+  if (selection.size === 0) return []
+  const ids = pivotsFor(selection, connections)
+  return ids.map((id) => {
+    const part = parts.find((p) => p.id === id)
+    const name = part ? catalogPartName(part.catalogId) : id
+    return { id, label: `${name} (${id.slice(0, 4)})` }
+  })
+}
+
+/** Keyboard shortcuts for the editor. The viewport keeps the keys for placing and framing. */
+function useKeys(
+  keys: {
+    doc: Y.Doc
+    history: History | undefined
+    selection: ReadonlySet<string>
+    tool: PartRef | undefined
+    parts: PlacedPart[]
+    undo: () => void
+    redo: () => void
+    duplicate: () => void
+    remove: () => void
+    recolor: (color: string) => void
+  },
+  setSelection: (next: Set<string>) => void,
+  setMode: (mode: GizmoMode) => void,
+  setLocal: (update: (v: boolean) => boolean) => void,
+  setShortcutsOpen: (open: boolean) => void,
+  pick: (id: string | undefined) => void
+) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (isTyping(event.target)) return
+      const mod = event.ctrlKey || event.metaKey
+      const key = event.key.toLowerCase()
+      if (mod && key === "z") {
+        event.preventDefault()
+        if (event.shiftKey) keys.redo()
+        else keys.undo()
+      } else if (mod && key === "y") {
+        event.preventDefault()
+        keys.redo()
+      } else if (mod && key === "d") {
+        event.preventDefault()
+        keys.duplicate()
+      } else if (mod && key === "a") {
+        event.preventDefault()
+        setSelection(new Set(keys.parts.map((p) => p.id)))
+      } else if (event.key === "Delete" || event.key === "Backspace") {
+        if (keys.selection.size > 0 && !keys.tool) {
+          event.preventDefault()
+          keys.remove()
+        }
+      } else if (event.key === "Escape") {
+        if (keys.tool) pick(undefined)
+        else setSelection(new Set())
+      } else if (mod) {
+        return
+      } else if (key === "w") setMode("move")
+      else if (key === "e") setMode("rotate")
+      else if (key === "l") setLocal((v) => !v)
+      else if (event.key === "?") setShortcutsOpen(true)
+      else if (
+        /^[1-8]$/.test(event.key) &&
+        keys.selection.size > 0 &&
+        !keys.tool
+      ) {
+        keys.recolor(PALETTE[Number(event.key) - 1].color)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+    // The handlers read the latest values through `keys`, which is rebuilt each render.
+  }, [keys, setSelection, setMode, setLocal, setShortcutsOpen, pick])
+}
+
+function isTyping(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return (
+    target.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+  )
 }
 
 function ViewNotices({
   modelsBase,
   status,
+  notice,
 }: {
   modelsBase: ReturnType<typeof readModelsBase>
   status: ViewportStatus
+  notice?: string
 }) {
   const notes: {
     key: string
@@ -282,6 +641,7 @@ function ViewNotices({
       tone: "error",
       text: `${status.invalid} saved part${status.invalid === 1 ? "" : "s"} could not be read and ${status.invalid === 1 ? "is" : "are"} hidden. A newer version of this app may have saved ${status.invalid === 1 ? "it" : "them"}.`,
     })
+  if (notice) notes.push({ key: "notice", tone: "error", text: notice })
   if (status.contextLost)
     notes.push({
       key: "lost",
@@ -312,13 +672,13 @@ function ViewNotices({
 
 function Footer({
   tool,
-  selected,
+  selectionCount,
   onDelete,
   status,
   placing,
 }: {
   tool: CatalogPart | undefined
-  selected: PlacedPart | undefined
+  selectionCount: number
   onDelete: () => void
   status: ViewportStatus
   placing: boolean
@@ -335,11 +695,9 @@ function Footer({
               </span>
             )}
           </p>
-        ) : selected ? (
-          <p className="flex items-center gap-3 truncate">
-            <span className="truncate">
-              {catalogPartName(selected.catalogId)}
-            </span>
+        ) : selectionCount > 0 ? (
+          <p className="flex items-center gap-3 truncate text-muted-foreground">
+            {selectionCount} selected
             <Button variant="ghost" size="sm" onClick={onDelete}>
               Delete
             </Button>
@@ -361,8 +719,7 @@ function Footer({
         ) : (
           <>
             <Hint keys={["Click"]} label="select" />
-            <Hint keys={["Del"]} label="delete" />
-            <Hint keys={["Esc"]} label="clear" />
+            <Hint keys={["?"]} label="all shortcuts" />
           </>
         )}
         <Hint keys={["F"]} label="frame" />

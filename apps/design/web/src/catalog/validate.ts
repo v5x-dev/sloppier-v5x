@@ -18,6 +18,10 @@ const FIXED_FAMILIES = [
   "nut",
   "plate",
   "gusset",
+  "bearing",
+  "collar",
+  "spacer",
+  "gear",
 ]
 const CUT_FAMILIES = ["channel", "angle", "shaft"]
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -103,6 +107,12 @@ function snapErrors(where: string, value: unknown): string[] {
     errors.push(`${where}/${sp.id}: axis must be a unit vector`)
   if (!(typeof sp.diameterMm === "number" && sp.diameterMm > 0))
     errors.push(`${where}/${sp.id}: diameterMm must be positive`)
+  if (
+    sp.accepts !== undefined &&
+    (!Array.isArray(sp.accepts) ||
+      !sp.accepts.every((t) => typeof t === "string"))
+  )
+    errors.push(`${where}/${sp.id}: accepts must be a list of fit tokens`)
   return errors
 }
 

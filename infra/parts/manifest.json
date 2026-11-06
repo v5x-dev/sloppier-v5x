@@ -11,16 +11,164 @@
         "path": "Motors/V5 Smart Motor (276-4840).step"
       },
       "material": "electronics",
-      "snap": "ruled-bores",
+      "snap": "none",
       "budgetTriangles": 22000,
       "maxErrorMm": 0.3,
-      "boreRule": {
-        "minDiameterMm": 2.0,
-        "maxDiameterMm": 2.6,
-        "minDepthMm": 30
-      },
       "notes": [
-        "Snap points are hand corrections: the four 2.2 mm mounting bores through the motor body, found by the bore detector. Their ends are not on the bounding box, so the automatic opening test does not select them."
+        "Mounting holes: four 8-32 tapped holes at the corners of each end face, at (±21.95, ±14) mm in the STEP frame, measured from the circle edges of the STEP file (3.4 mm, the 8-32 tap drill). Each runs about 12 mm in from its end, and the two ends are not joined. The old 2.2 mm bores 27 mm apart were not these holes.",
+        "The four holes are 43.9 mm apart along X and 28.0 mm along Y. Neither is a multiple of the channel web lattice (12.7 mm along, 6.35 mm across), so one channel web lines up with one of the four holes at a time. Others meet a channel only where a second channel or another placement takes them.",
+        "The output socket is a hand-placed opening at the top of the output boss, where the STEP 10.3 mm counterbore opens (manual). Its shafts are 1/8 in and 1/4 in square, per VEX knowledge base; the STEP does not show the square socket cleanly, so only the opening position and mouth are measured."
+      ],
+      "snapAccepts": [
+        "screw:8-32"
+      ],
+      "extraSnaps": [
+        {
+          "kind": "hole",
+          "position": [
+            21.95,
+            14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            21.95,
+            -14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            -14,
+            29.2
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 12,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            21.95,
+            14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            21.95,
+            -14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            -21.95,
+            -14,
+            -27.4
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 3.4,
+          "depthMm": 11.2,
+          "note": "8-32 tap hole, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            12.7,
+            0,
+            34
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 10.3,
+          "accepts": [
+            "shaft:1/8",
+            "shaft:1/4"
+          ]
+        }
       ]
     },
     {
@@ -33,11 +181,49 @@
         "path": "Motors/V5 Smart Motor (5.5W) (276-4842).step"
       },
       "material": "electronics",
-      "snap": "bores",
+      "snap": "none",
       "budgetTriangles": 6000,
       "maxErrorMm": 0.05,
       "notes": [
-        "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
+        "Mounting holes: two 8-32 tapped holes on the end face at STEP y = -40.13, at x = 0 and z = 3.15 and 15.85. They are 12.7 mm (0.5 in) apart, so both line up with one channel web row. Each runs about 19 mm in, to a shelf at y = -21.1. Measured from the STEP circle edges (3.45 mm, the 8-32 tap drill).",
+        "No other openings are measured on this motor yet. The 5.5 W STEP is 84 edges open in places, so only the end face holes are used."
+      ],
+      "snapAccepts": [
+        "screw:8-32"
+      ],
+      "extraSnaps": [
+        {
+          "kind": "hole",
+          "position": [
+            0,
+            -40.13,
+            3.15
+          ],
+          "axis": [
+            0,
+            -1,
+            0
+          ],
+          "diameterMm": 3.45,
+          "depthMm": 19,
+          "note": "8-32 tap hole at the end face, measured from the STEP circle edges"
+        },
+        {
+          "kind": "hole",
+          "position": [
+            0,
+            -40.13,
+            15.85
+          ],
+          "axis": [
+            0,
+            -1,
+            0
+          ],
+          "diameterMm": 3.45,
+          "depthMm": 19,
+          "note": "8-32 tap hole at the end face, measured from the STEP circle edges"
+        }
       ]
     },
     {
@@ -57,7 +243,11 @@
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
-      }
+      },
+      "snapAccepts": [
+        "shaft:1/8",
+        "shaft:1/4"
+      ]
     },
     {
       "id": "wheel-normal-2-75",
@@ -76,7 +266,11 @@
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
-      }
+      },
+      "snapAccepts": [
+        "shaft:1/8",
+        "shaft:1/4"
+      ]
     },
     {
       "id": "wheel-omni-4",
@@ -95,7 +289,11 @@
       "expectSizeMm": {
         "x": 101.6,
         "z": 101.6
-      }
+      },
+      "snapAccepts": [
+        "shaft:1/8",
+        "shaft:1/4"
+      ]
     },
     {
       "id": "standoff-1-4",
@@ -112,7 +310,11 @@
       "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 6.35
-      }
+      },
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32"
+      ]
     },
     {
       "id": "standoff-1-2",
@@ -129,7 +331,11 @@
       "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 12.7
-      }
+      },
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32"
+      ]
     },
     {
       "id": "standoff-1",
@@ -146,7 +352,11 @@
       "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 25.4
-      }
+      },
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32"
+      ]
     },
     {
       "id": "standoff-2",
@@ -163,7 +373,11 @@
       "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 50.8
-      }
+      },
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32"
+      ]
     },
     {
       "id": "screw-6-32-1-4",
@@ -190,6 +404,7 @@
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
+      "fit": "screw:6-32",
       "remodel": "lathe",
       "segments": 8
     },
@@ -218,6 +433,7 @@
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
+      "fit": "screw:6-32",
       "remodel": "lathe",
       "segments": 8
     },
@@ -246,6 +462,7 @@
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
+      "fit": "screw:8-32",
       "remodel": "lathe",
       "segments": 8
     },
@@ -274,6 +491,7 @@
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
       ],
+      "fit": "screw:8-32",
       "remodel": "lathe",
       "segments": 8
     },
@@ -289,7 +507,10 @@
       "material": "steel",
       "snap": "bores",
       "budgetTriangles": 400,
-      "maxErrorMm": 0.05
+      "maxErrorMm": 0.05,
+      "snapAccepts": [
+        "screw:8-32"
+      ]
     },
     {
       "id": "plate-5x15-steel",
@@ -312,6 +533,11 @@
       "notes": [
         "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
         "Budget miss, by design: each hole keeps four walls (8 triangles), 1,368 for 171 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
+      ],
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32",
+        "shaft:1/8"
       ]
     },
     {
@@ -331,6 +557,11 @@
       "notes": [
         "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
         "Budget miss, by design: each hole keeps four walls (8 triangles), 2,248 for 281 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
+      ],
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32",
+        "shaft:1/8"
       ]
     },
     {
@@ -345,7 +576,11 @@
       "material": "steel",
       "snap": "bores+probe",
       "budgetTriangles": 1000,
-      "maxErrorMm": 0.05
+      "maxErrorMm": 0.05,
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32"
+      ]
     },
     {
       "id": "gusset-90-flat",
@@ -359,7 +594,11 @@
       "material": "steel",
       "snap": "bores+probe",
       "budgetTriangles": 1000,
-      "maxErrorMm": 0.05
+      "maxErrorMm": 0.05,
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32"
+      ]
     },
     {
       "id": "channel-1x2x1-aluminum",
@@ -420,6 +659,11 @@
             "pitch": 63.5,
             "phase": 0.5
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       }
     },
@@ -483,6 +727,11 @@
             "pitch": 63.5,
             "phase": 0.5
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       },
       "notes": [
@@ -561,6 +810,11 @@
             "pitch": 63.5,
             "phase": 0
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       },
       "notes": [
@@ -607,6 +861,11 @@
             "pitch": 63.5,
             "phase": 0.5
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       },
       "notes": [
@@ -628,7 +887,132 @@
         "sizeMm": 6.35,
         "cornerRadiusMm": 0,
         "rows": []
-      }
+      },
+      "fit": "shaft:1/4"
+    },
+    {
+      "id": "shaft-square-1-8",
+      "name": "1/8 in Square Shaft",
+      "family": "shaft",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/2 Shaft (276-2011-001).step",
+        "sampleLengthMm": 50.8
+      },
+      "material": "steel",
+      "fit": "shaft:1/8",
+      "cut": {
+        "sizeMm": 3.175,
+        "cornerRadiusMm": 0,
+        "rows": []
+      },
+      "notes": [
+        "Standard drive shaft: 1/8 in square, the shaft that runs through a channel's square holes and turns in bearings."
+      ]
+    },
+    {
+      "id": "bearing-flat-low-profile",
+      "name": "Low Profile Bearing Flat",
+      "family": "bearing",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/Low Profile Bearing Flat (276-8023).step"
+      },
+      "material": "nylon",
+      "snap": "ruled-bores",
+      "boreRule": {
+        "minDiameterMm": 4,
+        "maxDiameterMm": 4.4,
+        "minDepthMm": 4
+      },
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32",
+        "shaft:1/8"
+      ],
+      "budgetTriangles": 1000,
+      "maxErrorMm": 0.1,
+      "notes": [
+        "Three 4.2 mm bores at 1/2 in pitch. They screw down to a channel's holes, and a 1/8 in shaft turns in them. Ends are taken for both openings because the bores stop short of the outline."
+      ]
+    },
+    {
+      "id": "shaft-collar-1-8",
+      "name": "1/8 in Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shaft Collars/Shaft Collar (276-2010).step"
+      },
+      "material": "steel",
+      "snap": "ruled-bores",
+      "boreRule": {
+        "minDiameterMm": 4,
+        "maxDiameterMm": 4.4,
+        "minDepthMm": 5
+      },
+      "snapAccepts": [
+        "shaft:1/8"
+      ],
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05
+    },
+    {
+      "id": "gear-36t-1-8",
+      "name": "36 Tooth Gear (1/8 in bore)",
+      "family": "gear",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/36T Gear (276-2169-002).step"
+      },
+      "material": "nylon",
+      "snap": "none",
+      "extraSnaps": [
+        {
+          "kind": "hole",
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.175,
+          "accepts": [
+            "shaft:1/8"
+          ]
+        }
+      ],
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "notes": [
+        "The STEP file has no bore that the detector can read, so the 1/8 in bore is a hand placement at the gear's centre (manual)."
+      ]
+    },
+    {
+      "id": "spacer-1-8-nylon",
+      "name": "1/8 in Nylon Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_8 Nylon Spacer (275-1066-001).step"
+      },
+      "material": "nylon",
+      "snap": "bores",
+      "snapAccepts": [
+        "screw:6-32",
+        "screw:8-32"
+      ],
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05
     }
   ]
 }

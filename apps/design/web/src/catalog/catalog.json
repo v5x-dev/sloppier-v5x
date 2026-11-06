@@ -64,6 +64,11 @@
             "pitch": 63.5,
             "phase": 0.5
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       },
       "verification": {
@@ -76,6 +81,183 @@
       },
       "notes": [
         "The outer corner fillet is not modelled."
+      ]
+    },
+    {
+      "kind": "model",
+      "id": "bearing-flat-low-profile",
+      "name": "Low Profile Bearing Flat",
+      "family": "bearing",
+      "sku": {
+        "value": "276-8023",
+        "source": "filename"
+      },
+      "material": "nylon",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "Bearings/Low Profile Bearing Flat (276-8023).step",
+        "sha256": "3599a885916dd637b7219a9d4a2c6f71ab91f9a184f953989e3287567376ebd0",
+        "declaredUnit": "mm"
+      },
+      "sizeMm": {
+        "x": 34,
+        "y": 6.85,
+        "z": 8.6
+      },
+      "volumeMm3": 1161.084,
+      "mass": {
+        "densityGPerCm3": 1.14,
+        "massG": 1.324,
+        "basis": "volume x density"
+      },
+      "model": {
+        "file": "models/bearing-flat-low-profile-5d86b9e3.glb",
+        "sha256": "5d86b9e3b7779410fb11256645dc431d1d2a8986f0cb42b4b38f46b3a5fdbf37",
+        "bytes": 42788,
+        "triangles": 1000,
+        "rawTriangles": 3344,
+        "budgetTriangles": 1000,
+        "maxErrorMm": 0.063,
+        "coordinates": "mm, Y up, origin at the centre of the bounding box"
+      },
+      "snapPoints": [
+        {
+          "id": "bearing-01",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            12.699999999997175,
+            1.8324805853450182e-15,
+            2.725
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 4.2,
+          "depthMm": 4.68,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
+          ]
+        },
+        {
+          "id": "bearing-02",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            12.699999999997175,
+            1.8324805853450182e-15,
+            -1.9549999999999992
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 4.2,
+          "depthMm": 4.68,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
+          ]
+        },
+        {
+          "id": "bearing-03",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            -12.700000000000474,
+            7.84765718437458e-15,
+            2.725
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 4.2,
+          "depthMm": 4.68,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
+          ]
+        },
+        {
+          "id": "bearing-04",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            -12.700000000000474,
+            7.84765718437458e-15,
+            -1.9549999999999992
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 4.2,
+          "depthMm": 4.68,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
+          ]
+        },
+        {
+          "id": "bearing-05",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            -2.478781565533228e-15,
+            2.2086976574554674e-17,
+            2.725
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 4.2,
+          "depthMm": 4.68,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
+          ]
+        },
+        {
+          "id": "bearing-06",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            -2.478781565533228e-15,
+            2.2086976574554674e-17,
+            -1.9549999999999992
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 4.2,
+          "depthMm": 4.68,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
+          ]
+        }
+      ],
+      "notes": [
+        "Three 4.2 mm bores at 1/2 in pitch. They screw down to a channel's holes, and a 1/8 in shaft turns in them. Ends are taken for both openings because the bores stop short of the outline."
       ]
     },
     {
@@ -153,6 +335,11 @@
             "pitch": 63.5,
             "phase": 0.5
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       },
       "verification": {
@@ -240,6 +427,11 @@
             "pitch": 63.5,
             "phase": 0.5
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       },
       "verification": {
@@ -341,6 +533,11 @@
             "pitch": 63.5,
             "phase": 0
           }
+        ],
+        "holeAccepts": [
+          "screw:6-32",
+          "screw:8-32",
+          "shaft:1/8"
         ]
       },
       "verification": {
@@ -353,6 +550,70 @@
       },
       "notes": [
         "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
+      "kind": "model",
+      "id": "gear-36t-1-8",
+      "name": "36 Tooth Gear (1/8 in bore)",
+      "family": "gear",
+      "sku": {
+        "value": "276-2169-002",
+        "source": "filename"
+      },
+      "material": "nylon",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "Gears & Pinions/36T Gear (276-2169-002).step",
+        "sha256": "6b11a85afe25f11f59500d4cee9c5fc16b543fdbb175c63af4d13fd2af87458a",
+        "declaredUnit": "inch"
+      },
+      "sizeMm": {
+        "x": 40.084,
+        "y": 40.084,
+        "z": 9.525
+      },
+      "volumeMm3": 3951.468,
+      "mass": {
+        "densityGPerCm3": 1.14,
+        "massG": 4.505,
+        "basis": "volume x density"
+      },
+      "model": {
+        "file": "models/gear-36t-1-8-3ac8c985.glb",
+        "sha256": "3ac8c985933e1635ebc528dc0178e8547f3a1647c7be99e4933d3e060bfbdff4",
+        "bytes": 57376,
+        "triangles": 1730,
+        "rawTriangles": 3988,
+        "budgetTriangles": 1200,
+        "maxErrorMm": 0.1,
+        "coordinates": "mm, Y up, origin at the centre of the bounding box"
+      },
+      "snapPoints": [
+        {
+          "id": "gear-01",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            0,
+            -8.881784197001252e-16,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "diameterMm": 3.175,
+          "accepts": [
+            "shaft:1/8"
+          ]
+        }
+      ],
+      "notes": [
+        "The STEP file has no bore that the detector can read, so the 1/8 in bore is a hand placement at the gear's centre (manual)."
       ]
     },
     {
@@ -410,7 +671,11 @@
             0
           ],
           "diameterMm": 4.2,
-          "depthMm": 1.575
+          "depthMm": 1.575,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         },
         {
           "id": "gusset-02",
@@ -427,7 +692,11 @@
             0
           ],
           "diameterMm": 4.2,
-          "depthMm": 1.575
+          "depthMm": 1.575,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         },
         {
           "id": "gusset-03",
@@ -448,6 +717,10 @@
           "openingMm": [
             7.25,
             4.25
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -469,6 +742,10 @@
           "openingMm": [
             7,
             4.25
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -490,6 +767,10 @@
           "openingMm": [
             8,
             7
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -511,6 +792,10 @@
           "openingMm": [
             8,
             7
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         }
       ],
@@ -575,6 +860,10 @@
           "openingMm": [
             7.25,
             4.25
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -596,6 +885,10 @@
           "openingMm": [
             7,
             4.25
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -617,6 +910,10 @@
           "openingMm": [
             7,
             4.25
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -638,6 +935,10 @@
           "openingMm": [
             4.5,
             7
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -659,6 +960,10 @@
           "openingMm": [
             4.5,
             7
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -680,6 +985,10 @@
           "openingMm": [
             4.5,
             7
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         },
         {
@@ -701,6 +1010,10 @@
           "openingMm": [
             4,
             3.75
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
           ]
         }
       ],
@@ -751,140 +1064,186 @@
           "kind": "hole",
           "source": "manual",
           "position": [
-            -25.44999999999623,
-            -27.85,
-            -13.500000000000737
+            21.949999999999996,
+            20.449999999999996,
+            -14.000000000000002
           ],
           "axis": [
             0,
-            -1,
+            1,
             0
           ],
-          "diameterMm": 2.2,
-          "depthMm": 34.8
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
         },
         {
           "id": "motor-02",
           "kind": "hole",
           "source": "manual",
           "position": [
-            -25.44999999999623,
-            6.9499999999999975,
-            -13.500000000000737
+            21.949999999999996,
+            20.449999999999996,
+            13.999999999999998
           ],
           "axis": [
             0,
             1,
             0
           ],
-          "diameterMm": 2.2,
-          "depthMm": 34.8
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
         },
         {
           "id": "motor-03",
           "kind": "hole",
           "source": "manual",
           "position": [
-            25.450000000000053,
-            -27.950000000000003,
-            -13.499999999998632
+            -21.950000000000003,
+            20.449999999999996,
+            -14.000000000000002
           ],
           "axis": [
             0,
-            -1,
+            1,
             0
           ],
-          "diameterMm": 2.2,
-          "depthMm": 34.9
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
         },
         {
           "id": "motor-04",
           "kind": "hole",
           "source": "manual",
           "position": [
-            25.450000000000053,
-            6.9499999999999975,
-            -13.499999999998632
+            -21.950000000000003,
+            20.449999999999996,
+            13.999999999999998
           ],
           "axis": [
             0,
             1,
             0
           ],
-          "diameterMm": 2.2,
-          "depthMm": 34.9
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
         },
         {
           "id": "motor-05",
           "kind": "hole",
           "source": "manual",
           "position": [
-            25.45000000000202,
-            -27.950000000000003,
-            13.500000000011125
+            21.949999999999996,
+            -36.15,
+            -14.000000000000002
           ],
           "axis": [
             0,
             -1,
             0
           ],
-          "diameterMm": 2.2,
-          "depthMm": 34.9
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
         },
         {
           "id": "motor-06",
           "kind": "hole",
           "source": "manual",
           "position": [
-            25.45000000000202,
-            6.9499999999999975,
-            13.500000000011125
-          ],
-          "axis": [
-            0,
-            1,
-            0
-          ],
-          "diameterMm": 2.2,
-          "depthMm": 34.9
-        },
-        {
-          "id": "motor-07",
-          "kind": "hole",
-          "source": "manual",
-          "position": [
-            -25.449999999996223,
-            -27.950000000000003,
-            13.50000000000627
+            21.949999999999996,
+            -36.15,
+            13.999999999999998
           ],
           "axis": [
             0,
             -1,
             0
           ],
-          "diameterMm": 2.2,
-          "depthMm": 34.9
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
+        },
+        {
+          "id": "motor-07",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            -21.950000000000003,
+            -36.15,
+            -14.000000000000002
+          ],
+          "axis": [
+            0,
+            -1,
+            0
+          ],
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
         },
         {
           "id": "motor-08",
           "kind": "hole",
           "source": "manual",
           "position": [
-            -25.449999999996223,
-            6.9499999999999975,
-            13.50000000000627
+            -21.950000000000003,
+            -36.15,
+            13.999999999999998
+          ],
+          "axis": [
+            0,
+            -1,
+            0
+          ],
+          "diameterMm": 3.4,
+          "note": "8-32 tap hole, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
+        },
+        {
+          "id": "motor-09",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            12.699999999999998,
+            25.25,
+            -1.7763568394002505e-15
           ],
           "axis": [
             0,
             1,
             0
           ],
-          "diameterMm": 2.2,
-          "depthMm": 34.9
+          "diameterMm": 10.3,
+          "accepts": [
+            "shaft:1/8",
+            "shaft:1/4"
+          ]
         }
       ],
       "notes": [
-        "Snap points are hand corrections: the four 2.2 mm mounting bores through the motor body, found by the bore detector. Their ends are not on the bounding box, so the automatic opening test does not select them."
+        "Mounting holes: four 8-32 tapped holes at the corners of each end face, at (±21.95, ±14) mm in the STEP frame, measured from the circle edges of the STEP file (3.4 mm, the 8-32 tap drill). Each runs about 12 mm in from its end, and the two ends are not joined. The old 2.2 mm bores 27 mm apart were not these holes.",
+        "The four holes are 43.9 mm apart along X and 28.0 mm along Y. Neither is a multiple of the channel web lattice (12.7 mm along, 6.35 mm across), so one channel web lines up with one of the four holes at a time. Others meet a channel only where a second channel or another placement takes them.",
+        "The output socket is a hand-placed opening at the top of the output boss, where the STEP 10.3 mm counterbore opens (manual). Its shafts are 1/8 in and 1/4 in square, per VEX knowledge base; the STEP does not show the square socket cleanly, so only the opening position and mouth are measured."
       ]
     },
     {
@@ -926,9 +1285,51 @@
         "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
-      "snapPoints": [],
+      "snapPoints": [
+        {
+          "id": "motor-01",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            0,
+            3.1499999999999875,
+            32.21750000000001
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.45,
+          "note": "8-32 tap hole at the end face, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
+        },
+        {
+          "id": "motor-02",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            0,
+            15.849999999999987,
+            32.21750000000001
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 3.45,
+          "note": "8-32 tap hole at the end face, measured from the STEP circle edges",
+          "accepts": [
+            "screw:8-32"
+          ]
+        }
+      ],
       "notes": [
-        "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
+        "Mounting holes: two 8-32 tapped holes on the end face at STEP y = -40.13, at x = 0 and z = 3.15 and 15.85. They are 12.7 mm (0.5 in) apart, so both line up with one channel web row. Each runs about 19 mm in, to a shelf at y = -21.1. Measured from the STEP circle edges (3.45 mm, the 8-32 tap drill).",
+        "No other openings are measured on this motor yet. The 5.5 W STEP is 84 edges open in places, so only the end face holes are used."
       ]
     },
     {
@@ -986,7 +1387,10 @@
             1
           ],
           "diameterMm": 4.191,
-          "depthMm": 2.692
+          "depthMm": 2.692,
+          "accepts": [
+            "screw:8-32"
+          ]
         },
         {
           "id": "nut-02",
@@ -1003,7 +1407,10 @@
             -1
           ],
           "diameterMm": 4.191,
-          "depthMm": 2.692
+          "depthMm": 2.692,
+          "accepts": [
+            "screw:8-32"
+          ]
         }
       ],
       "notes": []
@@ -1067,6 +1474,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1088,6 +1500,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1109,6 +1526,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1130,6 +1552,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1151,6 +1578,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1172,6 +1604,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1193,6 +1630,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1214,6 +1656,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1235,6 +1682,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1256,6 +1708,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1277,6 +1734,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1298,6 +1760,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1319,6 +1786,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1340,6 +1812,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1361,6 +1838,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1382,6 +1864,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1403,6 +1890,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1424,6 +1916,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1445,6 +1942,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1466,6 +1968,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1487,6 +1994,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1508,6 +2020,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1529,6 +2046,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1550,6 +2072,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1571,6 +2098,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1592,6 +2124,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1613,6 +2150,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1634,6 +2176,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1655,6 +2202,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1676,6 +2228,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1697,6 +2254,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1718,6 +2280,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1739,6 +2306,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1760,6 +2332,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1781,6 +2358,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1802,6 +2384,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1823,6 +2410,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1844,6 +2436,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1865,6 +2462,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1886,6 +2488,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1907,6 +2514,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1928,6 +2540,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1949,6 +2566,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1970,6 +2592,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -1991,6 +2618,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2012,6 +2644,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2033,6 +2670,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2054,6 +2696,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2075,6 +2722,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2096,6 +2748,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2117,6 +2774,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2138,6 +2800,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2159,6 +2826,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2180,6 +2852,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2201,6 +2878,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2222,6 +2904,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2243,6 +2930,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2264,6 +2956,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2285,6 +2982,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2306,6 +3008,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2327,6 +3034,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2348,6 +3060,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2369,6 +3086,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2390,6 +3112,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2411,6 +3138,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2432,6 +3164,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2453,6 +3190,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2474,6 +3216,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2495,6 +3242,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2516,6 +3268,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2537,6 +3294,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2558,6 +3320,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2579,6 +3346,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2600,6 +3372,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2621,6 +3398,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2642,6 +3424,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2663,6 +3450,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2684,6 +3476,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2705,6 +3502,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2726,6 +3528,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2747,6 +3554,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2768,6 +3580,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2789,6 +3606,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2810,6 +3632,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2831,6 +3658,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2852,6 +3684,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2873,6 +3710,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2894,6 +3736,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2915,6 +3762,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2936,6 +3788,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2957,6 +3814,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2978,6 +3840,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -2999,6 +3866,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3020,6 +3892,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3041,6 +3918,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3062,6 +3944,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3083,6 +3970,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3104,6 +3996,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3125,6 +4022,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3146,6 +4048,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3167,6 +4074,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3188,6 +4100,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3209,6 +4126,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3230,6 +4152,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3251,6 +4178,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3272,6 +4204,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3293,6 +4230,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3314,6 +4256,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3335,6 +4282,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3356,6 +4308,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3377,6 +4334,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3398,6 +4360,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3419,6 +4386,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3440,6 +4412,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3461,6 +4438,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3482,6 +4464,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3503,6 +4490,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3524,6 +4516,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3545,6 +4542,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3566,6 +4568,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3587,6 +4594,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3608,6 +4620,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3629,6 +4646,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3650,6 +4672,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3671,6 +4698,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3692,6 +4724,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3713,6 +4750,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3734,6 +4776,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3755,6 +4802,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3776,6 +4828,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3797,6 +4854,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3818,6 +4880,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3839,6 +4906,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3860,6 +4932,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3881,6 +4958,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3902,6 +4984,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3923,6 +5010,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3944,6 +5036,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3965,6 +5062,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -3986,6 +5088,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4007,6 +5114,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4028,6 +5140,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4049,6 +5166,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4070,6 +5192,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4091,6 +5218,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4112,6 +5244,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4133,6 +5270,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4154,6 +5296,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4175,6 +5322,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4196,6 +5348,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4217,6 +5374,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4238,6 +5400,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4259,6 +5426,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4280,6 +5452,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4301,6 +5478,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4322,6 +5504,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4343,6 +5530,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4364,6 +5556,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4385,6 +5582,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4406,6 +5608,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4427,6 +5634,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4448,6 +5660,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4469,6 +5686,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4490,6 +5712,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4511,6 +5738,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4532,6 +5764,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4553,6 +5790,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4574,6 +5816,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4595,6 +5842,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4616,6 +5868,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4637,6 +5894,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         }
       ],
@@ -4704,6 +5966,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4725,6 +5992,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4746,6 +6018,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4767,6 +6044,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4788,6 +6070,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4809,6 +6096,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4830,6 +6122,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4851,6 +6148,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4872,6 +6174,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4893,6 +6200,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4914,6 +6226,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4935,6 +6252,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4956,6 +6278,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4977,6 +6304,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -4998,6 +6330,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5019,6 +6356,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5040,6 +6382,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5061,6 +6408,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5082,6 +6434,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5103,6 +6460,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5124,6 +6486,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5145,6 +6512,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5166,6 +6538,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5187,6 +6564,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5208,6 +6590,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5229,6 +6616,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5250,6 +6642,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5271,6 +6668,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5292,6 +6694,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5313,6 +6720,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5334,6 +6746,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5355,6 +6772,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5376,6 +6798,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5397,6 +6824,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5418,6 +6850,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5439,6 +6876,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5460,6 +6902,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5481,6 +6928,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5502,6 +6954,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5523,6 +6980,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5544,6 +7006,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5565,6 +7032,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5586,6 +7058,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5607,6 +7084,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5628,6 +7110,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5649,6 +7136,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5670,6 +7162,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5691,6 +7188,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5712,6 +7214,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5733,6 +7240,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5754,6 +7266,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5775,6 +7292,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5796,6 +7318,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5817,6 +7344,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5838,6 +7370,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5859,6 +7396,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5880,6 +7422,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5901,6 +7448,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5922,6 +7474,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5943,6 +7500,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5964,6 +7526,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -5985,6 +7552,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6006,6 +7578,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6027,6 +7604,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6048,6 +7630,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6069,6 +7656,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6090,6 +7682,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6111,6 +7708,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6132,6 +7734,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6153,6 +7760,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6174,6 +7786,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6195,6 +7812,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6216,6 +7838,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6237,6 +7864,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6258,6 +7890,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6279,6 +7916,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6300,6 +7942,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6321,6 +7968,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6342,6 +7994,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6363,6 +8020,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6384,6 +8046,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6405,6 +8072,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6426,6 +8098,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6447,6 +8124,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6468,6 +8150,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6489,6 +8176,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6510,6 +8202,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6531,6 +8228,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6552,6 +8254,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6573,6 +8280,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6594,6 +8306,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6615,6 +8332,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6636,6 +8358,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6657,6 +8384,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6678,6 +8410,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6699,6 +8436,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6720,6 +8462,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6741,6 +8488,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6762,6 +8514,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6783,6 +8540,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6804,6 +8566,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6825,6 +8592,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6846,6 +8618,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6867,6 +8644,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6888,6 +8670,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6909,6 +8696,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6930,6 +8722,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6951,6 +8748,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6972,6 +8774,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -6993,6 +8800,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7014,6 +8826,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7035,6 +8852,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7056,6 +8878,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7077,6 +8904,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7098,6 +8930,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7119,6 +8956,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7140,6 +8982,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7161,6 +9008,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7182,6 +9034,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7203,6 +9060,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7224,6 +9086,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7245,6 +9112,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7266,6 +9138,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7287,6 +9164,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7308,6 +9190,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7329,6 +9216,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7350,6 +9242,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7371,6 +9268,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7392,6 +9294,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7413,6 +9320,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7434,6 +9346,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7455,6 +9372,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7476,6 +9398,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7497,6 +9424,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7518,6 +9450,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7539,6 +9476,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7560,6 +9502,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7581,6 +9528,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7602,6 +9554,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7623,6 +9580,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7644,6 +9606,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7665,6 +9632,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7686,6 +9658,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7707,6 +9684,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7728,6 +9710,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7749,6 +9736,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7770,6 +9762,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7791,6 +9788,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7812,6 +9814,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7833,6 +9840,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7854,6 +9866,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7875,6 +9892,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7896,6 +9918,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7917,6 +9944,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7938,6 +9970,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7959,6 +9996,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -7980,6 +10022,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8001,6 +10048,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8022,6 +10074,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8043,6 +10100,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8064,6 +10126,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8085,6 +10152,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8106,6 +10178,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8127,6 +10204,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8148,6 +10230,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8169,6 +10256,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8190,6 +10282,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8211,6 +10308,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8232,6 +10334,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8253,6 +10360,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8274,6 +10386,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8295,6 +10412,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8316,6 +10438,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8337,6 +10464,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8358,6 +10490,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8379,6 +10516,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8400,6 +10542,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8421,6 +10568,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8442,6 +10594,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8463,6 +10620,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8484,6 +10646,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8505,6 +10672,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8526,6 +10698,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8547,6 +10724,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8568,6 +10750,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8589,6 +10776,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8610,6 +10802,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8631,6 +10828,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8652,6 +10854,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8673,6 +10880,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8694,6 +10906,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8715,6 +10932,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8736,6 +10958,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8757,6 +10984,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8778,6 +11010,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8799,6 +11036,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8820,6 +11062,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8841,6 +11088,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8862,6 +11114,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8883,6 +11140,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8904,6 +11166,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8925,6 +11192,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8946,6 +11218,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8967,6 +11244,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -8988,6 +11270,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9009,6 +11296,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9030,6 +11322,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9051,6 +11348,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9072,6 +11374,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9093,6 +11400,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9114,6 +11426,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9135,6 +11452,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9156,6 +11478,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9177,6 +11504,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9198,6 +11530,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9219,6 +11556,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9240,6 +11582,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9261,6 +11608,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9282,6 +11634,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9303,6 +11660,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9324,6 +11686,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9345,6 +11712,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9366,6 +11738,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9387,6 +11764,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9408,6 +11790,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9429,6 +11816,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9450,6 +11842,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9471,6 +11868,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9492,6 +11894,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9513,6 +11920,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9534,6 +11946,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9555,6 +11972,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9576,6 +11998,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9597,6 +12024,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9618,6 +12050,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9639,6 +12076,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9660,6 +12102,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9681,6 +12128,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9702,6 +12154,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9723,6 +12180,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9744,6 +12206,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9765,6 +12232,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9786,6 +12258,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9807,6 +12284,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9828,6 +12310,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9849,6 +12336,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9870,6 +12362,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9891,6 +12388,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9912,6 +12414,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9933,6 +12440,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9954,6 +12466,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9975,6 +12492,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -9996,6 +12518,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10017,6 +12544,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10038,6 +12570,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10059,6 +12596,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10080,6 +12622,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10101,6 +12648,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10122,6 +12674,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10143,6 +12700,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10164,6 +12726,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10185,6 +12752,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10206,6 +12778,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10227,6 +12804,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10248,6 +12830,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10269,6 +12856,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10290,6 +12882,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10311,6 +12908,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10332,6 +12934,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10353,6 +12960,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10374,6 +12986,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10395,6 +13012,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10416,6 +13038,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10437,6 +13064,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10458,6 +13090,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10479,6 +13116,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10500,6 +13142,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10521,6 +13168,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10542,6 +13194,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10563,6 +13220,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         },
         {
@@ -10584,6 +13246,11 @@
           "openingMm": [
             4.5,
             4.5
+          ],
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32",
+            "shaft:1/8"
           ]
         }
       ],
@@ -10636,6 +13303,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -5.4227950000000025,
@@ -10653,6 +13321,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             7.179204999999998,
@@ -10670,7 +13339,8 @@
       ],
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "fit": "screw:6-32"
     },
     {
       "kind": "model",
@@ -10716,6 +13386,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -2.2477950000000004,
@@ -10733,6 +13404,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             4.004204999999999,
@@ -10750,7 +13422,8 @@
       ],
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "fit": "screw:6-32"
     },
     {
       "kind": "model",
@@ -10796,6 +13469,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -11.595320000000001,
@@ -10813,6 +13487,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             13.332680000000002,
@@ -10830,7 +13505,8 @@
       ],
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "fit": "screw:8-32"
     },
     {
       "kind": "model",
@@ -10876,6 +13552,7 @@
         {
           "id": "screw-01",
           "kind": "pin",
+          "role": "head",
           "source": "detected",
           "position": [
             -24.295319999999993,
@@ -10893,6 +13570,7 @@
         {
           "id": "screw-02",
           "kind": "pin",
+          "role": "tip",
           "source": "detected",
           "position": [
             26.03268000000001,
@@ -10910,7 +13588,91 @@
       ],
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "fit": "screw:8-32"
+    },
+    {
+      "kind": "model",
+      "id": "shaft-collar-1-8",
+      "name": "1/8 in Shaft Collar",
+      "family": "collar",
+      "sku": {
+        "value": "276-2010",
+        "source": "filename"
+      },
+      "material": "steel",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "Shaft Collars/Shaft Collar (276-2010).step",
+        "sha256": "f926615ba64e9e39a45a49ea85310a30efdd45dd27b340aede95dee31a6511e7",
+        "declaredUnit": "inch"
+      },
+      "sizeMm": {
+        "x": 11,
+        "y": 11.302,
+        "z": 6.604
+      },
+      "volumeMm3": 527.816,
+      "mass": {
+        "densityGPerCm3": 7.85,
+        "massG": 4.143,
+        "basis": "volume x density"
+      },
+      "model": {
+        "file": "models/shaft-collar-1-8-bf0a49c8.glb",
+        "sha256": "bf0a49c8781b4457b072537155609c52dc717bec4954980f86ef90bd9978c306",
+        "bytes": 85644,
+        "triangles": 1846,
+        "rawTriangles": 2730,
+        "budgetTriangles": 400,
+        "maxErrorMm": 0.049,
+        "coordinates": "mm, Y up, origin at the centre of the bounding box"
+      },
+      "snapPoints": [
+        {
+          "id": "collar-01",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            -2.8119247113169447e-16,
+            -3.302,
+            -0.19105502157873938
+          ],
+          "axis": [
+            0,
+            -1,
+            0
+          ],
+          "diameterMm": 4.191,
+          "depthMm": 6.604,
+          "accepts": [
+            "shaft:1/8"
+          ]
+        },
+        {
+          "id": "collar-02",
+          "kind": "hole",
+          "source": "manual",
+          "position": [
+            -2.8119247113169447e-16,
+            3.302,
+            -0.19105502157873938
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "diameterMm": 4.191,
+          "depthMm": 6.604,
+          "accepts": [
+            "shaft:1/8"
+          ]
+        }
+      ],
+      "notes": []
     },
     {
       "kind": "cut",
@@ -10952,6 +13714,137 @@
         "missing": 0,
         "extra": 0
       },
+      "notes": [],
+      "fit": "shaft:1/4"
+    },
+    {
+      "kind": "cut",
+      "id": "shaft-square-1-8",
+      "name": "1/8 in Square Shaft",
+      "family": "shaft",
+      "sku": {
+        "value": "276-2011-001",
+        "source": "filename"
+      },
+      "material": "steel",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "Shafts (axles)/2 Shaft (276-2011-001).step",
+        "sha256": "87b2ad047ac896cd0a0cd67ca6f3e84597013db039b003ca676990078bdcf392",
+        "declaredUnit": "inch"
+      },
+      "sampleSizeMm": {
+        "x": 3.175,
+        "y": 3.175,
+        "z": 50.8
+      },
+      "mass": {
+        "densityGPerCm3": 7.85,
+        "basis": "profile area x length x density, computed in the app"
+      },
+      "cut": {
+        "sizeMm": 3.175,
+        "cornerRadiusMm": 0,
+        "rows": []
+      },
+      "verification": {
+        "checked": true,
+        "expectedHoles": 0,
+        "probedHoles": 0,
+        "matched": 0,
+        "missing": 0,
+        "extra": 0
+      },
+      "notes": [
+        "Standard drive shaft: 1/8 in square, the shaft that runs through a channel's square holes and turns in bearings."
+      ],
+      "fit": "shaft:1/8"
+    },
+    {
+      "kind": "model",
+      "id": "spacer-1-8-nylon",
+      "name": "1/8 in Nylon Spacer",
+      "family": "spacer",
+      "sku": {
+        "value": "275-1066-001",
+        "source": "filename"
+      },
+      "material": "nylon",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "Spacers/1_8 Nylon Spacer (275-1066-001).step",
+        "sha256": "eccaba3ea5bb7d7d12df07ea7fdbae8d334a40abeb0d748cb3e41bc26b79b2d6",
+        "declaredUnit": "inch"
+      },
+      "sizeMm": {
+        "x": 12.607,
+        "y": 3.175,
+        "z": 12.7
+      },
+      "volumeMm3": 338.335,
+      "mass": {
+        "densityGPerCm3": 1.14,
+        "massG": 0.386,
+        "basis": "volume x density"
+      },
+      "model": {
+        "file": "models/spacer-1-8-nylon-4edd5791.glb",
+        "sha256": "4edd579164a456b45130aab2415bb44c3ca705d322931fb6a4d9bee74fcc679c",
+        "bytes": 7152,
+        "triangles": 208,
+        "rawTriangles": 208,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0,
+        "coordinates": "mm, Y up, origin at the centre of the bounding box"
+      },
+      "snapPoints": [
+        {
+          "id": "spacer-01",
+          "kind": "hole",
+          "source": "detected",
+          "position": [
+            2.869060533268226e-15,
+            2.9929841107115556e-16,
+            1.5875
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 4.928,
+          "depthMm": 3.175,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
+        },
+        {
+          "id": "spacer-02",
+          "kind": "hole",
+          "source": "detected",
+          "position": [
+            2.869060533268226e-15,
+            2.9929841107115556e-16,
+            -1.5875
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 4.928,
+          "depthMm": 3.175,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
+        }
+      ],
       "notes": []
     },
     {
@@ -11009,7 +13902,11 @@
             -0.9999999973870026
           ],
           "diameterMm": 4.191,
-          "depthMm": 25.146
+          "depthMm": 25.146,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         },
         {
           "id": "standoff-02",
@@ -11026,7 +13923,11 @@
             0.9999999973870026
           ],
           "diameterMm": 4.191,
-          "depthMm": 25.146
+          "depthMm": 25.146,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         }
       ],
       "notes": []
@@ -11086,7 +13987,11 @@
             -0.9999999893336181
           ],
           "diameterMm": 4.191,
-          "depthMm": 12.446
+          "depthMm": 12.446,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         },
         {
           "id": "standoff-02",
@@ -11103,7 +14008,11 @@
             0.9999999893336181
           ],
           "diameterMm": 4.191,
-          "depthMm": 12.446
+          "depthMm": 12.446,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         }
       ],
       "notes": []
@@ -11163,7 +14072,11 @@
             1
           ],
           "diameterMm": 4.191,
-          "depthMm": 6.096
+          "depthMm": 6.096,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         },
         {
           "id": "standoff-02",
@@ -11180,7 +14093,11 @@
             -1
           ],
           "diameterMm": 4.191,
-          "depthMm": 6.096
+          "depthMm": 6.096,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         }
       ],
       "notes": []
@@ -11240,7 +14157,11 @@
             0.9999999895480124
           ],
           "diameterMm": 4.191,
-          "depthMm": 50.547
+          "depthMm": 50.547,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         },
         {
           "id": "standoff-02",
@@ -11257,7 +14178,11 @@
             -0.9999999895480124
           ],
           "diameterMm": 4.191,
-          "depthMm": 50.547
+          "depthMm": 50.547,
+          "accepts": [
+            "screw:6-32",
+            "screw:8-32"
+          ]
         }
       ],
       "notes": []
@@ -11317,7 +14242,11 @@
             -1
           ],
           "diameterMm": 6.35,
-          "depthMm": 25
+          "depthMm": 25,
+          "accepts": [
+            "shaft:1/8",
+            "shaft:1/4"
+          ]
         }
       ],
       "notes": []
@@ -11377,7 +14306,11 @@
             -1
           ],
           "diameterMm": 6.35,
-          "depthMm": 24.539736242691752
+          "depthMm": 24.539736242691752,
+          "accepts": [
+            "shaft:1/8",
+            "shaft:1/4"
+          ]
         }
       ],
       "notes": []
@@ -11437,7 +14370,11 @@
             -1
           ],
           "diameterMm": 6.35,
-          "depthMm": 24.579399494309406
+          "depthMm": 24.579399494309406,
+          "accepts": [
+            "shaft:1/8",
+            "shaft:1/4"
+          ]
         }
       ],
       "notes": []

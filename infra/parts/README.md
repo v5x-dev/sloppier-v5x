@@ -123,10 +123,11 @@ raw one, and nothing is hidden: a missed budget shows in the table.
 
 ## Known gaps
 
-- Snap Points are not complete for every part. The V5 motor's mounting bores do not open
-  onto the bounding box, so the motor has a hand-corrected rule (`ruled-bores`). The
-  5.5 W motor has no snap points: its STEP file has no bore that opens on the outside, so
-  it needs a corrected file or measured positions.
+- Snap Points are not complete for every part. The motors' mounting holes are measured
+  positions (`extraSnaps`), not detected bores. The 11 W motor's four 8-32 holes sit at the
+  corners of each end face, at (±21.95, ±14) mm in the STEP frame, found from the circle
+  edges of the STEP file. The 5.5 W motor's two 8-32 holes are on its end face at x = 0,
+  12.7 mm apart. Both are hand-measured, and the catalog's tests pin the 11 W positions.
 - The steel angle is not included as a Cut Part.
 - The steel plates miss their 1,200 triangle budget and keep 3,080 and 5,120. Each hole needs
   four walls (8 triangles), and nothing collapses within 0.5 mm, so reaching the budget would

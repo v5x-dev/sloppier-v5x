@@ -73,7 +73,11 @@ describe("Cut Part geometry", () => {
     const { geometry, volumeMm3, snapPoints } = generateCutPart(shaft, 100)
     expect(volumeMm3).toBeCloseTo(6.35 * 6.35 * 100, 6)
     expect(signedVolume(geometry.positions)).toBeCloseTo(volumeMm3, 0)
-    expect(snapPoints).toEqual([])
+    // A shaft has no holes, only a pin at each end, so it can be set into an opening.
+    expect(snapPoints.map((p) => [p.kind, p.position[0]])).toEqual([
+      ["pin", -50],
+      ["pin", 50],
+    ])
   })
 
   it("rejects a length that is not positive", () => {
@@ -88,11 +92,16 @@ describe("Cut Part hole positions", () => {
     expect(holes.filter((h) => h.wall === "side")).toHaveLength(82)
   })
 
-  it("gives each hole one Snap Point on the outside of its wall", () => {
+  it("gives each hole a Snap Point at both openings of its wall, facing out of the Part", () => {
+    // A hole is a through-hole, so a screw can come from either face of the web.
     const { snapPoints } = generateCutPart(channel, 444.5)
-    expect(snapPoints).toHaveLength(198)
+    expect(snapPoints).toHaveLength(396)
     const web = snapPoints.filter((s) => s.id.startsWith("hole-web"))
-    expect(web.every((s) => s.axis[1] === 1)).toBe(true)
+    const outside = web.filter((s) => !s.id.endsWith("-in"))
+    const inside = web.filter((s) => s.id.endsWith("-in"))
+    expect(outside).toHaveLength(inside.length)
+    expect(outside.every((s) => s.axis[1] === 1)).toBe(true)
+    expect(inside.every((s) => s.axis[1] === -1)).toBe(true)
     expect(snapPoints.every((s) => s.diameterMm === 4.5)).toBe(true)
   })
 
@@ -105,12 +114,14 @@ describe("Cut Part hole positions", () => {
     expect(xs[1] - xs[0]).toBeCloseTo(12.7, 6)
   })
 
-  it("gives the angle 41 holes per leg, on each leg's outer side", () => {
+  it("gives the angle 41 holes per leg, at both openings of each leg", () => {
     const { snapPoints } = generateCutPart(angle, 444.5)
-    expect(snapPoints).toHaveLength(82)
-    expect(snapPoints.filter((s) => s.id.startsWith("hole-web"))).toHaveLength(
-      41
-    )
+    expect(snapPoints).toHaveLength(164)
+    expect(
+      snapPoints.filter(
+        (s) => s.id.startsWith("hole-web") && !s.id.endsWith("-in")
+      )
+    ).toHaveLength(41)
   })
 })
 
