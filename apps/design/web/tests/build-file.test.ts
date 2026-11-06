@@ -11,6 +11,7 @@ import {
   mirrorRotation,
   parseBuildFile,
   planBuildImport,
+  summarizeBuildPlan,
   unityRotation,
 } from "@/design/build-file"
 import { alignToSnap, toWorldSnap } from "@/design/snap"
@@ -323,6 +324,46 @@ describe("planning an import", () => {
       mappings
     )
     expect(plan.rejected.map((r) => r.number)).toEqual([2])
+  })
+})
+
+describe("summarising a plan", () => {
+  it("counts importable, skipped, and unreadable entries, grouping skips by part id and reason", () => {
+    const plan = planBuildImport(
+      parsedOk(
+        fileWith([
+          goodPart("fake-motor"),
+          goodPart("mystery"),
+          goodPart("mystery"),
+          goodPart("fake-broken"),
+          null,
+        ])
+      ),
+      [
+        {
+          partId: "fake-motor",
+          catalogId: "motor-v5-smart-11w",
+          calibration: IDENTITY_CAL,
+          verified: true,
+          note: "test",
+        },
+        {
+          partId: "fake-broken",
+          catalogId: "no-such-part",
+          calibration: IDENTITY_CAL,
+          verified: true,
+          note: "test",
+        },
+      ]
+    )
+    const summary = summarizeBuildPlan(plan)
+    expect(summary.importable).toBe(1)
+    expect(summary.total).toBe(5)
+    expect(summary.skipped.map((g) => [g.partId, g.count])).toEqual([
+      ["mystery", 2],
+      ["fake-broken", 1],
+    ])
+    expect(summary.rejected.map((r) => r.number)).toEqual([5])
   })
 })
 

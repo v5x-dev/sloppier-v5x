@@ -165,7 +165,7 @@ function readVec(
       )
       return undefined
     }
-    values.push(value as number)
+    values.push(value)
   }
   return [values[0], values[1], values[2]]
 }
@@ -226,8 +226,9 @@ export function designPose(
     position[1] * unitsToMm,
     position[2] * unitsToMm
   )
+  const [turnX, turnY, turnZ] = calibration.modelTurnDeg
   const model = new Quaternion().setFromEuler(
-    new Euler(...(calibration.modelTurnDeg.map((d) => d * DEG) as Vec3), "XYZ")
+    new Euler(turnX * DEG, turnY * DEG, turnZ * DEG, "XYZ")
   )
   const turn = mirrorRotation(unityRotation(rotation)).multiply(model)
   const centre = pivotWorld.sub(
@@ -340,6 +341,36 @@ export function designFromPlan(
   const checked = parseDesignFile(designFileText(file))
   if (!checked.ok) return { ok: false, problems: checked.problems }
   return { ok: true, design: checked.design }
+}
+
+export type BuildSummary = {
+  /** Parts that will be imported. */
+  importable: number
+  /** Every part entry in the file. */
+  total: number
+  /** Skipped parts, grouped by part id and reason, in the order first seen. */
+  skipped: { partId: string; reason: string; count: number }[]
+  rejected: RejectedPart[]
+}
+
+/** The counts and groups the review step shows, so the user can decide. */
+export function summarizeBuildPlan(plan: BuildPlan): BuildSummary {
+  const groups = new Map<
+    string,
+    { partId: string; reason: string; count: number }
+  >()
+  for (const skip of plan.skipped) {
+    const key = `${skip.partId}\u0000${skip.reason}`
+    const group = groups.get(key)
+    if (group) group.count += 1
+    else groups.set(key, { partId: skip.partId, reason: skip.reason, count: 1 })
+  }
+  return {
+    importable: plan.parts.length,
+    total: plan.parts.length + plan.skipped.length + plan.rejected.length,
+    skipped: [...groups.values()],
+    rejected: plan.rejected,
+  }
 }
 
 function reject(

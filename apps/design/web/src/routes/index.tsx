@@ -35,12 +35,33 @@ import { ToggleGroup, ToggleGroupItem } from "@v5x/ui/components/toggle-group"
 import { useMutation, useQuery } from "convex/react"
 import { useRef, useState } from "react"
 import { DesignRow } from "@/components/design-row"
+import { BuildImportDialog } from "@/components/build-import-dialog"
 import { NameDialog } from "@/components/name-dialog"
+import {
+  BUILD_FILE_EXTENSION,
+  designFromPlan,
+  parseBuildFile,
+  planBuildImport,
+  summarizeBuildPlan,
+  type BuildSummary,
+} from "@/design/build-file"
 import {
   DESIGN_FILE_EXTENSION,
   designUpdates,
   parseDesignFile,
+  type ParsedDesign,
 } from "@/design/design-file"
+
+/** Most problems listed in an import message, so a big file cannot fill the page. */
+const MAX_IMPORT_PROBLEMS = 20
+
+/** A Protobot file waiting for the user to decide what to import. */
+type BuildReview = {
+  fileName: string
+  summary: BuildSummary
+  unverified: boolean
+  design: ParsedDesign
+}
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -175,6 +196,7 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const [view, setView] = useState<"active" | "archived">("active")
   const fileInput = useRef<HTMLInputElement>(null)
   const [importProblems, setImportProblems] = useState<string[]>()
+  const [buildReview, setBuildReview] = useState<BuildReview>()
 
   // The file is checked before anything is created. Its contents are stored on the server
   // before the editor opens, so no Design is ever left empty by an import. If storing fails,
@@ -188,15 +210,63 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
       setImportProblems(["The file could not be read."])
       return
     }
+    if (file.name.toLowerCase().endsWith(BUILD_FILE_EXTENSION.toLowerCase())) {
+      reviewBuild(file.name, text)
+      return
+    }
     const parsed = parseDesignFile(text)
     if (!parsed.ok) {
       setImportProblems(parsed.problems)
       return
     }
+    await createImported(parsed.design)
+  }
+
+  // A Protobot file is shown for review first, because part of it may not import. Nothing is
+  // created until the user confirms.
+  function reviewBuild(fileName: string, text: string) {
+    const parsed = parseBuildFile(text)
+    if (!parsed.ok) {
+      setImportProblems(parsed.problems)
+      return
+    }
+    const plan = planBuildImport(parsed)
+    const summary = summarizeBuildPlan(plan)
+    if (plan.parts.length === 0) {
+      setImportProblems(
+        [
+          `None of the ${summary.total} parts in this file can be imported yet.`,
+          ...summary.skipped.map(
+            (group) =>
+              `${group.count} × part "${group.partId}": ${group.reason}`
+          ),
+          ...summary.rejected.map(
+            (entry) => `Part ${entry.number}: ${entry.reason}`
+          ),
+        ].slice(0, MAX_IMPORT_PROBLEMS)
+      )
+      return
+    }
+    const built = designFromPlan(plan)
+    if (!built.ok) {
+      setImportProblems(built.problems)
+      return
+    }
+    setBuildReview({
+      fileName,
+      summary,
+      unverified: !plan.verified,
+      design: built.design,
+    })
+  }
+
+  // Creates a Design from a checked file and opens it. Its contents are stored before the
+  // editor opens, and a Design that fails to store is removed again.
+  async function createImported(design: ParsedDesign) {
     let designId: Id<"designs"> | undefined
     try {
-      designId = await create({ workspaceId, name: parsed.design.name })
-      for (const update of designUpdates(parsed.design)) {
+      designId = await create({ workspaceId, name: design.name })
+      for (const update of designUpdates(design)) {
         await appendUpdate({
           designId,
           updateId: crypto.randomUUID(),
@@ -256,7 +326,7 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
           <input
             ref={fileInput}
             type="file"
-            accept={`${DESIGN_FILE_EXTENSION},.json,application/json`}
+            accept={`${DESIGN_FILE_EXTENSION},${BUILD_FILE_EXTENSION},.json,application/json`}
             className="hidden"
             aria-label="Choose a Design file to import"
             onChange={(event) => {
@@ -306,6 +376,20 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
           </EmptyHeader>
           <EmptyContent>{newDesign}</EmptyContent>
         </Empty>
+      )}
+
+      {buildReview && (
+        <BuildImportDialog
+          fileName={buildReview.fileName}
+          summary={buildReview.summary}
+          unverified={buildReview.unverified}
+          onClose={() => setBuildReview(undefined)}
+          onImport={() => {
+            const { design } = buildReview
+            setBuildReview(undefined)
+            void createImported(design)
+          }}
+        />
       )}
 
       {suggestedName !== undefined && (
