@@ -174,6 +174,31 @@ describe("findSnapAlongRay", () => {
     rotation: [0, 0, 0, 1] as [number, number, number, number],
   }
 
+  it("sets a fastener pin only into an opening that takes its fit", () => {
+    const index = new SnapIndex(10)
+    index.add({
+      owner: "motor",
+      snapId: "screw-hole",
+      kind: "hole",
+      accepts: ["screw:8-32"],
+      ...target([0, 0, 0], [0, 1, 0]),
+    })
+    const pin = snap({ kind: "pin", role: "end", axis: [0, -1, 0] })
+    expect(
+      findSnapAlongRay([pin], down, index, 10, flat, 0, "shaft:1/8")
+    ).toBeNull()
+    const screw = findSnapAlongRay(
+      [pin],
+      down,
+      index,
+      10,
+      flat,
+      0,
+      "screw:8-32"
+    )
+    expect(screw?.target.snapId).toBe("screw-hole")
+  })
+
   it("takes the opening that faces the pointer when a ray passes both faces of a hole", () => {
     // A through-hole: one opening faces up, the other down, at the same point.
     const index = new SnapIndex(10)

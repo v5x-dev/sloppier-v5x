@@ -5,17 +5,22 @@
 // Connection is decided in a later change.
 
 import { Quaternion, Vector3 } from "three"
-import type { SnapPoint, Vec3 } from "@/catalog/types"
+import type { FitToken, SnapPoint, Vec3 } from "@/catalog/types"
 import type { Quat } from "./model"
 
 export type Pose = { position: Vec3; rotation: Quat }
 
-/** A Snap Point in the world frame. `axis` is a unit vector pointing out of its Part. */
+/**
+ * A Snap Point in the world frame. `axis` is a unit vector pointing out of its Part. `kind`
+ * and `accepts` tell a placement which openings a fastener can be set into.
+ */
 export type WorldSnap = {
   owner: string
   snapId: string
   position: Vector3
   axis: Vector3
+  kind?: SnapPoint["kind"]
+  accepts?: readonly FitToken[]
 }
 
 export function toWorldSnap(
@@ -151,7 +156,8 @@ export function findSnap(
   pose: Pose,
   index: SnapIndex,
   radius: number,
-  roll = 0
+  roll = 0,
+  fit?: FitToken
 ): SnapMatch | null {
   let best: SnapMatch | undefined
   for (const candidate of candidates) {
@@ -159,6 +165,7 @@ export function findSnap(
     for (const target of index.near(at, radius)) {
       const distance = at.distanceTo(target.position)
       if (distance > radius || (best && distance >= best.distance)) continue
+      if (!fitsOpening(target, candidate, fit)) continue
       const aligned = alignToSnap(candidate, target, pose.rotation, roll)
       best = { candidate, target, distance, pose: aligned }
     }
@@ -180,7 +187,8 @@ export function findSnapAlongRay(
   index: SnapIndex,
   radius: number,
   groundPose: Pose,
-  roll = 0
+  roll = 0,
+  fit?: FitToken
 ): SnapMatch | null {
   if (candidates.length === 0) return null
   // Called on every pointer move against every placed Snap Point, so it allocates little.
@@ -206,20 +214,37 @@ export function findSnapAlongRay(
       rank: distance + (facesAway ? FACES_AWAY_RANK_MM : 0),
     })
   }
-  if (reached.length === 0) return null
   reached.sort((a, b) => a.rank - b.rank)
-  const { target, distance } = reached[0]
-  let candidate = candidates[0]
-  let nearest = Infinity
-  for (const c of candidates) {
-    const at = toWorldSnap(c, groundPose).position.distanceTo(target.position)
-    if (at < nearest) {
-      nearest = at
-      candidate = c
+  for (const { target, distance } of reached) {
+    let candidate: SnapPoint | undefined
+    let nearest = Infinity
+    for (const c of candidates) {
+      if (!fitsOpening(target, c, fit)) continue
+      const at = toWorldSnap(c, groundPose).position.distanceTo(target.position)
+      if (at < nearest) {
+        nearest = at
+        candidate = c
+      }
     }
+    if (!candidate) continue
+    const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
+    return { candidate, target, distance, pose }
   }
-  const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
-  return { candidate, target, distance, pose }
+  return null
+}
+
+/**
+ * Whether a candidate Snap Point can be set into this target. A fastener's pin only goes
+ * into an opening that takes its fit, such as a shaft into a socket, or a screw into a hole
+ * it threads. Other pairs are not limited by fit.
+ */
+function fitsOpening(
+  target: WorldSnap,
+  candidate: SnapPoint,
+  fit: FitToken | undefined
+): boolean {
+  if (candidate.kind !== "pin" || fit === undefined) return true
+  return target.kind === "hole" && (target.accepts?.includes(fit) ?? false)
 }
 
 /**

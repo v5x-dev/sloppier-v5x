@@ -631,7 +631,13 @@ export class SceneStore {
 }
 
 function worldEntry(owner: string, snap: SnapPoint, pose: Pose): WorldSnap {
-  return { owner, snapId: snap.id, ...toWorldSnap(snap, pose) }
+  return {
+    owner,
+    snapId: snap.id,
+    kind: snap.kind,
+    ...(snap.accepts ? { accepts: snap.accepts } : {}),
+    ...toWorldSnap(snap, pose),
+  }
 }
 
 function lineGeometry(points: readonly number[]): BufferGeometry {

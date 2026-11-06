@@ -6,7 +6,7 @@
 // valid assembly. Turns are about the vertical axis, plus a roll about the snapped axis.
 
 import { Quaternion, Vector3 } from "three"
-import type { SnapPoint, Vec3 } from "@/catalog/types"
+import type { FitToken, SnapPoint, Vec3 } from "@/catalog/types"
 import {
   findLineSnapAlongRay,
   findSnap,
@@ -49,6 +49,8 @@ export type PlacementShape = {
   bounds: Bounds
   family: string
   sizeMm: Vec3
+  /** The fit this Part is, when it is a fastener. Its pins only go into openings that take it. */
+  catalog?: { fit?: FitToken }
 }
 
 export type PlacementResult = {
@@ -106,8 +108,17 @@ export function placementPose(
 ): PlacementResult {
   const free = freePose(shape, ground, turn)
   const candidates = placeableSnaps(shape.snapPoints)
+  const fit = shape.catalog?.fit
   const underPointer = ray
-    ? findSnapAlongRay(candidates, ray, index, SNAP_RADIUS_MM, free, turn.roll)
+    ? findSnapAlongRay(
+        candidates,
+        ray,
+        index,
+        SNAP_RADIUS_MM,
+        free,
+        turn.roll,
+        fit
+      )
     : null
   if (underPointer) return { pose: underPointer.pose, snap: underPointer }
   // A shaft is a line, so a hole or axle that takes its fit slides on anywhere along it.
@@ -127,7 +138,8 @@ export function placementPose(
     free,
     index,
     SNAP_RADIUS_MM,
-    turn.roll
+    turn.roll,
+    fit
   )
   return nearGround
     ? { pose: nearGround.pose, snap: nearGround }
