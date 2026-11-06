@@ -15,7 +15,6 @@
       "name": "@v5x/code-web",
       "version": "0.0.1",
       "dependencies": {
-        "@convex-dev/workos": "^0.0.3",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
@@ -26,13 +25,13 @@
         "@tanstack/react-hotkeys": "^0.22.0",
         "@tanstack/react-router": "1.170.46",
         "@tanstack/react-start": "1.169.4",
+        "@v5x/auth": "workspace:*",
         "@v5x/backend": "workspace:*",
         "@v5x/serial": "workspace:*",
         "@v5x/tokens": "workspace:*",
         "@v5x/ui": "workspace:*",
         "@vscode/codicons": "0.0.45",
         "@wasm-fmt/clang-format": "^23.1.1",
-        "@workos-inc/authkit-react": "^0.16.3",
         "convex": "^1.48.0",
         "cuelume": "0.2.8",
         "date-fns": "^4.4.0",
@@ -69,13 +68,20 @@
       "name": "@v5x/design-web",
       "version": "0.0.1",
       "dependencies": {
+        "@phosphor-icons/react": "^2.1.10",
         "@tanstack/react-router": "1.170.46",
         "@tanstack/react-start": "1.169.4",
+        "@v5x/auth": "workspace:*",
+        "@v5x/backend": "workspace:*",
         "@v5x/tokens": "workspace:*",
         "@v5x/ui": "workspace:*",
+        "convex": "^1.48.0",
+        "date-fns": "^4.4.0",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "tailwindcss": "^4",
+        "y-indexeddb": "^9.0.12",
+        "yjs": "^13.6.33",
       },
       "devDependencies": {
         "@alchemy.run/cloudflare": "^2.0.0-beta.85",
@@ -94,6 +100,7 @@
         "eslint": "^10",
         "typescript": "^6.0.2",
         "vite": "^8",
+        "vitest": "^5.0.5",
       },
     },
     "apps/film/web": {
@@ -120,6 +127,29 @@
         "eslint": "^10",
         "typescript": "^6.0.2",
         "vite": "^8",
+      },
+    },
+    "packages/auth": {
+      "name": "@v5x/auth",
+      "version": "0.0.0",
+      "dependencies": {
+        "@convex-dev/workos": "^0.0.3",
+        "@phosphor-icons/react": "^2.1.10",
+        "@tanstack/react-router": "1.170.46",
+        "@tanstack/react-start": "1.169.4",
+        "@v5x/backend": "workspace:*",
+        "@v5x/ui": "workspace:*",
+        "@workos-inc/authkit-react": "^0.16.3",
+        "convex": "^1.48.0",
+        "react": "^19.2.8",
+      },
+      "devDependencies": {
+        "@tanstack/eslint-config": "0.4.0",
+        "@types/node": "^22",
+        "@types/react": "^19",
+        "eslint": "^10",
+        "vite": "^8",
+        "vitest": "^5.0.5",
       },
     },
     "packages/backend": {
@@ -900,6 +930,8 @@
     "@unrs/resolver-binding-win32-ia32-msvc": ["@unrs/resolver-binding-win32-ia32-msvc@1.12.2", "", { "os": "win32", "cpu": "ia32" }, "sha512-WD9sY00OfpHVGfsnHZoA8jVT+esS/Bg8z8jzxp5BnDCjjwsuKsPQrzswwpFy4J1AUJbXPRfkpcX0mXrzeXW79g=="],
 
     "@unrs/resolver-binding-win32-x64-msvc": ["@unrs/resolver-binding-win32-x64-msvc@1.12.2", "", { "os": "win32", "cpu": "x64" }, "sha512-nAB74NfSNKknqQ1RrYj6uz8FcXEomu/MATJZxh/x+BArzN2U3JbOYC0APYzUIGhVY3m5hRxA8VPNdPBoG8txlA=="],
+
+    "@v5x/auth": ["@v5x/auth@workspace:packages/auth"],
 
     "@v5x/backend": ["@v5x/backend@workspace:packages/backend"],
 

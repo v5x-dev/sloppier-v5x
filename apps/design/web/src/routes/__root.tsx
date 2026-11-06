@@ -4,10 +4,15 @@ import {
   Scripts,
   createRootRoute,
 } from "@tanstack/react-router"
+import { AuthProviders } from "@v5x/auth/providers"
+import { Toaster } from "@v5x/ui/components/toast"
+import { ConvexReactClient } from "convex/react"
 
 import appCss from "@v5x/ui/globals.css?url"
 import tokenCss from "@v5x/tokens/design/web.css?url"
 import { fontPreloadsForRoute } from "@v5x/ui/lib/font-preloads"
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL)
 
 export const Route = createRootRoute({
   // The root head sees every match, so the leaf route picks the font preloads.
@@ -48,7 +53,13 @@ export const Route = createRootRoute({
     </main>
   ),
   shellComponent: RootDocument,
-  component: () => <Outlet />,
+  component: () => (
+    <AuthProviders convex={convex}>
+      <Toaster>
+        <Outlet />
+      </Toaster>
+    </AuthProviders>
+  ),
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {

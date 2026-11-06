@@ -112,6 +112,6 @@ and no school Chromebook. Real deployments add network round trips to Convex and
 Pierre, and the 4x CPU row is only a rough stand-in for lower-end hardware.
 
 To measure a production bundle, the demo sign-in gate is development-only. A
-measurement build can temporarily lift that gate in `src/lib/auth.ts`. Restore the
+measurement build can temporarily lift that gate in `packages/auth/src/auth.ts`. Restore the
 file before committing. The dev server (`bun run dev`) inflates cold-start timings
 through dev transforms, so use it only for relative comparisons.

@@ -1,10 +1,10 @@
-import { AuthGate } from "@/components/app/auth-gate"
+import { AuthGate } from "@v5x/auth/gate"
 import { ActionsBar } from "@/components/program/program-actions-bar"
 import { ProgramConnection } from "@/components/program/program-connection"
 import { Workbench } from "@/components/program/program-workbench"
 import { WorkbenchSource } from "@/lib/workbench-source"
 import { errorMessage } from "@/lib/errors"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@v5x/auth"
 import { preloadEditorHighlighter } from "@/lib/editor-theme"
 import { takePrefetchedProgramEditor } from "@/lib/program-editor-prefetch"
 import {

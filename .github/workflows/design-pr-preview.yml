@@ -1,0 +1,116 @@
+name: Design PR preview
+
+# Runs for every base branch, so each layer of a stacked pull request gets a preview.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: design-pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # Separate from Code's preview token, which cannot use alchemy's state store.
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_DESIGN_PREVIEW_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+
+jobs:
+  preview:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: design-pr-${{ github.event.pull_request.number }}
+      url: https://pr-${{ github.event.pull_request.number }}.design-preview.v5x.dev
+    env:
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_DEPLOY_KEY }}
+      VITE_WORKOS_CLIENT_ID: ${{ vars.PREVIEW_WORKOS_CLIENT_ID }}
+      PRODUCTION_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
+      DESIGN_DOMAIN: pr-${{ github.event.pull_request.number }}.design-preview.v5x.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - name: Validate preview settings
+        shell: bash
+        run: |
+          : "${CLOUDFLARE_API_TOKEN:?Missing CLOUDFLARE_DESIGN_PREVIEW_API_TOKEN}"
+          : "${CLOUDFLARE_ACCOUNT_ID:?Missing CLOUDFLARE_ACCOUNT_ID}"
+          : "${VITE_WORKOS_CLIENT_ID:?Missing PREVIEW_WORKOS_CLIENT_ID}"
+          : "${PRODUCTION_CONVEX_URL:?Missing VITE_CONVEX_URL}"
+          case "$CONVEX_DEPLOY_KEY" in
+            preview:*:*) ;;
+            *) echo "CONVEX_PREVIEW_DEPLOY_KEY must be a project preview deploy key" >&2; exit 1 ;;
+          esac
+      - name: Deploy isolated Convex backend
+        working-directory: packages/backend
+        run: |
+          # Convex looks for TypeScript in this package, while Bun hoists it.
+          mkdir -p node_modules
+          ln -s "$GITHUB_WORKSPACE/node_modules/typescript" node_modules/typescript
+          bunx convex deploy --preview-name "design-pr-${PR_NUMBER}" --typecheck enable --codegen disable \
+            --cmd-url-env-var-name PREVIEW_CONVEX_URL \
+            --cmd 'if [ "$PREVIEW_CONVEX_URL" = "$PRODUCTION_CONVEX_URL" ]; then echo "Preview must not use production Convex" >&2; exit 1; fi; printf "VITE_CONVEX_URL=%s\n" "$PREVIEW_CONVEX_URL" >> "$GITHUB_ENV"'
+      - name: Deploy the stage
+        working-directory: apps/design/web
+        # Bash here turns on pipefail, so a failed deploy is not hidden by tee.
+        shell: bash
+        run: bunx alchemy deploy --stage "pr-${PR_NUMBER}" --no-input --yes 2>&1 | tee "$RUNNER_TEMP/deploy.log"
+      - name: Cache converted models
+        if: hashFiles('infra/parts/manifest.json') != ''
+        uses: actions/cache@v4
+        with:
+          path: infra/parts/.cache
+          key: design-parts-${{ hashFiles('infra/parts/**', '!infra/parts/.cache/**') }}
+      - name: Build and upload models, then point the site at them
+        if: hashFiles('infra/parts/manifest.json') != ''
+        working-directory: apps/design/web
+        shell: bash
+        run: |
+          bucket=$(grep -oP "modelsBucket: '\K[^']+" "$RUNNER_TEMP/deploy.log" | tail -1)
+          host=$(grep -oP "modelsBaseUrl: '\K[^']+" "$RUNNER_TEMP/deploy.log" | tail -1)
+          : "${bucket:?The stage did not report a models bucket}"
+          : "${host:?The stage did not report a models host}"
+          bun run --cwd ../../infra/parts build
+          R2_BUCKET="$bucket" bun run --cwd ../../infra/parts upload
+          VITE_DESIGN_MODELS_URL="https://${host}" bunx alchemy deploy --stage "pr-${PR_NUMBER}" --no-input --yes
+
+  cleanup:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Destroy reads the stage from its saved state, so these only need to be present.
+      VITE_WORKOS_CLIENT_ID: ${{ vars.PREVIEW_WORKOS_CLIENT_ID }}
+      VITE_CONVEX_URL: https://closed.invalid
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - name: Destroy the stage
+        working-directory: apps/design/web
+        run: bunx alchemy destroy --stage "pr-${PR_NUMBER}" --no-input --yes
+      - name: Delete Convex preview if it exists
+        env:
+          CONVEX_MANAGEMENT_TOKEN: ${{ secrets.CONVEX_MANAGEMENT_TOKEN }}
+          CONVEX_PREVIEW_PREFIX: design-pr
+        run: python3 scripts/delete-convex-pr-preview.py

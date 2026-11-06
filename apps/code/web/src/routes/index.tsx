@@ -12,7 +12,7 @@ import {
   UsersIcon,
 } from "@phosphor-icons/react"
 import { Link, createFileRoute } from "@tanstack/react-router"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@v5x/auth"
 import { api } from "@v5x/backend/api"
 import type { Doc, Id } from "@v5x/backend/dataModel"
 import { Avatar, AvatarFallback, AvatarImage } from "@v5x/ui/components/avatar"
@@ -80,7 +80,7 @@ import {
   starterTileClassName,
   starterTileStyle,
 } from "@/components/program/starter-tile"
-import { AuthGate } from "@/components/app/auth-gate"
+import { AuthGate } from "@v5x/auth/gate"
 import { RepositoryStatusBadge } from "@/components/repository/repository-status-badge"
 import { errorMessage } from "@/lib/errors"
 import { prefetchProgramEditor } from "@/lib/program-editor-prefetch"
