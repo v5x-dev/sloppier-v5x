@@ -112,7 +112,10 @@ export function SelectionPanel(props: SelectionPanelProps) {
         {facts.position && (
           <PositionFields position={facts.position} onMoveTo={props.onMoveTo} />
         )}
-        <TurnBy onTurn={props.onTurn} />
+        <TurnBy
+          onTurn={props.onTurn}
+          aboutFastener={props.pivot !== undefined}
+        />
         <div className="flex items-end gap-2">
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             Snap turns to
@@ -255,8 +258,10 @@ function PositionFields({
 
 function TurnBy({
   onTurn,
+  aboutFastener,
 }: {
   onTurn: (degrees: number, axis: number) => void
+  aboutFastener: boolean
 }) {
   const [degrees, setDegrees] = useState("90")
   const [axis, setAxis] = useState(1)
@@ -281,18 +286,24 @@ function TurnBy({
         />
       </label>
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-        Around
-        <NativeSelect
-          value={String(axis)}
-          onChange={(event) => setAxis(Number(event.target.value))}
-          aria-label="Turn around axis"
-        >
-          {AXIS_NAMES.map((name, i) => (
-            <NativeSelectOption key={name} value={String(i)}>
-              {name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        {aboutFastener ? "Fastener axis" : "Around"}
+        {aboutFastener ? (
+          <span className="flex h-7 items-center px-2 text-foreground">
+            Selected screw or shaft
+          </span>
+        ) : (
+          <NativeSelect
+            value={String(axis)}
+            onChange={(event) => setAxis(Number(event.target.value))}
+            aria-label="Turn around axis"
+          >
+            {AXIS_NAMES.map((name, i) => (
+              <NativeSelectOption key={name} value={String(i)}>
+                {name}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        )}
       </label>
       <Button type="submit" size="sm" variant="secondary" disabled={!valid}>
         Turn
