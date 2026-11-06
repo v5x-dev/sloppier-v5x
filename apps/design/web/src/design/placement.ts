@@ -66,6 +66,14 @@ export function groundRotation(
   return quatOf(turn.multiply(rest))
 }
 
+/**
+ * The Snap Points a Part being placed can offer. A screw goes in head first, so its tip is
+ * never the end that is set into an opening; the tip is still a target for other Parts.
+ */
+export function placeableSnaps(snapPoints: readonly SnapPoint[]): SnapPoint[] {
+  return snapPoints.filter((s) => !(s.kind === "pin" && s.role === "tip"))
+}
+
 /** The pose a Part takes with nothing to snap to: on the grid, with its lowest point on the ground. */
 export function freePose(
   shape: PlacementShape,
@@ -97,21 +105,15 @@ export function placementPose(
   ray?: { origin: Vector3; direction: Vector3 }
 ): PlacementResult {
   const free = freePose(shape, ground, turn)
+  const candidates = placeableSnaps(shape.snapPoints)
   const underPointer = ray
-    ? findSnapAlongRay(
-        shape.snapPoints,
-        ray,
-        index,
-        SNAP_RADIUS_MM,
-        free,
-        turn.roll
-      )
+    ? findSnapAlongRay(candidates, ray, index, SNAP_RADIUS_MM, free, turn.roll)
     : null
   if (underPointer) return { pose: underPointer.pose, snap: underPointer }
   // A shaft is a line, so a hole or axle that takes its fit slides on anywhere along it.
   const onShaft = ray
     ? findLineSnapAlongRay(
-        shape.snapPoints,
+        candidates,
         ray,
         index.lines(),
         SNAP_RADIUS_MM,
@@ -121,7 +123,7 @@ export function placementPose(
     : null
   if (onShaft) return { pose: onShaft.pose, snap: onShaft }
   const nearGround = findSnap(
-    shape.snapPoints,
+    candidates,
     free,
     index,
     SNAP_RADIUS_MM,

@@ -658,7 +658,7 @@ function Workspace(
     const ray: Ray = store.rayAt(ndc, activeCamera())
     const step = GRID_MM
     const handle = drag.handle
-    let plan: Plan | undefined
+    let plan: Plan
     if (handle.kind === "axis") {
       const t = closestOnAxis(ray, drag.pivot, drag.axis)
       const raw = t - (drag.startT ?? t)
@@ -693,7 +693,6 @@ function Workspace(
         { alone: drag.alone }
       )
     }
-    if (!plan) return
     drag.plan = plan
     drag.moved = plan.changes.some((c, i) => {
       const t = drag.targets[i]
@@ -863,19 +862,27 @@ function Workspace(
     latest.current.onSelection(next)
   }
 
+  /**
+   * Frames the selection when something is selected, so a Part can be inspected up close,
+   * and every Part otherwise.
+   */
   function frameAll() {
     const state = live.current
     const controls = state.controls
-    const { parts } = readPlacedParts(latest.current.doc)
+    const selection = latest.current.selection
+    const all = readPlacedParts(latest.current.doc).parts
+    const parts =
+      selection.size > 0 ? all.filter((p) => selection.has(p.id)) : all
     if (!controls || parts.length === 0) return
+    const margin = selection.size > 0 ? 60 : 150
     const center = new Vector3()
     for (const p of parts) center.add(new Vector3(...p.position))
     center.divideScalar(parts.length)
-    let radius = 150
+    let radius = margin
     for (const p of parts)
       radius = Math.max(
         radius,
-        center.distanceTo(new Vector3(...p.position)) + 150
+        center.distanceTo(new Vector3(...p.position)) + margin
       )
     const current = state.active ?? camera
     const direction = current.position.clone().sub(controls.target).normalize()

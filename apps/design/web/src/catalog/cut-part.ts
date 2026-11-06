@@ -420,29 +420,46 @@ function snapPointsOf(
   )
 }
 
-/** One Snap Point per hole, on the outside face of its wall, pointing out of the Part. */
+/**
+ * Two Snap Points per hole, one at each opening of the through-hole: on the outside face of
+ * its wall, and on the inside face. Each points out of the Part, so a screw can come from
+ * either side. The inside opening is the one a Part set inside the channel meets.
+ */
 function holeSnaps(plate: Plate): SnapPoint[] {
   const P = plate.holeAxis
   const A = X
   const B = 3 - P - A
-  const face = plate.outward < 0 ? plate.min[P] : plate.max[P]
   const thickness = plate.max[P] - plate.min[P]
-  return plate.holes.map((h) => {
-    const position: [number, number, number] = [0, 0, 0]
-    position[A] = h.a
-    position[B] = h.b
-    position[P] = face
-    return {
-      id: `hole-${h.wall}-${String(h.index).padStart(3, "0")}`,
-      kind: "hole",
-      source: "computed",
-      shape: "square",
-      position: partPoint(position),
-      axis: partPoint(scale(AXES[P], plate.outward)),
-      diameterMm: h.sizeMm,
-      depthMm: thickness,
-    }
-  })
+  const openings = [
+    {
+      suffix: "",
+      sign: plate.outward,
+      face: plate.outward < 0 ? plate.min[P] : plate.max[P],
+    },
+    {
+      suffix: "-in",
+      sign: -plate.outward,
+      face: plate.outward < 0 ? plate.max[P] : plate.min[P],
+    },
+  ] as const
+  return plate.holes.flatMap((h) =>
+    openings.map((opening) => {
+      const position: [number, number, number] = [0, 0, 0]
+      position[A] = h.a
+      position[B] = h.b
+      position[P] = opening.face
+      return {
+        id: `hole-${h.wall}-${String(h.index).padStart(3, "0")}${opening.suffix}`,
+        kind: "hole" as const,
+        source: "computed" as const,
+        shape: "square" as const,
+        position: partPoint(position),
+        axis: partPoint(scale(AXES[P], opening.sign)),
+        diameterMm: h.sizeMm,
+        depthMm: thickness,
+      }
+    })
+  )
 }
 
 function cutVolume(part: CutPart, length: number): number {

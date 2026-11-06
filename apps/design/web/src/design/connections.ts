@@ -83,6 +83,15 @@ export function connectionsFor(
   const found: ConnectionDraft[] = []
   for (const host of hosts) {
     if (host.id === fastener.id) continue
+    // A through-hole has an opening on each face, and both lie on the fastener's line. The
+    // Connection is made once per hole, through the first opening that matches.
+    const claimed = new Set<string>()
+    const once = (snap: SnapPoint) => {
+      const key = openingKey(snap)
+      if (claimed.has(key)) return false
+      claimed.add(key)
+      return true
+    }
     if (fastener.role === "screw") {
       const shank = shankOf(fastener)
       const pins = fastener.snaps.filter((snap) => snap.kind === "pin")
@@ -93,15 +102,16 @@ export function connectionsFor(
           pinEntersHole(toWorldSnap(pin, fastener.pose), there)
         )
         if (endOn) {
-          found.push({
-            fastener: fastener.id,
-            host: host.id,
-            fastenerSnap: endOn.id,
-            hostSnap: hole.id,
-          })
+          if (once(hole))
+            found.push({
+              fastener: fastener.id,
+              host: host.id,
+              fastenerSnap: endOn.id,
+              hostSnap: hole.id,
+            })
           continue
         }
-        if (shank && shankPasses(shank, there))
+        if (shank && shankPasses(shank, there) && once(hole))
           found.push({
             fastener: fastener.id,
             host: host.id,
@@ -114,7 +124,7 @@ export function connectionsFor(
         if (point.kind !== "hole" && point.kind !== "axle") continue
         if (!takesFit(point, fastener.fit)) continue
         const there = toWorldSnap(point, host.pose)
-        if (shaftPasses(line, fastener.lengthMm, there))
+        if (shaftPasses(line, fastener.lengthMm, there) && once(point))
           found.push({
             fastener: fastener.id,
             host: host.id,
@@ -124,6 +134,11 @@ export function connectionsFor(
     }
   }
   return found
+}
+
+/** The opening a Snap Point belongs to: a hole's two faces share one key. */
+function openingKey(snap: SnapPoint): string {
+  return snap.id.replace(/-in$/, "")
 }
 
 /** Whether a screw's end pin sits in an opening: at the same place, along the same axis. */
