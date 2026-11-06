@@ -90,7 +90,11 @@ export function restore(
  * Runs one local action in a single transaction, and records what it changed. Each entry
  * in `refs` is read before and after, so the whole action is one undo step.
  */
-function recorded(doc: Y.Doc, refs: readonly Ref[], fn: () => void): void {
+export function recorded(
+  doc: Y.Doc,
+  refs: readonly Ref[],
+  fn: () => void
+): void {
   const unique = [...new Map(refs.map((r) => [`${r.map}/${r.id}`, r])).values()]
   const before = unique.map((ref) => snapshot(doc, ref))
   doc.transact(fn, LOCAL_ORIGIN)
@@ -244,7 +248,10 @@ function writeLinks(doc: Y.Doc, links: readonly Link[]): void {
 }
 
 /** The ids of every Connection that touches one of these Parts. */
-function connectionIdsTouching(doc: Y.Doc, ids: ReadonlySet<string>): string[] {
+export function connectionIdsTouching(
+  doc: Y.Doc,
+  ids: ReadonlySet<string>
+): string[] {
   const found: string[] = []
   const connections = connectionsMap(doc)
   for (const key of connections.keys()) {
@@ -297,6 +304,35 @@ export function breakConnections(doc: Y.Doc, ids: Iterable<string>): void {
 }
 
 export type PoseChange = { id: string; position: Vec3; rotation: Quat }
+
+/**
+ * Moves or turns Parts and, in the same step, breaks every Connection that touches the
+ * Parts named in `breakParts`. One call is one undo step.
+ */
+export function commitPoses(
+  doc: Y.Doc,
+  changes: readonly PoseChange[],
+  breakParts: Iterable<string> = []
+): void {
+  const broken = new Set(breakParts)
+  const links = connectionIdsTouching(doc, broken)
+  recorded(
+    doc,
+    [
+      ...changes.map((c) => ({ map: "parts" as const, id: c.id })),
+      ...links.map((id) => ({ map: "connections" as const, id })),
+    ],
+    () => {
+      for (const change of changes) {
+        const entry = partsMap(doc).get(change.id)
+        if (!entry) continue
+        entry.set("position", [...change.position])
+        entry.set("rotation", [...change.rotation])
+      }
+      for (const id of links) connectionsMap(doc).delete(id)
+    }
+  )
+}
 
 /** Moves or turns several Parts in one edit. A missing Part is left alone. */
 export function setPoses(doc: Y.Doc, changes: readonly PoseChange[]): void {
