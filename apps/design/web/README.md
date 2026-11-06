@@ -26,6 +26,21 @@ cross-section and hole rows, and `cut-part.ts` generates them at any length.
 To change the catalog, edit `infra/parts/manifest.json` and run the pipeline. See
 `infra/parts/README.md`.
 
+## The editor
+
+- A Design's Parts live in one Yjs map, `parts`, keyed by a random id. `src/design/document.ts`
+  owns that format. Each Part has `catalog`, `position`, `rotation` (a quaternion, x y z w),
+  `color`, and `lengthMm` for a Cut Part, in millimetres with Y up.
+- `src/design/` is pure code with unit tests: the document, snap math, and placement.
+  `src/viewport/` is the 3D code, lazy-loaded when a Design opens. `SceneStore` draws one
+  instanced mesh per (Part, length) and updates matrices directly, so React does not
+  re-render per frame.
+- `VITE_DESIGN_MODELS_URL` is the base the Part models load from. Without it, fixed Parts
+  draw as boxes and the editor says why. Pull request previews set it for you.
+- The dev server exposes `window.__designBench` for the benchmark. Production builds do not.
+- `benchmarks/viewport.mjs` loads 2,000 Parts into a Design and reports frame time and draw
+  calls. It needs a dev server and a WorkOS emulator; its header says how to run it.
+
 ## Deploying with alchemy
 
 `alchemy.run.ts` defines the Cloudflare Worker for this app using

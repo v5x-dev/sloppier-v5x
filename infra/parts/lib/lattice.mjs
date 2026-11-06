@@ -41,6 +41,23 @@ export function probeAxis(mesh, axis, stepMm = 0.25) {
 }
 
 /**
+ * For a STEP file drawn with its web normal to +Y instead of +Z, such as the steel
+ * C-channel and the U-channel. Rotates probed holes and the bounds centre about the length
+ * axis, (x, y, z) -> (x, -z, y), so the rows can be written and compared in the same frame
+ * as every other channel. A web hole (probed along Y, u = z, v = x) becomes a probe along Z
+ * (u = x, v = -z). A side hole (probed along Z, u = x, v = y) becomes a probe along Y
+ * (u = y, v = x).
+ */
+export function rotateWebToZ(holes, centre) {
+  return {
+    holes: holes.map((h) =>
+      h.axis === 1 ? { ...h, axis: 2, u: h.v, v: -h.u } : { ...h, axis: 1, u: h.v, v: h.u }
+    ),
+    centre: [centre[0], -centre[2], centre[1]],
+  };
+}
+
+/**
  * Compares rows against probed holes. `probed` holes are in STEP coordinates; the
  * bounds centre is subtracted so both sides use the catalog's frame.
  * Returns the counts and the holes that did not match on either side.

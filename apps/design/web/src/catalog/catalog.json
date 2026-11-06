@@ -166,6 +166,196 @@
       "notes": []
     },
     {
+      "kind": "cut",
+      "id": "channel-1x2x1-steel",
+      "name": "1x2x1 Steel C-Channel",
+      "family": "channel",
+      "sku": {
+        "value": "276-2906",
+        "source": "filename"
+      },
+      "material": "steel",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "C Channels/Steel/1x2x1x35 Steel C-Channel (276-2906).step",
+        "sha256": "4eac3a6095ac521a01f65aefc4a8295e3451bf253dc0abaf595768b9e03450dc",
+        "declaredUnit": "inch"
+      },
+      "sampleSizeMm": {
+        "x": 444.5,
+        "y": 13.868,
+        "z": 25.4
+      },
+      "mass": {
+        "densityGPerCm3": 7.85,
+        "basis": "profile area x length x density, computed in the app"
+      },
+      "cut": {
+        "widthMm": 25.4,
+        "depthMm": 13.868,
+        "thicknessMm": 1.168,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": -6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -0.584,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.516,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      },
+      "verification": {
+        "checked": true,
+        "expectedHoles": 157,
+        "probedHoles": 157,
+        "matched": 157,
+        "missing": 0,
+        "extra": 0
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
+      "kind": "cut",
+      "id": "channel-u-2x2x2-aluminum",
+      "name": "2x2x2 Aluminum U-Channel",
+      "family": "channel",
+      "sku": {
+        "value": "276-7285",
+        "source": "filename"
+      },
+      "material": "aluminum",
+      "source": {
+        "repo": "VEX V5 CAD downloads, mirrored by TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "url": "https://github.com/TlorschCode/VEX-V5-Parts-Solidworks-Download",
+        "commit": "c49519327b827f77db3d26052e9486c2db8b4463",
+        "path": "C Channels/U-Channel 2x2x2x20 (276-7285).step",
+        "sha256": "15363d9d86750ead36e321e5f2b9cb50e91cf33d80e52d32e4a5fa12d50754fb",
+        "declaredUnit": "inch"
+      },
+      "sampleSizeMm": {
+        "x": 254,
+        "y": 25.832,
+        "z": 29
+      },
+      "mass": {
+        "densityGPerCm3": 2.7,
+        "basis": "profile area x length x density, computed in the app"
+      },
+      "cut": {
+        "widthMm": 29,
+        "depthMm": 25.832,
+        "thicknessMm": 1.6,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": 6.55,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 0.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -6.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": -7.766,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -1.366,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.934,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 10.384,
+            "pitch": 63.5,
+            "phase": 0
+          }
+        ]
+      },
+      "verification": {
+        "checked": true,
+        "expectedHoles": 127,
+        "probedHoles": 127,
+        "matched": 127,
+        "missing": 0,
+        "extra": 0
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
       "kind": "model",
       "id": "gusset-30-flat",
       "name": "30 Degree Flat Gusset",
@@ -195,12 +385,12 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/gusset-30-flat-cd72b9fa.glb",
-        "sha256": "cd72b9fa4d5222ef6186c4b06aba52a40a2d7cd9127879097fac878d0e786b3b",
-        "bytes": 16688,
+        "file": "models/gusset-30-flat-71ffc513.glb",
+        "sha256": "71ffc513ecd9e0dbbe65ddf7d8111ab6b7a109279482c54dcaa99381e809ac18",
+        "bytes": 9936,
         "triangles": 544,
         "rawTriangles": 544,
-        "budgetTriangles": 600,
+        "budgetTriangles": 1000,
         "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
@@ -356,13 +546,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/gusset-90-flat-b9faea7a.glb",
-        "sha256": "b9faea7a5408012b2a81727da99764702012bcf981f1e3afa1feac208761bde0",
-        "bytes": 18196,
-        "triangles": 600,
+        "file": "models/gusset-90-flat-e2cecfa4.glb",
+        "sha256": "e2cecfa4ba288cc8871fd6b73ba2da6295f61170c77bc43d0c4c88b21177c4c2",
+        "bytes": 11312,
+        "triangles": 680,
         "rawTriangles": 680,
-        "budgetTriangles": 600,
-        "maxErrorMm": 0.037,
+        "budgetTriangles": 1000,
+        "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -546,13 +736,13 @@
         "basis": "not estimated"
       },
       "model": {
-        "file": "models/motor-v5-smart-11w-d5956bac.glb",
-        "sha256": "d5956bace093c97b16a7dc0631b3be8804ebfc03b011409a731456f72af9475f",
-        "bytes": 97972,
-        "triangles": 2000,
+        "file": "models/motor-v5-smart-11w-54868fb8.glb",
+        "sha256": "54868fb8742d437ff27b1e1ace5f3c3894b008433f90b72d6e8225986e15ac6e",
+        "bytes": 622808,
+        "triangles": 23987,
         "rawTriangles": 57151,
-        "budgetTriangles": 2000,
-        "maxErrorMm": 1.494,
+        "budgetTriangles": 22000,
+        "maxErrorMm": 0.299,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -727,17 +917,19 @@
         "basis": "not estimated"
       },
       "model": {
-        "file": "models/motor-v5-smart-5-5w-621452d7.glb",
-        "sha256": "621452d7f49fec4bf78a5d5c5f5149247787ae5f6f521050c22d66454cfb9376",
-        "bytes": 43868,
-        "triangles": 1200,
+        "file": "models/motor-v5-smart-5-5w-277fc30e.glb",
+        "sha256": "277fc30e29a65b24570bf4b86dd6dbfe770b4ba5af803dc7598e27aa8902d77a",
+        "bytes": 39436,
+        "triangles": 2484,
         "rawTriangles": 2484,
-        "budgetTriangles": 1200,
-        "maxErrorMm": 0.235,
+        "budgetTriangles": 6000,
+        "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [],
-      "notes": []
+      "notes": [
+        "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
+      ]
     },
     {
       "kind": "model",
@@ -769,13 +961,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/nut-8-32-hex-6e374cf8.glb",
-        "sha256": "6e374cf886525ca1bdb7336f4edf4f740c291e91c093f9e818dfca377df4d815",
-        "bytes": 8096,
-        "triangles": 150,
+        "file": "models/nut-8-32-hex-2dcda901.glb",
+        "sha256": "2dcda9018baf535bb4e8394c3e1df2a156cb611d97fc826e4fc225aafdc4811b",
+        "bytes": 10020,
+        "triangles": 400,
         "rawTriangles": 616,
-        "budgetTriangles": 150,
-        "maxErrorMm": 0.086,
+        "budgetTriangles": 400,
+        "maxErrorMm": 0.022,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -846,12 +1038,12 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/plate-5x15-steel-9364a7d3.glb",
-        "sha256": "9364a7d30fe6040df31c9ac2bb7ae6abcfb784de939a0cc8c40b08971b7be855",
-        "bytes": 73688,
+        "file": "models/plate-5x15-steel-fef0f72d.glb",
+        "sha256": "fef0f72dfdacb72d40a09815e29fa059384f938629dacee0eced9971b6369532",
+        "bytes": 41228,
         "triangles": 3080,
         "rawTriangles": 3080,
-        "budgetTriangles": 1200,
+        "budgetTriangles": 6000,
         "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
@@ -4449,7 +4641,8 @@
         }
       ],
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 1,368 for 171 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {
@@ -4482,12 +4675,12 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/plate-5x25-steel-3ccaba8f.glb",
-        "sha256": "3ccaba8f6844247fd4723b40e440b60ebf458638cd54634ec8b660f07f4d1157",
-        "bytes": 119596,
+        "file": "models/plate-5x25-steel-9fe51a91.glb",
+        "sha256": "9fe51a91c35dd283e644f235ab29a24a54883ba0ce5a7d9ee623ba01a5fef724",
+        "bytes": 66012,
         "triangles": 5120,
         "rawTriangles": 5120,
-        "budgetTriangles": 1200,
+        "budgetTriangles": 6000,
         "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
@@ -10395,7 +10588,8 @@
         }
       ],
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 2,248 for 281 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {
@@ -10429,13 +10623,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-6-32-1-2-40a5e993.glb",
-        "sha256": "40a5e993e7623652b6a2d3175bcf67c8270f865442a996530164b9045ef9f087",
-        "bytes": 16792,
-        "triangles": 386,
+        "file": "models/screw-6-32-1-2-aff909c3.glb",
+        "sha256": "aff909c39e3f3ce0064a8ecc8f01bfadcf1cfa9c6c1973e592fe377a0eb28bf3",
+        "bytes": 4492,
+        "triangles": 192,
         "rawTriangles": 490,
-        "budgetTriangles": 150,
-        "maxErrorMm": 0.02,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10474,7 +10668,9 @@
           "depthMm": 12.602
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "model",
@@ -10507,13 +10703,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-6-32-1-4-c235e932.glb",
-        "sha256": "c235e9326e1ebdef12c615ac8d6cebd54a9caeffddd7edae0996a7ff3923e8da",
-        "bytes": 16956,
-        "triangles": 390,
+        "file": "models/screw-6-32-1-4-b4f5101a.glb",
+        "sha256": "b4f5101ad80fd2434fceb8f72e3937631b264eb138e14fdd58eab8830534a901",
+        "bytes": 4500,
+        "triangles": 192,
         "rawTriangles": 490,
-        "budgetTriangles": 150,
-        "maxErrorMm": 0.02,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10552,7 +10748,9 @@
           "depthMm": 6.252
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "model",
@@ -10585,13 +10783,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-8-32-1-93bf2ea9.glb",
-        "sha256": "93bf2ea939af87f759b161cd26f4dfe51bb0759629194f9207c5437d5e1c2f3b",
-        "bytes": 17000,
-        "triangles": 402,
+        "file": "models/screw-8-32-1-370046b6.glb",
+        "sha256": "370046b65dc88b80c93c4b2c0ae5320cf5a268db574f8bb85c192bc188dc009a",
+        "bytes": 4300,
+        "triangles": 176,
         "rawTriangles": 490,
-        "budgetTriangles": 150,
-        "maxErrorMm": 0.018,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10630,7 +10828,9 @@
           "depthMm": 24.928
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "model",
@@ -10663,13 +10863,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/screw-8-32-2-315762b4.glb",
-        "sha256": "315762b488c5bab2e1be9ad6fb2d83df52170f8ab0407d0e2249bc2301ffaf66",
-        "bytes": 17200,
-        "triangles": 398,
+        "file": "models/screw-8-32-2-3d158bc1.glb",
+        "sha256": "3d158bc1250f0eab82bc1fbd8708b543b61a358e990ab3dd76341859194fe3fb",
+        "bytes": 4492,
+        "triangles": 192,
         "rawTriangles": 458,
-        "budgetTriangles": 150,
-        "maxErrorMm": 0.017,
+        "budgetTriangles": 300,
+        "maxErrorMm": 0.03,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10708,7 +10908,9 @@
           "depthMm": 50.328
         }
       ],
-      "notes": []
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ]
     },
     {
       "kind": "cut",
@@ -10782,13 +10984,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/standoff-1-37eb37bc.glb",
-        "sha256": "37eb37bc14796022e21922756e1353c10356a7a6917e9f91f557abe9dcafc503",
-        "bytes": 14092,
-        "triangles": 300,
+        "file": "models/standoff-1-fe1c2b94.glb",
+        "sha256": "fe1c2b9490d31a20a0eebb8919ea42a8d97f38c62205327f218cd8125668a23e",
+        "bytes": 9064,
+        "triangles": 396,
         "rawTriangles": 396,
-        "budgetTriangles": 300,
-        "maxErrorMm": 0.014,
+        "budgetTriangles": 800,
+        "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10859,13 +11061,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/standoff-1-2-82aa46ca.glb",
-        "sha256": "82aa46ca2d151cadc1ad92cebc3f8cc97cdeed72b9db36b276621686b1ab6544",
-        "bytes": 13940,
-        "triangles": 300,
+        "file": "models/standoff-1-2-cbd57006.glb",
+        "sha256": "cbd57006215fde992f45d4363ce57348d51a5b0541a68dbab60421ee00cb0ab7",
+        "bytes": 9080,
+        "triangles": 400,
         "rawTriangles": 400,
-        "budgetTriangles": 300,
-        "maxErrorMm": 0.015,
+        "budgetTriangles": 800,
+        "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -10874,13 +11076,13 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            -0.0008780934116564306,
-            -1.2408687910806767e-11,
+            -0.0008780934116564308,
+            -1.2408687989787049e-11,
             -6.222846906485687
           ],
           "axis": [
-            -0.000146057398898211,
-            -2.060212909364798e-12,
+            -0.00014605739889821104,
+            -2.0602129220567676e-12,
             -0.9999999893336181
           ],
           "diameterMm": 4.191,
@@ -10891,13 +11093,13 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            0.0009397369750307037,
-            1.3232721959147508e-11,
+            0.0009397369750307039,
+            1.323272203813148e-11,
             6.223152960760524
           ],
           "axis": [
-            0.000146057398898211,
-            2.060212909364798e-12,
+            0.00014605739889821104,
+            2.0602129220567676e-12,
             0.9999999893336181
           ],
           "diameterMm": 4.191,
@@ -10936,13 +11138,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/standoff-1-4-2c4467a3.glb",
-        "sha256": "2c4467a398d5e6a6f56ae821433a352d5e58222ab7992b550e921d360adf920b",
-        "bytes": 13120,
-        "triangles": 300,
+        "file": "models/standoff-1-4-49a5dba0.glb",
+        "sha256": "49a5dba09209fec7e56dbeb1d95c22df397e57e03ae3b1eee3a50d4ec5b89b87",
+        "bytes": 8828,
+        "triangles": 400,
         "rawTriangles": 400,
-        "budgetTriangles": 300,
-        "maxErrorMm": 0.012,
+        "budgetTriangles": 800,
+        "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -11013,13 +11215,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/standoff-2-9a2e082b.glb",
-        "sha256": "9a2e082b506750af5a2f2420bf7e17311979a2bf40b3e9c94534049e8354b210",
-        "bytes": 14032,
-        "triangles": 300,
+        "file": "models/standoff-2-6de1da05.glb",
+        "sha256": "6de1da053527d0d49d61310a55caa4e8bfec973877fdb1206e108fa25ee72959",
+        "bytes": 10472,
+        "triangles": 490,
         "rawTriangles": 490,
-        "budgetTriangles": 300,
-        "maxErrorMm": 0.059,
+        "budgetTriangles": 800,
+        "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -11028,14 +11230,14 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            -0.0008781885313020083,
-            -1.868103855422163e-14,
-            25.2735001371881
+            -0.0008781885313044122,
+            -1.8524160325025664e-14,
+            25.273500137188094
           ],
           "axis": [
-            -0.00014458206956138473,
-            -3.757000178719485e-15,
-            0.9999999895480126
+            -0.0001445820695613847,
+            -3.75698748674966e-15,
+            0.9999999895480124
           ],
           "diameterMm": 4.191,
           "depthMm": 50.547
@@ -11045,14 +11247,14 @@
           "kind": "hole",
           "source": "detected",
           "position": [
-            0.006430001338817305,
-            1.7122404947951217e-13,
-            -25.27349933449529
+            0.0064300013388149,
+            1.713802861677094e-13,
+            -25.273499334495284
           ],
           "axis": [
-            0.00014458206956138473,
-            3.757000178719485e-15,
-            -0.9999999895480126
+            0.0001445820695613847,
+            3.75698748674966e-15,
+            -0.9999999895480124
           ],
           "diameterMm": 4.191,
           "depthMm": 50.547
@@ -11090,13 +11292,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/wheel-normal-2-75-57181470.glb",
-        "sha256": "5718147011092e1dfa3bd3121246b4f527befbef1d87cb4803542e79dc23db5f",
-        "bytes": 75832,
-        "triangles": 1596,
+        "file": "models/wheel-normal-2-75-d30ae39c.glb",
+        "sha256": "d30ae39cba23bda19b42648569e97b3f9b6b0aa3b727637488c39633d49d3489",
+        "bytes": 341376,
+        "triangles": 12000,
         "rawTriangles": 29160,
-        "budgetTriangles": 1600,
-        "maxErrorMm": 1.494,
+        "budgetTriangles": 12000,
+        "maxErrorMm": 0.059,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -11150,13 +11352,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/wheel-omni-2-75-28c18e6b.glb",
-        "sha256": "28c18e6b66635c6a56a82949413efa3e69f146db3d6f291d3daa214585023a23",
-        "bytes": 138980,
-        "triangles": 2794,
+        "file": "models/wheel-omni-2-75-d3dd9eb0.glb",
+        "sha256": "d3dd9eb074ce083d83355e90c6f8fbaf043be00cec5890748356673dc7278d88",
+        "bytes": 879136,
+        "triangles": 26070,
         "rawTriangles": 107880,
-        "budgetTriangles": 2800,
-        "maxErrorMm": 1.492,
+        "budgetTriangles": 24000,
+        "maxErrorMm": 0.299,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [
@@ -11210,13 +11412,13 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/wheel-omni-4-08171ff1.glb",
-        "sha256": "08171ff1fdff2b360166384d00d8e08d29ac1da691e2ee8dcbd6426e80a786e7",
-        "bytes": 134144,
-        "triangles": 2904,
+        "file": "models/wheel-omni-4-0a77bb3f.glb",
+        "sha256": "0a77bb3f40232c614d90fc88e746313d3c1ede370c4986c6faf0c27043f7e2d6",
+        "bytes": 289960,
+        "triangles": 14499,
         "rawTriangles": 23596,
-        "budgetTriangles": 2800,
-        "maxErrorMm": 1.485,
+        "budgetTriangles": 14500,
+        "maxErrorMm": 0.049,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
       "snapPoints": [

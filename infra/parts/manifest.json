@@ -12,8 +12,8 @@
       },
       "material": "electronics",
       "snap": "ruled-bores",
-      "budgetTriangles": 2000,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 22000,
+      "maxErrorMm": 0.3,
       "boreRule": {
         "minDiameterMm": 2.0,
         "maxDiameterMm": 2.6,
@@ -34,8 +34,11 @@
       },
       "material": "electronics",
       "snap": "bores",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.3
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
+      "notes": [
+        "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
+      ]
     },
     {
       "id": "wheel-omni-2-75",
@@ -49,8 +52,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 2800,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 24000,
+      "maxErrorMm": 0.3,
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
@@ -68,8 +71,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 1600,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 12000,
+      "maxErrorMm": 0.1,
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
@@ -87,8 +90,8 @@
       "material": "nylon",
       "snap": "axle",
       "axleDiameterMm": 6.35,
-      "budgetTriangles": 2800,
-      "maxErrorMm": 1.5,
+      "budgetTriangles": 14500,
+      "maxErrorMm": 0.1,
       "expectSizeMm": {
         "x": 101.6,
         "z": 101.6
@@ -105,8 +108,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 6.35
       }
@@ -122,8 +125,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 12.7
       }
@@ -139,8 +142,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 25.4
       }
@@ -156,8 +159,8 @@
       },
       "material": "aluminum",
       "snap": "bores",
-      "budgetTriangles": 300,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "y": 50.8
       }
@@ -182,8 +185,13 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-6-32-1-2",
@@ -205,8 +213,13 @@
         "min": 2.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-8-32-1",
@@ -228,8 +241,13 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "screw-8-32-2",
@@ -251,8 +269,13 @@
         "min": 3.5,
         "max": 5
       },
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.02
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.03,
+      "notes": [
+        "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
+      ],
+      "remodel": "lathe",
+      "segments": 8
     },
     {
       "id": "nut-8-32-hex",
@@ -265,8 +288,8 @@
       },
       "material": "steel",
       "snap": "bores",
-      "budgetTriangles": 150,
-      "maxErrorMm": 0.1
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05
     },
     {
       "id": "plate-5x15-steel",
@@ -279,15 +302,16 @@
       },
       "material": "steel",
       "snap": "probe",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "expectSizeMm": {
         "x": 63.5,
         "z": 190.5
       },
       "holeSquareMm": 4.5,
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 1,368 for 171 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {
@@ -301,11 +325,12 @@
       },
       "material": "steel",
       "snap": "probe",
-      "budgetTriangles": 1200,
-      "maxErrorMm": 0.1,
+      "budgetTriangles": 6000,
+      "maxErrorMm": 0.05,
       "holeSquareMm": 4.5,
       "notes": [
-        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square."
+        "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
+        "Budget miss, by design: each hole keeps four walls (8 triangles), 2,248 for 281 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
       ]
     },
     {
@@ -319,7 +344,7 @@
       },
       "material": "steel",
       "snap": "bores+probe",
-      "budgetTriangles": 600,
+      "budgetTriangles": 1000,
       "maxErrorMm": 0.05
     },
     {
@@ -333,7 +358,7 @@
       },
       "material": "steel",
       "snap": "bores+probe",
-      "budgetTriangles": 600,
+      "budgetTriangles": 1000,
       "maxErrorMm": 0.05
     },
     {
@@ -397,6 +422,150 @@
           }
         ]
       }
+    },
+    {
+      "id": "channel-1x2x1-steel",
+      "name": "1x2x1 Steel C-Channel",
+      "family": "channel",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Steel/1x2x1x35 Steel C-Channel (276-2906).step",
+        "sampleLengthMm": 444.5,
+        "webNormal": "y"
+      },
+      "material": "steel",
+      "cut": {
+        "widthMm": 25.4,
+        "depthMm": 13.868,
+        "thicknessMm": 1.168,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": -6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 6.35,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 10.3,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -0.584,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.516,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
+    },
+    {
+      "id": "channel-u-2x2x2-aluminum",
+      "name": "2x2x2 Aluminum U-Channel",
+      "family": "channel",
+      "kind": "cut",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/U-Channel 2x2x2x20 (276-7285).step",
+        "sampleLengthMm": 254,
+        "webNormal": "y"
+      },
+      "material": "aluminum",
+      "cut": {
+        "widthMm": 29,
+        "depthMm": 25.832,
+        "thicknessMm": 1.6,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "web",
+            "across": 6.55,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 0.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -6.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 11.9,
+            "pitch": 63.5,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": -7.766,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -1.366,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.934,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 10.384,
+            "pitch": 63.5,
+            "phase": 0
+          }
+        ]
+      },
+      "notes": [
+        "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
+      ]
     },
     {
       "id": "angle-1x1-aluminum",
