@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import * as Y from "yjs"
 import type { Vec3 } from "../src/catalog/types"
+import { turnBy } from "../src/design/actions"
 import {
   connectionsFor,
   pivotAxis,
@@ -189,6 +190,45 @@ describe("moving a connected group", () => {
 })
 
 describe("turning about a fastener", () => {
+  it("keeps a real assembly joined when a typed turn's axis differs from the screw", () => {
+    const { doc } = twoChannelsAndAScrew()
+    const screwPose = positionPose(doc, "screw")
+    const pivot = pivotAxis({
+      role: "screw",
+      fit: screw.catalog.fit,
+      id: "screw",
+      snaps: screw.snapPoints,
+      pose: screwPose,
+    })
+    const axis: Vec3 =
+      Math.abs(pivot.direction[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]
+
+    turnBy(doc, new Set(["a"]), {
+      angle: Math.PI / 2,
+      axis,
+      pivotFastener: "screw",
+    })
+
+    const parts = readPlacedParts(doc).parts
+    const live = connectionsFor(
+      {
+        role: "screw",
+        fit: screw.catalog.fit,
+        id: "screw",
+        snaps: screw.snapPoints,
+        pose: positionPose(doc, "screw"),
+      },
+      parts
+        .filter((part) => part.id !== "screw")
+        .map((part) => ({
+          id: part.id,
+          snaps: partShape(part).snapPoints,
+          pose: { position: part.position, rotation: part.rotation },
+        }))
+    )
+    expect(live.map((connection) => connection.host).sort()).toEqual(["a", "b"])
+  })
+
   it("turns one Part about a single screw, leaving the Part on the far side still", () => {
     const { doc, bPose } = twoChannelsAndAScrew()
     const pivot = pivotAxis({

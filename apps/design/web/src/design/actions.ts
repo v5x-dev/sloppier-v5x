@@ -4,10 +4,12 @@
 import type * as Y from "yjs"
 import type { Vec3 } from "@/catalog/types"
 import { connectionsForSelection, hingeOf } from "./connect"
+import { connectionKey } from "./connections"
 import {
   addConnections,
   breakConnections,
   duplicateParts,
+  readConnections,
   readPlacedParts,
   removeParts,
   setColors,
@@ -62,7 +64,10 @@ export function turnBy(
   const pivot: Vec3 = hinge
     ? [hinge.point.x, hinge.point.y, hinge.point.z]
     : centre
-  const plan = planTurn(targets, pivot, options.axis, options.angle, {
+  const axis: Vec3 = hinge
+    ? [hinge.direction.x, hinge.direction.y, hinge.direction.z]
+    : options.axis
+  const plan = planTurn(targets, pivot, axis, options.angle, {
     alone: options.alone,
   })
   commitPlan(doc, plan)
@@ -73,7 +78,11 @@ export function connectSelection(
   doc: Y.Doc,
   selection: ReadonlySet<string>
 ): number {
-  const drafts = connectionsForSelection(readPlacedParts(doc).parts, selection)
+  const existing = new Set(readConnections(doc).map(connectionKey))
+  const drafts = connectionsForSelection(
+    readPlacedParts(doc).parts,
+    selection
+  ).filter((draft) => !existing.has(connectionKey(draft)))
   if (drafts.length === 0) return 0
   return addConnections(doc, drafts).length
 }
