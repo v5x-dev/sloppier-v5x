@@ -134,8 +134,29 @@ function DesignEditor({
   designId: Id<"designs">
   userId: string
 }) {
+  // The hooks live in OpenDesign, so that no hook is skipped while the document loads.
   const design = useQuery(api.designs.get, { designId })
   const { doc, state } = useDesignSync(designId, userId)
+  if (!doc) {
+    return (
+      <div className="flex h-svh items-center justify-center gap-3">
+        <Spinner className="size-5 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Opening the Design…</p>
+      </div>
+    )
+  }
+  return <OpenDesign doc={doc} design={design} state={state} />
+}
+
+function OpenDesign({
+  doc,
+  design,
+  state,
+}: {
+  doc: Y.Doc
+  design: { name: string } | null | undefined
+  state: DesignSyncState
+}) {
   const modelsBase = useMemo(
     () => readModelsBase(import.meta.env.VITE_DESIGN_MODELS_URL),
     []
@@ -175,7 +196,6 @@ function DesignEditor({
   }, [pickedId, draft])
 
   useEffect(() => {
-    if (!doc) return
     const next = createHistory(doc)
     setHistory(next)
     const off = next.subscribe(rerender)
@@ -202,15 +222,6 @@ function DesignEditor({
     () => pivotChoices(parts, connections, selection),
     [parts, connections, selection]
   )
-
-  if (!doc) {
-    return (
-      <div className="flex h-svh items-center justify-center gap-3">
-        <Spinner className="size-5 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Opening the Design…</p>
-      </div>
-    )
-  }
 
   const pick = (id: string | undefined) => {
     setSelection(new Set())
