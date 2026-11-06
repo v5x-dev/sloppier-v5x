@@ -161,7 +161,8 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const navigate = useNavigate()
   const designs = useQuery(api.designs.listByWorkspace, { workspaceId })
   const create = useMutation(api.designs.create)
-  const [creating, setCreating] = useState(false)
+  const generateName = useMutation(api.designs.generateName)
+  const [suggestedName, setSuggestedName] = useState<string>()
   const [view, setView] = useState<"active" | "archived">("active")
 
   const shown = designs
@@ -173,7 +174,14 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const hasArchived = designs?.some((design) => design.archivedAt)
 
   const newDesign = (
-    <Button onClick={() => setCreating(true)}>
+    <Button
+      onClick={() => {
+        // If no name comes back, the backend picks one when the field is empty.
+        generateName({})
+          .catch(() => "")
+          .then(setSuggestedName)
+      }}
+    >
       <PlusIcon data-icon="inline-start" />
       New Design
     </Button>
@@ -224,11 +232,12 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
         </Empty>
       )}
 
-      {creating && (
+      {suggestedName !== undefined && (
         <NameDialog
           title="New Design"
           action="Create"
-          initialName=""
+          initialName={suggestedName}
+          allowEmpty
           onSubmit={async (name) => {
             const designId = await create({ workspaceId, name })
             await navigate({
@@ -236,7 +245,7 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
               params: { designId },
             })
           }}
-          onClose={() => setCreating(false)}
+          onClose={() => setSuggestedName(undefined)}
         />
       )}
     </main>

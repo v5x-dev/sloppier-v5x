@@ -15,12 +15,14 @@ export function NameDialog({
   title,
   action,
   initialName,
+  allowEmpty = false,
   onSubmit,
   onClose,
 }: {
   title: string
   action: string
   initialName: string
+  allowEmpty?: boolean
   onSubmit: (name: string) => Promise<unknown>
   onClose: () => void
 }) {
@@ -80,7 +82,10 @@ export function NameDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending || !name.trim()}>
+            <Button
+              type="submit"
+              disabled={pending || (!allowEmpty && !name.trim())}
+            >
               {action}
             </Button>
           </DialogFooter>

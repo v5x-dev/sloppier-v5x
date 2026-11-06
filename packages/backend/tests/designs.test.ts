@@ -51,6 +51,15 @@ describe("design lifecycle", () => {
     expect((await owner.query(api.designs.get, { designId })).name).toBe(
       "Clawbot"
     )
+    for (const name of [undefined, "   "]) {
+      const namedId = await owner.mutation(api.designs.create, {
+        workspaceId,
+        name,
+      })
+      expect(
+        (await owner.query(api.designs.get, { designId: namedId })).name
+      ).toMatch(/^[a-z]+(-[a-z]+)+-\d+$/)
+    }
     await owner.mutation(api.designs.rename, { designId, name: " Tray bot " })
     await owner.mutation(api.designs.setArchived, { designId, archived: true })
     const archived = await owner.query(api.designs.get, { designId })

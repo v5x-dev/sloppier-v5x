@@ -1,7 +1,12 @@
 import { internal } from "./_generated/api"
 import { internalMutation, mutation, query } from "./_generated/server"
 import { ConvexError, v } from "convex/values"
-import { requireDesignMembership, requireWorkspaceMembership } from "./lib/auth"
+import {
+  requireDesignMembership,
+  requireIdentity,
+  requireWorkspaceMembership,
+} from "./lib/auth"
+import generateBoringName from "boring-name-generator"
 
 const COPY_BATCH_ROWS = 20
 const COPY_BATCH_BYTES = 8 * 1024 * 1024
@@ -34,13 +39,23 @@ export const get = query({
   },
 })
 
+export const generateName = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireIdentity(ctx)
+    return generateBoringName({ number: true }).dashed
+  },
+})
+
 export const create = mutation({
-  args: { workspaceId: v.id("workspaces"), name: v.string() },
+  args: { workspaceId: v.id("workspaces"), name: v.optional(v.string()) },
   handler: async (ctx, { workspaceId, name }) => {
     const { identity } = await requireWorkspaceMembership(ctx, workspaceId)
     return ctx.db.insert("designs", {
       workspaceId,
-      name: validName(name),
+      name: validName(
+        name?.trim() || generateBoringName({ number: true }).dashed
+      ),
       createdBy: identity.subject,
       createdAt: Date.now(),
     })
