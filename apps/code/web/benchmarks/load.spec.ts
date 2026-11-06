@@ -268,3 +268,41 @@ if ((state || demoUser) && programId) {
     )
   })
 }
+
+if ((state || demoUser) && programId) {
+  test("Open a different file", async ({ browser, baseURL }) => {
+    const samples: number[] = []
+    const path = process.env.PLAYWRIGHT_BENCHMARK_FILE ?? "include/main.h"
+    for (let i = 0; i < runs; i++) {
+      const context = await browser.newContext({ baseURL, storageState: state })
+      try {
+        const page = await measuredPage(context)
+        await page.goto(
+          `/programs/${encodeURIComponent(programId)}${demoUser ? `?demoUser=${encodeURIComponent(demoUser)}` : ""}`
+        )
+        await waitVisible(page.getByRole("tabpanel").getByRole("textbox"))
+        await page.keyboard.press("Control+p")
+        const search = page.getByRole("combobox", { name: "Find a file" })
+        await search.fill(path)
+        const start = performance.now()
+        await search.press("Enter")
+        await expect(page.getByRole("tab", { selected: true })).toHaveAttribute(
+          "title",
+          path
+        )
+        await waitVisible(page.getByRole("tabpanel").getByRole("textbox"))
+        samples.push(performance.now() - start)
+      } finally {
+        await context.close()
+      }
+    }
+    console.log(
+      JSON.stringify({
+        scenario: "Open a different file",
+        runs,
+        cpuRate,
+        ...summarize(samples),
+      })
+    )
+  })
+}

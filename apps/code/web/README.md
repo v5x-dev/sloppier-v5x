@@ -94,7 +94,9 @@ checks do not verify hosted WorkOS, production cookies, or production configurat
 `bun run benchmark:load` measures control readiness, reload, opening a Program from
 the dashboard, returning to a Program after leaving it, opening an editor, search
 navigation, a one-line edit, and undo. Configure an authenticated session
-and Program as above. Set `PLAYWRIGHT_BENCHMARK_RUNS` (1–100) and
+and Program as above. The different-file scenario opens `include/main.h` by default;
+set `PLAYWRIGHT_BENCHMARK_FILE` for a different path. Set
+`PLAYWRIGHT_BENCHMARK_RUNS` (1–100) and
 `PLAYWRIGHT_CPU_THROTTLE` (1–20) for sampling and constrained CPU comparisons.
 For representative timing, build and preview the app and select it with
 `PLAYWRIGHT_BASE_URL`. Development compilation and dependency optimization inflate

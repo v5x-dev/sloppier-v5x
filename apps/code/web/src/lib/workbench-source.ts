@@ -498,8 +498,7 @@ export class WorkbenchSource {
           [path]: {
             contents,
             editorKey:
-              this.state.loaded[path]?.editorKey ??
-              `${this.programId}:${crypto.randomUUID()}`,
+              this.state.loaded[path]?.editorKey ?? `${this.programId}:${path}`,
             truncated: Number.isFinite(total) && total > bytes.byteLength,
           },
         },

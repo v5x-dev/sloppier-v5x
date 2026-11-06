@@ -19,7 +19,14 @@ export function prefetchProgramEditor(
     const source = new WorkbenchSource(programId, {
       buildManifest: (args) =>
         client.action(api.codeStorage.buildManifest, args),
-      listFiles: (args) => client.action(api.codeStorage.listFiles, args),
+      listFiles: async (args) => ({
+        paths: (
+          await client.query(api.files.listByProgram, {
+            programId: args.programId,
+          })
+        ).map((file) => file.path),
+        hasMore: false,
+      }),
       readFile: (args) => client.action(api.codeStorage.readFile, args),
       openLiveFile: (args) => client.action(api.codeStorage.openLiveFile, args),
       commitFiles: (args) => client.action(api.codeStorage.commitFiles, args),

@@ -34,7 +34,13 @@ import {
 } from "@v5x/ui/components/sidebar"
 import { Spinner } from "@v5x/ui/components/spinner"
 import { toast } from "@v5x/ui/components/toast"
-import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react"
+import {
+  useAction,
+  useConvex,
+  useConvexAuth,
+  useMutation,
+  useQuery,
+} from "convex/react"
 import { useEffect, useState } from "react"
 
 const programRoute = getRouteApi("/programs/$programId")
@@ -64,7 +70,7 @@ function ProgramLoader({ programId }: { programId: Id<"programs"> }) {
     isAuthenticated ? { programId } : "skip"
   )
   const buildManifest = useAction(api.codeStorage.buildManifest)
-  const listFiles = useAction(api.codeStorage.listFiles)
+  const client = useConvex()
   const readFile = useAction(api.codeStorage.readFile)
   const openLiveFile = useAction(api.codeStorage.openLiveFile)
   const commitFiles = useAction(api.codeStorage.commitFiles)
@@ -75,7 +81,14 @@ function ProgramLoader({ programId }: { programId: Id<"programs"> }) {
       takePrefetchedProgramEditor(programId) ??
       new WorkbenchSource(programId, {
         buildManifest,
-        listFiles,
+        listFiles: async (args) => ({
+          paths: (
+            await client.query(api.files.listByProgram, {
+              programId: args.programId,
+            })
+          ).map((file) => file.path),
+          hasMore: false,
+        }),
         readFile,
         openLiveFile,
         commitFiles,

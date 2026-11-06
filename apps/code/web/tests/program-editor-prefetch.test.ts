@@ -13,8 +13,6 @@ const programId = "program-hover" as Id<"programs">
 function fakeClient() {
   const action = vi.fn(async (reference: unknown) => {
     const name = getFunctionName(reference as never)
-    if (name === "codeStorage:listFiles")
-      return { paths: ["src/main.cpp"], hasMore: false }
     if (name === "codeStorage:readFile")
       return {
         bytes: new TextEncoder().encode("int main() {}").buffer,
@@ -23,20 +21,25 @@ function fakeClient() {
       }
     throw new Error("unexpected action")
   })
-  return { client: { action } as unknown as ConvexReactClient, action }
+  const query = vi.fn(async (_reference: unknown) => [{ path: "src/main.cpp" }])
+  return {
+    client: { action, query } as unknown as ConvexReactClient,
+    action,
+    query,
+  }
 }
 
 describe("program editor prefetch", () => {
   it("starts the listing once for a hovered Program and hands it to the editor", async () => {
     vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} })
     try {
-      const { client, action } = fakeClient()
+      const { client, action, query } = fakeClient()
       prefetchProgramEditor(client, programId)
       prefetchProgramEditor(client, programId)
       expect(
-        action.mock.calls.filter(
+        query.mock.calls.filter(
           ([reference]) =>
-            getFunctionName(reference as never) === "codeStorage:listFiles"
+            getFunctionName(reference as never) === "files:listByProgram"
         )
       ).toHaveLength(1)
 
