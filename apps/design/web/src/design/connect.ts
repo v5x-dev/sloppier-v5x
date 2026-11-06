@@ -7,6 +7,7 @@ import type * as Y from "yjs"
 import { Vector3 } from "three"
 import {
   connectionsFor,
+  connectionKey,
   pivotAxis,
   type ConnectionDraft,
   type FastenerPart,
@@ -98,7 +99,7 @@ function pose(part: PlacedPart) {
 function unique(drafts: ConnectionDraft[]): ConnectionDraft[] {
   const seen = new Set<string>()
   return drafts.filter((d) => {
-    const key = [d.fastener, d.host, d.fastenerSnap ?? "", d.hostSnap].join("|")
+    const key = connectionKey(d)
     if (seen.has(key)) return false
     seen.add(key)
     return true

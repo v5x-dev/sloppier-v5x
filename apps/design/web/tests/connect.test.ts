@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest"
+import * as Y from "yjs"
+import { connectSelection } from "../src/design/actions"
 import {
   connectionsForNew,
   connectionsForSelection,
 } from "../src/design/connect"
+import { placePart, readConnections } from "../src/design/document"
 import type { PlacedPart } from "../src/design/model"
 import { partShape } from "../src/design/library"
 import { alignToSnap, toWorldSnap, type Pose } from "../src/design/snap"
@@ -96,6 +99,45 @@ describe("connections made when a Part is placed", () => {
 })
 
 describe("the Connect action on a selection", () => {
+  it("does not add a duplicate Connection when a screw is already joined", () => {
+    const doc = new Y.Doc()
+    const at: Pose = { position: [0, 100, 0], rotation: IDENTITY }
+    const { channel, screw } = channelWithScrew(at)
+    const drafts = connectionsForNew([channel], screw).map((draft) => ({
+      ...draft,
+      // Either face Snap Point represents the same physical through-hole.
+      hostSnap: draft.hostSnap.endsWith("-in")
+        ? draft.hostSnap.slice(0, -3)
+        : `${draft.hostSnap}-in`,
+    }))
+    placePart(
+      doc,
+      {
+        catalogId: channel.catalogId,
+        lengthMm: channel.lengthMm,
+        position: channel.position,
+        rotation: channel.rotation,
+        color: channel.color,
+      },
+      channel.id
+    )
+    placePart(
+      doc,
+      {
+        catalogId: screw.catalogId,
+        position: screw.position,
+        rotation: screw.rotation,
+        color: screw.color,
+      },
+      screw.id,
+      drafts
+    )
+
+    expect(readConnections(doc)).toHaveLength(1)
+    expect(connectSelection(doc, new Set([screw.id]))).toBe(0)
+    expect(readConnections(doc)).toHaveLength(1)
+  })
+
   it("joins a selected screw to the Parts it passes through", () => {
     const at: Pose = { position: [0, 100, 0], rotation: IDENTITY }
     const { channel, screw } = channelWithScrew(at)
