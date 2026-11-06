@@ -9057,18 +9057,56 @@
         "basis": "volume x density"
       },
       "model": {
-        "file": "models/chain-rubber-link-82b56fa9.glb",
-        "sha256": "82b56fa90140f6eea07db7a8ba376af511a7798be95ced27afaf24d89139bef7",
-        "bytes": 12456,
-        "triangles": 300,
+        "file": "models/chain-rubber-link-70506c17.glb",
+        "sha256": "70506c1796da797471399f0e1a4af7202c71c9e29d619a84be0b4bf4031724f4",
+        "bytes": 8520,
+        "triangles": 412,
         "rawTriangles": 412,
         "budgetTriangles": 300,
-        "maxErrorMm": 0.066,
+        "maxErrorMm": 0,
         "coordinates": "mm, Y up, origin at the centre of the bounding box"
       },
-      "snapPoints": [],
-      "snapGap": "No Snap Points: the STEP file's holes were not detected as openings on the outside. Hand-placed Snap Points are needed.",
-      "notes": []
+      "snapPoints": [
+        {
+          "id": "chain-01",
+          "kind": "pin",
+          "role": "end",
+          "source": "detected",
+          "position": [
+            3.902905878193408e-16,
+            9.996462761811843e-17,
+            14.985999999999985
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "diameterMm": 4.191,
+          "depthMm": 29.972
+        },
+        {
+          "id": "chain-02",
+          "kind": "pin",
+          "role": "end",
+          "source": "detected",
+          "position": [
+            3.902905878193408e-16,
+            9.996462761811843e-17,
+            -14.986000000000017
+          ],
+          "axis": [
+            0,
+            0,
+            -1
+          ],
+          "diameterMm": 4.191,
+          "depthMm": 29.972
+        }
+      ],
+      "notes": [
+        "Snap Points use the detected 4.191 mm pin along the link."
+      ]
     },
     {
       "kind": "cut",

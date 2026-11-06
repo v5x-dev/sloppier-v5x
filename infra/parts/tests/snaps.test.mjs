@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { endSnaps, throughSnaps } from "../lib/snaps.mjs";
+import { endSnaps, pinEndSnaps, throughSnaps } from "../lib/snaps.mjs";
 
 /**
  * A 10 x 10 x 1 mm plate with a 2 x 2 mm square hole at x 4..6, y 4..6, built from
@@ -59,6 +59,27 @@ test("a plate with no hole gets no through Snap Points", () => {
     brep_faces: [],
   };
   assert.deepEqual(throughSnaps([plateWithSquareHole(), plug], bounds), []);
+});
+
+test("a detected pin gets a Snap Point at each end", () => {
+  const pin = {
+    center: [0, 0, 0],
+    axis: [0, 1, 0],
+    diameterMm: 4.191,
+    depthMm: 10,
+  };
+  const bounds = { min: [-5, -5, -5], max: [5, 5, 5], center: [0, 0, 0] };
+  const points = pinEndSnaps(
+    [pin, { ...pin, diameterMm: 10.414, depthMm: 5 }],
+    bounds,
+    { min: 4, max: 4.4 }
+  );
+  assert.equal(points.length, 2);
+  assert.deepEqual(points.map((point) => point.role), ["end", "end"]);
+  assert.deepEqual(points.map((point) => point.position[2]), [5, -5]);
+  assert.deepEqual(points.map((point) => point.axis[2]), [1, -1]);
+  assert.ok(points.every((point) => point.diameterMm === 4.191));
+  assert.deepEqual(pinEndSnaps([pin], bounds, { min: 5, max: 6 }), []);
 });
 
 test("an end socket sits at each end of the longest axis, centred on the section", () => {

@@ -1,6 +1,6 @@
 // Checks the manifest before any STEP file is read, so a typo fails with the part's name.
 
-const SNAP_STRATEGIES = new Set(["bores", "ruled-bores", "shank", "probe", "bores+probe", "through", "ends", "axle", "none"]);
+const SNAP_STRATEGIES = new Set(["bores", "ruled-bores", "shank", "pins", "probe", "bores+probe", "through", "ends", "axle", "none"]);
 // Every family the catalog knows. The app's validator (apps/design/web/src/catalog/validate.ts)
 // must list the same families, and its tests check that both lists agree.
 export const FAMILIES = new Set([
@@ -46,6 +46,7 @@ export function validateManifest(manifest, knownRepos) {
     }
     if (part.fit !== undefined && !FIT.test(part.fit)) errors.push(`${where}: fit "${part.fit}" must be screw:<thread> or shaft:<side>`);
     for (const token of part.snapAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: snapAccepts token "${token}" is not a fit`);
+    if (part.snap === "pins" && !validRange(part.pinDiameterMm)) errors.push(`${where}: pins snap needs a valid pinDiameterMm range`);
     for (const token of part.cut?.holeAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: holeAccepts token "${token}" is not a fit`);
     if (part.parametric) {
       // Checked above: a parametric Part needs no budget, since it is built from its shapes.
@@ -61,4 +62,8 @@ export function validateManifest(manifest, knownRepos) {
     }
   }
   return errors;
+}
+
+function validRange(range) {
+  return Number.isFinite(range?.min) && Number.isFinite(range?.max) && range.min > 0 && range.max >= range.min;
 }

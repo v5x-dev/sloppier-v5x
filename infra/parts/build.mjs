@@ -22,7 +22,7 @@ import { SOURCES, ensureSource, readAt } from "./lib/sources.mjs";
 import { skuFromFileName } from "./lib/sku.mjs";
 import { checkExpectedSize, checkExpectedSorted } from "./lib/units.mjs";
 import { validateManifest } from "./lib/manifest.mjs";
-import { boreSnaps, probedSnaps, ruledBoreSnaps, shankSnaps, axleSnap, thinAxis, throughSnaps, endSnaps } from "./lib/snaps.mjs";
+import { boreSnaps, probedSnaps, ruledBoreSnaps, shankSnaps, pinEndSnaps, axleSnap, thinAxis, throughSnaps, endSnaps } from "./lib/snaps.mjs";
 import { compareRows, latticeOpenings, probeAxis, rotateWebToZ, WALL_AXIS } from "./lib/lattice.mjs";
 import { parametricMesh } from "./lib/parametric.mjs";
 
@@ -292,6 +292,7 @@ function snapPoints(part, analysis) {
   }
   if (part.snap === "bores" || part.snap === "bores+probe") points.push(...boreSnaps(analysis.bores, bounds));
   if (part.snap === "shank") points.push(...shankSnaps(analysis.pins, bounds, part.shankDiameterMm));
+  if (part.snap === "pins") points.push(...pinEndSnaps(analysis.pins, bounds, part.pinDiameterMm));
   if (part.snap === "ruled-bores") points.push(...ruledBoreSnaps(analysis.bores, bounds, part.boreRule));
   if (part.snap === "probe") points.push(...latticePlateSnaps(analysis, part));
   if (part.snap === "bores+probe") {

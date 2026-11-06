@@ -37,3 +37,13 @@ test("catches a duplicate id, an unknown family, and an unknown source", () => {
   assert.match(errors, /unknown family/);
   assert.match(errors, /unknown source repo/);
 });
+
+test("requires a valid measured diameter range for detected pin ends", () => {
+  const link = manifest.parts.find((part) => part.id === "chain-rubber-link");
+  assert.ok(link);
+  const errors = validateManifest(
+    { parts: [{ ...link, pinDiameterMm: { min: 5, max: 4 } }] },
+    repos
+  ).join("\n");
+  assert.match(errors, /valid pinDiameterMm range/);
+});

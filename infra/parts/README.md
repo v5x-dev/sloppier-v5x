@@ -92,6 +92,7 @@ Adding a Part is a manifest entry. For a fixed model:
   has no SKU, give one in `"sku": { "value": "...", "source": "solidpython4vex-name", "note": "..." }`.
 - `snap` picks the Snap Point strategy: `bores` (detected bore openings), `ruled-bores`
   (bores matched by a rule, for hand corrections), `shank` (a fastener's shank ends),
+  `pins` (both ends of a detected pin, with `pinDiameterMm` selecting its measured size),
   `probe` (square openings on a 0.25 in lattice, for plates), `bores+probe` (both, for
   flat parts), or `axle` (a computed axle for wheels). `through` finds every through-opening
   along the three axes by ray probes on all bodies together, measures its edges on a fine

@@ -3282,14 +3282,21 @@
         "repo": "vex-cad-download",
         "path": "Unknown & Misc/Rubber Link (275-1029).step"
       },
-      "snap": "through",
+      "snap": "pins",
+      "pinDiameterMm": {
+        "min": 4,
+        "max": 4.4
+      },
       "budgetTriangles": 300,
       "maxErrorMm": 0.2,
       "sku": {
         "value": "275-1029",
         "source": "solidpython4vex-name",
         "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
-      }
+      },
+      "notes": [
+        "Snap Points use the detected 4.191 mm pin along the link."
+      ]
     },
     {
       "id": "bracket-lead-screw",

@@ -196,4 +196,19 @@ describe("the fits the build sets", () => {
         spacer.snapPoints.every((sp) => sp.accepts?.includes("screw:8-32"))
     ).toBe(true)
   })
+
+  it("gives the rubber chain link detected Snap Points at both pin ends", () => {
+    const link = partById("chain-rubber-link")
+    if (link.kind !== "model") throw new Error("expected a fixed model")
+    expect(link.snapPoints).toHaveLength(2)
+    expect(
+      link.snapPoints.every(
+        (sp) =>
+          sp.kind === "pin" &&
+          sp.role === "end" &&
+          sp.source === "detected" &&
+          Math.abs(sp.diameterMm - 4.191) < 0.01
+      )
+    ).toBe(true)
+  })
 })

@@ -85,6 +85,24 @@ export function shankSnaps(pins, bounds, range) {
   }));
 }
 
+/** Both ends of a measured, non-fastener pin, such as the connector in a chain link. */
+export function pinEndSnaps(pins, bounds, range) {
+  const pin = pins
+    .filter((p) => p.diameterMm >= range.min && p.diameterMm <= range.max)
+    .sort((a, b) => b.depthMm - a.depthMm)[0];
+  if (!pin) return [];
+  const half = pin.depthMm / 2;
+  return [-1, 1].map((sign) => ({
+    kind: "pin",
+    role: "end",
+    source: "detected",
+    position: stepToPartPoint(add(pin.center, scale(pin.axis, sign * half)), bounds),
+    axis: stepToPartDirection(scale(pin.axis, sign)),
+    diameterMm: pin.diameterMm,
+    depthMm: pin.depthMm,
+  }));
+}
+
 /**
  * The sign (-1 or 1) of the shank end that has a wider cylinder on its axis within a few
  * millimetres: the screw's head. Falls back to -1 when neither end has one.
