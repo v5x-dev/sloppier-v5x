@@ -98,7 +98,7 @@ export function buildPartsList(parts: readonly PlacedPart[]): PartsList {
       key,
       catalogId: group.catalogId,
       name: entry?.name ?? group.catalogId,
-      sku: entry?.sku.value ?? "",
+      sku: entry?.sku?.value ?? "",
       family,
       familyLabel: FAMILY_LABELS[family] ?? family,
       kind: entry?.kind === "cut" ? "cut" : "fixed",

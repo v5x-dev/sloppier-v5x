@@ -14,14 +14,26 @@ describe("the committed Part catalog", () => {
     expect(checkCatalog(rawCatalog).ok).toBe(true)
   })
 
-  it("gives every entry an id and a SKU, and a model or a generator", () => {
+  it("gives every entry an id, a category, and a model or a generator", () => {
     for (const part of catalog.parts) {
       expect(part.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/)
-      expect(part.sku.value).toMatch(/^\d{3}-\d{4}(-\d{3,4})?$/)
-      if (part.kind === "model")
+      expect(part.category).toMatch(
+        /^(structure|motion|electronics|pneumatics|field)$/
+      )
+      if (part.sku !== null)
+        expect(part.sku.value).toMatch(/^\d{3}-\d{4}(-\d{1,4})?$/)
+      if (part.kind === "model") {
         expect(part.model.file).toMatch(/^models\/.+-[0-9a-f]{8}\.glb$/)
-      else expect(part.cut.rows).toBeInstanceOf(Array)
+        // A model with no Snap Points must say why.
+        if (part.snapPoints.length === 0)
+          expect(part.snapGap).toEqual(expect.any(String))
+      } else expect(part.cut.rows).toBeInstanceOf(Array)
     }
+  })
+
+  it("has a SKU for most Parts, and says so when one is missing", () => {
+    const withoutSku = catalog.parts.filter((p) => p.sku === null)
+    expect(withoutSku.length).toBeLessThan(catalog.parts.length / 5)
   })
 
   it("verified the channel's holes against its STEP file", () => {
@@ -54,11 +66,10 @@ describe("the committed Part catalog", () => {
 
   it("lists both kinds of entry", () => {
     expect(modelParts().length).toBeGreaterThan(0)
-    expect(
-      cutParts()
-        .map((p) => p.family)
-        .sort()
-    ).toEqual(["angle", "channel", "channel", "channel", "shaft"])
+    const families = cutParts().map((p) => p.family)
+    expect(families.filter((f) => f === "channel")).toHaveLength(8)
+    expect(families.filter((f) => f === "angle")).toHaveLength(4)
+    expect(families.filter((f) => f === "shaft")).toHaveLength(6)
   })
 })
 
@@ -95,6 +106,18 @@ describe("checkCatalog", () => {
     [
       "an unknown material",
       (p: Record<string, unknown>) => ({ ...p, material: "wood" }),
+    ],
+    [
+      "an unknown category",
+      (p: Record<string, unknown>) => ({ ...p, category: "toys" }),
+    ],
+    [
+      "no snap points and no reason for it",
+      (p: Record<string, unknown>) => ({
+        ...p,
+        snapPoints: [],
+        snapGap: undefined,
+      }),
     ],
   ])("rejects %s", (_name, break_) => {
     const bad = {

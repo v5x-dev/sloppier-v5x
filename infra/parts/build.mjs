@@ -52,8 +52,10 @@ for (const part of selected) {
   console.log(`${part.id.padEnd(26)} ${entry.kind.padEnd(6)} ${summary(entry)} (${Date.now() - started} ms)`);
 }
 
+// A full build writes the whole catalog. --only rebuilds the named Parts and merges them
+// into catalog.json, so a long build can run in batches.
 if (!args.only) writeCatalog(entries);
-else console.log("--only given: catalog.json not written");
+else mergeCatalog(entries);
 
 // ----------------------------------------------------------------------------
 
@@ -84,6 +86,7 @@ async function buildModel(part) {
     id: part.id,
     name: part.name,
     family: part.family,
+    category: part.category,
     sku,
     material: part.material,
     source,
@@ -101,6 +104,7 @@ async function buildModel(part) {
       coordinates: "mm, Y up, origin at the centre of the bounding box",
     },
     snapPoints: snaps,
+    ...snapGapFor(part, snaps),
     notes: part.notes ?? [],
   };
 }
@@ -141,6 +145,7 @@ async function buildCut(part) {
     id: part.id,
     name: part.name,
     family: part.family,
+    category: part.category,
     sku,
     material: part.material,
     source,
@@ -176,6 +181,8 @@ async function load(part) {
 }
 
 function resolveSku(part, file) {
+  // "sku": null means the Part has no published SKU in any source.
+  if (part.sku === null) return null;
   if (part.sku?.value) return { value: part.sku.value, source: part.sku.source, note: part.sku.note };
   const sku = skuFromFileName(file);
   if (!sku) fail(`${part.id}: no SKU in the file name and no sku override in the manifest`);
@@ -260,6 +267,26 @@ function profileSizes(spec) {
   if (spec.sizeMm !== undefined) return [spec.sizeMm, spec.sizeMm];
   if (spec.legMm !== undefined) return [spec.legMm, spec.legMm];
   return [spec.depthMm, spec.widthMm];
+}
+
+/**
+ * A Part with no Snap Points cannot be connected, so the catalog says why. The bore
+ * detector finds a cylinder only when a face covers 170 degrees within a 1.5 to 12 mm
+ * diameter, so some STEP files (B-spline holes, bores over 12 mm, or bores that do not
+ * open on the bounding box) give none. A hand-placed point is the fix, recorded as manual.
+ */
+function snapGapFor(part, snaps) {
+  if (snaps.length > 0) return {};
+  return { snapGap: part.snapGap ?? "No Snap Points: the STEP file's holes were not detected as openings on the outside. Hand-placed Snap Points are needed." };
+}
+
+function mergeCatalog(entries) {
+  const existing = JSON.parse(readFileSync(catalogPath, "utf8"));
+  const rebuilt = new Map(entries.map((e) => [e.id, e]));
+  const kept = existing.parts.filter((e) => !rebuilt.has(e.id));
+  const catalog = { ...existing, parts: [...kept, ...entries].sort((a, b) => a.id.localeCompare(b.id)) };
+  writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+  console.log(`merged ${entries.length} parts into ${catalogPath} (${catalog.parts.length} parts)`);
 }
 
 function writeCatalog(entries) {

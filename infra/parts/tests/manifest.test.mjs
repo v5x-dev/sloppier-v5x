@@ -14,8 +14,10 @@ test("the committed manifest is valid", () => {
   assert.deepEqual(validateManifest(manifest, repos), []);
 });
 
-test("every part's SKU is in the file name or given in the manifest", () => {
+test("every part's SKU is in the file name or given in the manifest, or is null", () => {
   for (const part of manifest.parts) {
+    // "sku": null says no source publishes a SKU for this Part.
+    if (part.sku === null) continue;
     const fromName = /\(\d{3}-\d{4}(-\d{3,4})?\)/.test(part.source.path);
     assert.ok(fromName || part.sku?.value, `${part.id} has no SKU`);
   }

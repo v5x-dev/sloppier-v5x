@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Measures the hole rows in a manifest source file, to write a Cut Part spec.
 //
-//   node rows.mjs <manifest id>
+//   node rows.mjs <manifest id>          # prints the holes, grouped by wall
+//   node rows.mjs <manifest id> --json   # prints the HoleRow[] to paste into "cut.rows"
 //
 // Prints the STEP bounds, then each probed hole grouped by the wall it sits in and its
 // position across that wall, relative to the bounds centre. Use the output as the `rows`
@@ -12,10 +13,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyseStep } from "./lib/analyse.mjs";
 import { SOURCES, ensureSource, readAt } from "./lib/sources.mjs";
-import { probeAxis, WALL_AXIS } from "./lib/lattice.mjs";
+import { deriveRows, probeAxis, WALL_AXIS } from "./lib/lattice.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const id = process.argv[2];
+const asJson = process.argv.includes("--json");
 const manifest = JSON.parse(readFileSync(join(here, "manifest.json"), "utf8"));
 const part = manifest.parts.find((p) => p.id === id);
 if (!part) {
@@ -25,6 +27,13 @@ if (!part) {
 const source = ensureSource(join(here, ".cache"), part.source.repo);
 const analysis = await analyseStep(readAt(source, part.source.path));
 const { center } = analysis.bounds;
+if (asJson) {
+  const probed = analysis.meshes
+    .filter((m) => m.brep_faces.length)
+    .flatMap((m) => [...probeAxis(m, WALL_AXIS.web, 0.1), ...probeAxis(m, WALL_AXIS.side, 0.1)]);
+  console.log(JSON.stringify(deriveRows(probed, center, part.source.webNormal), null, 2));
+  process.exit(0);
+}
 console.log(`${part.id}: ${SOURCES[part.source.repo].url} @ ${source.commit.slice(0, 12)} ${part.source.path}`);
 console.log(`bounds (mm): min ${analysis.bounds.min.map(round)} max ${analysis.bounds.max.map(round)}`);
 console.log(`centre (mm): ${center.map(round)}`);

@@ -90,25 +90,72 @@ Raw STEP tessellations are large. The motor is 57,151 triangles and the omni whe
 the achieved counts against the raw ones. The simplifier keeps each collapse within
 `maxErrorMm`, so a part with a budget it cannot reach stays above it, and the build says so.
 
+## Categories, families, and what the Catalog holds
+
+Every entry has a `category` (the parts panel's top-level group) and a `family` (its
+group inside that category). The families are listed in `lib/manifest.mjs`, and the app's
+validator (`apps/design/web/src/catalog/validate.ts`) must list the same ones.
+
+| Category | Parts | Families |
+| --- | --- | --- |
+| Structure | 79 | C-channels, angles, plates, gussets, standoffs, screws, nuts, brackets |
+| Motion | 157 | shafts (standard, high-strength, capped), collars, spacers, washers, bearings, retainers, lock bars, bumpers, couplers, inserts, gears, racks, sprockets, chains, tank tread, wheels |
+| Electronics | 27 | motors, Brain, battery and clip, radio, controller, sensors, switches, 3-wire expander |
+| Pneumatics | 15 | cylinders (25, 50, 75 mm), reservoir, fittings, valves, regulator, gauge, manifold |
+| Field Elements | 18 | one family per season: Push Back so far. Override, High Stakes and Spin Up have no readable source yet |
+
+Cut Parts (channels, angles, square shafts) are generated at any length in the app.
+Their hole rows are measured from the STEP file with `node rows.mjs <id> --json` and
+then checked by the build, so a row that does not match the file stops the build.
+
+Each channel length has its own row spec, measured from its STEP file. Shared bore-pattern
+rules are not implemented yet.
+
+A model with no Snap Points records a `snapGap` in the catalog. The app's validator
+requires that reason, so an empty list can never pass silently. 142 of 278 models
+have one, because the bore detector (`lib/holes.mjs`) finds a cylinder only when a face
+covers 170 degrees within a 1.5 to 12 mm diameter. Many STEP files use B-spline holes,
+bores over 12 mm, or bores that do not open on the bounding box, so they give none. The
+fix for each is a hand-placed point recorded as `manual`. That work is not done.
+
+Mass is null for electronics, and for field elements (material `other`, a mix of
+materials with no single density).
+
+Budgets are targets. 131 models are above their triangle budget, because the simplifier
+stops at the error limit first. Gears, sprockets, chains and racks use a 0.2 mm error
+limit, since 0.05 mm cannot reach their budgets. The 1/8 in setscrew uses 0.1 mm, because
+at 0.25 mm its threads collapse into a coil.
+
 ## Known gaps
 
-- Snap Points are not complete for every part. The V5 motor's mounting bores do not open
-  onto the bounding box, so the motor has a hand-corrected rule (`ruled-bores`). The
-  5.5 W motor has no snap points: its STEP file has no bore that opens on the outside, so
-  it needs a corrected file or measured positions.
-- The steel angle is not included as a Cut Part.
-- The steel plates miss their 1,200 triangle budget and keep 3,080 and 5,120. Each hole needs
-  four walls (8 triangles), and nothing collapses within 0.5 mm, so reaching the budget would
-  mean removing holes. The manifest notes give the numbers.
-- Wheels get a computed axle at their centre. The STEP hub bore could not be detected
-  reliably, so the bore is not read.
-- Mass uses the STEP volume times a handbook density, not a measured weight. Electronics
-  have no density, so motor mass stays null until a published figure is recorded.
-- The model's corner overlaps (the channel's web and sides, and the angle's legs) are
-  kept as separate plates, so the mesh is slightly larger than the solid it describes.
-  The overlapping faces are hidden inside the Part.
+- **Chassis rails** (275-1145, 275-1146): the 12.7 x 24.13 mm profile is not a channel or
+  an angle, and the Cut Part generator draws only those and square shafts.
+- **Flat bar** (275-1141, 1 x 25 in): no Cut Part family for it.
+- **Linear Motion Kit rails and slides**: no V5 STEP in the sources checked. The SolidWorks
+  repo has only `.SLDPRT` (binary) for its slide truck, and the SHU repo has IQ parts only.
+  VEX's product page for the kit (276-6465) lists STEP files; not fetched in this PR.
+- **Pneumatic tubing and solenoids**: no STEP in the Pneumatics folders checked.
+- **High Stakes** field elements: the Fusion (`.f3d`) and Inventor (`.ipt`) files are
+  ShapeManager B-reps (`.smb`), with no mesh. They need a kernel to read, so they are out.
+- **Override** field elements: the Fusion files are binary B-reps as above. SHU-ROBOTICS
+  has only the pin and cup as STL meshes. STL is not read by this pipeline yet.
+- **Spin Up** field elements: no STEP found. The SJTU VEX open-source library (SolidWorks)
+  and a third-party disc on stlfinder were found, but not checked.
+- **Field goals** are split into their STEP files (the centre goal's bottom, top and leg
+  are three Parts), not merged into one Part per goal. Merging needs multi-file sources.
+- **Snap Points** are missing on 142 models (see above).
+- **Recents** in the parts panel are not built.
 
-## Sources and credit
+## Sources, licences, and credit
+
+Each source was checked for a licence file at its pinned commit. The licence says what the
+pipeline may do with the files it reads, and what the app may ship.
+
+| Source | Licence | Used for |
+| --- | --- | --- |
+| `vex-cad-download` (TlorschCode/VEX-V5-Parts-Solidworks-Download, pinned in `lib/sources.mjs`) | None in the repo. The README says the parts are unchanged from VEX's CAD downloads, and its field elements from VEX's Onshape document. VEX's terms apply; not verified. | Every fixed model, Cut Part, and Push Back field element |
+| `solidpython4vex` (UTCSheffield/SolidPython4VEX) | MIT (`LICENSE`, Copyright 2026 UTC Sheffield) | SKU names for Parts whose file name has none |
+| VEX-CAD-Fusion-360-Library, VEX-CAD-Inventor, VEX-CAD-Solidworks, SHU-ROBOTICS/VEX-CAD-FILES | No licence file found at the default branch | Searched, not used. Their Override and High Stakes files are unreadable (see Known gaps) |
 
 - `vex-cad-download`: TlorschCode/VEX-V5-Parts-Solidworks-Download, pinned in
   `lib/sources.mjs`. The repo describes its files as unchanged from VEX's CAD downloads.

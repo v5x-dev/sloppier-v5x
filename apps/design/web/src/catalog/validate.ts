@@ -2,14 +2,30 @@
 // id instead of rendering a wrong model. Every entry needs an id, a SKU, and either a
 // model file (fixed Parts) or a generator spec (Cut Parts).
 
-import type { Catalog, CatalogPart, Material, SnapPoint, Vec3 } from "./types"
+import type {
+  Catalog,
+  CatalogPart,
+  Category,
+  Material,
+  SnapPoint,
+  Vec3,
+} from "./types"
 
 const MATERIALS: readonly Material[] = [
   "aluminum",
   "steel",
   "nylon",
   "electronics",
+  "other",
 ]
+const CATEGORIES: readonly Category[] = [
+  "structure",
+  "motion",
+  "electronics",
+  "pneumatics",
+  "field",
+]
+// Must match the FixedFamily and cut families in types.ts, and FAMILIES in infra/parts/lib/manifest.mjs.
 const FIXED_FAMILIES = [
   "motor",
   "wheel",
@@ -18,6 +34,40 @@ const FIXED_FAMILIES = [
   "nut",
   "plate",
   "gusset",
+  "shaft",
+  "bracket",
+  "collar",
+  "spacer",
+  "washer",
+  "bearing",
+  "retainer",
+  "lock-bar",
+  "bumper",
+  "coupler",
+  "insert",
+  "gear",
+  "rack",
+  "sprocket",
+  "chain",
+  "tread",
+  "brain",
+  "battery",
+  "radio",
+  "controller",
+  "sensor",
+  "switch",
+  "expander",
+  "cylinder",
+  "reservoir",
+  "fitting",
+  "valve",
+  "regulator",
+  "gauge",
+  "manifold",
+  "override",
+  "push-back",
+  "high-stakes",
+  "spin-up",
 ]
 const CUT_FAMILIES = ["channel", "angle", "shaft"]
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -53,9 +103,15 @@ export function checkCatalog(value: unknown): CatalogCheck {
     seen.add(where)
     if (typeof part.name !== "string" || part.name === "")
       errors.push(`${where}: missing name`)
+    // A null SKU means no source publishes one. Anything else must carry a value.
     const sku = asRecord(part.sku)
-    if (!sku || typeof sku.value !== "string" || sku.value === "")
+    if (
+      part.sku !== null &&
+      (!sku || typeof sku.value !== "string" || sku.value === "")
+    )
       errors.push(`${where}: missing SKU`)
+    if (!CATEGORIES.includes(part.category as Category))
+      errors.push(`${where}: unknown category`)
     if (!MATERIALS.includes(part.material as Material))
       errors.push(`${where}: unknown material`)
     if (!asRecord(part.source)) errors.push(`${where}: missing source record`)
@@ -68,8 +124,12 @@ export function checkCatalog(value: unknown): CatalogCheck {
         errors.push(`${where}: a model needs model.file`)
       if (!Array.isArray(part.snapPoints))
         errors.push(`${where}: snapPoints must be an array`)
-      else
+      else {
         for (const sp of part.snapPoints) errors.push(...snapErrors(where, sp))
+        // A Part without Snap Points must say why, so the gap is visible in the catalog.
+        if (part.snapPoints.length === 0 && typeof part.snapGap !== "string")
+          errors.push(`${where}: no snap points and no snapGap reason`)
+      }
     } else if (part.kind === "cut") {
       if (!CUT_FAMILIES.includes(String(part.family)))
         errors.push(`${where}: unknown cut family`)

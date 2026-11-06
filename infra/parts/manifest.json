@@ -15,13 +15,14 @@
       "budgetTriangles": 2000,
       "maxErrorMm": 1.5,
       "boreRule": {
-        "minDiameterMm": 2.0,
+        "minDiameterMm": 2,
         "maxDiameterMm": 2.6,
         "minDepthMm": 30
       },
       "notes": [
         "Snap points are hand corrections: the four 2.2 mm mounting bores through the motor body, found by the bore detector. Their ends are not on the bounding box, so the automatic opening test does not select them."
-      ]
+      ],
+      "category": "electronics"
     },
     {
       "id": "motor-v5-smart-5-5w",
@@ -38,7 +39,8 @@
       "maxErrorMm": 0.3,
       "notes": [
         "No Snap Points yet. The STEP file has one 7.75 mm bore, and both of its ends lie inside the body, so no opening can be placed on the outside. Its shells are open in places (84 edges used once), so the mounting holes are not in the file as bores. Needs a corrected STEP or measured positions."
-      ]
+      ],
+      "category": "electronics"
     },
     {
       "id": "wheel-omni-2-75",
@@ -57,7 +59,8 @@
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
-      }
+      },
+      "category": "motion"
     },
     {
       "id": "wheel-normal-2-75",
@@ -76,7 +79,8 @@
       "expectSizeMm": {
         "x": 69.85,
         "z": 69.85
-      }
+      },
+      "category": "motion"
     },
     {
       "id": "wheel-omni-4",
@@ -95,7 +99,8 @@
       "expectSizeMm": {
         "x": 101.6,
         "z": 101.6
-      }
+      },
+      "category": "motion"
     },
     {
       "id": "standoff-1-4",
@@ -112,7 +117,8 @@
       "maxErrorMm": 0.1,
       "expectSizeMm": {
         "y": 6.35
-      }
+      },
+      "category": "structure"
     },
     {
       "id": "standoff-1-2",
@@ -129,7 +135,8 @@
       "maxErrorMm": 0.1,
       "expectSizeMm": {
         "y": 12.7
-      }
+      },
+      "category": "structure"
     },
     {
       "id": "standoff-1",
@@ -146,7 +153,8 @@
       "maxErrorMm": 0.1,
       "expectSizeMm": {
         "y": 25.4
-      }
+      },
+      "category": "structure"
     },
     {
       "id": "standoff-2",
@@ -163,7 +171,8 @@
       "maxErrorMm": 0.1,
       "expectSizeMm": {
         "y": 50.8
-      }
+      },
+      "category": "structure"
     },
     {
       "id": "screw-6-32-1-4",
@@ -189,7 +198,8 @@
       "maxErrorMm": 0.25,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "screw-6-32-1-2",
@@ -215,7 +225,8 @@
       "maxErrorMm": 0.25,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "screw-8-32-1",
@@ -241,7 +252,8 @@
       "maxErrorMm": 0.25,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "screw-8-32-2",
@@ -267,7 +279,8 @@
       "maxErrorMm": 0.25,
       "notes": [
         "Error limit 0.25 mm, not 0.02 mm. At 0.02 mm the simplifier stops at 386 to 402 triangles, because the shank and head faces cannot collapse without moving the surface further. At 0.25 mm it reaches the 150 budget with a measured error of 0.15 to 0.21 mm, under half a pixel at normal zoom."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "nut-8-32-hex",
@@ -281,7 +294,8 @@
       "material": "steel",
       "snap": "bores",
       "budgetTriangles": 150,
-      "maxErrorMm": 0.1
+      "maxErrorMm": 0.1,
+      "category": "structure"
     },
     {
       "id": "plate-5x15-steel",
@@ -304,7 +318,8 @@
       "notes": [
         "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
         "Budget miss, by design: each hole keeps four walls (8 triangles), 1,368 for 171 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "plate-5x25-steel",
@@ -323,7 +338,8 @@
       "notes": [
         "Holes sit on a 0.25 in checkerboard lattice; half-holes on the outline are included. Opening size is the probe measurement, 4.5 mm square.",
         "Budget miss, by design: each hole keeps four walls (8 triangles), 2,248 for 281 holes, and the faces around them need about 5 more each. Nothing collapses within 0.5 mm, so 1,200 cannot be reached without removing holes."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "gusset-30-flat",
@@ -337,7 +353,8 @@
       "material": "steel",
       "snap": "bores+probe",
       "budgetTriangles": 600,
-      "maxErrorMm": 0.05
+      "maxErrorMm": 0.05,
+      "category": "structure"
     },
     {
       "id": "gusset-90-flat",
@@ -351,7 +368,8 @@
       "material": "steel",
       "snap": "bores+probe",
       "budgetTriangles": 600,
-      "maxErrorMm": 0.05
+      "maxErrorMm": 0.05,
+      "category": "structure"
     },
     {
       "id": "channel-1x2x1-aluminum",
@@ -413,7 +431,8 @@
             "phase": 0.5
           }
         ]
-      }
+      },
+      "category": "structure"
     },
     {
       "id": "channel-1x2x1-steel",
@@ -479,7 +498,8 @@
       },
       "notes": [
         "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "channel-u-2x2x2-aluminum",
@@ -557,7 +577,8 @@
       },
       "notes": [
         "The STEP file is drawn with its web normal to +Y. source.webNormal rotates the probed holes into the frame every channel uses, so the Part is generated in the same orientation as the aluminum channel."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "angle-1x1-aluminum",
@@ -603,7 +624,8 @@
       },
       "notes": [
         "The outer corner fillet is not modelled."
-      ]
+      ],
+      "category": "structure"
     },
     {
       "id": "shaft-square-1-4",
@@ -620,7 +642,5916 @@
         "sizeMm": 6.35,
         "cornerRadiusMm": 0,
         "rows": []
+      },
+      "category": "motion"
+    },
+    {
+      "id": "plate-15x30-base",
+      "name": "15x30 Base Plate",
+      "family": "plate",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Plates/15x30 Base Plate (276-1341).step"
+      },
+      "snap": "probe",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1347",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "holeSquareMm": 4.5
+    },
+    {
+      "id": "gusset-30-bent",
+      "name": "30 Degree Bent Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/30 Degree Bent Gusset (276-7758-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-7758-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
       }
+    },
+    {
+      "id": "gusset-45-flat",
+      "name": "45 Degree Flat Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/45 Degree Flat Gusset (276-7759-001).step"
+      },
+      "snap": "bores+probe",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-7759-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-45-bent",
+      "name": "45 Degree Bent Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/45 Degree Bent Gusset (276-7759-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-7759-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-45",
+      "name": "45 Degree Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/45 Degree Gusset (275-1186).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1186",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-60-flat",
+      "name": "60 Degree Flat Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/60 Degree Flat Gusset (276-7760-001).step"
+      },
+      "snap": "bores+probe",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-7760-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-60-bent",
+      "name": "60 Degree Bent Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/60 Degree Bent Gusset (276-7760-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-7760-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-90-bent",
+      "name": "90 Degree Bent Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/90 Degree Bent Gusset (276-7761-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-7761-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-90-set-angle",
+      "name": "90-Degree Gusset Set (Angle)",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/90-Degree Gusset Set - Angle (276-2577).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2577-1",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-90-set-plate",
+      "name": "90-Degree Gusset Set (Plate)",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/90-Degree Gusset Set - Plate (276-2577).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2577-2",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-angle-corner",
+      "name": "Angle Corner Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/Angle Corner Gusset (276-2576).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2576",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-angle-coupler",
+      "name": "Angle Coupler Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/Angle Coupler Gusset (276-2578).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2578",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-channel-coupler",
+      "name": "C-Channel Coupler Gusset",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/C-Channel Coupler Gusset (276-2575).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2575",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-pack-angle",
+      "name": "Gusset Pack (Angle)",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/Gusset Pack - Angle (276-1110).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-1110-01",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-pack-pivot",
+      "name": "Gusset Pack (Pivot)",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/Gusset Pack - Pivot (276-1110).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-1110-02",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gusset-pack-plus",
+      "name": "Gusset Pack (Plus)",
+      "family": "gusset",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gussets/Gusset Pack - Plus (276-1110).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-1110-03",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "standoff-3-4",
+      "name": "3/4 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/3_4 Standoff (275-1015).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1015",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "standoff-1-5",
+      "name": "1.5 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/1.500 Standoff (275-1017).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1017",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "standoff-2-5",
+      "name": "2.5 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/2.50 Standoff (275-1019).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1019",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "standoff-3",
+      "name": "3 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/3.00 Standoff (275-1020).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1020",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "standoff-4",
+      "name": "4 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/4.00 Standoff (275-1021).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1021",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "standoff-5",
+      "name": "5 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/5.00 Standoff (275-1022).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1022",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "standoff-6",
+      "name": "6 in Standoff",
+      "family": "standoff",
+      "kind": "model",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Standoffs/6.00 Standoff (275-1023).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1023",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bracket-bevel-gearbox",
+      "name": "Bevel Gearbox Bracket",
+      "family": "bracket",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Misc. Metal/Bevel Gearbox Bracket (275-1189).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1189",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bracket-rack-gearbox-v2",
+      "name": "Rack Gearbox Bracket v2",
+      "family": "bracket",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Misc. Metal/Rack Gearbox Bracket v2 (276-5771).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-5571",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bracket-turntable",
+      "name": "Turntable Mounting Bracket",
+      "family": "bracket",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Misc. Metal/Turntable Mounting Bracket (276-5652-007).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-5652-007",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bracket-worm-gearbox",
+      "name": "Worm Gearbox Bracket",
+      "family": "bracket",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Misc. Metal/Worm Gearbox Bracket (275-1187).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1187",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "nut-8-32-keps",
+      "name": "#8-32 Keps Nut",
+      "family": "nut",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Nuts/#8-32 Keps Nut (275-1026).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1026",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "nut-8-32-low-profile",
+      "name": "#8-32 Low Profile Nut",
+      "family": "nut",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Nuts/#8-32 Low Profile Nut (276-7767).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-7767",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "nut-8-32-nylock",
+      "name": "#8-32 Nylock Nut",
+      "family": "nut",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Nuts/#8-32 Nylock Nut (275-1027).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1027",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "nut-lead-screw",
+      "name": "Lead Screw Nut",
+      "family": "nut",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Nuts/Lead Screw Nut (276-2045-031).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2045-031",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "screw-8-32-setscrew-1-8",
+      "name": "1/8 in Setscrew",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.125 Inch Setscrew.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": null,
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      },
+      "notes": [
+        "Threads are simplified with a 0.1 mm error limit: at 0.25 mm the thread collapses into a coil."
+      ]
+    },
+    {
+      "id": "screw-6-32-1-4-thick",
+      "name": "6-32 x 1/4 in Thick Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.25 Inch Screw (Thick).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": null,
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-6-32-1-2-thick",
+      "name": "6-32 x 1/2 in Thick Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.50 Inch Screw (Thick).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": null,
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-4-star",
+      "name": "#8-32 x 1/4 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.25 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4990",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-3-8",
+      "name": "#8-32 x 3/8 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.375 Inch Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-3-8-star",
+      "name": "#8-32 x 3/8 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.375 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4991",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-2-star",
+      "name": "#8-32 x 1/2 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.50 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4992",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-thumb-1-2",
+      "name": "1/2 in Thumbscrew",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.50 Inch Thumbscrew.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1485",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-5-8",
+      "name": "#8-32 x 5/8 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.625 Inch Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1005",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-5-8-star",
+      "name": "#8-32 x 5/8 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.625 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4993",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-3-4",
+      "name": "#8-32 x 3/4 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.75 Inch Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1006",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-3-4-star",
+      "name": "#8-32 x 3/4 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.75 in Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4994",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-7-8",
+      "name": "#8-32 x 7/8 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.875 Inch Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1007",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-7-8-star",
+      "name": "#8-32 x 7/8 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/0.875 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4995",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-1-4",
+      "name": "#8-32 x 1.25 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/1.25 Inch Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1009",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-1-4-star",
+      "name": "#8-32 x 1.25 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/1.25 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4997",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-1-2",
+      "name": "#8-32 x 1.5 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/1.50 Inch Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": null,
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-1-2-star",
+      "name": "#8-32 x 1.5 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/1.50 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4998",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-3-4",
+      "name": "#8-32 x 1.75 in Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/1.75 Inch Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1011",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-1-3-4-star",
+      "name": "#8-32 x 1.75 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/1.75 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-4999",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-2-star",
+      "name": "#8-32 x 2 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/2.00 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-5004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-2-1-4-star",
+      "name": "#8-32 x 2.25 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/2.25 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-8015",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-2-1-2-star",
+      "name": "#8-32 x 2.5 in Star Drive Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/2.50 Inch Star Drive Screw.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "276-8016",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 5
+      }
+    },
+    {
+      "id": "screw-8-32-shoulder",
+      "name": "#8-32 Shoulder Screw",
+      "family": "screw",
+      "kind": "model",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Screws/Shoulder Screws.step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "275-1408",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-1",
+      "name": "1 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/1 Capped Shaft (228-2500-2219).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2219",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-1-5",
+      "name": "1.5 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/1.5 Capped Shaft (228-2500-2221).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2221",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-2",
+      "name": "2 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/2 Capped Shaft (228-2500-2223).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2223",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-2-5",
+      "name": "2.5 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/2.5 Capped Shaft (228-2500-2225).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2225",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-3",
+      "name": "3 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/3 Capped Shaft (228-2500-2226).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2226",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-3-5",
+      "name": "3.5 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/3.5 Capped Shaft (228-2500-2227).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2227",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-4",
+      "name": "4 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/4 Capped Shaft (228-2500-2228).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2228",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-4-5",
+      "name": "4.5 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/4.5 Capped Shaft (228-2500-2229).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2229",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-5",
+      "name": "5 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/5 Capped Shaft (228-2500-2230).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2230",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-5-5",
+      "name": "5.5 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/5.5 Capped Shaft (228-2500-2231).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2231",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-capped-6",
+      "name": "6 in Capped Shaft",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/Capped/6 Capped Shaft (228-2500-2232).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.25,
+      "sku": {
+        "value": "228-2500-2232",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 5,
+        "max": 7
+      }
+    },
+    {
+      "id": "shaft-adapter-square-1-8",
+      "name": "High Strength Shaft Adapter (1/8 in Square Bore)",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/High Strength Shaft Adapter (1_8 Square Bore, 1_2 Long) (276-8235).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8235",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "shaft-adapter-round-8",
+      "name": "High Strength Shaft Adapter (#8 Round Bore)",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/High Strength Shaft Adapter (#8 Round Bore, 1_2 Long) (276-8034).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8034",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "collar-clamping",
+      "name": "Clamping Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shaft Collars/Clamping Shaft Collar (276-3891).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-6103",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "collar-hs-clamping",
+      "name": "High Strength Clamping Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shaft Collars/High Strength Clamping Shaft Collar (276-3520).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-3520",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "collar-hs-low-profile",
+      "name": "Low Profile High Strength Clamping Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shaft Collars/Low Profile High Strength Clamping Shaft Collar (276-7580).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-7580",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "retainer-collar-bearing-flat",
+      "name": "Shaft Collar Retainer with Bearing Flat",
+      "family": "retainer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shaft Collars/Shaft Collar Retainer with Bearing Flat (276-8024).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8024",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "collar-shaft",
+      "name": "Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shaft Collars/Shaft Collar (276-2010).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "spacer-hs-1-16",
+      "name": "1/16 in High Strength Shaft Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_16 High Strength Shaft Spacer (276-3441-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-3441-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-hs-1-8",
+      "name": "1/8 in High Strength Shaft Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_8 High Strength Shaft Spacer (276-3441-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-3441-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-hs-1-4",
+      "name": "1/4 in High Strength Shaft Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_4 High Strength Shaft Spacer (276-3441-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-3441-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-hs-1-2",
+      "name": "1/2 in High Strength Shaft Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_2 High Strength Shaft Spacer (276-3441-004).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-3441-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-nylon-1-8",
+      "name": "1/8 in Nylon Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_8 Nylon Spacer (275-1066-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1066-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-nylon-1-4",
+      "name": "1/4 in Nylon Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_4 Nylon Spacer (275-1066-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1066-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-nylon-3-8",
+      "name": "3/8 in Nylon Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/3_8 Nylon Spacer (275-1066-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1066-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-nylon-1-2",
+      "name": "1/2 in Nylon Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/1_2 Nylon Spacer (275-1066-004).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1066-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-plastic-4-6",
+      "name": "4.6 mm Plastic Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/4.6mm Plastic Spacer (276-2018).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05
+    },
+    {
+      "id": "spacer-plastic-8",
+      "name": "8 mm Plastic Spacer",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/8mm Plastic Spacer (276-2019).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2019",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-click-on-0-063",
+      "name": "3/8 in OD x #8 Click-On Spacer (0.063 in)",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/3_8 OD x #8 Click-On Spacer, 0.063 (276-8019-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8019-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-click-on-0-125",
+      "name": "3/8 in OD x #8 Click-On Spacer (0.125 in)",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/3_8 OD x #8 Click-On Spacer, 0.125 (276-8019-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8019-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "spacer-click-on-0-250",
+      "name": "3/8 in OD x #8 Click-On Spacer (0.250 in)",
+      "family": "spacer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/3_8 OD x #8 Click-On Spacer, 0.250 (276-8019-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8019-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "insert-shaft-metal",
+      "name": "Metal Shaft Insert",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Metal Shaft Inserts (276-3881-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-3881-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "insert-shaft-plastic",
+      "name": "Plastic Shaft Insert",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Plastic Shaft Inserts (276-3881-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-3881-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "collar-rubber",
+      "name": "Rubber Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Rubber Shaft Collar (228-3510).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "228-3510",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "coupler-shaft",
+      "name": "Shaft Coupler",
+      "family": "coupler",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Shaft Coupler (276-1843-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1843-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "collar-star-clamping",
+      "name": "Star Drive Clamping Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Star Drive Clamping Shaft Collar (276-6101).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-6101",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "collar-star",
+      "name": "Star Drive Shaft Collar",
+      "family": "collar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Star Drive Shaft Collar (276-6103).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-6103",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "washer-steel",
+      "name": "Steel Washer",
+      "family": "washer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Steel Washer (275-1024).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1024",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "washer-teflon",
+      "name": "Teflon Washer",
+      "family": "washer",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Spacers/Teflon Washer (275-1025).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 150,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1025",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bearing-flat",
+      "name": "Flat Bearing",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/Flat Bearing (276-1209).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1209",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bearing-flat-low-profile",
+      "name": "Low Profile Bearing Flat",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/Low Profile Bearing Flat (276-8023).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8023",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bearing-block",
+      "name": "Bearing Block",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/Bearing Blocks (276-2016-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2016-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bearing-block-hs-8",
+      "name": "High Strength Bearing Block (#8 Insert)",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/High Strength Bearing Block #8 Insert (276-7454-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "bearing-block-hs-square",
+      "name": "High Strength Bearing Block (Square Insert)",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/High Strength Bearing Block Square Insert (276-7454-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "bearing-pillow-hs",
+      "name": "High Strength Pillow Block Bearing",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/High Strength Pillow Block Bearing (276-8383).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8383",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bearing-shaft-hs",
+      "name": "High Strength Shaft Bearing",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/High Strength Shaft Bearing (276-3521).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-3521",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "lock-bar",
+      "name": "Lock Bar",
+      "family": "lock-bar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bearings/Lock Bar (276-2016-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2016-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bearing-ball-flanged",
+      "name": "Flanged Ball Bearing (0.875 in ID)",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Ball (Flanged) Bearings/Ball Bearing ID x 0.875 OD x 0.280 WD (Flanged Bearing) (217-5830).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "bearing-ball-block-housing",
+      "name": "High Strength Ball Bearing Block Housing",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Ball (Flanged) Bearings/High Strength Ball Bearing Block Housing (276-7454-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "bearing-ball-shaft-assembly",
+      "name": "High Strength Shaft Ball Bearing Assembly",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Ball (Flanged) Bearings/High Strength Shaft Ball Bearing Assembly (217-8402).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "lock-drive-shaft-bar",
+      "name": "Drive Shaft Bar Lock",
+      "family": "lock-bar",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Bars/Drive Shaft Bar Lock (275-1065).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1065",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "retainer-hex-1-bearing",
+      "name": "1-Post Hex Nut Retainer with Bearing Flat",
+      "family": "retainer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Retainers/1-Post Hex Nut Retainer w_ Bearing Flat (276-6481).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-6481",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "retainer-hex-1",
+      "name": "1-Post Hex Nut Retainer",
+      "family": "retainer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Retainers/1-Post Hex Nut Retainer (276-6482).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "retainer-hex-4",
+      "name": "4-Post Hex Nut Retainer",
+      "family": "retainer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Retainers/4-Post Hex Nut Retainer (276-6483).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-6483",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "retainer-standoff-1-bearing",
+      "name": "1-Post Standoff Retainer with Bearing Flat",
+      "family": "retainer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Retainers/1-Post Standoff Retainer with Bearing Flat (276-8021).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8021",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "retainer-standoff-1",
+      "name": "1-Post Standoff Retainer",
+      "family": "retainer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Retainers/1-Post Standoff Retainer (276-8020).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "retainer-standoff-4",
+      "name": "4-Post Standoff Retainer",
+      "family": "retainer",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Retainers/4-Post Standoff Retainer (276-8022).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8022",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bumper-rubber",
+      "name": "Rubber Bumper",
+      "family": "bumper",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Screws and Nuts/Rubber Bumper (276-7499).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-7499",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "chain-rubber-link",
+      "name": "Rubber Link",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Unknown & Misc/Rubber Link (275-1029).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "275-1029",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bracket-lead-screw",
+      "name": "Lead Screw Bracket",
+      "family": "bracket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Unknown & Misc/Lead Screw Bracket (276-2045-033).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2045-033",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "hinge",
+      "name": "Hinge",
+      "family": "bracket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Unknown & Misc/Hinge (275-1272).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "275-1272",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-12t",
+      "name": "12T Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/12T Gear (276-2169-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2169-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-36t",
+      "name": "36T Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/36T Gear (276-2169-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2169-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-60t",
+      "name": "60T Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/60T Gear (276-2169-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2169-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-84t",
+      "name": "84T Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/84T Gear (276-2169-004).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2169-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-hs-36t",
+      "name": "36T High Strength Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/36T High Strength Gear (276-5034).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2
+    },
+    {
+      "id": "gear-hs-36t-v2",
+      "name": "36T High Strength Gear v2",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/36T High Strength Gear v2 (8-pack) (276-7747).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7747",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-hs-48t-v2",
+      "name": "48T High Strength Gear v2",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/48T High Strength Gear v2 (276-7573).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7573",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-hs-60t",
+      "name": "60T High Strength Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/60T High Strength Gear (276-5035).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2
+    },
+    {
+      "id": "gear-hs-60t-v2",
+      "name": "60T High Strength Gear v2",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/60T High Strength Gear v2 (8-pack) (276-7748).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7748",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-hs-72t-v2",
+      "name": "72T High Strength Gear v2",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/72T High Strength Gear v2 (6-Pack) (276-7574).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7574",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-hs-84t",
+      "name": "84T High Strength Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/84T High Strength Gear (276-3438).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2
+    },
+    {
+      "id": "gear-hs-84t-v2",
+      "name": "84T High Strength Gear v2",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/84T High Strength Gear v2 (4-pack) (276-7749).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7749",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-hs-12t-metal-pinion",
+      "name": "12T High Strength Metal Pinion",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/High Strength and Metal/12T High Strength Metal Pinion (276-2251).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2251",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-metal-12t",
+      "name": "12T Metal Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/High Strength and Metal/12T Metal Gear (276-7368).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7368",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-hs-24t-v2",
+      "name": "24T High Strength Gear v2",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/High Strength and Metal/24T High Strength Gear v2 (276-7572).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7572",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-bevel-16t",
+      "name": "16T Bevel Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Bevel/16t Bevel Gear (276-2045-051).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2045-051",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-bevel-24t",
+      "name": "24T Bevel Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Bevel/24T Bevel Gear (276-2184-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2184-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-bevel-32t",
+      "name": "32T Bevel Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Bevel/32t Bevel Gear (276-2045-052).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2045-052",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-differential",
+      "name": "Differential & Bevel Gear",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Differential & Bevel Gear (276-2184-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2184-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "rack-gear-pinion",
+      "name": "Rack Gear & Pinion",
+      "family": "rack",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Rack Gear & Pinion (276-2184-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2184-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "rack-gear-v2",
+      "name": "Rack Gear v2",
+      "family": "rack",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Rack Gear v2 (276-4782).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-4782",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gear-worm",
+      "name": "Worm Gear & Wheel",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Worm Gear & Wheel (276-2184-004).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2184-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "cam-drop-off",
+      "name": "Drop Off Cam",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Drop Off Cam (276-2045-061).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2045-061",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "hand-crank",
+      "name": "Hand Crank",
+      "family": "gear",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Hand Crank (276-2045-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2045-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "intake-rollers",
+      "name": "Intake Rollers",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Intake Rollers (276-1499).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-1499",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "turntable-bearing-large",
+      "name": "Large Turntable Bearing",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Large Turntable Bearing (276-5652-000).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-5652-000",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "turntable-bearing-small",
+      "name": "Small Turntable Bearing",
+      "family": "bearing",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Small Turntable Bearing (276-5652-004).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-5652-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "lead-screw",
+      "name": "Lead Screw",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Lead Screw (276-2045-032).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2045-032",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 9
+      }
+    },
+    {
+      "id": "shaft-short-shifter",
+      "name": "Short Shifter Shaft (2.65 Ratio Spread)",
+      "family": "shaft",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Gears & Pinions/Short Shifter Shaft 2.65 Ratio Spread (217-3288).step"
+      },
+      "snap": "shank",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "217-3288",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "shankDiameterMm": {
+        "min": 2.5,
+        "max": 9
+      }
+    },
+    {
+      "id": "joint-u",
+      "name": "U-Joint",
+      "family": "coupler",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Joints/U-Joint (276-2045-020).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2045-020",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "joint-universal",
+      "name": "Universal Joints",
+      "family": "coupler",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Joints/Universal Joints (276-2723).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-2723",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "coupler-8-32-hex-1-2",
+      "name": "#8-32 x 1/2 in Hex Drive Coupler",
+      "family": "coupler",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Couplers/#8-32 x 0.500 Hex Drive Coupler (275-1000).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1000",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "coupler-8-32-hex-1",
+      "name": "#8-32 x 1 in Hex Drive Coupler",
+      "family": "coupler",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Couplers/#8-32 x 1.000 Hex Drive Coupler (275-1001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "275-1001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "coupler-8-32-star-1-2",
+      "name": "#8-32 x 1/2 in Star Drive Coupler",
+      "family": "coupler",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Couplers/#8-32 x 0.500 Star Drive Coupler (276-4989).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-4989",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "coupler-8-32-star-1",
+      "name": "#8-32 x 1 in Star Drive Coupler",
+      "family": "coupler",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Couplers/#8-32 x 1.000 Star Drive Coupler (276-4988).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-4988",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-8t",
+      "name": "8T Sprocket (6P)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/8T Sprocket, 6P (276-8030).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-8030",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-16t",
+      "name": "16T Sprocket (6P)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/16T Sprocket, 6P (276-8328).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-8328",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-24t",
+      "name": "24T Sprocket (6P)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/24T Sprocket, 6P (276-8329).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-8329",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-32t",
+      "name": "32T Sprocket (6P)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/32T Sprocket, 6P (276-8330).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-8330",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-40t",
+      "name": "40T Sprocket (6P)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/40T Sprocket, 6P (276-8331).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-8331",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-6t",
+      "name": "6T High Strength Sprocket",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/6T High Strength Sprocket (276-3876).stp"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-3876",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-12t",
+      "name": "12T High Strength Sprocket",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/12T High Strength Sprocket (276-3877).stp"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-3877",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-18t",
+      "name": "18T High Strength Sprocket",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/18T High Strength Sprocket (276-3878).stp"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-3878",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-24t",
+      "name": "24T High Strength Sprocket",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/24T High Strength Sprocket (276-3879).stp"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-3879",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-30t",
+      "name": "30T High Strength Sprocket",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/30T High Strength Sprocket (276-3880).stp"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-3880",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-6t-hs-bore",
+      "name": "6T High Strength Sprocket (HS Bore)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/6T High Strength Sprocket (HS Bore) (276-3876).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 900,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2252-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-12t-hs-bore",
+      "name": "12T High Strength Sprocket (HS Bore)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/12T High Strength Sprocket (HS Bore) (276-3877).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2252-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-18t-hs-bore",
+      "name": "18T High Strength Sprocket (HS Bore)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/18T High Strength Sprocket (HS Bore) (276-3878).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2252-005",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-24t-hs-bore",
+      "name": "24T High Strength Sprocket (HS Bore)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/24T High Strength Sprocket (HS Bore) (276-3879).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2252-006",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sprocket-hs-30t-hs-bore",
+      "name": "30T High Strength Sprocket (HS Bore)",
+      "family": "sprocket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sprockets/High Strength/30T High Strength Sprocket (HS Bore) (276-3880).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2252-007",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "chain-conveyor-base",
+      "name": "Conveyor-belt Base Links",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/Conveyor-belt Base Links (276-2214-001).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2214-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "chain-conveyor-insert-medium",
+      "name": "Medium Conveyor-belt Insert",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/Medium Conveyor-belt Inserts (276-2214-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2214-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "chain-conveyor-insert-short",
+      "name": "Short Conveyor-belt Insert",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/Short Conveyor-belt Inserts (276-2214-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2214-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "chain-conveyor-insert-tall",
+      "name": "Tall Conveyor-belt Insert",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/Tall Conveyor-belt Inserts (276-2214-004).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2214-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "tread-traction-link",
+      "name": "Tank Tread Traction Link",
+      "family": "tread",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/Tank Tread Traction Links (276-2214-005).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2214-005",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "tread-link",
+      "name": "Tread Link",
+      "family": "tread",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/Tread Links (276-2168-004).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2168-004",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "tread-drive-wheel",
+      "name": "Tank Tread Drive Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/Tank Tread Drive Wheels (276-2168-001).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2168-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "chain-hs-link",
+      "name": "High Strength Chain Link",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/High Strength Chain Links (276-2252-001).stp"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2252-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "chain-hs-attachment",
+      "name": "High Strength Chain Attachment Link",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/High Strength Chain Attachment Links (276-2252-002).stp"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-2252-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "chain-hs-conveyor",
+      "name": "High Strength Conveyor Chain",
+      "family": "chain",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Chains/High Strength Conveyor Chain (276-7141).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7141",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "wheel-flex-1-625",
+      "name": "1.625 in Straight Flex Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Flex/1.625 OD Straight Flex Wheel (217-6350).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-flex-2",
+      "name": "2 in Straight Flex Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Flex/2 OD Straight Flex Wheel (217-6353).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-flex-3",
+      "name": "3 in Straight Flex Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Flex/3 OD Straight Flex Wheel (217-6447).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1800,
+      "maxErrorMm": 0.1,
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-flex-4",
+      "name": "4 in Straight Flex Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Flex/4 OD Straight Flex Wheel (217-6450).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1800,
+      "maxErrorMm": 0.1,
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "insert-versahub",
+      "name": "1/2 in Hex Bore Plastic VersaHub",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Flex Wheel Inserts/1_2\u201d Hex Bore Plastic VersaHub (217-4009).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "217-4009",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "insert-versahub-v2",
+      "name": "1/2 in Hex Bore Plastic VersaHub v2",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Flex Wheel Inserts/1_2\u201d Hex Bore Plastic VersaHub v2 (217-8079).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "217-8079",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "insert-versahex-1-4-long",
+      "name": "1/2 in VersaHex Adapter (1/4 in Square Bore, 1/4 in Long)",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Flex Wheel Inserts/1_2 VersaHex Adapters (1_4 Square Bore, 1_4 Long) (6 Pack) (217-5950).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05
+    },
+    {
+      "id": "insert-versahex-1-8-long",
+      "name": "1/2 in VersaHex Adapter (1/4 in Square Bore, 1/8 in Long)",
+      "family": "insert",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Flex Wheel Inserts/1_2 VersaHex Adapters (1_4 Square Bore, 1_8 Long) (6 Pack) (217-5949).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.05
+    },
+    {
+      "id": "wheel-traction-3-25",
+      "name": "3.25 in Traction Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Traction/3.25 Traction Wheel (276-3525) .step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-3525",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-omni-2-75-double",
+      "name": "2.75 in Omni-Directional Double Roller Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Omni/2.75 Omni-Directional Wheel - Double Roller (276-1902) .step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1902",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-omni-3-25",
+      "name": "3.25 in Omni-Directional Anti-Static Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Omni/3.25 (260mm Travel) Omni-Directional Anti-Static Wheel (276-8026).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8026",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-omni-2",
+      "name": "2 in Omni-Directional Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Omni/2\u201d Omni-Directional Wheel (276-9044).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-9044",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-mecanum-2-v2-left",
+      "name": "2 in Mecanum Wheel V2 (Left)",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Mecanum/2\u201d Mecanum Wheels V2 (Left) (276-9041-801) .step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-9041-801",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-mecanum-2-v2-right",
+      "name": "2 in Mecanum Wheel V2 (Right)",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Mecanum/2\u201d Mecanum Wheels V2 (Right) (276-9041-802) .step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-9041-802",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-mecanum-2-left",
+      "name": "2 in Mecanum Wheel (Left, Legacy)",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Mecanum/2 Mecanum Wheel- Left (217-7400).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "217-7400",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-mecanum-2-right",
+      "name": "2 in Mecanum Wheel (Right, Legacy)",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Mecanum/2 Mecanum Wheel- Right (217-7400).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "217-7400",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-mecanum-4",
+      "name": "4 in Mecanum Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Mecanum/4 Mecanum Wheel (276-1447) .step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1447",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-anti-static-3-25",
+      "name": "3.25 in Anti-Static Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Normal/3.25 (260mm Travel) Anti-Static Wheel (276-7771).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-7771",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-anti-static-4",
+      "name": "4 in Anti-Static Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Normal/4 (320mm Travel) Anti-Static Wheel (2-Pack) (276-8103).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8103",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-legacy-4",
+      "name": "4 in Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Legacy/4 Wheel (276-1497) .step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1497",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-legacy-4-hs-bore",
+      "name": "4 in Wheel (High Strength Bore)",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Legacy/4 Wheel (High Strength Bore) (276-1497-110).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1497-110",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-legacy-5",
+      "name": "5 in Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Legacy/5 Wheel (276-1498) .step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 2200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-1498",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "wheel-leg-6",
+      "name": "6 Wheel Leg",
+      "family": "bracket",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/6 Wheel Leg (276-2218) .step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2218",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "bogie-double",
+      "name": "Double Bogie Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/Double Bogie Wheel (276-2168-002).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2168-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "bogie-single",
+      "name": "Single Bogie Wheel",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Unknown & Misc/Single Bogie Wheel (276-2168-003).step"
+      },
+      "snap": "axle",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2168-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      },
+      "axleDiameterMm": 6.35
+    },
+    {
+      "id": "flywheel-weight",
+      "name": "V5 Flywheel Weight",
+      "family": "wheel",
+      "kind": "model",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Wheels/V5 Flywheel Weight (276-8794).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8794",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "motor-3-wire-servo",
+      "name": "3-Wire Servo",
+      "family": "motor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Motors/3-Wire Servo (276-2162).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2162",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "brain-v5",
+      "name": "V5 Robot Brain",
+      "family": "brain",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Robot Brain (276-4810).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 3000,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-4810",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "brain-flange-short",
+      "name": "V5 Robot Brain Mounting Flange (Short)",
+      "family": "brain",
+      "kind": "model",
+      "category": "electronics",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Plastic Containers/V5 Robot Brain Mounting Flange (Short) (276-4810-002).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-4810-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "brain-flange-long",
+      "name": "V5 Robot Brain Mounting Flange (Long)",
+      "family": "brain",
+      "kind": "model",
+      "category": "electronics",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Plastic Containers/V5 Robot Brain Mounting Flange (Long) (276-4810-003).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-4810-003",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "battery-v5",
+      "name": "V5 Robot Battery",
+      "family": "battery",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Robot Battery (276-4811).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-4811",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "battery-clip",
+      "name": "V5 Battery Clip",
+      "family": "battery",
+      "kind": "model",
+      "category": "electronics",
+      "material": "nylon",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Plastic Containers/V5 Battery Clip (276-6020).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 400,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-6020",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "radio-v5",
+      "name": "V5 Robot Radio",
+      "family": "radio",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Robot Radio (276-4831).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-4831",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "controller-v5",
+      "name": "V5 Controller",
+      "family": "controller",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Controller (276-4820).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 2000,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-4820",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-rotation",
+      "name": "V5 Rotation Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Rotation Sensor (276-6050).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-6050",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-distance",
+      "name": "V5 Distance Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Distance Sensor (276-4852).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-4852",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-optical",
+      "name": "V5 Optical Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Optical Sensor (276-7043).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-7043",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-inertial",
+      "name": "V5 Inertial Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 Inertial Sensor (276-4855).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-4855",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-vision-ai",
+      "name": "AI Vision Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/AI Vision Sensor (276-8659).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 2000,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-8659",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-gps",
+      "name": "VEX GPS Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/VEX GPS Sensor (276-7405).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.2,
+      "sku": {
+        "value": "276-7405",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "switch-bumper-v2",
+      "name": "Bumper Switch v2",
+      "family": "switch",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Bumper Switch v2 (276-4858).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-4858",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "switch-bumper-legacy",
+      "name": "Bumper Switch (Legacy)",
+      "family": "switch",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Legacy/Bumper Switch (276-2159).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2159",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "switch-limit",
+      "name": "Limit Switch",
+      "family": "switch",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Limit Switch (276-2174).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2174",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-potentiometer-v2",
+      "name": "Potentiometer V2",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Potentiometer V2 (276-7417).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-7417",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-potentiometer",
+      "name": "Potentiometer",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Potentiometer (276-2216).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "sensor-encoder-optical",
+      "name": "Optical Shaft Encoder",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Optical Shaft Encoder (276-2156).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "sensor-line-tracker",
+      "name": "Line Tracker",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Line Tracker (276-2154).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2154",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-light",
+      "name": "Light Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Light Sensor (276-2158).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-2158",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "sensor-ultrasonic",
+      "name": "Ultrasonic Range Finder",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Ultrasonic Range Finder (276-2155).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "sensor-gyro-yaw-rate",
+      "name": "Yaw Rate Gyroscope Sensor",
+      "family": "sensor",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/Yaw Rate Gyroscope Sensor V1.0 (276-2333).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1
+    },
+    {
+      "id": "expander-3-wire",
+      "name": "V5 3-Wire Expander",
+      "family": "expander",
+      "kind": "model",
+      "category": "electronics",
+      "material": "electronics",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Sensors/V5 3-Wire Expander (276-5299).step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-5299",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "cylinder-25mm",
+      "name": "25 mm Stroke Pneumatic Cylinder",
+      "family": "cylinder",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/25mm Stroke Pneumatic Cylinder.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8642-000",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "cylinder-50mm",
+      "name": "50 mm Stroke Pneumatic Cylinder",
+      "family": "cylinder",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/50mm Stroke Pneumatic Cylinder.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "sku": null
+    },
+    {
+      "id": "cylinder-75mm",
+      "name": "75 mm Stroke Pneumatic Cylinder",
+      "family": "cylinder",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/75mm Stroke Pneumatic Cylinder.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8646-000",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "reservoir",
+      "name": "Pneumatic Reservoir",
+      "family": "reservoir",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Pneumatic Reservoir Assembly.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8749-000",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "fitting-straight",
+      "name": "Straight Pneumatic Fitting",
+      "family": "fitting",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Straight Pneumatic Fitting.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8636-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "fitting-elbow",
+      "name": "Elbow Fitting",
+      "family": "fitting",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Elbow Fitting.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8637-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "fitting-tee",
+      "name": "Tee Fitting",
+      "family": "fitting",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Tee Fittings.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8638-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "fitting-air-flow-valve",
+      "name": "Air Flow Valve Fitting",
+      "family": "fitting",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Air Flow Valve Fitting.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8639-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "fitting-plug",
+      "name": "Pneumatic Fitting Plug",
+      "family": "fitting",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Pneumatic Fitting Plug.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8757-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "valve-schrader",
+      "name": "Schrader Valve",
+      "family": "fitting",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Schrader Valve.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 300,
+      "maxErrorMm": 0.05,
+      "sku": {
+        "value": "276-8751-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "valve-hand",
+      "name": "Pneumatic Hand Valve",
+      "family": "valve",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Pneumatic Hand Valve.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8755-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "regulator",
+      "name": "Pressure Regulator",
+      "family": "regulator",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Pressure Regulator.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8748-000",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "regulator-bracket",
+      "name": "Air Pressure Regulator Mounting Bracket",
+      "family": "bracket",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Air Pressure Regulator Mounting Bracket.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 600,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8748-002",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "gauge-pressure",
+      "name": "Pressure Gauge",
+      "family": "gauge",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Pneumatics/Pressure Gauge.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 800,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8756-001",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "manifold",
+      "name": "Pneumatic Manifold Assembly",
+      "family": "manifold",
+      "kind": "model",
+      "category": "pneumatics",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Unknown & Misc/Manifold Assembly.step"
+      },
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.1,
+      "sku": {
+        "value": "276-8750-810",
+        "source": "solidpython4vex-name",
+        "note": "Matched by name to SolidPython4VEX (SKU in parentheses)."
+      }
+    },
+    {
+      "id": "channel-1x2x1-aluminum-25",
+      "name": "1x2x1 Aluminum C-Channel (25 in)",
+      "family": "channel",
+      "kind": "cut",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Aluminum/1x2x1x25 Aluminum C-Channel (276-2288).step",
+        "sampleLengthMm": 317.5
+      },
+      "cut": {
+        "widthMm": 25.4,
+        "depthMm": 13.97,
+        "thicknessMm": 1.5875,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -0.63,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "side",
+            "across": 4.37,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -10.1,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -6.35,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 6.35,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": 10.1,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "channel-1x5x1-aluminum-25",
+      "name": "1x5x1 Aluminum C-Channel (25 in)",
+      "family": "channel",
+      "kind": "cut",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Aluminum/1x5x1x25 Aluminum C-Channel (276-2290).step",
+        "sampleLengthMm": 317.5
+      },
+      "cut": {
+        "widthMm": 63.5,
+        "depthMm": 13.97,
+        "thicknessMm": 1.5875,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -4.38,
+            "pitch": 63.5,
+            "phase": 0.495
+          },
+          {
+            "wall": "side",
+            "across": 0.67,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": -29.15,
+            "pitch": 63.5,
+            "phase": 0.495
+          },
+          {
+            "wall": "web",
+            "across": -25.4,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": -12.7,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": 12.7,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": 25.4,
+            "pitch": 12.7,
+            "phase": 1
+          },
+          {
+            "wall": "web",
+            "across": 29.15,
+            "pitch": 63.5,
+            "phase": 0.495
+          }
+        ]
+      }
+    },
+    {
+      "id": "channel-1x5x1-aluminum-35",
+      "name": "1x5x1 Aluminum C-Channel (35 in)",
+      "family": "channel",
+      "kind": "cut",
+      "category": "structure",
+      "material": "aluminum",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Aluminum/1x5x1x35 Aluminum C-Channel (276-2298).step",
+        "sampleLengthMm": 444.5
+      },
+      "cut": {
+        "widthMm": 63.5,
+        "depthMm": 13.97,
+        "thicknessMm": 1.5875,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -4.43,
+            "pitch": 63.5,
+            "phase": 0.495
+          },
+          {
+            "wall": "side",
+            "across": 0.67,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -29.2,
+            "pitch": 63.5,
+            "phase": 0.495
+          },
+          {
+            "wall": "web",
+            "across": -25.4,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -12.7,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 12.7,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 25.4,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 29.2,
+            "pitch": 63.5,
+            "phase": 0.495
+          }
+        ]
+      }
+    },
+    {
+      "id": "channel-1x5x1-steel-25",
+      "name": "1x5x1 Steel C-Channel (25 in)",
+      "family": "channel",
+      "kind": "cut",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Steel/1x5x1x25 Steel C-Channel (275-1138).step",
+        "sampleLengthMm": 317.5,
+        "webNormal": "y"
+      },
+      "cut": {
+        "widthMm": 63.5,
+        "depthMm": 13.868,
+        "thicknessMm": 1.168,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -0.58,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.62,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -29.4,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -25.15,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -12.45,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0.25,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 12.95,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 25.65,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 29.4,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "channel-1x5x1-steel-35",
+      "name": "1x5x1 Steel C-Channel (35 in)",
+      "family": "channel",
+      "kind": "cut",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "C Channels/Steel/1x5x1x35 Steel C-Channel (275-1139).step",
+        "sampleLengthMm": 444.5,
+        "webNormal": "y"
+      },
+      "cut": {
+        "widthMm": 63.5,
+        "depthMm": 13.868,
+        "thicknessMm": 1.168,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -0.58,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 4.62,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -29.4,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -25.15,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -12.45,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 0.25,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 12.95,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 25.65,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 29.4,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "angle-2x2-steel-25",
+      "name": "2x2 Steel Angle (25 in)",
+      "family": "angle",
+      "kind": "cut",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Angles/Steel/2x2x25 Steel Angle (275-1142).step",
+        "sampleLengthMm": 317.5
+      },
+      "cut": {
+        "legMm": 25.4,
+        "thicknessMm": 0.889,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -10.55,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -5.15,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 1.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 7.55,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -7.55,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -1.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 5.15,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 10.55,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "angle-2x2-steel-35",
+      "name": "2x2 Steel Angle (35 in)",
+      "family": "angle",
+      "kind": "cut",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Angles/Steel/2x2x35 Steel Angle (275-1143).step",
+        "sampleLengthMm": 444.5
+      },
+      "cut": {
+        "legMm": 25.4,
+        "thicknessMm": 0.889,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -10.55,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -5.15,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 1.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 7.55,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -7.55,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -1.15,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 5.15,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 10.55,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "angle-3x3-steel-35",
+      "name": "3x3 Steel Angle (35 in)",
+      "family": "angle",
+      "kind": "cut",
+      "category": "structure",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Angles/Steel/3x3x35 Steel Angle (275-1144).step",
+        "sampleLengthMm": 444.5
+      },
+      "cut": {
+        "legMm": 38.1,
+        "thicknessMm": 0.889,
+        "holeMm": 4.5,
+        "rows": [
+          {
+            "wall": "side",
+            "across": -16.85,
+            "pitch": 63.5,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": -11.5,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": -5.2,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 1.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "side",
+            "across": 7.5,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "side",
+            "across": 13.9,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -13.9,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": -7.5,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": -1.2,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 5.2,
+            "pitch": 12.7,
+            "phase": 0.5
+          },
+          {
+            "wall": "web",
+            "across": 11.5,
+            "pitch": 12.7,
+            "phase": 0
+          },
+          {
+            "wall": "web",
+            "across": 16.85,
+            "pitch": 63.5,
+            "phase": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "shaft-square-1-8",
+      "name": "1/8 in Square Shaft",
+      "family": "shaft",
+      "kind": "cut",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/2 Shaft (276-2011-001).step",
+        "sampleLengthMm": 50.8
+      },
+      "cut": {
+        "sizeMm": 3.175,
+        "cornerRadiusMm": 0,
+        "rows": []
+      }
+    },
+    {
+      "id": "shaft-square-hs-1-4-3",
+      "name": "1/4 in High Strength Square Shaft (3 in)",
+      "family": "shaft",
+      "kind": "cut",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/High Strength/3 High Strength Shaft (276-3522).step",
+        "sampleLengthMm": 75.2
+      },
+      "cut": {
+        "sizeMm": 6.35,
+        "cornerRadiusMm": 0,
+        "rows": []
+      }
+    },
+    {
+      "id": "shaft-square-hs-1-4-4",
+      "name": "1/4 in High Strength Square Shaft (4 in)",
+      "family": "shaft",
+      "kind": "cut",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/High Strength/4 High Strength Shaft (276-3523).step",
+        "sampleLengthMm": 100.6
+      },
+      "cut": {
+        "sizeMm": 6.35,
+        "cornerRadiusMm": 0,
+        "rows": []
+      }
+    },
+    {
+      "id": "shaft-square-hs-1-4-12",
+      "name": "1/4 in High Strength Square Shaft (12 in)",
+      "family": "shaft",
+      "kind": "cut",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/High Strength/12 High Strength Shaft (276-3524).step",
+        "sampleLengthMm": 304.8
+      },
+      "cut": {
+        "sizeMm": 6.35,
+        "cornerRadiusMm": 0,
+        "rows": []
+      }
+    },
+    {
+      "id": "shaft-square-hs-1-4-24",
+      "name": "1/4 in High Strength Square Shaft (24 in)",
+      "family": "shaft",
+      "kind": "cut",
+      "category": "motion",
+      "material": "steel",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Shafts (axles)/High Strength/24 High Strength Shaft (276-7465).step",
+        "sampleLengthMm": 609.79
+      },
+      "cut": {
+        "sizeMm": 6.35,
+        "cornerRadiusMm": 0,
+        "rows": []
+      }
+    },
+    {
+      "id": "field-push-back-wall",
+      "name": "Field Perimeter Wall",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Field Assembly - Field Wall.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 4000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-foam-floor",
+      "name": "Foam Floor",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Field Assembly - Foam Floor.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 4000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-tape-1",
+      "name": "Field Tape 1",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Field Assembly - Tape 1.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-tape-2",
+      "name": "Field Tape 2",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Field Assembly - Tape 2.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-center-goal-bottom",
+      "name": "Center Goal Bottom",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Field Assembly - Center Goal Bottom.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 2000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-center-goal-top",
+      "name": "Center Goal Top",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Field Assembly - Center Goal Top.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 2000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-center-goal-leg",
+      "name": "Center Goal Support Leg",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Field Assembly - Center Goal Support Leg.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-high-goal-center",
+      "name": "High Goal Center",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Field Assembly - High Goal Center.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 2500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-high-goal-side",
+      "name": "High Goal Side",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Field Assembly - High Goal Side.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 2500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-high-goal-beam",
+      "name": "High Goal Support Beam",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Field Assembly - High Goal Support Beam.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-high-goal-leg",
+      "name": "High Goal Support Leg",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Field Assembly - High Goal Support Leg.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1200,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-goal-tape",
+      "name": "Goal Tape Lines",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Goal Parts/Tape/Field Assembly - Goal Tape Lines.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-loader-top",
+      "name": "Match Loader Top",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Loader Parts/Field Assembly - Loader Top.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 2000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-loader-tube",
+      "name": "Match Loader Tube",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Loader Parts/Field Assembly - Loader Tube.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-park-zone-blue",
+      "name": "Blue Park Zone",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Parking Zones/Field Assembly - Blue Parking Zone.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-park-zone-red",
+      "name": "Red Park Zone",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Parking Zones/Field Assembly - Red Parking Zone.step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1500,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-block-blue",
+      "name": "Blue Block",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Blocks/Blue/Field Assembly - Blue Block (1).step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
+    },
+    {
+      "id": "field-push-back-block-red",
+      "name": "Red Block",
+      "family": "push-back",
+      "kind": "model",
+      "category": "field",
+      "material": "other",
+      "source": {
+        "repo": "vex-cad-download",
+        "path": "Field/Blocks/Red/Field Assembly - Red Block (1).step"
+      },
+      "sku": null,
+      "snap": "bores",
+      "budgetTriangles": 1000,
+      "maxErrorMm": 0.5,
+      "notes": [
+        "Push Back field element from the Field folder of the Push Back CAD set. SKU not published in the file name."
+      ]
     }
   ]
 }

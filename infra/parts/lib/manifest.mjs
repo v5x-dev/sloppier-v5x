@@ -1,8 +1,23 @@
 // Checks the manifest before any STEP file is read, so a typo fails with the part's name.
 
 const SNAP_STRATEGIES = new Set(["bores", "ruled-bores", "shank", "probe", "bores+probe", "axle"]);
-const FAMILIES = new Set(["motor", "wheel", "standoff", "screw", "nut", "plate", "gusset", "channel", "angle", "shaft"]);
-const MATERIALS = new Set(["aluminum", "steel", "nylon", "electronics"]);
+// Every family the catalog knows. The app's validator (apps/design/web/src/catalog/validate.ts)
+// must list the same families, and its tests check that both lists agree.
+export const FAMILIES = new Set([
+  // Structure
+  "channel", "angle", "plate", "gusset", "standoff", "screw", "nut", "bracket", "rail",
+  // Motion
+  "shaft", "collar", "spacer", "washer", "bearing", "retainer", "lock-bar", "bumper", "coupler",
+  "insert", "gear", "rack", "sprocket", "chain", "tread", "wheel",
+  // Electronics
+  "motor", "brain", "battery", "radio", "controller", "sensor", "switch", "expander",
+  // Pneumatics
+  "cylinder", "reservoir", "fitting", "valve", "regulator", "gauge", "manifold",
+  // Field Elements, one family per season
+  "push-back", "high-stakes", "override", "spin-up",
+]);
+export const CATEGORIES = new Set(["structure", "motion", "electronics", "pneumatics", "field"]);
+const MATERIALS = new Set(["aluminum", "steel", "nylon", "electronics", "other"]);
 
 export function validateManifest(manifest, knownRepos) {
   const errors = [];
@@ -14,6 +29,7 @@ export function validateManifest(manifest, knownRepos) {
     ids.add(part.id);
     if (!part.name) errors.push(`${where}: missing name`);
     if (!FAMILIES.has(part.family)) errors.push(`${where}: unknown family "${part.family}"`);
+    if (!CATEGORIES.has(part.category)) errors.push(`${where}: unknown category "${part.category}"`);
     if (!MATERIALS.has(part.material)) errors.push(`${where}: unknown material "${part.material}"`);
     if (!knownRepos.includes(part.source?.repo)) errors.push(`${where}: unknown source repo "${part.source?.repo}"`);
     if (!part.source?.path) errors.push(`${where}: missing source path`);

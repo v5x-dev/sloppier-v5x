@@ -122,4 +122,15 @@ describe("the parts panel's grouping", () => {
     ).toBe(true)
     expect(groupCatalog(catalog.parts, "no such part")).toEqual([])
   })
+
+  it("orders categories as the panel shows them, with Field Elements last", () => {
+    const categories = groupCatalog(catalog.parts, "").map((g) => g.category)
+    const order = ["structure", "motion", "electronics", "pneumatics", "field"]
+    const ranks = categories.map((c) => order.indexOf(c))
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b))
+    const fields = groupCatalog(catalog.parts, "")
+      .filter((g) => g.category === "field")
+      .map((g) => g.family)
+    expect(fields).toEqual(["push-back"])
+  })
 })

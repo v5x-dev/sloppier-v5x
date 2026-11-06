@@ -4,7 +4,8 @@
 
 export type Vec3 = readonly [number, number, number]
 
-export type Material = "aluminum" | "steel" | "nylon" | "electronics"
+/** "other" is for assemblies of several materials, such as field elements: no density, so no mass. */
+export type Material = "aluminum" | "steel" | "nylon" | "electronics" | "other"
 
 /** Snap Points are where another Part can line up: a hole's opening, a shank's end, or an axle. */
 export type SnapPoint = {
@@ -45,10 +46,63 @@ export type MassRecord = {
 
 export type Size = { x: number; y: number; z: number }
 
+/**
+ * The Part panel's top-level groups. Field Elements are kept apart from the parts a
+ * robot is built from.
+ */
+export type Category =
+  "structure" | "motion" | "electronics" | "pneumatics" | "field"
+
+/** Fixed-model families. Field Elements use one family per VEX season. */
+export type FixedFamily =
+  | "motor"
+  | "wheel"
+  | "standoff"
+  | "screw"
+  | "nut"
+  | "plate"
+  | "gusset"
+  | "shaft"
+  | "bracket"
+  | "collar"
+  | "spacer"
+  | "washer"
+  | "bearing"
+  | "retainer"
+  | "lock-bar"
+  | "bumper"
+  | "coupler"
+  | "insert"
+  | "gear"
+  | "rack"
+  | "sprocket"
+  | "chain"
+  | "tread"
+  | "brain"
+  | "battery"
+  | "radio"
+  | "controller"
+  | "sensor"
+  | "switch"
+  | "expander"
+  | "cylinder"
+  | "reservoir"
+  | "fitting"
+  | "valve"
+  | "regulator"
+  | "gauge"
+  | "manifold"
+  | "override"
+  | "push-back"
+  | "high-stakes"
+  | "spin-up"
+
 type PartCommon = {
   id: string
   name: string
-  sku: Sku
+  /** Null when no source publishes a SKU for this Part. */
+  sku: Sku | null
+  category: Category
   material: Material
   source: SourceRecord
   notes: string[]
@@ -56,7 +110,7 @@ type PartCommon = {
 
 export type ModelPart = PartCommon & {
   kind: "model"
-  family: "motor" | "wheel" | "standoff" | "screw" | "nut" | "plate" | "gusset"
+  family: FixedFamily
   /** Along the STEP file's axes, not the Part frame. See modelSizeInPartFrame. */
   sizeMm: Size
   volumeMm3: number
@@ -73,6 +127,8 @@ export type ModelPart = PartCommon & {
     coordinates: string
   }
   snapPoints: SnapPoint[]
+  /** Set when snapPoints is empty: why, and what would fix it. */
+  snapGap?: string
 }
 
 /**
