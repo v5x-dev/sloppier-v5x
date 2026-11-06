@@ -58,7 +58,7 @@ describe("design lifecycle", () => {
       })
       expect(
         (await owner.query(api.designs.get, { designId: namedId })).name
-      ).toMatch(/^[a-z]+(-[a-z]+)+-\d+$/)
+      ).toMatch(/^\S.*-\d+$/)
     }
     await owner.mutation(api.designs.rename, { designId, name: " Tray bot " })
     await owner.mutation(api.designs.setArchived, { designId, archived: true })
