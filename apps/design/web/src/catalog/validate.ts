@@ -71,6 +71,7 @@ const FIXED_FAMILIES = [
 ]
 const CUT_FAMILIES = ["channel", "angle", "shaft"]
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/
+const FIT_TOKEN = /^(screw:[0-9]+-[0-9]+|shaft:[0-9]+(?:\/[0-9]+)?)$/
 
 export type CatalogCheck =
   { ok: true; catalog: Catalog } | { ok: false; errors: string[] }
@@ -115,6 +116,11 @@ export function checkCatalog(value: unknown): CatalogCheck {
     if (!MATERIALS.includes(part.material as Material))
       errors.push(`${where}: unknown material`)
     if (!asRecord(part.source)) errors.push(`${where}: missing source record`)
+    if (
+      part.fit !== undefined &&
+      (typeof part.fit !== "string" || !FIT_TOKEN.test(part.fit))
+    )
+      errors.push(`${where}: invalid fit token`)
 
     if (part.kind === "model") {
       if (!FIXED_FAMILIES.includes(String(part.family)))
@@ -136,6 +142,14 @@ export function checkCatalog(value: unknown): CatalogCheck {
       const cut = asRecord(part.cut)
       if (!cut || !Array.isArray(cut.rows))
         errors.push(`${where}: a cut part needs a generator spec with rows`)
+      if (
+        cut?.holeAccepts !== undefined &&
+        (!Array.isArray(cut.holeAccepts) ||
+          !cut.holeAccepts.every(
+            (token) => typeof token === "string" && FIT_TOKEN.test(token)
+          ))
+      )
+        errors.push(`${where}: holeAccepts must be a list of fit tokens`)
     } else {
       errors.push(`${where}: kind must be "model" or "cut"`)
     }
@@ -163,6 +177,12 @@ function snapErrors(where: string, value: unknown): string[] {
     errors.push(`${where}/${sp.id}: axis must be a unit vector`)
   if (!(typeof sp.diameterMm === "number" && sp.diameterMm > 0))
     errors.push(`${where}/${sp.id}: diameterMm must be positive`)
+  if (
+    sp.accepts !== undefined &&
+    (!Array.isArray(sp.accepts) ||
+      !sp.accepts.every((t) => typeof t === "string" && FIT_TOKEN.test(t)))
+  )
+    errors.push(`${where}/${sp.id}: accepts must be a list of fit tokens`)
   return errors
 }
 

@@ -37,8 +37,11 @@ import {
   type WorldSnap,
 } from "@/design/snap"
 import { SNAP_RADIUS_MM } from "@/design/placement"
+import { fastenerOf } from "@/design/connect"
+import { shaftLine } from "@/design/connections"
 import { boxFor, type ModelLoader } from "./models"
 import type { SceneColors } from "./colors"
+import { withEdgeLines } from "./edge-lines"
 
 type Pose3 = { position: Vec3; rotation: Quat; color: string }
 
@@ -79,6 +82,17 @@ export const DEFAULT_COLORS: Record<PartMaterial, string> = {
   other: "#a9a48f",
 }
 
+/**
+ * The colour a new Part is placed in. A fixed model carries its own colours in its GLB, so
+ * it is placed untinted; a Cut Part has one colour and takes its material's.
+ */
+export function defaultColorFor(catalog: {
+  kind: string
+  material: PartMaterial
+}): string {
+  return catalog.kind === "model" ? "#ffffff" : DEFAULT_COLORS[catalog.material]
+}
+
 const SURFACE: Record<PartMaterial, { metalness: number; roughness: number }> =
   {
     aluminum: { metalness: 0.85, roughness: 0.32 },
@@ -104,6 +118,7 @@ export class SceneStore {
   private readonly rotation = new Quaternion()
   private readonly position = new Vector3()
   private readonly ghost: Mesh
+  private readonly ghostDepth: Mesh
   private readonly hover: LineSegments
   private hovered: string | undefined
   private readonly selection: LineSegments
@@ -136,6 +151,15 @@ export class SceneStore {
     this.ghost.visible = false
     this.ghost.renderOrder = 2
     scene.add(this.ghost)
+    // Writes only depth, from the same surface, before the transparent pass. The ghost then
+    // draws its outer surface only; faces inside the Part fail the depth test behind it.
+    this.ghostDepth = new Mesh(
+      undefined,
+      new MeshBasicMaterial({ colorWrite: false, depthWrite: true })
+    )
+    this.ghostDepth.visible = false
+    this.ghostDepth.renderOrder = 1
+    scene.add(this.ghostDepth)
 
     const edges = new EdgesGeometry(new BoxGeometry(1, 1, 1))
     this.hover = new LineSegments(
@@ -286,21 +310,30 @@ export class SceneStore {
   ): void {
     if (!ref || !pose || color === undefined) {
       this.ghost.visible = false
+      this.ghostDepth.visible = false
       return
     }
     const group = this.ensureGroup(this.shapeOf(ref))
     if (!group.geometry) {
       this.ghost.visible = false
+      this.ghostDepth.visible = false
       return
     }
     this.ghost.geometry = group.geometry
+    this.ghostDepth.geometry = group.geometry
     const material = this.ghost.material as MeshStandardMaterial
-    material.color.set(color)
+    if (material.vertexColors !== hasVertexColors(group.geometry)) {
+      material.vertexColors = hasVertexColors(group.geometry)
+      material.needsUpdate = true
+    }
     material.emissive.copy(this.snapColor)
     material.emissiveIntensity = snapped ? 0.55 : 0
     this.ghost.position.set(...pose.position)
     this.ghost.quaternion.set(...pose.rotation)
     this.ghost.visible = true
+    this.ghostDepth.position.copy(this.ghost.position)
+    this.ghostDepth.quaternion.copy(this.ghost.quaternion)
+    this.ghostDepth.visible = true
   }
 
   /** Marks the Snap Point a placement has snapped to, with its opening facing out. */
@@ -397,6 +430,7 @@ export class SceneStore {
     this.scene.remove(
       this.root,
       this.ghost,
+      this.ghostDepth,
       this.snapMarker,
       this.hover,
       this.selection,
@@ -523,6 +557,10 @@ export class SceneStore {
       (geometry) => {
         if (this.groups.get(group.key) !== group) return
         group.geometry = geometry
+        if (hasVertexColors(geometry)) {
+          group.material.vertexColors = true
+          group.material.needsUpdate = true
+        }
         this.attach(group)
         this.invalidate()
       },
@@ -602,11 +640,13 @@ export class SceneStore {
 
   private materialFor(shape: PartShape): MeshStandardMaterial {
     const surface = SURFACE[shape.catalog.material]
-    return new MeshStandardMaterial({
-      color: "#ffffff",
-      metalness: surface.metalness,
-      roughness: surface.roughness,
-    })
+    return withEdgeLines(
+      new MeshStandardMaterial({
+        color: "#ffffff",
+        metalness: surface.metalness,
+        roughness: surface.roughness,
+      })
+    )
   }
 
   private rebuildSnapIndex(parts: readonly PlacedPart[]): void {
@@ -614,20 +654,30 @@ export class SceneStore {
     for (const part of parts) {
       const shape = partShape(part)
       const shown = this.previews.get(part.id) ?? part
+      const pose = { position: shown.position, rotation: shown.rotation }
       for (const snap of shape.snapPoints)
-        index.add(
-          worldEntry(part.id, snap, {
-            position: shown.position,
-            rotation: shown.rotation,
-          })
-        )
+        index.add(worldEntry(part.id, snap, pose))
+      const fastener = fastenerOf({ ...part, ...pose })
+      if (fastener?.role === "shaft" && fastener.fit)
+        index.addLine({
+          owner: part.id,
+          ...shaftLine({ pose }),
+          fit: fastener.fit,
+          lengthMm: fastener.lengthMm,
+        })
     }
     this.snapIndex = index
   }
 }
 
 function worldEntry(owner: string, snap: SnapPoint, pose: Pose): WorldSnap {
-  return { owner, snapId: snap.id, ...toWorldSnap(snap, pose) }
+  return {
+    owner,
+    snapId: snap.id,
+    kind: snap.kind,
+    ...(snap.accepts ? { accepts: snap.accepts } : {}),
+    ...toWorldSnap(snap, pose),
+  }
 }
 
 function lineGeometry(points: readonly number[]): BufferGeometry {
@@ -664,4 +714,8 @@ function nextPowerOfTwo(n: number): number {
   let p = 1
   while (p < n) p *= 2
   return p
+}
+
+function hasVertexColors(geometry: BufferGeometry): boolean {
+  return "color" in geometry.attributes
 }

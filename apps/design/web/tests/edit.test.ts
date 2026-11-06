@@ -71,6 +71,7 @@ function twoChannelsAndAScrew() {
   const bPose = channelOnPin({ ...screwPose }, "screw-02", 0)
   const screwPart = {
     role: "screw" as const,
+    fit: screw.catalog.fit,
     id: "screw",
     snaps: screw.snapPoints,
     pose: screwPose,
@@ -192,6 +193,7 @@ describe("turning about a fastener", () => {
     const { doc, bPose } = twoChannelsAndAScrew()
     const pivot = pivotAxis({
       role: "screw",
+      fit: screw.catalog.fit,
       id: "screw",
       snaps: screw.snapPoints,
       pose: positionPose(doc, "screw"),
@@ -202,11 +204,8 @@ describe("turning about a fastener", () => {
       targetsOf(doc, group),
       pivot.point,
       pivot.direction,
-      Math.PI / 2,
-      { liftAllowed: false }
+      Math.PI / 2
     )
-    expect("blocked" in plan).toBe(false)
-    if ("blocked" in plan) return
     commitPlan(doc, plan)
     expect(positionOf(doc, "b")).toEqual(bPose.position)
     expect(readConnections(doc).length).toBe(2)
@@ -217,6 +216,7 @@ describe("turning about a fastener", () => {
     const screwPose = positionPose(doc, "screw")
     const pivot = pivotAxis({
       role: "screw",
+      fit: screw.catalog.fit,
       id: "screw",
       snaps: screw.snapPoints,
       pose: screwPose,
@@ -225,14 +225,18 @@ describe("turning about a fastener", () => {
       targetsOf(doc, ["a"]),
       pivot.point,
       pivot.direction,
-      Math.PI / 2,
-      { liftAllowed: false }
+      Math.PI / 2
     )
-    if ("blocked" in plan) throw new Error("unexpected")
     commitPlan(doc, plan)
     const turned = targetsOf(doc, ["a"])[0].pose
     const still = connectionsFor(
-      { role: "screw", id: "screw", snaps: screw.snapPoints, pose: screwPose },
+      {
+        role: "screw",
+        fit: screw.catalog.fit,
+        id: "screw",
+        snaps: screw.snapPoints,
+        pose: screwPose,
+      },
       [{ id: "a", snaps: channel.snapPoints, pose: turned }]
     )
     expect(still.map((d) => d.fastenerSnap)).toEqual(["screw-01"])
@@ -295,47 +299,41 @@ describe("turning about a fastener", () => {
     expect(groupOf(doc, ["a"], { pivot: "s1" })).toEqual(["a", "b", "s2"])
   })
 
-  it("is refused when a turn would dig a Part into the ground", () => {
-    // A block standing on the ground, turned about a pivot at the ground: it would dig in.
+  it("turns a Part into the ground when the turn takes it there, without lifting it", () => {
+    // A block standing on the ground, turned about a pivot at the ground: it digs in, and
+    // the turn keeps the pivot's axis exactly.
     const bounds: Bounds = { lo: [-5, -10, -5], hi: [5, 10, 5] }
     const standing: Target = {
       id: "block",
       pose: { position: [0, 10, 0], rotation: IDENTITY },
       bounds,
     }
-    const plan = planTurn([standing], [0, 0, 0], [1, 0, 0], Math.PI / 2, {
-      liftAllowed: false,
-    })
-    expect(plan).toEqual({ blocked: "ground" })
-    const lifted = planTurn([standing], [0, 0, 0], [1, 0, 0], Math.PI / 2, {
-      liftAllowed: true,
-    })
-    expect("blocked" in lifted).toBe(false)
+    const plan = planTurn([standing], [0, 0, 0], [1, 0, 0], Math.PI / 2)
+    const change = plan.changes[0]
+    // Turned a quarter about X: the block's height now runs along Z, and its middle stays
+    // at the pivot's height.
+    expect(change.position[1]).toBeCloseTo(0, 6)
+    expect(
+      lowestWorldY(
+        { position: change.position, rotation: change.rotation },
+        bounds
+      )
+    ).toBeLessThan(0)
   })
 })
 
-describe("the ground", () => {
-  it("lifts a moved group so that none of it goes below the ground", () => {
+describe("moves are not lifted off the ground", () => {
+  it("moves each Part by exactly the delta, even when that is below the ground", () => {
     const bounds: Bounds = { lo: [-5, -10, -5], hi: [5, 10, 5] }
     const targets: Target[] = [
       { id: "x", pose: { position: [0, 10, 0], rotation: IDENTITY }, bounds },
       { id: "y", pose: { position: [50, 30, 0], rotation: IDENTITY }, bounds },
     ]
     const plan = planMove(targets, [0, -500, 0])
-    for (const change of plan.changes) {
-      const low = lowestWorldY(
-        { position: change.position, rotation: change.rotation },
-        bounds
-      )
-      expect(low).toBeGreaterThanOrEqual(-1e-6)
-    }
-    expect(
-      Math.min(
-        ...plan.changes.map((c) =>
-          lowestWorldY({ position: c.position, rotation: c.rotation }, bounds)
-        )
-      )
-    ).toBeCloseTo(0, 6)
+    expect(plan.changes.map((c) => c.position)).toEqual([
+      [0, -490, 0],
+      [50, -470, 0],
+    ])
   })
 })
 

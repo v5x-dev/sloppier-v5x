@@ -35,9 +35,35 @@ that Part only. The build prints how many Parts came from the cache and the tota
    cylindrical faces (`lib/holes.mjs`), and hole openings found by ray probes
    (`lib/probe.mjs`, `lib/lattice.mjs`).
 3. **Builds a model** (fixed Parts): snap points by the manifest's strategy, mass from
-   volume and density, then a welded mesh reduced to the triangle budget with
-   meshoptimizer, written as flat-shaded, meshopt-compressed GLB into `.cache/models/`.
+   volume and density, then the display mesh (`lib/display.mjs`), written as a
+   meshopt-compressed GLB with normals and per-region colours into `.cache/models/`.
    The file name carries the first eight hex digits of its hash.
+
+The display mesh is the shape a viewer sees, not the solid. Its steps:
+
+- **Visible surfaces only** (`lib/exterior.mjs`). The bounding box is voxelised and
+  flood-filled from outside, with a one-voxel seal so seams do not leak. Triangles that
+  touch no outside air are dropped. Gears and boards sealed inside a case go, and so do
+  faces hidden in a socket's depth only if no opening reaches them.
+- **Colours per region.** Each colour from the STEP solids is simplified on its own, so
+  colour boundaries are open edges and stay sharp. Colours go in as vertex colours.
+- **Feature edges are locked** (`lockedVertices`). Edges that turn more than 35 degrees,
+  open edges, and colour boundaries keep their vertices, so the simplifier cannot round
+  off a real edge. Everything else is reduced toward the budget under `maxErrorMm`.
+- **Normals respect the crease** (`lib/normals.mjs`). Each corner averages only the faces
+  within 35 degrees of its own, so curves shade smooth and edges stay hard.
+
+Solids of revolution take a different path (`lib/lathe.mjs`). A screw is a dome head and a
+shank, so its display mesh is the measured radius profile along its axis, simplified within
+`maxErrorMm` and revolved around the axis with `segments` sides (12). That gives about 300
+triangles where the visible-surface path, with its locked sharp edges, cannot get below 380.
+The manifest marks these entries with `"remodel": "lathe"`. Checked by hand on the 1-inch
+screw: the revolved volume is 407.8 mm³ against the STEP's 409.4 mm³. The build does not
+check this; `tests/lathe.test.mjs` covers the parts of the method on fixtures.
+
+Snap Points, volume and mass still come from the full STEP, before any of this runs.
+`bun run --cwd infra/parts review -- --only <id>` writes the full tessellation and the
+display mesh side by side under `.cache/review/`, rendered with Blender, for comparing by eye.
 4. **Verifies a spec** (Cut Parts): the probed holes must match the `rows` in the manifest
    exactly, with no missing and no extra holes, or the build stops.
 
@@ -96,10 +122,15 @@ same numbers. glTF defines metres, so the app must not rescale them.
 
 ## Budgets and what they cost
 
-Raw STEP tessellations are large. The motor is 57,151 triangles and the omni wheel is
-107,880. Budgets are set per part in `manifest.json`. The table printed by `build` lists
-the achieved counts against the raw ones. The simplifier keeps each collapse within
-`maxErrorMm`, so a part with a budget it cannot reach stays above it, and the build says so.
+Budgets follow how often a Part appears in a robot. A rare Part can afford far more: the
+11W motor appears a dozen times, so it gets a budget in the tens of thousands. A screw
+appears hundreds of times and stays in the hundreds. Each budget is `budgetTriangles` in
+`manifest.json`, with `maxErrorMm` as the limit on surface error.
+
+The budget is a target, and a Part can miss it. Feature edges are locked, and an edge
+whose two ends are locked cannot collapse, so a Part with many sharp edges (the wheel's
+rollers) keeps a floor above its budget. The build prints the achieved count against the
+raw one, and nothing is hidden: a missed budget shows in the table.
 
 ## Categories, families, and what the Catalog holds
 
@@ -123,16 +154,17 @@ Each channel length has its own row spec, measured from its STEP file. Shared bo
 rules are not implemented yet.
 
 A model with no Snap Points records a `snapGap` in the catalog. The app's validator
-requires that reason, so an empty list can never pass silently. 142 of 278 models
+requires that reason, so an empty list can never pass silently. 139 of 278 models
 have one, because the bore detector (`lib/holes.mjs`) finds a cylinder only when a face
 covers 170 degrees within a 1.5 to 12 mm diameter. Many STEP files use B-spline holes,
-bores over 12 mm, or bores that do not open on the bounding box, so they give none. The
-fix for each is a hand-placed point recorded as `manual`. That work is not done.
+bores over 12 mm, or bores that do not open on the bounding box, so they give none. Some
+openings need a hand-placed point recorded as `manual`; the measured motor mounts are
+covered in Known gaps below.
 
 Mass is null for electronics, and for field elements (material `other`, a mix of
 materials with no single density).
 
-Budgets are targets. 131 models are above their triangle budget, because the simplifier
+Budgets are targets. 129 models are above their triangle budget, because the simplifier
 stops at the error limit first. Gears, sprockets, chains and racks use a 0.2 mm error
 limit, since 0.05 mm cannot reach their budgets. The 1/8 in setscrew uses 0.1 mm, because
 at 0.25 mm its threads collapse into a coil.
@@ -154,8 +186,22 @@ at 0.25 mm its threads collapse into a coil.
   and a third-party disc on stlfinder were found, but not checked.
 - **Field goals** are split into their STEP files (the centre goal's bottom, top and leg
   are three Parts), not merged into one Part per goal. Merging needs multi-file sources.
-- **Snap Points** are missing on 142 models (see above).
+- **Snap Points** remain incomplete on 139 models (see above). The motors' mounting holes
+  are measured positions (`extraSnaps`), not detected bores. The 11 W motor's four 8-32
+  holes sit at the corners of each end face, at (±21.95, ±14) mm in the STEP frame. The
+  5.5 W motor's two 8-32 holes are on its end face at x = 0, 12.7 mm apart. Tests pin the
+  11 W positions.
+- **Wheel bores** are not read reliably; wheels get a computed axle at their centre.
+- **Steel plates** keep 3,080 and 5,120 triangles against their 6,000 target. Each hole
+  needs four walls (8 triangles), so the remaining faces cannot be removed without losing
+  holes.
+- **Cut-part fit** is based on the measured catalog rows. Shared bore-pattern rules are not
+  implemented, and the steel angle is not included as a Cut Part.
 - **Recents** in the parts panel are not built.
+- **Mass** uses STEP volume times handbook density, not a measured weight. Electronics
+  have no density, so motor mass stays null until a published figure is recorded.
+- **Model overlaps** at channel webs/sides and angle legs are kept as separate plates; the
+  overlapping faces are hidden inside the Part.
 
 ## Sources, licences, and credit
 

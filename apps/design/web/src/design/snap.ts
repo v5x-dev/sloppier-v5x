@@ -5,17 +5,22 @@
 // Connection is decided in a later change.
 
 import { Quaternion, Vector3 } from "three"
-import type { SnapPoint, Vec3 } from "@/catalog/types"
+import type { FitToken, SnapPoint, Vec3 } from "@/catalog/types"
 import type { Quat } from "./model"
 
 export type Pose = { position: Vec3; rotation: Quat }
 
-/** A Snap Point in the world frame. `axis` is a unit vector pointing out of its Part. */
+/**
+ * A Snap Point in the world frame. `axis` is a unit vector pointing out of its Part. `kind`
+ * and `accepts` tell a placement which openings a fastener can be set into.
+ */
 export type WorldSnap = {
   owner: string
   snapId: string
   position: Vector3
   axis: Vector3
+  kind?: SnapPoint["kind"]
+  accepts?: readonly FitToken[]
 }
 
 export function toWorldSnap(
@@ -42,7 +47,13 @@ export function alignToSnap(
 ): Pose {
   const q0 = new Quaternion(...base)
   const from = new Vector3(...candidate.axis).applyQuaternion(q0).normalize()
-  const facing = target.axis.clone().normalize().negate()
+  // A fastener's end pin goes into an opening, so its body runs into the Part: the pin's
+  // axis lines up with the opening's. Other Snap Points face the opening.
+  const along = target.axis.clone().normalize()
+  const facing =
+    candidate.kind === "pin" && candidate.role !== "end"
+      ? along
+      : along.negate()
   const q1 = new Quaternion().setFromUnitVectors(from, facing).multiply(q0)
   const q2 = new Quaternion().setFromAxisAngle(facing, roll).multiply(q1)
   const offset = new Vector3(...candidate.position).applyQuaternion(q2)
@@ -53,13 +64,37 @@ export function alignToSnap(
   }
 }
 
+/**
+ * A placed shaft's line in the world frame. A hole or axle that takes the shaft's fit can
+ * slide onto it anywhere along its length, so a line is not a point in the grid.
+ */
+export type ShaftLine = {
+  owner: string
+  origin: Vector3
+  /** Unit vector along the shaft. */
+  direction: Vector3
+  fit: string
+  lengthMm: number
+}
+
 /** Placed Snap Points in a uniform grid, so a query looks at a few cells, not every point. */
 export class SnapIndex {
   private readonly cells = new Map<string, WorldSnap[]>()
   private readonly everything: WorldSnap[] = []
+  private readonly shafts: ShaftLine[] = []
 
   constructor(private readonly cellMm: number) {
     if (!(cellMm > 0)) throw new RangeError("Cell size must be positive")
+  }
+
+  /** Adds a shaft that other Parts can slide onto. */
+  addLine(line: ShaftLine): void {
+    this.shafts.push(line)
+  }
+
+  /** Every shaft line in the index. */
+  lines(): readonly ShaftLine[] {
+    return this.shafts
   }
 
   add(entry: WorldSnap): void {
@@ -113,8 +148,8 @@ export type SnapMatch = {
 
 /**
  * The nearest pair of Snap Points within `radius`, if any. The candidate's Snap Points are
- * taken where the Part would sit at `pose` without snapping. A pair whose aligned pose
- * fails `accept` is skipped, so a snap that would sink the Part can yield to the next one.
+ * taken where the Part would sit at `pose` without snapping. Nothing is refused for where the
+ * aligned Part lands: the ground does not limit a snap.
  */
 export function findSnap(
   candidates: readonly SnapPoint[],
@@ -122,7 +157,7 @@ export function findSnap(
   index: SnapIndex,
   radius: number,
   roll = 0,
-  accept: (pose: Pose) => boolean = () => true
+  fit?: FitToken
 ): SnapMatch | null {
   let best: SnapMatch | undefined
   for (const candidate of candidates) {
@@ -130,8 +165,8 @@ export function findSnap(
     for (const target of index.near(at, radius)) {
       const distance = at.distanceTo(target.position)
       if (distance > radius || (best && distance >= best.distance)) continue
+      if (!fitsOpening(target, candidate, fit)) continue
       const aligned = alignToSnap(candidate, target, pose.rotation, roll)
-      if (!accept(aligned)) continue
       best = { candidate, target, distance, pose: aligned }
     }
   }
@@ -141,9 +176,11 @@ export function findSnap(
 /**
  * The Snap Point the pointer is over, if any: the placed Snap Point nearest to the pointer's
  * ray, within `radius`, in front of the camera. The candidate's Snap Point that sits closest
- * to it, at the ground pose, is the one that mates. The result is aligned to that pair. A
- * pair whose aligned pose fails `accept` is skipped.
+ * to it, at the ground pose, is the one that mates. The result is aligned to that pair.
  */
+/** How much an opening that faces away from the pointer is set back when ranking targets. */
+const FACES_AWAY_RANK_MM = 3
+
 export function findSnapAlongRay(
   candidates: readonly SnapPoint[],
   ray: { origin: Vector3; direction: Vector3 },
@@ -151,13 +188,13 @@ export function findSnapAlongRay(
   radius: number,
   groundPose: Pose,
   roll = 0,
-  accept: (pose: Pose) => boolean = () => true
+  fit?: FitToken
 ): SnapMatch | null {
   if (candidates.length === 0) return null
   // Called on every pointer move against every placed Snap Point, so it allocates little.
   const direction = ray.direction.clone().normalize()
   const { x: ox, y: oy, z: oz } = ray.origin
-  const reached: { target: WorldSnap; distance: number }[] = []
+  const reached: { target: WorldSnap; distance: number; rank: number }[] = []
   for (const target of index.all()) {
     const dx = target.position.x - ox
     const dy = target.position.y - oy
@@ -167,21 +204,122 @@ export function findSnapAlongRay(
     const distance = Math.sqrt(
       Math.max(0, dx * dx + dy * dy + dz * dz - along * along)
     )
-    if (distance <= radius) reached.push({ target, distance })
+    if (distance > radius) continue
+    // A through-hole has an opening on each face, and a ray passes both. The opening that
+    // faces the pointer ranks first, so a pointer from above takes the top face.
+    const facesAway = target.axis.dot(direction) > 0
+    reached.push({
+      target,
+      distance,
+      rank: distance + (facesAway ? FACES_AWAY_RANK_MM : 0),
+    })
   }
-  reached.sort((a, b) => a.distance - b.distance)
+  reached.sort((a, b) => a.rank - b.rank)
   for (const { target, distance } of reached) {
-    let candidate = candidates[0]
+    let candidate: SnapPoint | undefined
     let nearest = Infinity
     for (const c of candidates) {
+      if (!fitsOpening(target, c, fit)) continue
       const at = toWorldSnap(c, groundPose).position.distanceTo(target.position)
       if (at < nearest) {
         nearest = at
         candidate = c
       }
     }
+    if (!candidate) continue
     const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
-    if (accept(pose)) return { candidate, target, distance, pose }
+    return { candidate, target, distance, pose }
   }
   return null
+}
+
+/**
+ * Whether a candidate Snap Point can be set into this target. A fastener's pin only goes
+ * into an opening that takes its fit, such as a shaft into a socket, or a screw into a hole
+ * it threads. Other pairs are not limited by fit.
+ */
+function fitsOpening(
+  target: WorldSnap,
+  candidate: SnapPoint,
+  fit: FitToken | undefined
+): boolean {
+  if (candidate.kind !== "pin" || fit === undefined) return true
+  return target.kind === "hole" && (target.accepts?.includes(fit) ?? false)
+}
+
+/**
+ * The point on a shaft's line that a pointer ray passes nearest to, if the ray gets within
+ * `radius` of the shaft's length. A candidate hole or axle that takes the shaft's fit is
+ * placed on that point, facing along the shaft, so a Part can slide on anywhere along it.
+ */
+export function findLineSnapAlongRay(
+  candidates: readonly SnapPoint[],
+  ray: { origin: Vector3; direction: Vector3 },
+  lines: readonly ShaftLine[],
+  radius: number,
+  groundPose: Pose,
+  roll = 0
+): SnapMatch | null {
+  const direction = ray.direction.clone().normalize()
+  let best: SnapMatch | null = null
+  for (const line of lines) {
+    const takers = candidates.filter(
+      (c) =>
+        (c.kind === "hole" || c.kind === "axle") &&
+        (c.accepts?.includes(line.fit) ?? false)
+    )
+    if (takers.length === 0) continue
+    const on = nearestOnLine(ray.origin, direction, line)
+    if (!on) continue
+    const q = line.origin.clone().addScaledVector(line.direction, on.along)
+    const reach = q.clone().sub(ray.origin)
+    const ahead = reach.dot(direction)
+    if (ahead <= 0) continue
+    const distance = reach.clone().addScaledVector(direction, -ahead).length()
+    if (distance > radius) continue
+    if (best && distance >= best.distance) continue
+    // The candidate taker nearest the line point decides which opening meets it.
+    let candidate = takers[0]
+    let nearest = Infinity
+    for (const c of takers) {
+      const at = toWorldSnap(c, groundPose).position.distanceTo(q)
+      if (at < nearest) {
+        nearest = at
+        candidate = c
+      }
+    }
+    // Face the shaft on the side the candidate already faces, so it does not flip over.
+    const facing =
+      toWorldSnap(candidate, groundPose).axis.dot(line.direction) >= 0 ? 1 : -1
+    const target: WorldSnap = {
+      owner: line.owner,
+      snapId: "shaft-line",
+      position: q,
+      axis: line.direction.clone().multiplyScalar(-facing),
+    }
+    const pose = alignToSnap(candidate, target, groundPose.rotation, roll)
+    best = { candidate, target, distance, pose }
+  }
+  return best
+}
+
+/** Where a ray passes nearest to a shaft's infinite line, clamped to the shaft's length. */
+function nearestOnLine(
+  origin: Vector3,
+  direction: Vector3,
+  line: ShaftLine
+): { along: number } | null {
+  const u = line.direction
+  const w0 = origin.clone().sub(line.origin)
+  const a = 1
+  const b = direction.dot(u)
+  const c = 1
+  const d = direction.dot(w0)
+  const e = u.dot(w0)
+  const denom = a * c - b * b
+  // A ray parallel to the shaft cannot pick out one point along it.
+  if (Math.abs(denom) < 1e-9) return null
+  const t = (a * e - b * d) / denom
+  const half = line.lengthMm / 2
+  return { along: Math.max(-half, Math.min(half, t)) }
 }

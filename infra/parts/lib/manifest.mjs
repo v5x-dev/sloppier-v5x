@@ -18,6 +18,7 @@ export const FAMILIES = new Set([
 ]);
 export const CATEGORIES = new Set(["structure", "motion", "electronics", "pneumatics", "field"]);
 const MATERIALS = new Set(["aluminum", "steel", "nylon", "electronics", "other"]);
+const FIT = /^(screw:[0-9]+-[0-9]+|shaft:[0-9/]+)$/;
 
 export function validateManifest(manifest, knownRepos) {
   const errors = [];
@@ -32,6 +33,9 @@ export function validateManifest(manifest, knownRepos) {
     if (!CATEGORIES.has(part.category)) errors.push(`${where}: unknown category "${part.category}"`);
     if (!MATERIALS.has(part.material)) errors.push(`${where}: unknown material "${part.material}"`);
     if (!knownRepos.includes(part.source?.repo)) errors.push(`${where}: unknown source repo "${part.source?.repo}"`);
+    if (part.fit !== undefined && !FIT.test(part.fit)) errors.push(`${where}: fit "${part.fit}" must be screw:<thread> or shaft:<side>`);
+    for (const token of part.snapAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: snapAccepts token "${token}" is not a fit`);
+    for (const token of part.cut?.holeAccepts ?? []) if (!FIT.test(token)) errors.push(`${where}: holeAccepts token "${token}" is not a fit`);
     if (!part.source?.path) errors.push(`${where}: missing source path`);
     if (part.kind === "model") {
       if (!SNAP_STRATEGIES.has(part.snap)) errors.push(`${where}: unknown snap strategy "${part.snap}"`);

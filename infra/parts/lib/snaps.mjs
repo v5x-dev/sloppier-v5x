@@ -62,21 +62,58 @@ export function ruledBoreSnaps(bores, bounds, rule) {
   return points;
 }
 
-/** The two ends of a fastener's shank: the underside of the head and the tip. */
+/**
+ * The two ends of a fastener's shank: the underside of the head and the tip. The head is
+ * the end with a wider cylinder beside it (the head itself). A screw is only ever set into an
+ * opening head first, so the head end is marked `role: "head"` and the tip `role: "tip"`.
+ */
 export function shankSnaps(pins, bounds, range) {
   const shank = pins
     .filter((p) => p.diameterMm >= range.min && p.diameterMm <= range.max)
     .sort((a, b) => b.depthMm - a.depthMm)[0];
   if (!shank) return [];
   const half = shank.depthMm / 2;
+  const headSign = headEndSign(pins, shank);
   return [-1, 1].map((sign) => ({
     kind: "pin",
+    role: sign === headSign ? "head" : "tip",
     source: "detected",
     position: stepToPartPoint(add(shank.center, scale(shank.axis, sign * half)), bounds),
     axis: stepToPartDirection(scale(shank.axis, sign)),
     diameterMm: shank.diameterMm,
     depthMm: shank.depthMm,
   }));
+}
+
+/**
+ * The sign (-1 or 1) of the shank end that has a wider cylinder on its axis within a few
+ * millimetres: the screw's head. Falls back to -1 when neither end has one.
+ */
+function headEndSign(pins, shank) {
+  const half = shank.depthMm / 2;
+  for (const sign of [-1, 1]) {
+    const end = add(shank.center, scale(shank.axis, sign * half));
+    const found = pins.some(
+      (p) =>
+        p.diameterMm > shank.diameterMm + 0.5 &&
+        Math.abs(dotOf(sub(p.center, end), shank.axis)) <= 3.5 &&
+        lengthOf(sub(sub(p.center, end), scale(shank.axis, dotOf(sub(p.center, end), shank.axis)))) <= 0.5 * shank.diameterMm
+    );
+    if (found) return sign;
+  }
+  return -1;
+}
+
+function sub(a, b) {
+  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+}
+
+function dotOf(a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+function lengthOf(a) {
+  return Math.hypot(a[0], a[1], a[2]);
 }
 
 /** Probed openings in a flat part, placed in the plane at mid-thickness. */

@@ -134,8 +134,6 @@ function DesignEditor({
   designId: Id<"designs">
   userId: string
 }) {
-  // The hooks live in OpenDesign, so that no hook is skipped while the document loads.
-  const design = useQuery(api.designs.get, { designId })
   const { doc, state } = useDesignSync(designId, userId)
   if (!doc) {
     return (
@@ -145,18 +143,20 @@ function DesignEditor({
       </div>
     )
   }
-  return <OpenDesign doc={doc} design={design} state={state} />
+  return <DesignWorkspace designId={designId} doc={doc} state={state} />
 }
 
-function OpenDesign({
+/** The editor once the Design's document has loaded. Every hook runs on every render. */
+function DesignWorkspace({
+  designId,
   doc,
-  design,
   state,
 }: {
+  designId: Id<"designs">
   doc: Y.Doc
-  design: { name: string } | null | undefined
   state: DesignSyncState
 }) {
+  const design = useQuery(api.designs.get, { designId })
   const modelsBase = useMemo(
     () => readModelsBase(import.meta.env.VITE_DESIGN_MODELS_URL),
     []
@@ -260,16 +260,12 @@ function OpenDesign({
   const turn = (degrees: number, axis: number) => {
     const unit: [number, number, number] = [0, 0, 0]
     unit[axis] = 1
-    const ok = turnBy(doc, selection, {
+    turnBy(doc, selection, {
       angle: (degrees * Math.PI) / 180,
       axis: unit,
       pivotFastener: pivot,
     })
-    setNotice(
-      ok
-        ? undefined
-        : "That turn would put a Part under the ground. Turn about the selection's centre, or move it up first."
-    )
+    setNotice(undefined)
   }
   const moveTo = (target: Vec3) => {
     if (selected.length !== 1) return

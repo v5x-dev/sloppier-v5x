@@ -38,8 +38,7 @@ export function moveBy(
 
 /**
  * Turns the selection about its centre, or about a screw or shaft if `pivotFastener` is
- * given. Returns false, changing nothing, when a turn about a fastener would dig the Parts
- * into the ground.
+ * given. Nothing is refused for where the Parts end up, below the ground or not.
  */
 export function turnBy(
   doc: Y.Doc,
@@ -50,7 +49,7 @@ export function turnBy(
     pivotFastener?: string
     alone?: boolean
   }
-): boolean {
+): void {
   const hinge = options.pivotFastener
     ? hingeOf(doc, options.pivotFastener)
     : undefined
@@ -65,11 +64,8 @@ export function turnBy(
     : centre
   const plan = planTurn(targets, pivot, options.axis, options.angle, {
     alone: options.alone,
-    liftAllowed: !hinge,
   })
-  if ("blocked" in plan) return false
   commitPlan(doc, plan)
-  return true
 }
 
 /** Joins the selection's screws and shafts to the Parts they pass through. Returns how many were made. */
