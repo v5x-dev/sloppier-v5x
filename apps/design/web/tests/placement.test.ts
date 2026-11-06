@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { Quaternion, Vector3 } from "three"
 import type { ModelPart, SnapPoint, Vec3 } from "../src/catalog/types"
 import { restingQuat } from "../src/design/orientation"
+import { connectionsForNew } from "../src/design/connect"
 import {
   SnapIndex,
   findSnap,
@@ -200,6 +201,58 @@ describe("the ground does not limit a snap", () => {
     const result = placementPose(block, { x: 0, z: 0 }, START_TURN, index, ray)
     expect(result.snap).not.toBeNull()
     expect(lowestWorldY(result.pose, block.bounds)).toBeLessThan(0)
+  })
+})
+
+describe("placing a shaft into a wheel", () => {
+  it("snaps a shaft end into an axle that accepts its fit and connects it", () => {
+    const shaftRef = { catalogId: "shaft-square-1-8", lengthMm: 50.8 }
+    const wheelRef = { catalogId: "wheel-normal-2-75" }
+    const shaft = partShape(shaftRef)
+    const wheel = partShape(wheelRef)
+    const wheelPose = {
+      position: [0, 100, 0] as Vec3,
+      rotation: [0, 0, 0, 1] as const,
+    }
+    const axle = wheel.snapPoints.find((point) => point.kind === "axle")
+    if (!axle) throw new Error("wheel has no axle Snap Point")
+    const target = toWorldSnap(axle, wheelPose)
+    const index = new SnapIndex(10)
+    index.add({
+      owner: "wheel",
+      snapId: axle.id,
+      kind: axle.kind,
+      ...(axle.accepts ? { accepts: axle.accepts } : {}),
+      ...target,
+    })
+    const ray = {
+      origin: target.position.clone().addScaledVector(target.axis, 100),
+      direction: target.axis.clone().negate(),
+    }
+    const result = placementPose(shaft, { x: 0, z: 0 }, START_TURN, index, ray)
+
+    expect(result.snap?.target.owner).toBe("wheel")
+    expect(result.snap?.target.snapId).toBe(axle.id)
+    expect(
+      connectionsForNew(
+        [
+          {
+            id: "wheel",
+            ...wheelRef,
+            position: wheelPose.position,
+            rotation: wheelPose.rotation,
+            color: "#fff",
+          },
+        ],
+        {
+          id: "shaft",
+          ...shaftRef,
+          position: result.pose.position,
+          rotation: result.pose.rotation,
+          color: "#fff",
+        }
+      )
+    ).toMatchObject([{ fastener: "shaft", host: "wheel", hostSnap: axle.id }])
   })
 })
 
