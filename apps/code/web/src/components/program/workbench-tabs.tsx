@@ -27,7 +27,7 @@ export function TabChip({ path }: { path: string }) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none w-48 overflow-hidden rounded-md shadow-overlay"
+      className="pointer-events-none w-48 overflow-hidden rounded-md shadow-[0_4px_8px_-4px_var(--shadow-color),0_16px_40px_-12px_var(--shadow-color)]"
     >
       <FileTree
         model={model}
