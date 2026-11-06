@@ -401,6 +401,7 @@ function snapPointsOf(
         position: [-half, 0, 0],
         axis: [-1, 0, 0],
         diameterMm: size,
+        role: "end",
       },
       {
         id: "pin-end",
@@ -409,6 +410,7 @@ function snapPointsOf(
         position: [half, 0, 0],
         axis: [1, 0, 0],
         diameterMm: size,
+        role: "end",
       },
     ]
   }

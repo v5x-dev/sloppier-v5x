@@ -174,6 +174,33 @@ describe("findSnapAlongRay", () => {
     rotation: [0, 0, 0, 1] as [number, number, number, number],
   }
 
+  it("takes the opening that faces the pointer when a ray passes both faces of a hole", () => {
+    // A through-hole: one opening faces up, the other down, at the same point.
+    const index = new SnapIndex(10)
+    index.add({ owner: "web", snapId: "top", ...target([0, 0, 0], [0, 1, 0]) })
+    index.add({
+      owner: "web",
+      snapId: "bottom",
+      ...target([0, -1.6, 0], [0, -1, 0]),
+    })
+    const fromAbove = findSnapAlongRay(
+      [snap({ axis: [0, -1, 0] })],
+      down,
+      index,
+      10,
+      flat
+    )
+    expect(fromAbove?.target.snapId).toBe("top")
+    const fromBelow = findSnapAlongRay(
+      [snap({ axis: [0, 1, 0] })],
+      { origin: new Vector3(0, -500, 0), direction: new Vector3(0, 1, 0) },
+      index,
+      10,
+      flat
+    )
+    expect(fromBelow?.target.snapId).toBe("bottom")
+  })
+
   it("snaps to a Snap Point the pointer's ray passes near", () => {
     const index = new SnapIndex(10)
     index.add({
@@ -311,5 +338,21 @@ describe("alignToSnap for a fastener's end pin", () => {
     const pose = alignToSnap(pin, opening, [0, 0, 0, 1])
     const axis = toWorldSnap(pin, pose).axis
     expect(axis.x).toBeCloseTo(1, 6)
+  })
+
+  it("lines a shaft end up the other way, so the shaft runs out of the opening", () => {
+    // A shaft end sits inside the opening it is set into, and its body runs out of it.
+    const end = snap({
+      kind: "pin",
+      role: "end",
+      position: [0, 0, 0],
+      axis: [-1, 0, 0],
+    })
+    const opening = {
+      position: new Vector3(10, 0, 0),
+      axis: new Vector3(1, 0, 0),
+    }
+    const pose = alignToSnap(end, opening, [0, 0, 0, 1])
+    expect(toWorldSnap(end, pose).axis.x).toBeCloseTo(-1, 6)
   })
 })

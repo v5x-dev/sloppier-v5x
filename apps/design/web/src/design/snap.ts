@@ -45,7 +45,10 @@ export function alignToSnap(
   // A fastener's end pin goes into an opening, so its body runs into the Part: the pin's
   // axis lines up with the opening's. Other Snap Points face the opening.
   const along = target.axis.clone().normalize()
-  const facing = candidate.kind === "pin" ? along : along.negate()
+  const facing =
+    candidate.kind === "pin" && candidate.role !== "end"
+      ? along
+      : along.negate()
   const q1 = new Quaternion().setFromUnitVectors(from, facing).multiply(q0)
   const q2 = new Quaternion().setFromAxisAngle(facing, roll).multiply(q1)
   const offset = new Vector3(...candidate.position).applyQuaternion(q2)
@@ -168,6 +171,9 @@ export function findSnap(
  * ray, within `radius`, in front of the camera. The candidate's Snap Point that sits closest
  * to it, at the ground pose, is the one that mates. The result is aligned to that pair.
  */
+/** How much an opening that faces away from the pointer is set back when ranking targets. */
+const FACES_AWAY_RANK_MM = 3
+
 export function findSnapAlongRay(
   candidates: readonly SnapPoint[],
   ray: { origin: Vector3; direction: Vector3 },
@@ -180,7 +186,7 @@ export function findSnapAlongRay(
   // Called on every pointer move against every placed Snap Point, so it allocates little.
   const direction = ray.direction.clone().normalize()
   const { x: ox, y: oy, z: oz } = ray.origin
-  const reached: { target: WorldSnap; distance: number }[] = []
+  const reached: { target: WorldSnap; distance: number; rank: number }[] = []
   for (const target of index.all()) {
     const dx = target.position.x - ox
     const dy = target.position.y - oy
@@ -190,10 +196,18 @@ export function findSnapAlongRay(
     const distance = Math.sqrt(
       Math.max(0, dx * dx + dy * dy + dz * dz - along * along)
     )
-    if (distance <= radius) reached.push({ target, distance })
+    if (distance > radius) continue
+    // A through-hole has an opening on each face, and a ray passes both. The opening that
+    // faces the pointer ranks first, so a pointer from above takes the top face.
+    const facesAway = target.axis.dot(direction) > 0
+    reached.push({
+      target,
+      distance,
+      rank: distance + (facesAway ? FACES_AWAY_RANK_MM : 0),
+    })
   }
   if (reached.length === 0) return null
-  reached.sort((a, b) => a.distance - b.distance)
+  reached.sort((a, b) => a.rank - b.rank)
   const { target, distance } = reached[0]
   let candidate = candidates[0]
   let nearest = Infinity
