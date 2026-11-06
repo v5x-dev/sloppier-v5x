@@ -57,6 +57,7 @@ type PartCommon = {
 export type ModelPart = PartCommon & {
   kind: "model"
   family: "motor" | "wheel" | "standoff" | "screw" | "nut" | "plate" | "gusset"
+  /** Along the STEP file's axes, not the Part frame. See modelSizeInPartFrame. */
   sizeMm: Size
   volumeMm3: number
   mass: MassRecord

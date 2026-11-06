@@ -4,7 +4,13 @@
 
 import { catalog, partById } from "@/catalog/catalog"
 import { generateCutPart, type GeneratedCutPart } from "@/catalog/cut-part"
-import type { CatalogPart, CutPart, SnapPoint, Vec3 } from "@/catalog/types"
+import type {
+  CatalogPart,
+  CutPart,
+  ModelPart,
+  SnapPoint,
+  Vec3,
+} from "@/catalog/types"
 import { groupKey } from "./instances"
 import type { PartRef } from "./model"
 
@@ -63,8 +69,8 @@ function modelShape(
     key,
     catalog: part,
     snapPoints: part.snapPoints,
-    sizeMm: [part.sizeMm.x, part.sizeMm.y, part.sizeMm.z],
-    minY: -part.sizeMm.y / 2,
+    sizeMm: modelSizeInPartFrame(part),
+    minY: -modelSizeInPartFrame(part)[1] / 2,
   }
 }
 

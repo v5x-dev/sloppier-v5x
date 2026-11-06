@@ -75,7 +75,18 @@ describe("Part shapes", () => {
     if (screw.kind !== "model") throw new Error("expected a model")
     const shape = partShape({ catalogId: screw.id })
     expect(shape.snapPoints).toBe(screw.snapPoints)
-    expect(shape.minY).toBeCloseTo(-screw.sizeMm.y / 2, 9)
+    expect(shape.minY).toBeCloseTo(-screw.sizeMm.z / 2, 9)
+  })
+
+  it("measures a fixed model in the Part frame, where its Snap Points are", () => {
+    // A 1/2 in standoff's bore runs along Part Z, so its length is Z and it lies on its side.
+    const shape = partShape({ catalogId: "standoff-1-2" })
+    expect(shape.sizeMm[2]).toBeCloseTo(12.7, 1)
+    expect(shape.sizeMm[1]).toBeLessThan(12)
+    expect(Math.abs(shape.snapPoints[0].position[2])).toBeGreaterThan(6)
+    expect(Math.abs(shape.snapPoints[0].position[2])).toBeLessThanOrEqual(
+      shape.sizeMm[2] / 2
+    )
   })
 
   it("shares one shape per length", () => {

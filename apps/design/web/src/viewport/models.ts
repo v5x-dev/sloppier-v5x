@@ -6,6 +6,7 @@ import { BoxGeometry, type BufferGeometry, Mesh } from "three"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js"
 import { modelUrl } from "@/catalog/catalog"
+import { modelSizeInPartFrame } from "@/design/library"
 import type { ModelPart } from "@/catalog/types"
 
 export type ModelStatus = { loading: number; failed: string[] }
@@ -61,5 +62,5 @@ export class ModelLoader {
 }
 
 export function boxFor(part: ModelPart): BufferGeometry {
-  return new BoxGeometry(part.sizeMm.x, part.sizeMm.y, part.sizeMm.z)
+  return new BoxGeometry(...modelSizeInPartFrame(part))
 }
