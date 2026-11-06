@@ -98,7 +98,7 @@ export function KeyboardSettingsDialog({
         onOpenChange(next)
       }}
     >
-      <DialogContent className="max-h-[85svh] sm:max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>
