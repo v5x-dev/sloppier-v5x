@@ -52,7 +52,7 @@ import { createGrid } from "./grid"
 import { ModelLoader, type ModelStatus } from "./models"
 import { Gizmo, type GizmoMode, type Handle } from "./gizmo"
 import { angleOnRing, closestOnAxis, rayPlaneHit, type Ray } from "./gizmo-math"
-import { DEFAULT_COLORS, SceneStore } from "./scene-store"
+import { defaultColorFor, SceneStore } from "./scene-store"
 import { INITIAL_STATUS, type Projection, type ViewportStatus } from "./status"
 import { keyStore } from "@/design/key-store"
 import { actionForEvent } from "@/design/keys"
@@ -97,6 +97,16 @@ const CAMERA_OPTIONS = {
   position: INITIAL_POSITION,
 }
 const CANVAS_STYLE = { touchAction: "none" }
+
+/**
+ * The keys that look straight along an axis: 1 along Z, 2 along X, 3 along Y, from the
+ * positive side. Shift looks from the negative side. A web or a face is square to the view.
+ */
+const AXIS_VIEW_KEYS: Record<string, Vector3 | undefined> = {
+  Digit1: new Vector3(0, 0, 1),
+  Digit2: new Vector3(1, 0, 0),
+  Digit3: new Vector3(0, 1, 0),
+}
 
 export default function DesignViewport(props: ViewportProps) {
   const box = useRef<HTMLDivElement>(null)
@@ -197,13 +207,19 @@ function Workspace(
     const state = live.current
     const colors = readSceneColors()
     scene.background = colors.background
-    const hemi = new HemisphereLight(colors.highlight, colors.background, 1.1)
-    const key = new DirectionalLight(0xffffff, 1.4)
+    const hemi = new HemisphereLight(colors.highlight, colors.background, 0.6)
+    // Key from above and to the front, and a softer fill from the opposite side, so a
+    // Part's faces read as different planes instead of one flat shade.
+    const key = new DirectionalLight(0xffffff, 1.0)
     key.position.set(500, 900, 380)
-    scene.add(hemi, key)
+    const fill = new DirectionalLight(colors.highlight, 0.4)
+    fill.position.set(-600, 400, -420)
+    scene.add(hemi, key, fill)
     const pmrem = new PMREMGenerator(gl)
     const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     scene.environment = environment
+    // Image lighting sets the base brightness; the lamps above add form on top of it.
+    scene.environmentIntensity = 0.6
     pmrem.dispose()
     const grid = createGrid(colors)
     scene.add(grid.mesh)
@@ -290,7 +306,7 @@ function Workspace(
       store.dispose()
       gizmo.dispose()
       grid.mesh.geometry.dispose()
-      scene.remove(hemi, key, grid.mesh, axes)
+      scene.remove(hemi, key, fill, grid.mesh, axes)
       scene.environment = null
       environment.dispose()
       state.store = undefined
@@ -406,7 +422,7 @@ function Workspace(
       store.setGhost(
         tool,
         result.pose,
-        DEFAULT_COLORS[shape.catalog.material],
+        defaultColorFor(shape.catalog),
         Boolean(result.snap)
       )
       if (result.snap) {
@@ -559,6 +575,10 @@ function Workspace(
         frameAll()
       } else if (action === "projection") {
         p.onToggleProjection()
+      } else if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+        const view = AXIS_VIEW_KEYS[event.code]
+        if (view)
+          lookAlong(view.clone().multiplyScalar(event.shiftKey ? -1 : 1))
       }
     }
     window.addEventListener("keydown", onKey)
@@ -661,7 +681,7 @@ function Workspace(
     const ray: Ray = store.rayAt(ndc, activeCamera())
     const step = GRID_MM
     const handle = drag.handle
-    let plan: Plan | { blocked: "ground" } | undefined
+    let plan: Plan
     if (handle.kind === "axis") {
       const t = closestOnAxis(ray, drag.pivot, drag.axis)
       const raw = t - (drag.startT ?? t)
@@ -693,20 +713,9 @@ function Workspace(
         [drag.pivot.x, drag.pivot.y, drag.pivot.z],
         [drag.axis.x, drag.axis.y, drag.axis.z],
         snapped,
-        {
-          alone: drag.alone,
-          liftAllowed: !drag.hinge,
-        }
+        { alone: drag.alone }
       )
-      if ("blocked" in plan) {
-        latest.current.onNotice(
-          "A turn about a screw or shaft cannot take a Part under the ground."
-        )
-        return
-      }
-      latest.current.onNotice(undefined)
     }
-    if ("blocked" in plan) return
     drag.plan = plan
     drag.moved = plan.changes.some((c, i) => {
       const t = drag.targets[i]
@@ -744,7 +753,7 @@ function Workspace(
   /** Places a Part, and makes the Connections it forms with the Parts around it. */
   function placeTool(tool: PartRef, pose: { position: Vec3; rotation: Quat }) {
     const doc = latest.current.doc
-    const color = DEFAULT_COLORS[partShape(tool).catalog.material]
+    const color = defaultColorFor(partShape(tool).catalog)
     const id = crypto.randomUUID()
     const added: PlacedPart = {
       ...tool,
@@ -876,19 +885,44 @@ function Workspace(
     latest.current.onSelection(next)
   }
 
+  /** Looks straight along `dir` at the orbit target, from the same distance as now. */
+  function lookAlong(dir: Vector3) {
+    const controls = live.current.controls
+    if (!controls) return
+    const cam = activeCamera()
+    const distance = cam.position.distanceTo(controls.target)
+    // Looking straight down needs a sliver of tilt, or the camera's up vector degenerates.
+    const tilt =
+      Math.abs(dir.y) > 0.99 ? new Vector3(0.001, 0, 0.001) : new Vector3()
+    cam.position
+      .copy(controls.target)
+      .addScaledVector(dir.clone().normalize(), distance)
+      .add(tilt)
+    controls.update()
+    invalidate()
+  }
+
+  /**
+   * Frames the selection when something is selected, so a Part can be inspected up close,
+   * and every Part otherwise.
+   */
   function frameAll() {
     const state = live.current
     const controls = state.controls
-    const { parts } = readPlacedParts(latest.current.doc)
+    const selection = latest.current.selection
+    const all = readPlacedParts(latest.current.doc).parts
+    const parts =
+      selection.size > 0 ? all.filter((p) => selection.has(p.id)) : all
     if (!controls || parts.length === 0) return
+    const margin = selection.size > 0 ? 60 : 150
     const center = new Vector3()
     for (const p of parts) center.add(new Vector3(...p.position))
     center.divideScalar(parts.length)
-    let radius = 150
+    let radius = margin
     for (const p of parts)
       radius = Math.max(
         radius,
-        center.distanceTo(new Vector3(...p.position)) + 150
+        center.distanceTo(new Vector3(...p.position)) + margin
       )
     const current = state.active ?? camera
     const direction = current.position.clone().sub(controls.target).normalize()
