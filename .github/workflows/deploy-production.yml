@@ -231,9 +231,6 @@ jobs:
           bun run deploy --typecheck enable \
             --cmd-url-env-var-name CONVEX_TARGET_URL \
             --cmd 'if [ "$CONVEX_TARGET_URL" != "$VITE_CONVEX_URL" ]; then echo "Convex deploy key does not match VITE_CONVEX_URL" >&2; exit 1; fi'
-          # Seed the bin parts catalog from the VEX legal-parts CSV. The seed matches
-          # rows by SKU, so running it on every deploy only changes what the CSV changed.
-          bunx convex run binCatalog:seed
       - name: Deploy Cloudflare Worker
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
