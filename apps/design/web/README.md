@@ -20,6 +20,10 @@ in the root `GLOSSARY.md`, and the decisions behind this app are in `docs/adr/`.
   environment keeps its own state, for example `--stage pr-12`.
 - `bun run alchemy:destroy --stage <name>` removes a stage's resources.
 
+Sign-in only works on a callback URL that WorkOS allows. The preview client allows
+`https://pr-*.design-preview.v5x.dev/callback`, so deploy a pull request's stage with
+`DESIGN_DOMAIN=pr-<number>.design-preview.v5x.dev`.
+
 Cloudflare credentials come from `alchemy profile edit --add Cloudflare`, which
 stores them in `~/.alchemy/profiles.json`. Alchemy's run logs go to `.alchemy/`,
 which is gitignored.
