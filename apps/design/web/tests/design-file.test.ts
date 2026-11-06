@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest"
 import * as Y from "yjs"
 import { partById } from "@/catalog/catalog"
 import {
-  applyDesignFile,
+  designUpdates,
+  UPDATE_CHUNK,
   designFileFrom,
   designFileOf,
   designFileText,
@@ -125,8 +126,7 @@ describe("round trip", () => {
     if (!parsed.ok) throw new Error(parsed.problems.join("; "))
     expect(parsed.design.name).toBe("Round trip")
 
-    const copy = new Y.Doc()
-    expect(applyDesignFile(copy, parsed.design)).toBe(true)
+    const copy = importedDoc(parsed.design)
     expect(readPlacedParts(copy).parts).toEqual(readPlacedParts(original).parts)
     expect(readConnections(copy)).toEqual(readConnections(original))
   })
@@ -136,29 +136,29 @@ describe("round trip", () => {
     const text = designFileText(designFileOf(original, "Again"))
     const parsed = parseDesignFile(text)
     if (!parsed.ok) throw new Error(parsed.problems.join("; "))
-    const copy = new Y.Doc()
-    applyDesignFile(copy, parsed.design)
+    const copy = importedDoc(parsed.design)
     expect(designFileText(designFileOf(copy, "Again"))).toBe(text)
   })
 
-  it("refuses to write into a Design that already has Parts", () => {
-    const parsed = parseDesignFile(
-      designFileText(designFileOf(sampleDoc(), "x"))
-    )
-    if (!parsed.ok) throw new Error("setup failed")
-    expect(applyDesignFile(sampleDoc(), parsed.design)).toBe(false)
-  })
-
-  it("keeps the import as one undo step", () => {
-    const parsed = parseDesignFile(
-      designFileText(designFileOf(sampleDoc(), "x"))
-    )
-    if (!parsed.ok) throw new Error("setup failed")
+  it("writes a big Design in several small updates that add up to the same Design", () => {
+    const parts = Array.from({ length: UPDATE_CHUNK * 2 + 7 }, (_, i) => ({
+      id: `p${i}`,
+      catalogId: "standoff-1-2",
+      position: [i, 0, 0] as const,
+      rotation: [0, 0, 0, 1] as const,
+      color: "#c4cad3",
+    }))
+    const updates = designUpdates({ name: "Big", parts, connections: [] })
+    expect(updates.length).toBe(3)
+    for (const update of updates)
+      expect(update.byteLength).toBeLessThan(900 * 1024)
     const doc = new Y.Doc()
-    let steps = 0
-    doc.on("afterTransaction", () => steps++)
-    applyDesignFile(doc, parsed.design)
-    expect(steps).toBe(1)
+    for (const update of updates) Y.applyUpdate(doc, update)
+    expect(
+      readPlacedParts(doc)
+        .parts.map((p) => p.id)
+        .sort()
+    ).toEqual(parts.map((p) => p.id).sort())
   })
 
   it("keeps a Connection's screw and host on the Parts it names", () => {
@@ -334,6 +334,13 @@ describe("rejecting a bad file", () => {
     expect(firstProblems(text).length).toBeGreaterThanOrEqual(2)
   })
 })
+
+/** The document a file's updates make, as the server would hold it. */
+function importedDoc(design: Parameters<typeof designUpdates>[0]): Y.Doc {
+  const doc = new Y.Doc()
+  for (const update of designUpdates(design)) Y.applyUpdate(doc, update)
+  return doc
+}
 
 describe("name", () => {
   it("is trimmed to one line and a sensible length, and defaults when missing", () => {

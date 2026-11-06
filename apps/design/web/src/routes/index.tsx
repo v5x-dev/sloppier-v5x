@@ -36,8 +36,11 @@ import { useMutation, useQuery } from "convex/react"
 import { useRef, useState } from "react"
 import { DesignRow } from "@/components/design-row"
 import { NameDialog } from "@/components/name-dialog"
-import { DESIGN_FILE_EXTENSION, parseDesignFile } from "@/design/design-file"
-import { importKey } from "@/design/import-handoff"
+import {
+  DESIGN_FILE_EXTENSION,
+  designUpdates,
+  parseDesignFile,
+} from "@/design/design-file"
 
 export const Route = createFileRoute("/")({
   component: () => (
@@ -165,13 +168,17 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
   const navigate = useNavigate()
   const designs = useQuery(api.designs.listByWorkspace, { workspaceId })
   const create = useMutation(api.designs.create)
+  const removeDesign = useMutation(api.designs.remove)
+  const appendUpdate = useMutation(api.designSync.appendUpdate)
   const generateName = useMutation(api.designs.generateName)
   const [suggestedName, setSuggestedName] = useState<string>()
   const [view, setView] = useState<"active" | "archived">("active")
   const fileInput = useRef<HTMLInputElement>(null)
   const [importProblems, setImportProblems] = useState<string[]>()
 
-  // The file is checked before anything is created, so a bad file leaves no empty Design.
+  // The file is checked before anything is created. Its contents are stored on the server
+  // before the editor opens, so no Design is ever left empty by an import. If storing fails,
+  // the new Design is removed again.
   async function importFile(file: File) {
     setImportProblems(undefined)
     let text: string
@@ -186,11 +193,20 @@ function Designs({ workspaceId }: { workspaceId: Id<"workspaces"> }) {
       setImportProblems(parsed.problems)
       return
     }
+    let designId: Id<"designs"> | undefined
     try {
-      const designId = await create({ workspaceId, name: parsed.design.name })
-      window.sessionStorage.setItem(importKey(designId), text)
+      designId = await create({ workspaceId, name: parsed.design.name })
+      for (const update of designUpdates(parsed.design)) {
+        await appendUpdate({
+          designId,
+          updateId: crypto.randomUUID(),
+          bytes: update.slice().buffer,
+        })
+      }
       await navigate({ to: "/designs/$designId", params: { designId } })
     } catch (caught) {
+      if (designId !== undefined)
+        await removeDesign({ designId }).catch(() => undefined)
       setImportProblems([errorMessage(caught)])
     }
   }

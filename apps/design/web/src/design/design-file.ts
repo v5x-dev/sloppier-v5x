@@ -21,10 +21,8 @@ import {
   isQuat,
   isVec3,
   partsMap,
-  recorded,
   readConnections,
   readPlacedParts,
-  type Ref,
 } from "./document"
 import {
   HOLE_PITCH_MM,
@@ -137,7 +135,7 @@ export function designFileOf(doc: Y.Doc, name: string): DesignFileV1 {
 
 /**
  * Reads a Design file. Returns every problem found (up to a limit), or the Design. Nothing is
- * changed in a Design by this; `applyDesignFile` does that once the file is accepted.
+ * changed in a Design by this; `designUpdates` writes it once the file is accepted.
  */
 export function parseDesignFile(text: string): ParseResult {
   if (text.length > MAX_FILE_CHARS)
@@ -209,39 +207,52 @@ export function parseDesignFile(text: string): ParseResult {
   }
 }
 
+/** Parts and Connections written per update, so each update stays well under the server's limit. */
+export const UPDATE_CHUNK = 500
+
 /**
- * Writes a parsed Design into a document that has no Parts yet, as one undo step. A document
- * that already holds Parts is left alone and the call returns false.
+ * The Yjs updates that write a parsed Design into an empty document, in order. The Design
+ * is written in chunks so each update is small, and each chunk is one edit. The updates are
+ * meant to be stored on the server before the Design is opened.
  */
-export function applyDesignFile(doc: Y.Doc, design: ParsedDesign): boolean {
-  if (readPlacedParts(doc).parts.length > 0) return false
-  const refs: Ref[] = [
-    ...design.parts.map((p): Ref => ({ map: "parts", id: p.id })),
-    ...design.connections.map((c): Ref => ({ map: "connections", id: c.id })),
+export function designUpdates(design: ParsedDesign): Uint8Array[] {
+  const scratch = new Y.Doc()
+  const updates: Uint8Array[] = []
+  scratch.on("update", (update: Uint8Array) => updates.push(update))
+  for (let i = 0; i < design.parts.length; i += UPDATE_CHUNK)
+    scratch.transact(() => {
+      for (const part of design.parts.slice(i, i + UPDATE_CHUNK))
+        writePart(scratch, part)
+    })
+  for (let i = 0; i < design.connections.length; i += UPDATE_CHUNK)
+    scratch.transact(() => {
+      for (const c of design.connections.slice(i, i + UPDATE_CHUNK))
+        writeConnection(scratch, c)
+    })
+  scratch.destroy()
+  return updates
+}
+
+function writePart(doc: Y.Doc, part: PlacedPart): void {
+  const fields: [string, unknown][] = [
+    ["catalog", part.catalogId],
+    ["position", [...part.position]],
+    ["rotation", [...part.rotation]],
+    ["color", part.color],
   ]
-  recorded(doc, refs, () => {
-    for (const part of design.parts) {
-      const fields: [string, unknown][] = [
-        ["catalog", part.catalogId],
-        ["position", [...part.position]],
-        ["rotation", [...part.rotation]],
-        ["color", part.color],
-      ]
-      if (part.lengthMm !== undefined) fields.push(["lengthMm", part.lengthMm])
-      partsMap(doc).set(part.id, new Y.Map(fields))
-    }
-    for (const c of design.connections) {
-      const fields: [string, unknown][] = [
-        ["fastener", c.fastener],
-        ["host", c.host],
-        ["hostSnap", c.hostSnap],
-      ]
-      if (c.fastenerSnap !== undefined)
-        fields.push(["fastenerSnap", c.fastenerSnap])
-      connectionsMap(doc).set(c.id, new Y.Map(fields))
-    }
-  })
-  return true
+  if (part.lengthMm !== undefined) fields.push(["lengthMm", part.lengthMm])
+  partsMap(doc).set(part.id, new Y.Map(fields))
+}
+
+function writeConnection(doc: Y.Doc, c: Connection): void {
+  const fields: [string, unknown][] = [
+    ["fastener", c.fastener],
+    ["host", c.host],
+    ["hostSnap", c.hostSnap],
+  ]
+  if (c.fastenerSnap !== undefined)
+    fields.push(["fastenerSnap", c.fastenerSnap])
+  connectionsMap(doc).set(c.id, new Y.Map(fields))
 }
 
 function readPart(
