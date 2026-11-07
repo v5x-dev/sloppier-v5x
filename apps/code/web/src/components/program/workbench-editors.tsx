@@ -32,7 +32,11 @@ import { toast } from "@v5x/ui/components/toast"
 import { cn } from "@v5x/ui/lib/utils"
 
 import { errorMessage } from "@/lib/errors"
-import type { WorkbenchSource } from "@/lib/workbench-source"
+import {
+  failureOf,
+  loadedFileOf,
+  type WorkbenchSource,
+} from "@/lib/workbench-source"
 import { Fragment, useSyncExternalStore } from "react"
 
 import type { DragSource, DropHighlight } from "./workbench-drop"
@@ -61,20 +65,12 @@ export function WorkbenchEditors({
   dropHighlight: DropHighlight | null
   drag: DragSource | null
 }) {
-  const {
-    paths,
-    listError,
-    layout,
-    openPaths,
-    loaded,
-    readError,
-    dirtyPaths,
-    liveStatus,
-  } = useSyncExternalStore(
-    source.subscribe,
-    source.getSnapshot,
-    source.getSnapshot
-  )
+  const { paths, listError, layout, openPaths, files, dirtyPaths, liveStatus } =
+    useSyncExternalStore(
+      source.subscribe,
+      source.getSnapshot,
+      source.getSnapshot
+    )
   const { activateTab, activateGroup, splitGroup, resizeSash, equalizeSplit } =
     source
   function closeTab(groupId: string, path: string) {
@@ -189,7 +185,9 @@ export function WorkbenchEditors({
             <TabsContent
               // Each file owns its scroll container and stays mounted while
               // inactive, retaining its selection, draft, and undo history.
-              key={loaded[path]?.editorKey ?? `${programId}:${path}`}
+              key={
+                loadedFileOf(files[path])?.editorKey ?? `${programId}:${path}`
+              }
               value={path}
               keepMounted
               ref={(panel) => {
@@ -206,14 +204,16 @@ export function WorkbenchEditors({
                 }
               }}
             >
-              {readError[path] ? (
+              {failureOf(files[path]) ? (
                 <Empty className="h-full">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
                       <WarningCircleIcon />
                     </EmptyMedia>
                     <EmptyTitle>Could not open this file</EmptyTitle>
-                    <EmptyDescription>{readError[path]}</EmptyDescription>
+                    <EmptyDescription>
+                      {failureOf(files[path])}
+                    </EmptyDescription>
                   </EmptyHeader>
                 </Empty>
               ) : (
@@ -233,7 +233,7 @@ export function WorkbenchEditors({
                   onPeopleChange={(people) => source.setPeople(path, people)}
                   onSyncChange={(synced) => source.setSynced(path, synced)}
                   onLiveStatus={(status) => source.setLiveStatus(path, status)}
-                  loaded={loaded[path]}
+                  loaded={loadedFileOf(files[path])}
                   takeLiveOpen={source.takeLiveOpen}
                   scrollPositions={source.scrollPositions}
                   onChange={(text) => source.setDraft(path, text)}

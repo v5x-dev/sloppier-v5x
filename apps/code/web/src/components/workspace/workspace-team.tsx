@@ -420,6 +420,15 @@ function deliveryLabel(delivery: Doc<"workspaceInvitations">["delivery"]) {
   }
 }
 
+/** Whether this client's profile has been synced with the server for invitation checks. */
+type Profile =
+  { kind: "syncing" } | { kind: "synced" } | { kind: "failed"; message: string }
+/** The invitation being accepted, or that the user has joined one. */
+type Accepting =
+  | { kind: "idle" }
+  | { kind: "accepting"; invitation: string }
+  | { kind: "joined" }
+
 export function WorkspaceInvitations({
   invitationId,
   onAccepted,
@@ -432,21 +441,23 @@ export function WorkspaceInvitations({
   const sync = useAction(api.workspaces.syncProfile)
   const accept = useAction(api.workspaces.acceptInvitation)
   const invitations = useQuery(api.workspaces.pendingInvitations)
-  const [synced, setSynced] = useState(false)
-  const [error, setError] = useState("")
-  const [pending, setPending] = useState<string | null>(null)
-  const [joined, setJoined] = useState(false)
+  const [profile, setProfile] = useState<Profile>({ kind: "syncing" })
+  const [accepting, setAccepting] = useState<Accepting>({ kind: "idle" })
+  const synced = profile.kind === "synced"
+  const error = profile.kind === "failed" ? profile.message : ""
+  const pending = accepting.kind === "accepting" ? accepting.invitation : null
+  const joined = accepting.kind === "joined"
   const [retry, setRetry] = useState(0)
   useEffect(() => {
     let cancelled = false
-    setError("")
-    setSynced(false)
+    setProfile({ kind: "syncing" })
     void sync({})
       .then(() => {
-        if (!cancelled) setSynced(true)
+        if (!cancelled) setProfile({ kind: "synced" })
       })
       .catch((failure) => {
-        if (!cancelled) setError(errorMessage(failure))
+        if (!cancelled)
+          setProfile({ kind: "failed", message: errorMessage(failure) })
       })
     return () => {
       cancelled = true
@@ -508,12 +519,15 @@ export function WorkspaceInvitations({
               <Button
                 disabled={pending !== null}
                 onClick={async () => {
-                  setPending(invitation._id)
+                  setAccepting({
+                    kind: "accepting",
+                    invitation: invitation._id,
+                  })
                   try {
                     const workspaceId = await accept({
                       invitationId: invitation._id,
                     })
-                    setJoined(true)
+                    setAccepting({ kind: "joined" })
                     onAccepted?.(workspaceId)
                     toast.add({
                       type: "success",
@@ -522,7 +536,10 @@ export function WorkspaceInvitations({
                   } catch (failure) {
                     report(failure)
                   } finally {
-                    setPending(null)
+                    // A joined invitation stays joined; only an attempt that failed goes back to idle.
+                    setAccepting((current) =>
+                      current.kind === "accepting" ? { kind: "idle" } : current
+                    )
                   }
                 }}
               >

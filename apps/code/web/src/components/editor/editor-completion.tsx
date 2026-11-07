@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react"
 import { createPortal } from "react-dom"
 import "@vscode/codicons/dist/codicon.css"
@@ -38,6 +39,41 @@ type Menu = {
   incomplete: boolean
 }
 type Anchor = { left: number; top: number; bottom: number }
+
+/**
+ * What the completion popup shows. One store holds it: event handlers read it synchronously, and React
+ * subscribes to it, so the two can never disagree.
+ */
+type CompletionView = {
+  menu: Menu | null
+  signature: SignatureHelp | null
+  anchor: Anchor | null
+}
+class CompletionViewStore {
+  private value: CompletionView = { menu: null, signature: null, anchor: null }
+  private listeners = new Set<() => void>()
+  subscribe = (listener: () => void) => {
+    this.listeners.add(listener)
+    return () => {
+      this.listeners.delete(listener)
+    }
+  }
+  getSnapshot = () => this.value
+  get menu() {
+    return this.value.menu
+  }
+  get signature() {
+    return this.value.signature
+  }
+  update(patch: Partial<CompletionView>) {
+    const changed = (Object.keys(patch) as (keyof CompletionView)[]).some(
+      (key) => patch[key] !== this.value[key]
+    )
+    if (!changed) return
+    this.value = { ...this.value, ...patch }
+    for (const listener of this.listeners) listener()
+  }
+}
 
 // VS Code's completion item icons (codicons) and default dark theme colors,
 // indexed by completion kind.
@@ -96,26 +132,24 @@ export function useEditorCompletion(
 ) {
   const client = useLanguageService()
   const wrapper = useRef<HTMLDivElement>(null)
-  const [shownMenu, setMenuState] = useState<Menu | null>(null)
-  const [signature, setSignatureState] = useState<SignatureHelp | null>(null)
-  const [anchor, setAnchor] = useState<Anchor | null>(null)
+  const [store] = useState(() => new CompletionViewStore())
+  const {
+    menu: shownMenu,
+    signature,
+    anchor,
+  } = useSyncExternalStore(store.subscribe, store.getSnapshot)
+  // Requests and timers, plus the guard that is true while a completion is being accepted.
   const state = useRef({
-    menu: null as Menu | null,
-    signature: null as SignatureHelp | null,
     request: null as AbortController | null,
     signatureRequest: null as AbortController | null,
     timer: undefined as ReturnType<typeof setTimeout> | undefined,
     accepting: false,
   }).current
 
-  const setMenu = (next: Menu | null) => {
-    state.menu = next
-    setMenuState(next)
-  }
-  const setSignature = (next: SignatureHelp | null) => {
-    state.signature = next
-    setSignatureState(next)
-  }
+  const setMenu = (next: Menu | null) => store.update({ menu: next })
+  const setSignature = (next: SignatureHelp | null) =>
+    store.update({ signature: next })
+  const setAnchor = (next: Anchor | null) => store.update({ anchor: next })
   const caret = () => {
     const selections = binding.editor?.getViewState().selections
     const selection = selections?.length === 1 ? selections[0] : undefined
@@ -126,7 +160,7 @@ export function useEditorCompletion(
   const close = () => {
     clearTimeout(state.timer)
     state.request?.abort()
-    if (state.menu) setMenu(null)
+    if (store.menu) setMenu(null)
   }
 
   const measure = () => {
@@ -142,7 +176,7 @@ export function useEditorCompletion(
     // Like VS Code, the menu stays aligned to the start of the word.
     const offset = caret()
     const typed =
-      state.menu && offset !== null ? offset - state.menu.wordStart : 0
+      store.menu && offset !== null ? offset - store.menu.wordStart : 0
     const font = getComputedStyle(element.parentElement ?? element).font
     const context = (measureCanvas ??=
       document.createElement("canvas")).getContext("2d")
@@ -156,7 +190,7 @@ export function useEditorCompletion(
     setAnchor({ left: rect.left - width, top: rect.top, bottom: rect.bottom })
   }
 
-  const refilter = (menu = state.menu) => {
+  const refilter = (menu = store.menu) => {
     if (!menu) return
     const offset = caret()
     const text = binding.document.getText()
@@ -238,12 +272,12 @@ export function useEditorCompletion(
   const accept = (item: CompletionItem) => {
     const editor = binding.editor
     const offset = caret()
-    if (!editor || offset === null || !state.menu) return close()
+    if (!editor || offset === null || !store.menu) return close()
     const document = binding.document
     const edit = item.textEdit
     const start = edit
       ? document.offsetAt(edit.range.start)
-      : state.menu.wordStart
+      : store.menu.wordStart
     // Characters typed after the request extend the replaced range.
     const end = Math.max(
       offset,
@@ -305,7 +339,7 @@ export function useEditorCompletion(
       const offset = caret()
       if (offset === null) return close()
       const text = binding.document.getText()
-      if (state.menu) {
+      if (store.menu) {
         if (!typed || [...typed].every(isWordChar)) refilter()
         else if (char && client.triggerCharacters.has(char)) complete()
         else close()
@@ -326,7 +360,7 @@ export function useEditorCompletion(
         client.signatureTriggerCharacters.has(char)
       )
         signatureHelp()
-      else if (state.signature) signatureHelp()
+      else if (store.signature) signatureHelp()
     })
   }
 
@@ -343,7 +377,7 @@ export function useEditorCompletion(
       else complete()
       return
     }
-    const menu = state.menu
+    const menu = store.menu
     const plain = !event.ctrlKey && !event.metaKey && !event.altKey
     if (menu && plain && menu.matches.length) {
       const count = menu.matches.length
@@ -371,7 +405,7 @@ export function useEditorCompletion(
         return
       }
     }
-    const help = state.signature
+    const help = store.signature
     if (
       !menu &&
       help &&
@@ -388,7 +422,7 @@ export function useEditorCompletion(
       })
       return
     }
-    if (event.key === "Escape" && (menu || state.signature)) {
+    if (event.key === "Escape" && (menu || store.signature)) {
       consume()
       if (menu) close()
       else setSignature(null)
@@ -398,7 +432,7 @@ export function useEditorCompletion(
     if (/^(Arrow|Home|End|Page)/.test(event.key))
       setTimeout(() => {
         refilter()
-        if (state.signature) signatureHelp()
+        if (store.signature) signatureHelp()
       })
   })
   const onPointer = useEffectEvent(() => {
@@ -412,7 +446,7 @@ export function useEditorCompletion(
     }
   })
   const onScroll = useEffectEvent(() => {
-    if (state.menu || state.signature) requestAnimationFrame(measure)
+    if (store.menu || store.signature) requestAnimationFrame(measure)
   })
   useEffect(() => {
     const host = wrapper.current

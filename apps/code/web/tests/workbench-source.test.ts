@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest"
-import { WorkbenchSource } from "../src/lib/workbench-source"
+import {
+  WorkbenchSource,
+  failureOf,
+  loadedFileOf,
+} from "../src/lib/workbench-source"
 import { groupsOf } from "../src/lib/editor-groups"
 import type { Id } from "@v5x/backend/dataModel"
 
@@ -88,10 +92,10 @@ describe("workbench source", () => {
     staleRead.reject(new Error("Repository not ready"))
     await Promise.resolve()
     expect(source.getSnapshot().listError).toBeNull()
-    expect(source.getSnapshot().readError["src/main.cpp"]).toBeUndefined()
-    expect(source.getSnapshot().loaded["src/main.cpp"]?.contents).toBe(
-      "original"
-    )
+    expect(failureOf(source.getSnapshot().files["src/main.cpp"])).toBeNull()
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])?.contents
+    ).toBe("original")
     expect(actions.readFile).toHaveBeenCalledTimes(2)
   })
 
@@ -135,9 +139,9 @@ describe("workbench source", () => {
     await Promise.resolve()
     expect(source.getDrafts().get("src/main.cpp")).toBe("early edit")
     expect(source.getSnapshot().dirtyPaths).toEqual(["src/main.cpp"])
-    expect(source.getSnapshot().loaded["src/main.cpp"]?.editorKey).toBe(
-      "program:src/main.cpp"
-    )
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])?.editorKey
+    ).toBe("program:src/main.cpp")
   })
 
   it("does not reopen a live document when activating an already-open tab", async () => {
@@ -259,13 +263,32 @@ describe("workbench source", () => {
     })
     await source.refreshRepository()
     expect(source.getSnapshot().dirtyPaths).toEqual([])
-    expect(source.getSnapshot().loaded["src/main.cpp"]?.contents).toBe(
-      "shared commit"
-    )
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])?.contents
+    ).toBe("shared commit")
     source.setDraft("src/main.cpp", "later edits")
     await source.refreshRepository()
     expect(source.getDrafts().get("src/main.cpp")).toBe("later edits")
     expect(source.getSnapshot().dirtyPaths).toEqual(["src/main.cpp"])
+    // A failed re-read shows its error but keeps the last good copy; a later good read clears the error.
+    actions.readFile.mockRejectedValueOnce(new Error("Repository offline"))
+    await source.refreshRepository()
+    expect(failureOf(source.getSnapshot().files["src/main.cpp"])).toBe(
+      "Repository offline"
+    )
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])?.contents
+    ).toBe("shared commit")
+    actions.readFile.mockResolvedValueOnce({
+      bytes: new TextEncoder().encode("recovered").buffer,
+      contentRange: null,
+      contentType: "text/plain",
+    })
+    await source.refreshRepository()
+    expect(failureOf(source.getSnapshot().files["src/main.cpp"])).toBeNull()
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])?.contents
+    ).toBe("recovered")
   })
 
   it("moves a dirty file with its draft, tab, editor identity, scroll, and presence", async () => {
@@ -276,7 +299,9 @@ describe("workbench source", () => {
     ])
     source.setSynced("src/main.cpp", true)
     source.scrollPositions.set("src/main.cpp", 123)
-    const editorKey = source.getSnapshot().loaded["src/main.cpp"]?.editorKey
+    const editorKey = loadedFileOf(
+      source.getSnapshot().files["src/main.cpp"]
+    )?.editorKey
     const listener = vi.fn()
     source.subscribeDrafts(listener)
     await source.applyExplorerUpdate({
@@ -290,11 +315,11 @@ describe("workbench source", () => {
     const state = source.getSnapshot()
     expect(state.openPaths).toEqual(["code/main.cpp"])
     expect(state.activePath).toBe("code/main.cpp")
-    expect(state.loaded["code/main.cpp"]).toMatchObject({
+    expect(loadedFileOf(state.files["code/main.cpp"])).toMatchObject({
       contents: "draft",
       editorKey,
     })
-    expect(state.loaded["src/main.cpp"]).toBeUndefined()
+    expect(loadedFileOf(state.files["src/main.cpp"])).toBeUndefined()
     expect([...source.getDrafts()]).toEqual([["code/main.cpp", "draft"]])
     expect(state.dirtyPaths).toEqual(["code/main.cpp"])
     expect(state.filePeople["code/main.cpp"][0].id).toBe("alice")
@@ -363,7 +388,9 @@ describe("workbench source", () => {
       contentType: "text/plain",
     })
     await Promise.resolve()
-    expect(source.getSnapshot().loaded["src/main.cpp"]).toBeUndefined()
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])
+    ).toBeUndefined()
     expect(source.getSnapshot().openPaths).toEqual([])
   })
   it("restores a commit and reloads all files, removing stale tabs and drafts", async () => {
@@ -388,10 +415,12 @@ describe("workbench source", () => {
       sha: "a".repeat(40),
     })
     expect(source.getSnapshot().openPaths).toEqual(["src/main.cpp"])
-    expect(source.getSnapshot().loaded["src/main.cpp"]?.contents).toBe(
-      "historical"
-    )
-    expect(source.getSnapshot().loaded["include/robot.h"]).toBeUndefined()
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])?.contents
+    ).toBe("historical")
+    expect(
+      loadedFileOf(source.getSnapshot().files["include/robot.h"])
+    ).toBeUndefined()
     expect(source.getDrafts().size).toBe(0)
   })
   it("restores clean files and forwards partial-success warnings", async () => {
@@ -404,9 +433,9 @@ describe("workbench source", () => {
     expect(await source.restoreFile("sha", "src/main.cpp")).toBe(
       "Reopen the program"
     )
-    expect(source.getSnapshot().loaded["src/main.cpp"]?.contents).toBe(
-      "restored"
-    )
+    expect(
+      loadedFileOf(source.getSnapshot().files["src/main.cpp"])?.contents
+    ).toBe("restored")
     source.setDraft("src/main.cpp", "restored")
     expect(source.getSnapshot().dirtyPaths).toEqual([])
   })
@@ -508,8 +537,10 @@ describe("persisted workbench tabs", () => {
       read.reject(new Error("stale speculative read"))
       await Promise.resolve()
       await Promise.resolve()
-      expect(source.getSnapshot().readError["src/main.cpp"]).toBeUndefined()
-      expect(source.getSnapshot().loaded["src/main.cpp"]).toBeUndefined()
+      expect(failureOf(source.getSnapshot().files["src/main.cpp"])).toBeNull()
+      expect(
+        loadedFileOf(source.getSnapshot().files["src/main.cpp"])
+      ).toBeUndefined()
     } finally {
       vi.unstubAllGlobals()
     }
@@ -537,7 +568,9 @@ describe("persisted workbench tabs", () => {
       listing.resolve({ paths: ["src/main.cpp"], hasMore: false })
       await loading
       expect(source.getSnapshot().openPaths).toEqual([])
-      expect(source.getSnapshot().loaded["removed.cpp"]).toBeUndefined()
+      expect(
+        loadedFileOf(source.getSnapshot().files["removed.cpp"])
+      ).toBeUndefined()
     } finally {
       vi.unstubAllGlobals()
     }

@@ -27,9 +27,29 @@ type Status = {
   sourceHash?: string | null
   artifactEntries?: ArtifactEntries | null
 }
+/**
+ * This client's link to the Builder. `linking` is retrying the handshake; `linked` holds the connection the Builder
+ * granted, and keeps it while a refresh is retried after a failure. `failure` is the last handshake error.
+ */
+type Link =
+  | { kind: "unlinked" }
+  | { kind: "linking"; failure: string | null }
+  | { kind: "linked"; connection: Connection; failure: string | null }
+/** The latest status the Builder reported, and the last poll's failure. */
+type Polled = { status: Status | null; failure: string | null }
+/**
+ * The last non-speculative build this client submitted. Its compiler problems are saved once, when that build
+ * finishes; `savedStartedAt` records which build that was.
+ */
+type Submitted = {
+  startedAt: number | null
+  revision: string | null
+  savedStartedAt: number | null
+}
 // Status cadence: quick while a build runs, relaxed while the Builder is idle.
 const IDLE_STATUS_MS = 500
 const BUILD_STATUS_MS = 100
+const HANDSHAKE_RETRY_MS = 3000
 type Channel = {
   machineStatus: string | null
   status: Status | null
@@ -57,43 +77,53 @@ export function ProgramConnection({
   children: ReactNode
 }) {
   const saveDiagnostics = useMutation(api.diagnostics.save)
-  const buildStarted = useRef<number | null>(null)
-  const savedBuild = useRef<number | null>(null)
-  const submittedRevision = useRef<string | null>(null)
+  const submitted = useRef<Submitted>({
+    startedAt: null,
+    revision: null,
+    savedStartedAt: null,
+  })
   const connect = useAction(api.buildConnection.connect)
   const start = useMutation(api.builds.start)
   const convex = useConvex()
   const starting = useRef<Promise<Connection> | null>(null)
   // Convex carries lifecycle state only. Build output never enters this query.
   const machine = useQuery(api.builds.status, { programId })
-  const [connection, setConnection] = useState<Connection | null>(null)
-  const connectionRef = useRef<Connection | null>(null)
-  connectionRef.current = connection
-  const [status, setStatus] = useState<Status | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [link, setLinkState] = useState<Link>({ kind: "unlinked" })
+  // Requests made between renders read the link from here, so every change goes through setLink.
+  const linkRef = useRef<Link>(link)
+  const setLink = useCallback((next: Link) => {
+    linkRef.current = next
+    setLinkState(next)
+  }, [])
+  const [polled, setPolled] = useState<Polled>({ status: null, failure: null })
   useEffect(() => {
     if (machine?.status !== "ready") {
-      connectionRef.current = null
-      setConnection(null)
+      setLink({ kind: "unlinked" })
       return
     }
+    if (linkRef.current.kind === "unlinked")
+      setLink({ kind: "linking", failure: null })
     let disposed = false
     let timer: ReturnType<typeof setTimeout>
     const handshake = async () => {
       try {
         const result = await connect({ programId })
         if (disposed) return
-        setConnection(result)
-        setError(null)
+        setLink({ kind: "linked", connection: result, failure: null })
         timer = setTimeout(
           () => void handshake(),
           Math.max(1000, Date.parse(result.expiresAt) - Date.now() - 60_000)
         )
       } catch (err) {
-        if (!disposed) {
-          setError(errorMessage(err))
-          timer = setTimeout(() => void handshake(), 3000)
-        }
+        if (disposed) return
+        const failure = errorMessage(err)
+        const current = linkRef.current
+        setLink(
+          current.kind === "linked"
+            ? { ...current, failure }
+            : { kind: "linking", failure }
+        )
+        timer = setTimeout(() => void handshake(), HANDSHAKE_RETRY_MS)
       }
     }
     void handshake()
@@ -101,29 +131,31 @@ export function ProgramConnection({
       disposed = true
       clearTimeout(timer)
     }
-  }, [connect, programId, machine?.machineId, machine?.status])
+  }, [connect, programId, machine?.machineId, machine?.status, setLink])
+  // Starts the Builder, then waits for it to report ready and links to it.
+  const startAndConnect = useCallback(async (): Promise<Connection> => {
+    await start({ programId })
+    const deadline = Date.now() + 90_000
+    while (Date.now() < deadline) {
+      const state = await convex.query(api.builds.status, { programId })
+      if (state?.status === "error") throw new Error(state.logs)
+      if (state?.status === "ready") {
+        const result = await connect({ programId })
+        setLink({ kind: "linked", connection: result, failure: null })
+        return result
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+    throw new Error("The Builder didn't start in time. Try again.")
+  }, [connect, convex, programId, setLink, start])
   const request = useCallback(
     async (path: string, body?: unknown, signal?: AbortSignal) => {
       signal?.throwIfAborted()
-      let direct = connectionRef.current
+      let direct =
+        linkRef.current.kind === "linked" ? linkRef.current.connection : null
       if (!direct) {
         if (!starting.current)
-          starting.current = (async () => {
-            await start({ programId })
-            const deadline = Date.now() + 90_000
-            while (Date.now() < deadline) {
-              const state = await convex.query(api.builds.status, { programId })
-              if (state?.status === "error") throw new Error(state.logs)
-              if (state?.status === "ready") {
-                const result = await connect({ programId })
-                connectionRef.current = result
-                setConnection(result)
-                return result
-              }
-              await new Promise((resolve) => setTimeout(resolve, 500))
-            }
-            throw new Error("The Builder didn't start in time. Try again.")
-          })().finally(() => {
+          starting.current = startAndConnect().finally(() => {
             starting.current = null
           })
         direct = await starting.current
@@ -148,58 +180,61 @@ export function ProgramConnection({
       const speculative = (body as { speculative?: boolean } | undefined)
         ?.speculative
       if (path === "/build" && !speculative) {
-        buildStarted.current = Date.now()
-        submittedRevision.current =
-          (body as { commit?: string } | undefined)?.commit ?? null
+        submitted.current = {
+          ...submitted.current,
+          startedAt: Date.now(),
+          revision: (body as { commit?: string } | undefined)?.commit ?? null,
+        }
       }
       return response
     },
-    [connect, convex, programId, start]
+    [startAndConnect]
   )
   useEffect(() => {
-    if (!connection) return
+    if (link.kind !== "linked") return
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
     const isAborted = () => controller.signal.aborted
     let pollInterval = IDLE_STATUS_MS
     const poll = async () => {
-      if (!connectionRef.current || isAborted()) return
+      if (linkRef.current.kind !== "linked" || isAborted()) return
       try {
         const response = await request("/status", undefined, controller.signal)
         const next = (await response.json()) as Status
         pollInterval = next.building ? BUILD_STATUS_MS : IDLE_STATUS_MS
         if (!isAborted()) {
+          const record = submitted.current
           if (next.building && next.startedAt && !next.speculative)
-            buildStarted.current = next.startedAt
-          const revision =
-            diagnosticRevision(next.logs) ?? submittedRevision.current
+            record.startedAt = next.startedAt
+          const revision = diagnosticRevision(next.logs) ?? record.revision
           if (
             !next.building &&
             !next.speculative &&
             revision &&
-            buildStarted.current !== null &&
-            savedBuild.current !== buildStarted.current
+            record.startedAt !== null &&
+            record.savedStartedAt !== record.startedAt
           ) {
-            const startedAt = buildStarted.current
-            savedBuild.current = startedAt
+            const startedAt = record.startedAt
+            record.savedStartedAt = startedAt
             void saveDiagnostics({
               programId,
               revision,
               startedAt,
               diagnostics: parseBuildDiagnostics(next.logs).slice(0, 2000),
             }).catch((err) => {
-              savedBuild.current = null
+              submitted.current.savedStartedAt = null
               if (!isAborted())
-                setError(
-                  `Could not save compiler problems: ${errorMessage(err)}`
-                )
+                setPolled((prev) => ({
+                  ...prev,
+                  failure: `Could not save compiler problems: ${errorMessage(err)}`,
+                }))
             })
           }
-          setStatus(next)
-          setError(null)
+          setPolled({ status: next, failure: null })
         }
       } catch (err) {
-        if (!isAborted()) setError(errorMessage(err))
+        if (!isAborted())
+          setPolled((prev) => ({ ...prev, failure: errorMessage(err) }))
       } finally {
         if (!isAborted()) timer = setTimeout(() => void poll(), pollInterval)
       }
@@ -209,13 +244,13 @@ export function ProgramConnection({
       controller.abort()
       clearTimeout(timer)
     }
-  }, [connection, request, programId, saveDiagnostics])
+  }, [link.kind, request, programId, saveDiagnostics])
   const machineStatus = machine?.status ?? null
   const machineStatusRef = useRef<string | null>(null)
   machineStatusRef.current = machineStatus
   const lastStart = useRef(0)
   const startBuilder = useCallback(() => {
-    if (connectionRef.current) return
+    if (linkRef.current.kind === "linked") return
     if (
       machineStatusRef.current === "ready" ||
       machineStatusRef.current === "starting"
@@ -227,13 +262,14 @@ export function ProgramConnection({
       lastStart.current = 0
     })
   }, [programId, start])
+  const linkFailure = link.kind === "unlinked" ? null : link.failure
   return (
     <Context
       value={{
         machineStatus,
-        status,
-        ready: Boolean(connection && status),
-        error,
+        status: polled.status,
+        ready: link.kind === "linked" && polled.status !== null,
+        error: linkFailure ?? polled.failure,
         request,
         startBuilder,
       }}

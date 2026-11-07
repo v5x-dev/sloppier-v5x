@@ -123,6 +123,17 @@ export type ClaimedBuild = {
   entries: ArtifactEntries | null
 }
 
+/**
+ * Where an upload's build stands. The Builder runs one build at a time, so the upload queues behind any other
+ * build, submits its source if none has built it, and waits for that build to produce a new artifact.
+ */
+type BuildPhase =
+  | { kind: "queued" }
+  | { kind: "submitting" }
+  /** `previousArtifact` is the artifact before submission; a finished build must replace it. */
+  | { kind: "building"; previousArtifact: string | null }
+  | { kind: "ready" }
+
 /** Never fall back to a previous successful artifact after this build fails. */
 export async function prepareUploadBuild(options: {
   commitChanges: (signal: AbortSignal) => Promise<void>
@@ -189,26 +200,43 @@ export async function prepareUploadBuild(options: {
     return status()
   }
   let current = await status()
-  // A speculative build yields to this one: the Builder cancels it when the build is submitted.
-  while (current.building && !current.speculative) {
-    onStage("Waiting for the current build…")
-    current = await nextStatus(current)
-  }
-  if (!matches(current, source.sha)) {
-    onStage("Building program…")
-    const previousArtifact = current.artifactId
-    await submitBuild(request, source, signal)
-    current = await status()
-    while (current.building) {
-      current = await nextStatus(current)
+  let phase: BuildPhase = { kind: "queued" }
+  while (phase.kind !== "ready") {
+    switch (phase.kind) {
+      case "queued":
+        // A speculative build yields to this one: the Builder cancels it when the build is submitted.
+        if (current.building && !current.speculative) {
+          onStage("Waiting for the current build…")
+          current = await nextStatus(current)
+          break
+        }
+        phase = matches(current, source.sha)
+          ? { kind: "ready" }
+          : { kind: "submitting" }
+        break
+      case "submitting": {
+        onStage("Building program…")
+        const previousArtifact = current.artifactId
+        await submitBuild(request, source, signal)
+        current = await status()
+        phase = { kind: "building", previousArtifact }
+        break
+      }
+      case "building":
+        if (current.building) {
+          current = await nextStatus(current)
+          break
+        }
+        if (
+          !matches(current, source.sha) ||
+          current.artifactId === phase.previousArtifact
+        )
+          throw new Error(
+            "Build failed or was replaced. Open Build logs for details and try uploading again."
+          )
+        phase = { kind: "ready" }
+        break
     }
-    if (
-      !matches(current, source.sha) ||
-      current.artifactId === previousArtifact
-    )
-      throw new Error(
-        "Build failed or was replaced. Open Build logs for details and try uploading again."
-      )
   }
   onStage("Downloading build binaries…")
   const artifactId = current.artifactId

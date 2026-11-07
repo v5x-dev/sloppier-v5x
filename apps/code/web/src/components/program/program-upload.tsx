@@ -74,6 +74,40 @@ import { ProgramConsole } from "./program-console"
 import { BrainHealth } from "./brain-health"
 
 type Device = { connection: Connection; bluetooth?: BluetoothConnection }
+type Transport = "USB" | "Bluetooth"
+/** The Brain link: nothing, a Bluetooth link waiting for its PIN, or a connection the Brain accepts. */
+type Brain =
+  | { kind: "disconnected" }
+  | { kind: "pairing"; transport: Transport }
+  | { kind: "ready"; transport: Transport; connection: Connection }
+/** Whether an operation is running, and how far its transfer has got. */
+type Work = { kind: "idle" } | { kind: "busy"; progress: number | null }
+/** How the last operation ended. A new operation or a slot change clears a result. */
+type Outcome =
+  { kind: "none" } | { kind: "uploaded" } | { kind: "failed"; message: string }
+/** The Brain's slot list: the last list read is kept while a read runs, and after a read fails. */
+type SlotList =
+  | { kind: "unread" }
+  | { kind: "reading"; slots: BrainSlotReading[] | null }
+  | { kind: "read"; slots: BrainSlotReading[] }
+  | { kind: "failed"; slots: BrainSlotReading[] | null; message: string }
+/** The status line for the Brain link, from the state it is in. */
+function brainLabels(brain: Brain) {
+  if (brain.kind === "disconnected")
+    return {
+      connectTitle: "Connect V5 Brain",
+      uploadLabel: "Connect a V5 Brain to upload",
+    }
+  if (brain.kind === "pairing")
+    return {
+      connectTitle: "Pair V5 Brain",
+      uploadLabel: "Pair your V5 Brain to upload",
+    }
+  return {
+    connectTitle: `V5 Brain connected over ${brain.transport}`,
+    uploadLabel: "Upload to V5 Brain",
+  }
+}
 
 const subscribeToNothing = () => () => {}
 
@@ -149,9 +183,6 @@ export function ProgramUpload({
   const busyRef = useRef(false)
   const slotButtons = useRef<(HTMLButtonElement | null)[]>([])
   const consoleQueue = useRef<Promise<unknown>>(Promise.resolve())
-  const [consoleConnection, setConsoleConnection] = useState<Connection | null>(
-    null
-  )
   const consoleIO = useCallback(
     (action: (connection: Connection) => Promise<void>): Promise<boolean> => {
       const result = consoleQueue.current.then(async () => {
@@ -166,9 +197,8 @@ export function ProgramUpload({
   )
   const [open, setOpen] = useState(false)
   const [connectOpen, setConnectOpen] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [paired, setPaired] = useState(false)
-  const [connected, setConnected] = useState<"USB" | "Bluetooth" | null>(null)
+  const [brain, setBrain] = useState<Brain>({ kind: "disconnected" })
+  const [work, setWorkState] = useState<Work>({ kind: "idle" })
   const [pin, setPin] = useState("")
   const [teamNumber, setTeamNumber] = useState("")
   const [savedTeamNumber, setSavedTeamNumber] = useState<string | null>(null)
@@ -183,12 +213,37 @@ export function ProgramUpload({
     setRun(settings.runAfterUpload)
   }, [settings.runAfterUpload])
   const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [progress, setProgress] = useState<number | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [slots, setSlots] = useState<BrainSlotReading[] | null>(null)
-  const [slotsLoading, setSlotsLoading] = useState(false)
-  const [slotsError, setSlotsError] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome>({ kind: "none" })
+  const [slotList, setSlotList] = useState<SlotList>({ kind: "unread" })
+  // Projections of the states above, so the markup reads the values it always has.
+  const connected = brain.kind === "disconnected" ? null : brain.transport
+  const paired = brain.kind === "ready"
+  const consoleConnection = brain.kind === "ready" ? brain.connection : null
+  const busy = work.kind === "busy"
+  const progress = work.kind === "busy" ? work.progress : null
+  const success = outcome.kind === "uploaded"
+  const error = outcome.kind === "failed" ? outcome.message : null
+  const slots = slotList.kind === "unread" ? null : slotList.slots
+  const slotsLoading = slotList.kind === "reading"
+  const slotsError = slotList.kind === "failed" ? slotList.message : null
+  // The work state is also a ref, so a second operation can be refused before React renders the first.
+  const setWork = (next: Work) => {
+    busyRef.current = next.kind === "busy"
+    setWorkState(next)
+  }
+  const setProgress = (value: number | null) =>
+    setWorkState((current) =>
+      current.kind === "busy" ? { kind: "busy", progress: value } : current
+    )
+  /** The Brain went away: forget its link, its team number, its slots, and any PIN. */
+  const dropBrain = (failure: string | null) => {
+    setBrain({ kind: "disconnected" })
+    setTeamNumber("")
+    setSavedTeamNumber(null)
+    setTeamMessage(null)
+    setSlotList({ kind: "unread" })
+    if (failure !== null) setOutcome({ kind: "failed", message: failure })
+  }
   // Browser support is read on the client; the server render reports none.
   const serialSupported = useSyncExternalStore(
     subscribeToNothing,
@@ -214,15 +269,7 @@ export function ProgramUpload({
     if (!consoleConnection) return
     return consoleConnection.onDisconnect((disconnectError) => {
       if (!mounted.current) return
-      setConsoleConnection(null)
-      setConnected(null)
-      setPaired(false)
-      setTeamNumber("")
-      setSavedTeamNumber(null)
-      setTeamMessage(null)
-      setSlots(null)
-      setSlotsError(null)
-      setError(disconnectError.message)
+      dropBrain(disconnectError.message)
       if (device.current?.connection === consoleConnection)
         device.current = null
       void consoleConnection.close().catch(() => {})
@@ -232,8 +279,10 @@ export function ProgramUpload({
   // Runs through the console queue so it never overlaps an upload. A skipped
   // read leaves the last list in place.
   const refreshSlots = useCallback(async () => {
-    setSlotsLoading(true)
-    setSlotsError(null)
+    setSlotList((current) => ({
+      kind: "reading",
+      slots: current.kind === "unread" ? null : current.slots,
+    }))
     try {
       await consoleIO(async (connection) => {
         const { readBrainSlots, SlotReadCancelled } =
@@ -249,18 +298,33 @@ export function ProgramUpload({
           throw cause
         }
         if (mounted.current && device.current?.connection === connection)
-          setSlots(readings)
+          setSlotList({ kind: "read", slots: readings })
       })
     } catch (err) {
-      if (mounted.current && device.current) setSlotsError(errorMessage(err))
+      if (mounted.current && device.current)
+        setSlotList((current) => ({
+          kind: "failed",
+          slots: current.kind === "unread" ? null : current.slots,
+          message: errorMessage(err),
+        }))
     } finally {
-      if (mounted.current) setSlotsLoading(false)
+      // A read that finished without a list (skipped, or failed before any list) leaves the last one in place.
+      if (mounted.current)
+        setSlotList((current) =>
+          current.kind !== "reading"
+            ? current
+            : current.slots
+              ? { kind: "read", slots: current.slots }
+              : { kind: "unread" }
+        )
     }
   }, [consoleIO])
 
   function selectSlot(number: number) {
     setSlot(number)
-    setSuccess(false)
+    setOutcome((current) =>
+      current.kind === "uploaded" ? { kind: "none" } : current
+    )
   }
   // Arrow keys move the selection through the slots, as in a radio group.
   function moveSlot(
@@ -285,10 +349,8 @@ export function ProgramUpload({
     { waitForConsole = true }: { waitForConsole?: boolean } = {}
   ) {
     if (busyRef.current) return
-    busyRef.current = true
-    setBusy(true)
-    setError(null)
-    setSuccess(false)
+    setWork({ kind: "busy", progress: null })
+    setOutcome({ kind: "none" })
     try {
       if (waitForConsole) await consoleQueue.current
       await action()
@@ -301,27 +363,19 @@ export function ProgramUpload({
           description: errorMessage(err),
         })
       if (mounted.current) {
-        setError(errorMessage(err))
+        setOutcome({ kind: "failed", message: errorMessage(err) })
         setMessage(null)
       }
     } finally {
-      busyRef.current = false
-      if (mounted.current) setBusy(false)
+      setWork({ kind: "idle" })
     }
   }
   async function disconnect() {
     const current = device.current
     device.current = null
-    setConnected(null)
-    setConsoleConnection(null)
-    setPaired(false)
+    dropBrain(null)
     setPin("")
-    setTeamNumber("")
-    setSavedTeamNumber(null)
-    setTeamMessage(null)
     setMessage(null)
-    setSlots(null)
-    setSlotsError(null)
     await current?.connection.close()
   }
   function connect(kind: "USB" | "Bluetooth") {
@@ -347,9 +401,15 @@ export function ProgramUpload({
           await verifyBrain(selected.connection)
           await loadTeamNumber(selected.connection)
         }
-        setConnected(kind)
-        setPaired(authenticated)
-        if (authenticated) setConsoleConnection(selected.connection)
+        setBrain(
+          authenticated
+            ? {
+                kind: "ready",
+                transport: kind,
+                connection: selected.connection,
+              }
+            : { kind: "pairing", transport: kind }
+        )
         setMessage(
           authenticated
             ? "V5 Brain connected"
@@ -406,8 +466,11 @@ export function ProgramUpload({
       )
       await verifyBrain(selected.connection)
       await loadTeamNumber(selected.connection)
-      setPaired(true)
-      setConsoleConnection(selected.connection)
+      setBrain({
+        kind: "ready",
+        transport: "Bluetooth",
+        connection: selected.connection,
+      })
       setPin("")
       setMessage("V5 Brain connected")
     })
@@ -425,7 +488,7 @@ export function ProgramUpload({
         let preparing = false
         // Verification waits for queued console I/O, then runs beside the commit and build, which never touch the
         // Brain. Anything that needs the Brain awaits it first, so a failed check still stops the upload before a transfer.
-        const brain = { verifyFailed: false }
+        const check = { verifyFailed: false }
         // The modules the Brain check and binary parsing need load now, not after the commit and build.
         const revisionModule = import("@/lib/brain-revision")
         revisionModule.catch(() => {})
@@ -434,7 +497,7 @@ export function ProgramUpload({
           verifyBrain(selected.connection)
         )
         verified.catch(() => {
-          brain.verifyFailed = true
+          check.verifyFailed = true
         })
         try {
           preparing = true
@@ -463,7 +526,7 @@ export function ProgramUpload({
           if (!program) {
             const resultMessage = `Slot ${targetSlot} already has this version.`
             if (mounted.current) {
-              setSuccess(true)
+              setOutcome({ kind: "uploaded" })
               setMessage(resultMessage)
               play("success")
             }
@@ -514,7 +577,7 @@ export function ProgramUpload({
           }
           const uploaded = `Uploaded to slot ${targetSlot}${run ? " and started" : ""}.`
           if (mounted.current) {
-            setSuccess(true)
+            setOutcome({ kind: "uploaded" })
             setMessage(uploaded)
             setProgress(null)
             play("success")
@@ -523,7 +586,7 @@ export function ProgramUpload({
         } catch (err) {
           // Unmounting aborts the upload too; that is not a failure to report.
           if (mounted.current) play("error")
-          if (!preparing || brain.verifyFailed)
+          if (!preparing || check.verifyFailed)
             await disconnect().catch(() => {})
           throw err
         } finally {
@@ -535,17 +598,8 @@ export function ProgramUpload({
       { waitForConsole: false }
     ).then(refreshSlots)
   }
-  const brainReady = Boolean(connected) && paired
-  const connectTitle = !connected
-    ? "Connect V5 Brain"
-    : !paired
-      ? "Pair V5 Brain"
-      : `V5 Brain connected over ${connected}`
-  const uploadLabel = !connected
-    ? "Connect a V5 Brain to upload"
-    : !paired
-      ? "Pair your V5 Brain to upload"
-      : "Upload to V5 Brain"
+  const brainReady = brain.kind === "ready"
+  const { connectTitle, uploadLabel } = brainLabels(brain)
   useHotkey(
     hotkeys.uploadToBrain,
     () => {

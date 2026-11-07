@@ -109,7 +109,9 @@ export function ProgramPathPreview({
   const [elapsed, setElapsed] = useState(0)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
-  const [imageError, setImageError] = useState(false)
+  // The field whose image failed to load. Each field has its own image, so the failure belongs to that field.
+  const [failedImage, setFailedImage] = useState<string | null>(null)
+  const imageError = failedImage === field
   const [optionsOpen, setOptionsOpen] = useState(true)
   const [robotVisible, setRobotVisible] = useState(true)
   const optionsId = useId()
@@ -325,7 +327,6 @@ export function ProgramPathPreview({
                       onValueChange={(value) => {
                         if (value === null) return
                         setField(value)
-                        setImageError(false)
                       }}
                     >
                       <SelectTrigger
@@ -472,7 +473,7 @@ export function ProgramPathPreview({
                     alt={fields[Number(field)].label}
                     draggable={false}
                     className="absolute inset-0 size-full object-contain"
-                    onError={() => setImageError(true)}
+                    onError={() => setFailedImage(field)}
                   />
                   <svg
                     viewBox="0 0 100 100"

@@ -121,6 +121,19 @@ const templateLabels: Record<Template, string> = {
   "ez-template": "EZ",
 }
 
+type SearchField = { open: false } | { open: true; query: string }
+type WorkspaceModal = "none" | "workspace" | "team" | "invitations"
+type ProgramDialog = "none" | "rename" | "delete" | "duplicate"
+/** Opens `which`, or closes it when it is the open one. Other dialogs are left alone. */
+function toggleDialog<T extends string>(
+  current: T | "none",
+  which: T,
+  open: boolean
+): T | "none" {
+  if (open) return which
+  return current === which ? "none" : current
+}
+
 function ProgramsPage() {
   const workspaces = useQuery(api.workspaces.listMine)
   const search = Route.useSearch()
@@ -128,8 +141,14 @@ function ProgramsPage() {
     search.workspace ?? null
   )
   const [archived, setArchived] = useState(false)
-  const [query, setQuery] = useState("")
-  const [searching, setSearching] = useState(false)
+  // The search field is either closed or open with a query. Only a closed field has no query.
+  const [searchField, setSearchField] = useState<SearchField>({ open: false })
+  const searching = searchField.open
+  const query = searchField.open ? searchField.query : ""
+  const setQuery = (value: string) =>
+    setSearchField({ open: true, query: value })
+  const setSearching = (open: boolean) =>
+    setSearchField(open ? { open: true, query: "" } : { open: false })
 
   const available = (workspaces ?? []).flatMap(({ workspace }) =>
     workspace ? [workspace] : []
@@ -252,9 +271,17 @@ function AppHeader({
   onSelect: (id: Id<"workspaces">) => void
 }) {
   const { user, signOut } = useAuth()
-  const [creatingWorkspace, setCreatingWorkspace] = useState(false)
-  const [managingTeam, setManagingTeam] = useState(false)
-  const [viewingInvitations, setViewingInvitations] = useState(false)
+  // One modal is open at a time, opened from the account menu.
+  const [modal, setModal] = useState<WorkspaceModal>("none")
+  const creatingWorkspace = modal === "workspace"
+  const managingTeam = modal === "team"
+  const viewingInvitations = modal === "invitations"
+  const setCreatingWorkspace = (value: boolean) =>
+    setModal((current) => toggleDialog(current, "workspace", value))
+  const setManagingTeam = (value: boolean) =>
+    setModal((current) => toggleDialog(current, "team", value))
+  const setViewingInvitations = (value: boolean) =>
+    setModal((current) => toggleDialog(current, "invitations", value))
   const syncProfile = useAction(api.workspaces.syncProfile)
   useEffect(() => {
     // Profile refresh is optional for browsing. The invitation dialog shows
@@ -520,9 +547,17 @@ function ProgramActions({ program }: { program: Doc<"programs"> }) {
   const rename = useMutation(api.programs.rename)
   const setArchived = useMutation(api.programs.setArchived)
   const deleteProgram = useAction(api.codeStorage.deleteProgram)
-  const [open, setOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [duplicateOpen, setDuplicateOpen] = useState(false)
+  // One dialog is open at a time: rename, delete, or duplicate.
+  const [dialog, setDialog] = useState<ProgramDialog>("none")
+  const open = dialog === "rename"
+  const deleteOpen = dialog === "delete"
+  const duplicateOpen = dialog === "duplicate"
+  const setOpen = (value: boolean) =>
+    setDialog((current) => toggleDialog(current, "rename", value))
+  const setDeleteOpen = (value: boolean) =>
+    setDialog((current) => toggleDialog(current, "delete", value))
+  const setDuplicateOpen = (value: boolean) =>
+    setDialog((current) => toggleDialog(current, "duplicate", value))
   const [name, setName] = useState(program.name)
   const [pending, setPending] = useState(false)
   async function save(action: () => Promise<unknown>) {

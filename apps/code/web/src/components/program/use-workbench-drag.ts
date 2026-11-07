@@ -22,6 +22,17 @@ import {
 import type { WorkbenchSource } from "@/lib/workbench-source"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+/** The drag in progress. A tree drag also tracks the pointer, which draws the preview. */
+type Drag =
+  | { kind: "none" }
+  | { kind: "tab"; source: DragSource; highlight: DropHighlight | null }
+  | {
+      kind: "tree"
+      source: DragSource
+      position: { x: number; y: number }
+      highlight: DropHighlight | null
+    }
+
 export function useWorkbenchDrag(
   source: WorkbenchSource,
   layout: ReturnType<WorkbenchSource["getSnapshot"]>["layout"]
@@ -38,48 +49,47 @@ export function useWorkbenchDrag(
     window.addEventListener("pointermove", track, true)
     return () => window.removeEventListener("pointermove", track, true)
   }, [])
-  // The file being dragged and the editor group zone it would drop into.
-  const [drag, setDrag] = useState<DragSource | null>(null)
-  const [treeDragPosition, setTreeDragPosition] = useState<{
-    x: number
-    y: number
-  } | null>(null)
-  const [dropHighlight, setDropHighlight] = useState<DropHighlight | null>(null)
+  // One drag at a time: a tab dragged by dnd-kit, or a file dragged from the explorer. Each carries what it drops and
+  // the zone it would drop into, so the drag preview and the drop target always agree.
+  const [dragState, setDragState] = useState<Drag>({ kind: "none" })
+  const drag = dragState.kind === "none" ? null : dragState.source
+  const treeDragPosition = dragState.kind === "tree" ? dragState.position : null
+  const dropHighlight = dragState.kind === "none" ? null : dragState.highlight
   // Explorer drags use window pointer events, because the tree handles its own
-  // pointer input.
+  // pointer input. A press is only a click until the pointer travels past the threshold.
   const beginFileDrag = (path: string, event: React.PointerEvent) => {
     stopTreeDrag.current?.()
+    const dragged: DragSource = { path, groupId: null }
     const startX = event.clientX,
       startY = event.clientY
-    let dragging = false
+    let phase: "pressed" | "dragging" = "pressed"
     const move = (e: PointerEvent) => {
-      if (!dragging && Math.hypot(e.clientX - startX, e.clientY - startY) > 6) {
-        dragging = true
-        setDrag({ path, groupId: null })
+      if (phase === "pressed") {
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) <= 6) return
+        phase = "dragging"
       }
-      if (dragging) {
-        setTreeDragPosition({ x: e.clientX, y: e.clientY })
-        setDropHighlight(
-          dropAt(
-            e.clientX,
-            e.clientY,
-            { path, groupId: null },
-            undefined,
-            splitsOnDrop(e)
-          )
-        )
-      }
+      setDragState({
+        kind: "tree",
+        source: dragged,
+        position: { x: e.clientX, y: e.clientY },
+        highlight: dropAt(
+          e.clientX,
+          e.clientY,
+          dragged,
+          undefined,
+          splitsOnDrop(e)
+        ),
+      })
     }
     const finish = (e: PointerEvent) => {
       stop()
-      setDrag(null)
-      setTreeDragPosition(null)
-      setDropHighlight(null)
+      const dragging = phase === "dragging"
+      setDragState({ kind: "none" })
       if (!dragging) return
       const drop = dropAt(
         e.clientX,
         e.clientY,
-        { path, groupId: null },
+        dragged,
         undefined,
         splitsOnDrop(e)
       )
@@ -87,9 +97,7 @@ export function useWorkbenchDrag(
     }
     const cancel = () => {
       stop()
-      setDrag(null)
-      setTreeDragPosition(null)
-      setDropHighlight(null)
+      setDragState({ kind: "none" })
     }
     const stop = () => {
       stopTreeDrag.current = null
@@ -162,20 +170,27 @@ export function useWorkbenchDrag(
       sensors: tabSensors,
       collisionDetection,
       onDragStart: ({ active }: DragStartEvent) =>
-        setDrag(dragSourceOf(active)),
+        setDragState({
+          kind: "tab",
+          source: dragSourceOf(active),
+          highlight: null,
+        }),
       onDragMove: (event: DragMoveEvent) =>
-        setDropHighlight(resolveTabDrop(event, dragSourceOf(event.active))),
+        setDragState((current) =>
+          current.kind === "none"
+            ? current
+            : {
+                ...current,
+                highlight: resolveTabDrop(event, dragSourceOf(event.active)),
+              }
+        ),
       onDragEnd: (event: DragEndEvent) => {
         const dragged = dragSourceOf(event.active)
         const drop = resolveTabDrop(event, dragged)
-        setDrag(null)
-        setDropHighlight(null)
+        setDragState({ kind: "none" })
         if (drop) placeTab(dragged.path, dragged.groupId, drop.target)
       },
-      onDragCancel: () => {
-        setDrag(null)
-        setDropHighlight(null)
-      },
+      onDragCancel: () => setDragState({ kind: "none" }),
     },
   }
 }

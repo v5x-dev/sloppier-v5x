@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { LanguageService } from "@/lib/language-service"
-import type { WorkbenchSource } from "@/lib/workbench-source"
+import { loadedFileOf, type WorkbenchSource } from "@/lib/workbench-source"
 
 export const DefinitionContext = createContext<
   ((path: string, line: number, column: number) => boolean) | null
@@ -35,8 +35,10 @@ export function LanguageSession({
     let paths = source.getSnapshot().paths?.join("\n")
     const sync = () => {
       const state = source.getSnapshot()
-      for (const [path, file] of Object.entries(state.loaded))
+      for (const path of Object.keys(state.files)) {
+        const file = loadedFileOf(state.files[path])
         if (file && !file.truncated) client.updateFile(path, file.contents)
+      }
       for (const [path, text] of source.getDrafts())
         client.updateFile(path, text)
     }

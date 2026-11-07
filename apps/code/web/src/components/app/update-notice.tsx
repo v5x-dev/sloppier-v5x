@@ -48,11 +48,12 @@ export function UpdateNotice() {
   useEffect(() => {
     if (import.meta.env.DEV) return
     let disposed = false
-    let notified = false
-    let checking = false
+    // Idle until a check runs; checking while one is in flight; notified once a newer release has been announced,
+    // which ends the checks.
+    let phase: "idle" | "checking" | "notified" = "idle"
     async function check() {
-      if (checking || notified || document.visibilityState !== "visible") return
-      checking = true
+      if (phase !== "idle" || document.visibilityState !== "visible") return
+      phase = "checking"
       try {
         const response = await fetch("/release.json", { cache: "no-store" })
         if (!response.ok) return
@@ -65,7 +66,7 @@ export function UpdateNotice() {
           typeof data.release === "string" &&
           data.release !== release
         ) {
-          notified = true
+          phase = "notified"
           updates.add({
             type: "info",
             title: "A new version is available",
@@ -75,7 +76,7 @@ export function UpdateNotice() {
       } catch {
         // Retry on the next interval or return to the tab.
       } finally {
-        checking = false
+        if (phase === "checking") phase = "idle"
       }
     }
     void check()

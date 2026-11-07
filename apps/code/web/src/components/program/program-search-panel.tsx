@@ -114,6 +114,15 @@ function SearchSnippet({
 const subscribeToNothing = () => () => {}
 
 type Results = { files: SearchFile[]; truncated: boolean; skipped: number }
+/** The program-wide search for one query. Each settled result is tagged with the query it answers. */
+type Lookup =
+  | { kind: "idle" }
+  | { kind: "searching"; key: string }
+  | { kind: "found"; key: string; results: Results }
+  | { kind: "failed"; key: string; message: string }
+/** Replacing the selected matches, and how the last replace ended. */
+type Replace =
+  { kind: "idle" } | { kind: "replacing" } | { kind: "done"; message: string }
 export function ProgramSearchPanel({
   programId,
   revision,
@@ -140,17 +149,13 @@ export function ProgramSearchPanel({
   const [pathFilter, setPathFilter] = useState("")
   const [matchCase, setMatchCase] = useState(false)
   const [replacement, setReplacement] = useState("")
-  const [replacing, setReplacing] = useState(false)
-  const [replaceMessage, setReplaceMessage] = useState<string | null>(null)
+  const [replace, setReplace] = useState<Replace>({ kind: "idle" })
   const [excluded, setExcluded] = useState<{ scope: string; keys: string[] }>({
     scope: "",
     keys: [],
   })
   const [retry, setRetry] = useState(0)
-  const [result, setResult] = useState<Results | null>(null)
-  const [resultKey, setResultKey] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [lookup, setLookup] = useState<Lookup>({ kind: "idle" })
   const resultsId = useId()
   const resultButtons = useRef(new Map<string, HTMLButtonElement>())
   const [selection, setSelection] = useState<{
@@ -184,24 +189,24 @@ export function ProgramSearchPanel({
   )
   useEffect(() => {
     let cancelled = false
-    setResult(null)
-    setResultKey(null)
-    setError(null)
-    setLoading(open && Boolean(query))
-    if (!open || !query) return
+    if (!open || !query) {
+      setLookup({ kind: "idle" })
+      return
+    }
+    setLookup({ kind: "searching", key: searchKey })
     const timer = window.setTimeout(() => {
       void search({ programId, query, matchCase, sourceOnly, pathFilter })
         .then((value) => {
-          if (!cancelled) {
-            setResult(value)
-            setResultKey(searchKey)
-          }
+          if (!cancelled)
+            setLookup({ kind: "found", key: searchKey, results: value })
         })
         .catch((reason) => {
-          if (!cancelled) setError(errorMessage(reason))
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false)
+          if (!cancelled)
+            setLookup({
+              kind: "failed",
+              key: searchKey,
+              message: errorMessage(reason),
+            })
         })
     }, 250)
     return () => {
@@ -221,6 +226,14 @@ export function ProgramSearchPanel({
     search,
     searchKey,
   ])
+  // The lookup only answers for the query on screen; an earlier query's reply is not shown.
+  const current =
+    lookup.kind !== "idle" && lookup.key === searchKey ? lookup : null
+  const loading = current?.kind === "searching"
+  const result = current?.kind === "found" ? current.results : null
+  const error = current?.kind === "failed" ? current.message : null
+  const replacing = replace.kind === "replacing"
+  const replaceMessage = replace.kind === "done" ? replace.message : null
   const merged = useMemo(
     () =>
       overlaySearch(result?.files ?? [], drafts.getDrafts(), query, matchCase, {
@@ -245,7 +258,6 @@ export function ProgramSearchPanel({
   const canReplace = Boolean(
     query &&
     result &&
-    resultKey === searchKey &&
     !loading &&
     !error &&
     !result.skipped &&
@@ -260,22 +272,22 @@ export function ProgramSearchPanel({
     for (const match of selectedMatches)
       groups.set(match.path, [...(groups.get(match.path) ?? []), match])
     let applied = 0
-    setReplacing(true)
-    setReplaceMessage(null)
+    setReplace({ kind: "replacing" })
     try {
       for (const [path, items] of groups) {
         await drafts.replaceMatches(path, items, replacement)
         applied += items.length
       }
-      setReplaceMessage(
-        `Replaced ${applied} ${applied === 1 ? "match" : "matches"}.`
-      )
+      setReplace({
+        kind: "done",
+        message: `Replaced ${applied} ${applied === 1 ? "match" : "matches"}.`,
+      })
     } catch (failure) {
-      setReplaceMessage(
-        `${applied ? `Replaced ${applied} matches. ` : ""}${errorMessage(failure)}`
-      )
+      setReplace({
+        kind: "done",
+        message: `${applied ? `Replaced ${applied} matches. ` : ""}${errorMessage(failure)}`,
+      })
     } finally {
-      setReplacing(false)
       setExcluded({ scope: "", keys: [] })
       setRetry((value) => value + 1)
     }

@@ -35,6 +35,29 @@ type ChangedFile = FunctionReturnType<
   typeof api.codeStorage.historyFiles
 >[number]
 
+type Diff = FunctionReturnType<typeof api.codeStorage.historyDiff>
+/** What the user has open in the history panel. Choosing another commit replaces the whole value. */
+type Detail =
+  | { kind: "closed" }
+  | { kind: "listing"; commit: Commit }
+  | { kind: "failed"; commit: Commit; message: string }
+  | {
+      kind: "open"
+      commit: Commit
+      files: ChangedFile[]
+      file: ChangedFile | null
+      diff: Diff | null
+      /** The last failure: a diff that would not load, a checkpoint, or a restore. */
+      error: string | null
+      action: Action
+    }
+/** The action on the open commit. Confirming a restore, restoring, and the result that follows are one flow. */
+type Action =
+  | { kind: "idle" }
+  | { kind: "confirming" }
+  | { kind: "restoring" }
+  | { kind: "done"; message: string }
+
 export function ProgramHistoryPanel({
   programId,
   programName,
@@ -61,21 +84,33 @@ export function ProgramHistoryPanel({
   const historyDiff = useAction(api.codeStorage.historyDiff)
   const [open, setOpen] = useState(initiallyOpen)
   const [page, setPage] = useState<History | null>(null)
-  const [commit, setCommit] = useState<Commit | null>(null)
-  const [files, setFiles] = useState<ChangedFile[] | null>(null)
-  const [file, setFile] = useState<ChangedFile | null>(null)
-  const [diff, setDiff] = useState<FunctionReturnType<
-    typeof api.codeStorage.historyDiff
-  > | null>(null)
+  const [detail, setDetail] = useState<Detail>({ kind: "closed" })
   const [error, setError] = useState<string | null>(null)
-  const [detailError, setDetailError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [refresh, setRefresh] = useState(0)
   const [duplicateOpen, setDuplicateOpen] = useState(false)
-  const [confirm, setConfirm] = useState(false)
-  const [restoring, setRestoring] = useState(false)
   const restoreBusy = useRef(false)
-  const [result, setResult] = useState<string | null>(null)
+  // Projections of `detail`, so the markup reads the values it always has.
+  const commit = detail.kind === "closed" ? null : detail.commit
+  const files = detail.kind === "open" ? detail.files : null
+  const file = detail.kind === "open" ? detail.file : null
+  const diff = detail.kind === "open" ? detail.diff : null
+  const detailError =
+    detail.kind === "failed"
+      ? detail.message
+      : detail.kind === "open"
+        ? detail.error
+        : null
+  const confirm = detail.kind === "open" && detail.action.kind === "confirming"
+  const restoring = detail.kind === "open" && detail.action.kind === "restoring"
+  const result =
+    detail.kind === "open" && detail.action.kind === "done"
+      ? detail.action.message
+      : null
+  const setAction = (action: Action) =>
+    setDetail((current) =>
+      current.kind === "open" ? { ...current, action } : current
+    )
   const generation = useRef(0)
   useEffect(() => {
     if (!open) return
@@ -99,6 +134,13 @@ export function ProgramHistoryPanel({
   // Commit and file loads run from the handlers that select them, so a stale reply
   // from an earlier selection is dropped by comparing against the latest request.
   const detailRequest = useRef(0)
+  /** Changes the open commit. A reply for an earlier selection never reaches here, and a closed panel ignores it. */
+  const updateOpen = (
+    update: (open: Extract<Detail, { kind: "open" }>) => Detail
+  ) =>
+    setDetail((current) =>
+      current.kind === "open" ? update(current) : current
+    )
   async function loadDiff(
     target: Commit,
     changed: ChangedFile,
@@ -110,42 +152,53 @@ export function ProgramHistoryPanel({
         sha: target.sha,
         path: changed.path,
       })
-      if (request === detailRequest.current) setDiff(next)
+      if (request === detailRequest.current)
+        updateOpen((view) => ({ ...view, diff: next }))
     } catch (err) {
-      if (request === detailRequest.current) setDetailError(errorMessage(err))
+      if (request === detailRequest.current)
+        updateOpen((view) => ({ ...view, error: errorMessage(err) }))
     }
   }
   async function loadFiles(target: Commit) {
     const request = ++detailRequest.current
-    setFiles(null)
-    setFile(null)
-    setDiff(null)
-    setDetailError(null)
-    setConfirm(false)
-    setResult(null)
+    setDetail({ kind: "listing", commit: target })
     try {
       const next = await historyFiles({ programId, sha: target.sha })
       if (request !== detailRequest.current) return
-      setFiles(next)
-      const first = next.at(0)
-      setFile(first ?? null)
+      const first = next.at(0) ?? null
+      setDetail({
+        kind: "open",
+        commit: target,
+        files: next,
+        file: first,
+        diff: null,
+        error: null,
+        action: { kind: "idle" },
+      })
       if (first) await loadDiff(target, first, request)
     } catch (err) {
-      if (request === detailRequest.current) setDetailError(errorMessage(err))
+      if (request === detailRequest.current)
+        setDetail({
+          kind: "failed",
+          commit: target,
+          message: errorMessage(err),
+        })
     }
   }
   function openCommit(next: Commit) {
-    setCommit(next)
     void loadFiles(next)
   }
   function selectFile(next: ChangedFile) {
     if (!commit) return
-    setFile(next)
-    setDiff(null)
-    setDetailError(null)
-    setConfirm(false)
-    setResult(null)
-    void loadDiff(commit, next, ++detailRequest.current)
+    const request = ++detailRequest.current
+    updateOpen((view) => ({
+      ...view,
+      file: next,
+      diff: null,
+      error: null,
+      action: { kind: "idle" },
+    }))
+    void loadDiff(commit, next, request)
   }
   function reload() {
     setRefresh((current) => current + 1)
@@ -185,7 +238,7 @@ export function ProgramHistoryPanel({
   async function saveCheckpoint() {
     if (!commit || checkpointBusy) return
     setCheckpointBusy(true)
-    setDetailError(null)
+    updateOpen((view) => ({ ...view, error: null }))
     try {
       await createCheckpoint({
         programId,
@@ -193,9 +246,9 @@ export function ProgramHistoryPanel({
         name: checkpointName,
       })
       setCheckpointName("")
-      setResult("Checkpoint saved.")
+      setAction({ kind: "done", message: "Checkpoint saved." })
     } catch (err) {
-      setDetailError(errorMessage(err))
+      updateOpen((view) => ({ ...view, error: errorMessage(err) }))
     } finally {
       setCheckpointBusy(false)
     }
@@ -209,18 +262,39 @@ export function ProgramHistoryPanel({
   }
   async function restore() {
     if (!commit || !canRestore || restoreBusy.current) return
+    const sha = commit.sha
     restoreBusy.current = true
-    setRestoring(true)
-    setDetailError(null)
+    updateOpen((view) => ({
+      ...view,
+      error: null,
+      action: { kind: "restoring" },
+    }))
+    // The restore's outcome applies only while the same commit is still open.
+    const settle = (
+      change: (open: Extract<Detail, { kind: "open" }>) => Detail
+    ) =>
+      setDetail((current) =>
+        current.kind === "open" && current.commit.sha === sha
+          ? change(current)
+          : current
+      )
     try {
-      const warning = await onRestore(commit.sha)
-      setResult(warning ?? "Program restored in a new commit.")
-      setConfirm(false)
+      const warning = await onRestore(sha)
+      settle((view) => ({
+        ...view,
+        action: {
+          kind: "done",
+          message: warning ?? "Program restored in a new commit.",
+        },
+      }))
     } catch (err) {
-      setDetailError(errorMessage(err))
+      settle((view) => ({
+        ...view,
+        error: errorMessage(err),
+        action: { kind: "confirming" },
+      }))
     } finally {
       restoreBusy.current = false
-      setRestoring(false)
     }
   }
   return (
@@ -229,8 +303,7 @@ export function ProgramHistoryPanel({
       onOpenChange={(value) => {
         if (restoring) return
         setOpen(value)
-        setConfirm(false)
-        setResult(null)
+        setAction({ kind: "idle" })
         if (value && commit) void loadFiles(commit)
       }}
     >
@@ -262,10 +335,7 @@ export function ProgramHistoryPanel({
               aria-label="Back to commits"
               onClick={() => {
                 detailRequest.current++
-                setCommit(null)
-                setDetailError(null)
-                setResult(null)
-                setConfirm(false)
+                setDetail({ kind: "closed" })
               }}
             >
               <ArrowLeftIcon />
@@ -595,7 +665,7 @@ export function ProgramHistoryPanel({
                       size="sm"
                       variant="ghost"
                       disabled={restoring}
-                      onClick={() => setConfirm(false)}
+                      onClick={() => setAction({ kind: "idle" })}
                     >
                       Cancel
                     </Button>
@@ -620,7 +690,7 @@ export function ProgramHistoryPanel({
                     size="sm"
                     variant="outline"
                     disabled={!canRestore || restoring}
-                    onClick={() => setConfirm(true)}
+                    onClick={() => setAction({ kind: "confirming" })}
                   >
                     <ClockCounterClockwiseIcon />
                     Restore commit

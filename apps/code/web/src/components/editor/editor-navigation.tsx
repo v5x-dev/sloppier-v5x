@@ -14,6 +14,7 @@ import { File } from "@pierre/diffs/react"
 import { editorThemeOptions } from "@/lib/editor-theme"
 import type { PierreCollaboration } from "@/lib/pierre-collaboration"
 import { positionAt, RequestCancelled } from "@/lib/language-service"
+import { HoverCardController, type HoverWord } from "@/lib/hover-card"
 import { DefinitionContext, useLanguageService } from "./language-session"
 import { toast } from "@v5x/ui/components/toast"
 import { ScrollArea } from "@v5x/ui/components/scroll-area"
@@ -32,6 +33,8 @@ import {
 } from "@v5x/ui/components/dialog"
 
 type Popup = { contents: HoverContents; anchor: HoverAnchor }
+/** A word under the pointer, with where its card should sit. */
+type HoverTarget = HoverWord & { anchor: HoverAnchor }
 type Definition = { path: string; contents: string; line: number }
 
 function HoverCard({
@@ -224,33 +227,38 @@ export function useEditorNavigation(
     contents: string
     line: number
   } | null>(null)
-  const leaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
-  )
   const [popup, setPopup] = useState<Popup | null>(null)
+  const cardHover = useRef<HoverCardController<HoverTarget, Popup> | null>(null)
   useEffect(() => {
     const host = wrapper.current
     if (!host || !client) return
-    let timer: ReturnType<typeof setTimeout> | undefined
-    let hover: AbortController | undefined
     let definition: AbortController | undefined
-    let hoveredWord: { start: number; end: number; text: string } | undefined
     let pressed: Point | undefined
     let disposed = false
-    const cancelHover = () => {
-      clearTimeout(timer)
-      hover?.abort()
-      hoveredWord = undefined
-    }
-    const hideSoon = () => {
-      clearTimeout(leaveTimer.current)
-      leaveTimer.current = setTimeout(() => setPopup(null), 200)
-    }
-    const dismiss = () => {
-      cancelHover()
-      clearTimeout(leaveTimer.current)
-      setPopup(null)
-    }
+    const hover = new HoverCardController<HoverTarget, Popup>({
+      load: async (word, signal) => {
+        const version = client.version(path)
+        const result = await client
+          .hover(path, positionAt(word.text, word.offset), signal)
+          .catch(() => null)
+        if (signal.aborted || version !== client.version(path) || !result)
+          return null
+        const values = Array.isArray(result.contents)
+          ? result.contents
+          : [result.contents]
+        const content = values
+          .map((value) => (typeof value === "string" ? value : value.value))
+          .join("\n\n")
+          .trim()
+        return content
+          ? { contents: result.contents, anchor: word.anchor }
+          : null
+      },
+      show: (card) => setPopup(card),
+      hide: () => setPopup(null),
+    })
+    cardHover.current = hover
+    const dismiss = () => hover.dismiss()
     const go = async (offset: number) => {
       dismiss()
       if (!client.isReady) {
@@ -316,60 +324,17 @@ export function useEditorNavigation(
       if (!client.isReady || event.buttons) return dismiss()
       const text = binding.document.getText()
       const offset = pointerOffset(event, host, text)
-      if (offset === null || !/[\w]/.test(text[offset] ?? "")) {
-        cancelHover()
-        hideSoon()
-        return
-      }
+      // Keep the old card briefly so the pointer can cross onto it, even if
+      // another token lies between the originating symbol and the card.
+      if (offset === null || !/[\w]/.test(text[offset] ?? ""))
+        return hover.point(null)
       let start = offset
       let end = offset + 1
       while (start > 0 && /\w/.test(text[start - 1])) start--
       while (end < text.length && /\w/.test(text[end])) end++
-      clearTimeout(leaveTimer.current)
-      if (
-        hoveredWord?.start === start &&
-        hoveredWord.end === end &&
-        hoveredWord.text === text
-      )
-        return
-      cancelHover()
-      hoveredWord = { start, end, text }
-      const anchor = symbolAnchor(event, text, start, end)
-      // Keep the old card briefly so the pointer can cross onto it, even if
-      // another token lies between the originating symbol and the card.
-      hideSoon()
-      timer = setTimeout(() => {
-        const controller = (hover = new AbortController())
-        const version = client.version(path)
-        void client
-          .hover(path, positionAt(text, offset), controller.signal)
-          .then((result) => {
-            if (
-              disposed ||
-              controller.signal.aborted ||
-              version !== client.version(path) ||
-              !result
-            )
-              return
-            const values = Array.isArray(result.contents)
-              ? result.contents
-              : [result.contents]
-            const content = values
-              .map((value) => (typeof value === "string" ? value : value.value))
-              .join("\n\n")
-              .trim()
-            if (content) {
-              clearTimeout(leaveTimer.current)
-              setPopup({
-                contents: result.contents,
-                anchor,
-              })
-            }
-          })
-          .catch(() => {
-            /* Hover is optional; later pointer movement retries. */
-          })
-      }, 500)
+      const word = { start, end, text, offset }
+      if (hover.isOn(word)) return hover.stay()
+      hover.point({ ...word, anchor: symbolAnchor(event, text, start, end) })
     }
     const pointerdown = (event: PointerEvent) => {
       pressed = { x: event.clientX, y: event.clientY }
@@ -393,17 +358,12 @@ export function useEditorNavigation(
       void go(offset)
     }
     const leave = (event: MouseEvent) => {
-      cancelHover()
       // React's portaled mouse-enter can run before the editor's native leave.
-      // Do not re-arm dismissal after the pointer has already entered the card.
-      if (
+      // The card keeps itself up once the pointer has moved onto it.
+      const onCard =
         event.relatedTarget instanceof Element &&
-        event.relatedTarget.closest("[data-language-hover]")
-      ) {
-        clearTimeout(leaveTimer.current)
-        return
-      }
-      hideSoon()
+        Boolean(event.relatedTarget.closest("[data-language-hover]"))
+      hover.leaveEditor(onCard)
     }
     host.addEventListener("keydown", keydown, true)
     host.addEventListener("mousemove", move)
@@ -421,9 +381,8 @@ export function useEditorNavigation(
     window.addEventListener("scroll", scroll, true)
     return () => {
       disposed = true
-      clearTimeout(timer)
-      clearTimeout(leaveTimer.current)
-      hover?.abort()
+      hover.dispose()
+      cardHover.current = null
       definition?.abort()
       host.removeEventListener("keydown", keydown, true)
       host.removeEventListener("mousemove", move)
@@ -453,11 +412,8 @@ export function useEditorNavigation(
         createPortal(
           <HoverCard
             popup={popup}
-            onEnter={() => clearTimeout(leaveTimer.current)}
-            onLeave={() => {
-              clearTimeout(leaveTimer.current)
-              leaveTimer.current = setTimeout(() => setPopup(null), 200)
-            }}
+            onEnter={() => cardHover.current?.enterCard()}
+            onLeave={() => cardHover.current?.leaveCard()}
           />,
           document.body
         )}
