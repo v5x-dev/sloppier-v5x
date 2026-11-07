@@ -330,8 +330,10 @@ export async function createLocalFixture({ builderURL } = {}) {
       resolve(dir, "tsconfig.json"),
       '{"compilerOptions":{"target":"ES2022","moduleResolution":"bundler","module":"ESNext","strict":true,"skipLibCheck":true}}\n'
     )
+    // The copied backend resolves its own dependencies. The isolated bun
+    // linker keeps them in the backend's node_modules, not the root one.
     symlinkSync(
-      resolve(app, "../../../node_modules"),
+      resolve(backend, "node_modules"),
       resolve(dir, "node_modules"),
       "dir"
     )
