@@ -1,8 +1,10 @@
 // Run after completion-demo.mjs ez-template has started.
 // Usage: node apps/code/web/scripts/path-preview-check.mjs <demo URL> [screenshot.png]
 import { execFileSync } from "node:child_process"
-import { resolve } from "node:path"
-const [url, screenshot = "/tmp/auton-path-preview.png"] = process.argv.slice(2)
+import { mkdirSync } from "node:fs"
+import { dirname, resolve } from "node:path"
+const [url, screenshot = "test-results/auton-path-preview.png"] =
+  process.argv.slice(2)
 if (!url) throw new Error("Provide the EZ-Template demo URL")
 const browser = (...args) =>
   execFileSync("agent-browser", ["--session", "auton-preview", ...args], {
@@ -62,7 +64,9 @@ const result = browser(
 )
 if (!result.includes("PASS:")) throw new Error(result)
 console.log(result)
-console.log(browser("screenshot", resolve(screenshot)))
+const screenshotPath = resolve(screenshot)
+mkdirSync(dirname(screenshotPath), { recursive: true })
+console.log(browser("screenshot", screenshotPath))
 browser("click", '[aria-label="Close path preview"]')
 const closed = browser(
   "eval",

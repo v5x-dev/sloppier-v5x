@@ -32,3 +32,5 @@ test-results/
 
 # Public setup templates
 !**/.env.example
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

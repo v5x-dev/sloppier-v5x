@@ -88,3 +88,25 @@ has it: a `CODE_TEST_STORAGE_ENV` file, `PIERRE_*` environment variables, or the
 development Convex deployment named in `packages/backend/.env.local`. Nothing else is
 required. WorkOS, Smol, and Resend keys are not used, and production deploy keys are
 rejected. Never print the credential values.
+
+## Showing a UI change works
+
+Passing tests do not show how a UI looks. When you change anything a user sees, capture
+evidence and look at it before you report back.
+
+- **Keep evidence from the e2e suite.** Run `UI_EVIDENCE=1 bun run test:e2e`. Every test
+  then keeps a screenshot and a video under `apps/code/web/test-results/`. Open the PNGs
+  and check each one that covers your change. Without the variable, only failures keep
+  them.
+- **Drive the running app by hand.** Use the Playwright CLI (`playwright-cli`, installed
+  globally). Start a session with `playwright-cli -s=<name> open <url>`, then use
+  `snapshot`, `screenshot --filename=<file>`, and `video-start <file>.webm` / `video-stop`.
+  Use `-s=<name>` on every command so sessions stay separate. Add `--headed` to watch
+  the browser. For a signed-in app, run `bun run demo:visual` in `apps/code/web`
+  and open the URLs it prints.
+- **Compare before and after.** Use the same viewport and the same state for both shots.
+  If they differ, say why in your report.
+- **Wait before you capture.** Wait for the element or the network to settle first.
+  A screenshot taken mid-load shows the wrong thing.
+- Screenshots catch regressions. They do not replace a design review, so say what you
+  looked at and what you did not check.

@@ -13,6 +13,10 @@ export default defineConfig({
   use: {
     baseURL,
     trace: "retain-on-failure",
+    // UI_EVIDENCE=1 keeps a screenshot and video for every test, so the run
+    // can be reviewed in test-results/ even when everything passes.
+    screenshot: process.env.UI_EVIDENCE ? "on" : "only-on-failure",
+    video: process.env.UI_EVIDENCE ? "on" : "retain-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: process.env.PLAYWRIGHT_BASE_URL
