@@ -1662,7 +1662,7 @@ export const binCatalogRows = [
   },
   {
     sku: "276-4817-100",
-    name: "V5 Power Cable - 180mm",
+    name: "V5 Power Cable",
     partType: "Electronics",
     alternateSkus: [],
     retrievedAt: "2026-11-06",
