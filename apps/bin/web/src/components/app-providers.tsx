@@ -14,6 +14,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <AuthKitProvider
       clientId={import.meta.env.VITE_WORKOS_CLIENT_ID}
       devMode={import.meta.env.DEV}
+      // In production AuthKit calls this origin's /user_management routes, which
+      // keep the refresh token in an HttpOnly cookie. Calling WorkOS directly from
+      // the browser fails, so the sign-in callback never finishes.
+      apiHostname={import.meta.env.PROD ? window.location.hostname : undefined}
       redirectUri={
         import.meta.env.VITE_WORKOS_REDIRECT_URI ??
         `${window.location.origin}/callback`
