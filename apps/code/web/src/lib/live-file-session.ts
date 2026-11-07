@@ -39,6 +39,9 @@ export type LiveEditor = {
   destroy: () => void
 }
 
+/** A live file's session: opening, live (edits sync), or replaced (terminal; the server moved the file to a new document). */
+type SessionPhase = "opening" | "live" | "replaced"
+
 /** What one open editor needs from a live document. */
 export type LiveFileView = {
   onChange: (text: string) => void
@@ -205,10 +208,11 @@ export function createLiveFileSession({
   let stopPresence: (() => void) | undefined
   let sequence = 0
   let documentId: Id<"crdtDocuments"> | undefined
-  let replaced = false
-  const isStopped = () => disposed || replaced
-  let caughtUp = false
-  let cacheReady = false
+  /** Opening until the server log has replayed and the local cache has loaded; then live until the file is replaced. */
+  let phase: SessionPhase = "opening"
+  let replayed = false
+  let cached = false
+  const isStopped = () => disposed || phase === "replaced"
   let sending = false
   let inFlight: { updateId: string; bytes: ArrayBuffer } | undefined
   let sessionToken: string | undefined
@@ -224,12 +228,18 @@ export function createLiveFileSession({
   }
   const report = () => {
     if (isDisposed()) return
-    const dirty =
-      replaced || !caughtUp || !cacheReady || sending || hasChanges(doc, server)
+    // Shown as saving until the session is live, while a send is in flight, and while edits are unsent.
+    const dirty = phase !== "live" || sending || hasChanges(doc, server)
     callbacks.onSyncChange(!dirty)
     callbacks.onStatus(
       dirty ? "saving" : storagePending.size ? "backing-up" : "saved"
     )
+  }
+  /** Goes live once both the replay and the local cache have finished, opening the editor. */
+  function reachLive() {
+    if (phase !== "opening" || !replayed || !cached) return
+    phase = "live"
+    mountEditor()
   }
   function watchStorage() {
     stopStorage?.()
@@ -261,9 +271,7 @@ export function createLiveFileSession({
   async function flush() {
     if (
       disposed ||
-      replaced ||
-      !caughtUp ||
-      !cacheReady ||
+      phase !== "live" ||
       sending ||
       (!inFlight && !hasChanges(doc, server))
     )
@@ -403,7 +411,7 @@ export function createLiveFileSession({
       (batch) => {
         if (isDisposed()) return
         if (batch.documentId !== documentId) {
-          replaced = true
+          phase = "replaced"
           callbacks.onReplaced()
           callbacks.onSyncChange(false)
           callbacks.onError(
@@ -420,9 +428,9 @@ export function createLiveFileSession({
           watchUpdates()
           return
         }
-        if (!caughtUp) {
-          caughtUp = true
-          if (cacheReady) mountEditor()
+        if (!replayed) {
+          replayed = true
+          reachLive()
         }
         report()
         void flush()
@@ -460,9 +468,9 @@ export function createLiveFileSession({
       watchUpdates()
       await cache.whenSynced
       if (isStopped()) return
-      cacheReady = true
-      if (caughtUp) {
-        mountEditor()
+      cached = true
+      reachLive()
+      if (phase === "live") {
         report()
         void flush()
       }
@@ -523,9 +531,9 @@ export function createLiveFileSession({
     }
   }
   const retry = () => {
-    if (isDisposed() || replaced) return
+    if (isDisposed() || phase === "replaced") return
     callbacks.onError(null)
-    if (!caughtUp || !cacheReady) {
+    if (phase !== "live") {
       void start()
       return
     }
@@ -558,8 +566,7 @@ export function createLiveFileSession({
   }, 10_000)
   return {
     retry,
-    hasPendingChanges: () =>
-      replaced || !caughtUp || !cacheReady || hasChanges(doc, server),
+    hasPendingChanges: () => phase !== "live" || hasChanges(doc, server),
     setBrowserActive(active: boolean) {
       if (awareness.getLocalState()?.active !== active)
         awareness.setLocalStateField("active", active)

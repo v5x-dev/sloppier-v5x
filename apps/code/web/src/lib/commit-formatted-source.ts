@@ -2,6 +2,38 @@ import { isLanguageFile } from "./language-service"
 import { waitForSourceSync } from "./build-program"
 
 type FormatActions = Record<string, (() => Promise<void>) | null>
+/** The formatting actions the open editors have registered, and a way to hear when that changes. */
+export type FormatRegistry = {
+  get: () => FormatActions
+  subscribe: (listener: () => void) => () => void
+}
+
+/** Resolves with a file's format action as soon as its editor registers one, or rejects when the signal ends. */
+function whenFormatAction(
+  registry: FormatRegistry,
+  path: string,
+  signal: AbortSignal
+) {
+  return new Promise<() => Promise<void>>((resolve, reject) => {
+    const finish = () => {
+      unsubscribe()
+      signal.removeEventListener("abort", aborted)
+    }
+    const aborted = () => {
+      finish()
+      reject(signal.reason)
+    }
+    const check = () => {
+      const action = registry.get()[path]
+      if (!action) return
+      finish()
+      resolve(action)
+    }
+    const unsubscribe = registry.subscribe(check)
+    signal.addEventListener("abort", aborted)
+    check()
+  })
+}
 
 export async function commitFormattedSource(
   source: {
@@ -16,7 +48,7 @@ export async function commitFormattedSource(
     openFile: (path: string) => void
     commit: (message?: string) => Promise<void>
   },
-  actions: () => FormatActions,
+  registry: FormatRegistry,
   message: string | undefined,
   signal: AbortSignal
 ) {
@@ -31,12 +63,8 @@ export async function commitFormattedSource(
   const deadline = AbortSignal.any([signal, AbortSignal.timeout(15_000)])
   const formatted = new Map<string, string | undefined>()
   for (const path of paths) {
-    let action = actions()[path]
-    while (!action) {
-      deadline.throwIfAborted()
-      await new Promise<void>((resolve) => setTimeout(resolve, 50))
-      action = actions()[path]
-    }
+    // The file's editor opens with the commit; it registers its formatter once it has mounted.
+    const action = await whenFormatAction(registry, path, deadline)
     await action()
     formatted.set(path, source.getDrafts().get(path))
   }

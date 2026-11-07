@@ -9,7 +9,10 @@ import { toast } from "@v5x/ui/components/toast"
 import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys"
 
 import { waitForSourceSync } from "@/lib/build-program"
-import { commitFormattedSource } from "@/lib/commit-formatted-source"
+import {
+  commitFormattedSource,
+  type FormatRegistry,
+} from "@/lib/commit-formatted-source"
 import { errorMessage } from "@/lib/errors"
 import type { WorkbenchSource } from "@/lib/workbench-source"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -30,10 +33,21 @@ export function useWorkbenchCommands({
     Record<string, (() => Promise<void>) | null>
   >({})
   const formatActionsRef = useRef(formatActions)
+  const formatListeners = useRef(new Set<() => void>())
   const onFormatChange = useCallback<FormatChange>((path, action) => {
     formatActionsRef.current = { ...formatActionsRef.current, [path]: action }
     setFormatActions((current) => ({ ...current, [path]: action }))
+    for (const listener of formatListeners.current) listener()
   }, [])
+  const formatRegistry: FormatRegistry = {
+    get: () => formatActionsRef.current,
+    subscribe: (listener) => {
+      formatListeners.current.add(listener)
+      return () => {
+        formatListeners.current.delete(listener)
+      }
+    },
+  }
   const formatManually = (path: string) => {
     void formatActionsRef.current[path]?.().catch((error) =>
       toast.add({
@@ -47,12 +61,7 @@ export function useWorkbenchCommands({
     message: string | undefined,
     signal: AbortSignal
   ) => {
-    await commitFormattedSource(
-      source,
-      () => formatActionsRef.current,
-      message,
-      signal
-    )
+    await commitFormattedSource(source, formatRegistry, message, signal)
   }
   const [commitOpen, setCommitOpen] = useState(false)
   const commitLabel = `Commit ${dirtyPaths.length} ${dirtyPaths.length === 1 ? "file" : "files"}`

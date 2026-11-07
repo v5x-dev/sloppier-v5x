@@ -48,22 +48,32 @@ export function ProgramConsole({
   slot: number
   onSlotChange: (slot: number) => void
 }) {
-  const [open, setOpen] = useState(false)
+  // The console belongs to one connection. Its open state, failure, and events are tagged with that connection,
+  // so a new connection starts closed and clean, and nothing has to reset them.
+  const [openFor, setOpenFor] = useState<Connection | null>(null)
   const [tab, setTab] = useState<"output" | "events">("output")
   const [output, setOutput] = useState("")
   const [input, setInput] = useState("")
   const [paused, setPaused] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [failure, setFailure] = useState<{
+    connection: Connection
+    message: string
+  } | null>(null)
   const [pending, setPending] = useState(false)
-  const [events, setEvents] = useState<BrainLogEntry[] | null>(null)
+  const [eventLog, setEventLog] = useState<{
+    connection: Connection
+    entries: BrainLogEntry[]
+  } | null>(null)
+  const open = connection !== null && openFor === connection
+  const error =
+    failure && failure.connection === connection ? failure.message : null
+  const events =
+    eventLog && eventLog.connection === connection ? eventLog.entries : null
+  const setOpen = (next: boolean) => setOpenFor(next ? connection : null)
   const log = useRef<HTMLPreElement>(null)
   useEffect(() => {
-    setError(null)
-    setEvents(null)
-    if (!connection) {
-      setOpen(false)
-      return
-    }
+    if (!connection) return
+    const active = connection
     const decoder = new TextDecoder()
     let disposed = false
     const append = (bytes: Uint8Array) => {
@@ -82,8 +92,9 @@ export function ProgramConsole({
         )
           await io(async (current) => append(await readUser(current)))
       } catch (err) {
+        // Any other failure stops reading; the console shows it until the connection changes.
         if (!(err instanceof TimeoutError) && !disposed) {
-          setError(errorMessage(err))
+          setFailure({ connection: active, message: errorMessage(err) })
           return
         }
       }
@@ -102,14 +113,18 @@ export function ProgramConsole({
   async function action(fn: (current: Connection) => Promise<void>) {
     if (pending) return
     setPending(true)
-    setError(null)
+    setFailure(null)
     try {
       if (!(await io(fn)))
-        setError(
-          "The Brain is busy or disconnected. Try again when it is ready."
+        setFailure(
+          connection && {
+            connection,
+            message:
+              "The Brain is busy or disconnected. Try again when it is ready.",
+          }
         )
     } catch (err) {
-      setError(errorMessage(err))
+      setFailure(connection && { connection, message: errorMessage(err) })
     } finally {
       setPending(false)
     }
@@ -298,18 +313,14 @@ export function ProgramConsole({
                   onClick={() =>
                     void action(async (current) => {
                       const { count } = await current.request(logStatus())
-                      setEvents(
-                        count
-                          ? (
-                              await current.request(
-                                logRead(
-                                  Math.min(count, 20),
-                                  Math.min(count, 20)
-                                )
-                              )
-                            ).entries
-                          : []
-                      )
+                      const entries = count
+                        ? (
+                            await current.request(
+                              logRead(Math.min(count, 20), Math.min(count, 20))
+                            )
+                          ).entries
+                        : []
+                      setEventLog({ connection: current, entries })
                     })
                   }
                 >

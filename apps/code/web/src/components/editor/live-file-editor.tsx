@@ -94,7 +94,6 @@ export function LiveFileEditor({
     onLiveStatus,
   })
   callbacks.current = { onChange, onSyncChange, onPeopleChange, onLiveStatus }
-  const [ready, setReady] = useState(false)
   const [status, setStatus] = useState<LiveSaveStatus>("opening")
   const shownStatus: LiveSaveStatus = connection.isWebSocketConnected
     ? status
@@ -139,7 +138,6 @@ export function LiveFileEditor({
           undo
         )
         setBinding(collaboration)
-        setReady(true)
         return collaboration
       },
     }
@@ -169,6 +167,8 @@ export function LiveFileEditor({
       window.removeEventListener("beforeunload", beforeUnload)
       join.release()
       joinRef.current = null
+      // The bound editor belonged to this session; the next file shows its loading state until it binds.
+      setBinding(null)
     }
   }, [client, path, programId, user?.id])
 
@@ -206,7 +206,7 @@ export function LiveFileEditor({
           </Button>
         </div>
       )}
-      {!ready && (
+      {!binding && (
         <div className="flex flex-1 items-center justify-center py-12">
           <Spinner />
         </div>

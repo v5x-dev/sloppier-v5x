@@ -49,9 +49,12 @@ const sleep = (ms: number) =>
  */
 export class BuildSpeculation {
   private generation = 0
-  private current: symbol | undefined
   private timer: ReturnType<typeof setTimeout> | undefined
-  private requested: string | null = null
+  /**
+   * The latest build this class started, with the token that ends the watch of any older one. It is kept
+   * after the build settles, so the same content is not built again while its result is current.
+   */
+  private attempt: { token: symbol; hash: string } | null = null
   private finished: SpeculativeBuild | null = null
   /** The latest run, including its build. */
   private running: Promise<void> = Promise.resolve()
@@ -114,6 +117,11 @@ export class BuildSpeculation {
     return this.finished?.hash === hash ? this.finished : null
   }
 
+  /** Whether `token` still names the latest build, so an older build's watch ends. */
+  private isCurrent(token: symbol) {
+    return this.attempt?.token === token
+  }
+
   stop() {
     this.generation++
     clearTimeout(this.timer)
@@ -144,16 +152,15 @@ export class BuildSpeculation {
       if (generation !== this.generation) return
       const hash = await sourceHash(files)
       // Same content as the build in flight or finished: keep watching it. Only a new build supersedes a watch.
-      if (generation !== this.generation || hash === this.requested) return
+      if (generation !== this.generation || hash === this.attempt?.hash) return
       token = Symbol(hash)
-      this.current = token
-      this.requested = hash
+      this.attempt = { token, hash }
       const id = await uploadSource(
         this.options.request,
         { sha: hash, files },
         controller.signal
       )
-      if (this.current !== token) return
+      if (!this.isCurrent(token)) return
       await this.options.request("/build", {
         id,
         commit: `speculative ${hash}`,
@@ -162,10 +169,8 @@ export class BuildSpeculation {
       await this.watch(token, hash)
     } catch {
       // A refused or failed speculation only means the next Upload builds normally, and the same content may retry.
-      if (token !== undefined && this.current === token) {
-        this.current = undefined
-        this.requested = null
-      }
+      if (token !== undefined && this.attempt?.token === token)
+        this.attempt = null
     }
   }
 
@@ -179,15 +184,15 @@ export class BuildSpeculation {
   private async follow(token: symbol, hash: string) {
     let since: number | undefined
     for (;;) {
-      if (this.current !== token) return
+      if (!this.isCurrent(token)) return
       // A Builder that reports versions answers a long poll when the status changes; an older one is polled.
       if (since === undefined) await sleep(25)
-      if (this.current !== token) return
+      if (!this.isCurrent(token)) return
       const path =
         since === undefined ? "/status" : `/status?since=${since}&wait=5000`
       const response = await this.options.request(path)
       const status = (await response.json()) as BuildStatus
-      if (this.current !== token) return
+      if (!this.isCurrent(token)) return
       if (status.building) {
         since = status.version
         continue

@@ -31,6 +31,12 @@ import {
 } from "./workbench-shortcuts"
 
 type Palette = "files" | "commands"
+/** The overlay open over the editor. `line` carries the text typed so far and whether it was rejected. */
+type Overlay =
+  | { kind: "none" }
+  | { kind: "palette"; mode: Palette }
+  | { kind: "shortcuts" }
+  | { kind: "line"; text: string; invalid: boolean }
 
 export function WorkbenchHotkeys({
   source,
@@ -47,12 +53,28 @@ export function WorkbenchHotkeys({
   showSymbols: () => void
   onGoToLine: (line: number) => void
 }) {
-  const [palette, setPalette] = useState<Palette | null>(null)
-  const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [lineOpen, setLineOpen] = useState(false)
-  const [lineText, setLineText] = useState("")
-  const [lineInvalid, setLineInvalid] = useState(false)
-  const anyOpen = palette !== null || shortcutsOpen || lineOpen
+  // One overlay can be open over the editor at a time, so they are one value, not three flags.
+  const [overlay, setOverlay] = useState<Overlay>({ kind: "none" })
+  const palette = overlay.kind === "palette" ? overlay.mode : null
+  const shortcutsOpen = overlay.kind === "shortcuts"
+  const lineOpen = overlay.kind === "line"
+  const lineText = overlay.kind === "line" ? overlay.text : ""
+  const lineInvalid = overlay.kind === "line" && overlay.invalid
+  const anyOpen = overlay.kind !== "none"
+  const setPalette = (mode: Palette | null) =>
+    setOverlay(mode ? { kind: "palette", mode } : { kind: "none" })
+  const setShortcutsOpen = (open: boolean) =>
+    setOverlay(open ? { kind: "shortcuts" } : { kind: "none" })
+  const setLineOpen = (open: boolean) =>
+    setOverlay(
+      open ? { kind: "line", text: "", invalid: false } : { kind: "none" }
+    )
+  const updateLine = (change: { text?: string; invalid?: boolean }) =>
+    setOverlay((current) =>
+      current.kind === "line" ? { ...current, ...change } : current
+    )
+  const setLineText = (text: string) => updateLine({ text, invalid: false })
+  const setLineInvalid = (invalid: boolean) => updateLine({ invalid })
 
   const focusExplorer = () => {
     showExplorer()

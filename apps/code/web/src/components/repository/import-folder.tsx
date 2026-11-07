@@ -32,6 +32,12 @@ import {
 import { errorMessage } from "@/lib/errors"
 
 type Template = Doc<"programs">["template"]
+/** The folder the user picked, or nothing picked yet. */
+type Draft =
+  { kind: "empty" } | { kind: "picked"; entries: FolderFile[]; name: string }
+/** Editing the form (with the last error, if any), or uploading the folder with how many files have gone up. */
+type Progress =
+  { kind: "editing"; error: string } | { kind: "importing"; uploaded: number }
 const templates = [
   { value: "vexcode", label: "VEXcode" },
   { value: "pros", label: "PROS" },
@@ -50,12 +56,32 @@ export function ImportFolder({
   const finish = useMutation(api.programs.finishFolderImport)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const [entries, setEntries] = useState<FolderFile[]>([])
-  const [name, setName] = useState("")
+  // The folder picked, if any. Its name is the program's name, which the user may change.
+  const [draft, setDraft] = useState<Draft>({ kind: "empty" })
+  const entries = draft.kind === "picked" ? draft.entries : []
+  const name = draft.kind === "picked" ? draft.name : ""
+  const setName = (value: string) =>
+    setDraft((current) =>
+      current.kind === "picked" ? { ...current, name: value } : current
+    )
   const [template, setTemplate] = useState<Template>("pros")
-  const [error, setError] = useState("")
-  const [busy, setBusy] = useState(false)
-  const [uploaded, setUploaded] = useState(0)
+  const [progress, setProgress] = useState<Progress>({
+    kind: "editing",
+    error: "",
+  })
+  const busy = progress.kind === "importing"
+  const uploaded = progress.kind === "importing" ? progress.uploaded : 0
+  const error = progress.kind === "editing" ? progress.error : ""
+  const setError = (message: string) =>
+    setProgress((current) =>
+      current.kind === "editing" ? { kind: "editing", error: message } : current
+    )
+  /** Closes the dialog and forgets the picked folder, its name, and any error. */
+  const reset = () => {
+    setOpen(false)
+    setDraft({ kind: "empty" })
+    setProgress({ kind: "editing", error: "" })
+  }
   let plan: ReturnType<typeof planFolder> | null = null
   let planError = ""
   if (entries.length) {
@@ -71,13 +97,8 @@ export function ImportFolder({
       open={open}
       onOpenChange={(next) => {
         if (busy) return
-        setOpen(next)
-        if (!next) {
-          setEntries([])
-          setError("")
-          setName("")
-          setUploaded(0)
-        }
+        if (next) setOpen(true)
+        else reset()
       }}
     >
       <ActionTooltip label="Import folder">
@@ -95,9 +116,7 @@ export function ImportFolder({
           onSubmit={async (event) => {
             event.preventDefault()
             if (!plan || busy || !name.trim()) return
-            setBusy(true)
-            setError("")
-            setUploaded(0)
+            setProgress({ kind: "importing", uploaded: 0 })
             try {
               const importId = await begin({
                 workspaceId,
@@ -111,19 +130,16 @@ export function ImportFolder({
                 await append({ importId, sequence, files })
                 sequence++
                 count += files.length
-                setUploaded(count)
+                setProgress({ kind: "importing", uploaded: count })
               }
               const programId = await finish({ importId })
-              setOpen(false)
-              setEntries([])
+              reset()
               await navigate({
                 to: "/programs/$programId",
                 params: { programId },
               })
             } catch (failure) {
-              setError(errorMessage(failure))
-            } finally {
-              setBusy(false)
+              setProgress({ kind: "editing", error: errorMessage(failure) })
             }
           }}
         >
@@ -146,11 +162,14 @@ export function ImportFolder({
                 const files = Array.from(event.target.files ?? [])
                 if (!files.length) return
                 const folder = selectedFolder(files)
-                setEntries(folder.entries)
-                setName(folder.name)
+                setDraft({
+                  kind: "picked",
+                  entries: folder.entries,
+                  name: folder.name,
+                })
                 setTemplate(folder.template ?? "pros")
               } catch (failure) {
-                setEntries([])
+                setDraft({ kind: "empty" })
                 setError(errorMessage(failure))
               }
             }}
@@ -242,9 +261,7 @@ export function ImportFolder({
               variant="outline"
               disabled={busy}
               onClick={() => {
-                setOpen(false)
-                setEntries([])
-                setError("")
+                reset()
               }}
             >
               Cancel

@@ -88,6 +88,7 @@ describe("local language session", () => {
     await starting
     expect(service.getStatus()).toBe("stopped")
     expect(service.isReady).toBe(false)
+    expect(service.sourceLoading).toBe(false)
   })
   it("reads open Yjs contents immediately for local and remote edits", async () => {
     const { service } = await setup({

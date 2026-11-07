@@ -66,6 +66,13 @@ type Prompt = {
   entries: ExplorerEntry[]
   folder: string
 }
+/**
+ * The explorer's dialog. A closed dialog keeps its last request so it can finish closing with its labels; an open
+ * one owns the text typed into it and the error from its last attempt.
+ */
+type PromptState =
+  | { kind: "closed"; last: Prompt | null }
+  | { kind: "open"; request: Prompt; value: string; error: string | null }
 
 export function RepositoryExplorer(props: Props) {
   const { dirtyPaths, activePath } = props
@@ -105,10 +112,30 @@ export function RepositoryExplorer(props: Props) {
     entries: ExplorerEntry[]
     cut: boolean
   } | null>(null)
-  const [promptOpen, setPromptOpen] = useState(false)
-  const [prompt, setPrompt] = useState<Prompt | null>(null)
-  const [value, setValue] = useState("")
-  const [promptError, setPromptError] = useState<string | null>(null)
+  const [promptState, setPromptState] = useState<PromptState>({
+    kind: "closed",
+    last: null,
+  })
+  const promptOpen = promptState.kind === "open"
+  const prompt =
+    promptState.kind === "open" ? promptState.request : promptState.last
+  const value = promptState.kind === "open" ? promptState.value : ""
+  const promptError = promptState.kind === "open" ? promptState.error : null
+  const updateOpenPrompt = (change: {
+    value?: string
+    error?: string | null
+  }) =>
+    setPromptState((current) =>
+      current.kind === "open" ? { ...current, ...change } : current
+    )
+  const setValue = (next: string) => updateOpenPrompt({ value: next })
+  const setPromptError = (error: string | null) => updateOpenPrompt({ error })
+  const closePrompt = () =>
+    setPromptState((current) =>
+      current.kind === "open"
+        ? { kind: "closed", last: current.request }
+        : current
+    )
   const [menu, setMenu] = useState<{
     entry: ExplorerEntry
     context: ContextMenuOpenContext
@@ -218,16 +245,18 @@ export function RepositoryExplorer(props: Props) {
         selectionFor(entry).some((item) => isReadOnly(item.path)))
     )
       return
-    setPromptOpen(true)
-    setPromptError(null)
-    setValue(kind === "rename" ? barePath(entry.path).split("/").at(-1)! : "")
-    setPrompt({
-      kind,
-      entries: kind === "delete" ? selectionFor(entry) : [entry],
-      folder:
-        entry.kind === "directory"
-          ? barePath(entry.path)
-          : parentPath(entry.path),
+    setPromptState({
+      kind: "open",
+      request: {
+        kind,
+        entries: kind === "delete" ? selectionFor(entry) : [entry],
+        folder:
+          entry.kind === "directory"
+            ? barePath(entry.path)
+            : parentPath(entry.path),
+      },
+      value: kind === "rename" ? barePath(entry.path).split("/").at(-1)! : "",
+      error: null,
     })
   }
 
@@ -292,7 +321,7 @@ export function RepositoryExplorer(props: Props) {
 
   async function submitPrompt(event: React.FormEvent) {
     event.preventDefault()
-    if (!prompt || busyRef.current) return
+    if (!promptOpen || !prompt || busyRef.current) return
     busyRef.current = true
     setBusy(true)
     setPromptError(null)
@@ -328,7 +357,7 @@ export function RepositoryExplorer(props: Props) {
         })
         if (prompt.kind === "file") onOpen(path)
       }
-      setPromptOpen(false)
+      closePrompt()
     } catch (error) {
       setPromptError(errorMessage(error))
     } finally {
@@ -736,7 +765,7 @@ export function RepositoryExplorer(props: Props) {
       <Dialog
         open={promptOpen}
         onOpenChange={(open) => {
-          if (!open && !busy) setPromptOpen(false)
+          if (!open && !busy) closePrompt()
         }}
       >
         <DialogContent>

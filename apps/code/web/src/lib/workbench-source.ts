@@ -50,6 +50,23 @@ export type LoadedFile = {
   truncated: boolean
   editorKey?: string
 }
+/**
+ * One file's saved contents. A file with no entry is unread or being read. A failed re-read keeps the last good
+ * copy, so its editor identity and language data survive until a later read succeeds.
+ */
+export type FileRead =
+  | { kind: "loaded"; file: LoadedFile }
+  | { kind: "failed"; error: string; file: LoadedFile | null }
+/** Why the latest read of a file failed, or null when it did not. */
+export function failureOf(read: FileRead | undefined): string | null {
+  return read?.kind === "failed" ? read.error : null
+}
+/** The saved contents the workbench holds for a file, including a copy kept beside a failed re-read. */
+export function loadedFileOf(
+  read: FileRead | undefined
+): LoadedFile | undefined {
+  return read?.file ?? undefined
+}
 type State = {
   paths: string[] | null
   listError: string | null
@@ -59,8 +76,7 @@ type State = {
   openPaths: string[]
   /** The active group's active tab, derived from `layout`. */
   activePath: string | null
-  loaded: Partial<Record<string, LoadedFile>>
-  readError: Partial<Record<string, string>>
+  files: Partial<Record<string, FileRead>>
   dirtyPaths: string[]
   liveSync: Record<string, boolean>
   liveStatus: Partial<Record<string, LiveSaveStatus>>
@@ -76,8 +92,7 @@ export class WorkbenchSource {
     layout: createLayout(),
     openPaths: [],
     activePath: null,
-    loaded: {},
-    readError: {},
+    files: {},
     dirtyPaths: [],
     liveSync: {},
     liveStatus: {},
@@ -234,9 +249,9 @@ export class WorkbenchSource {
           return finish(`${path} was closed or removed.`)
         const ready = actions.get(path)
         if (ready) return finish(undefined, ready)
-        const error = this.state.readError[path]
-        if (error) return finish(error)
-        const file = this.state.loaded[path]
+        const read = this.state.files[path]
+        if (read?.kind === "failed") return finish(read.error)
+        const file = loadedFileOf(read)
         if (
           file &&
           (file.truncated ||
@@ -340,11 +355,9 @@ export class WorkbenchSource {
         this.liveOpens.delete(speculativePath)
 
         this.committed.delete(speculativePath)
-        const loaded = { ...this.state.loaded }
-        const readError = { ...this.state.readError }
-        delete loaded[speculativePath]
-        delete readError[speculativePath]
-        this.update({ loaded, readError })
+        const files = { ...this.state.files }
+        delete files[speculativePath]
+        this.update({ files })
       }
       this.update({ paths })
       if (!this.initialOpen) {
@@ -372,11 +385,9 @@ export class WorkbenchSource {
   private discardSpeculativeRead(path: string) {
     this.reads.delete(path)
     this.committed.delete(path)
-    const loaded = { ...this.state.loaded }
-    const readError = { ...this.state.readError }
-    delete loaded[path]
-    delete readError[path]
-    this.update({ loaded, readError })
+    const files = { ...this.state.files }
+    delete files[path]
+    this.update({ files })
   }
 
   // Start the authorized listing while the Program metadata query is pending.
@@ -400,8 +411,12 @@ export class WorkbenchSource {
     if (!refresh || this.state.listError) return
     // Re-read the saved baseline, keeping live drafts and editor identities.
     await Promise.all(
-      Object.keys(this.state.loaded)
-        .filter((path) => this.state.paths?.includes(path))
+      Object.keys(this.state.files)
+        .filter(
+          (path) =>
+            loadedFileOf(this.state.files[path]) &&
+            this.state.paths?.includes(path)
+        )
         .map((path) => this.loadFile(path, true))
     )
   }
@@ -438,7 +453,8 @@ export class WorkbenchSource {
     const layout = placeLayoutTab(this.state.layout, path, from, target)
     if (layout === this.state.layout) return
     this.update({ layout })
-    if (!wasOpen || !this.state.loaded[path]) this.prefetchLiveFile(path)
+    if (!wasOpen || !loadedFileOf(this.state.files[path]))
+      this.prefetchLiveFile(path)
     void this.loadFile(path)
   }
   activateTab = (groupId: string, path: string) => {
@@ -466,13 +482,7 @@ export class WorkbenchSource {
     this.update({ layout: equalizeLayoutSplit(this.state.layout, path) })
   }
   private async loadFile(path: string, refresh = false) {
-    if (
-      !refresh &&
-      (this.state.loaded[path] ||
-        this.state.readError[path] ||
-        this.reads.has(path))
-    )
-      return
+    if (!refresh && (this.state.files[path] || this.reads.has(path))) return
     const request = {}
     this.reads.set(path, request)
     try {
@@ -492,21 +502,31 @@ export class WorkbenchSource {
       if (refresh && this.drafts.get(path) === previous)
         this.drafts.delete(path)
       this.committed.set(path, contents)
+      const kept = loadedFileOf(this.state.files[path])
       this.sourceChanged({
-        loaded: {
-          ...this.state.loaded,
+        files: {
+          ...this.state.files,
           [path]: {
-            contents,
-            editorKey:
-              this.state.loaded[path]?.editorKey ?? `${this.programId}:${path}`,
-            truncated: Number.isFinite(total) && total > bytes.byteLength,
+            kind: "loaded",
+            file: {
+              contents,
+              editorKey: kept?.editorKey ?? `${this.programId}:${path}`,
+              truncated: Number.isFinite(total) && total > bytes.byteLength,
+            },
           },
         },
       })
     } catch (error) {
       if (this.reads.get(path) === request)
         this.update({
-          readError: { ...this.state.readError, [path]: errorMessage(error) },
+          files: {
+            ...this.state.files,
+            [path]: {
+              kind: "failed",
+              error: errorMessage(error),
+              file: loadedFileOf(this.state.files[path]) ?? null,
+            },
+          },
         })
     } finally {
       if (this.reads.get(path) === request) this.reads.delete(path)
@@ -575,8 +595,7 @@ export class WorkbenchSource {
       this.drafts.clear()
       this.scrollPositions.clear()
       this.sourceChanged({
-        loaded: {},
-        readError: {},
+        files: {},
         liveSync: {},
         filePeople: {},
       })
@@ -608,15 +627,17 @@ export class WorkbenchSource {
 
       this.committed.set(path, result.contents)
       this.sourceChanged({
-        loaded: {
-          ...this.state.loaded,
+        files: {
+          ...this.state.files,
           [path]: {
-            ...this.state.loaded[path],
-            contents: result.contents,
-            truncated: false,
+            kind: "loaded",
+            file: {
+              ...loadedFileOf(this.state.files[path]),
+              contents: result.contents,
+              truncated: false,
+            },
           },
         },
-        readError: { ...this.state.readError, [path]: undefined },
       })
       await this.loadPaths()
       this.openFile(path)
@@ -694,13 +715,17 @@ export class WorkbenchSource {
       this.reads.clear()
       this.liveOpens.clear()
 
-      const loaded = remapRecord(this.state.loaded)
-      for (const [path, value] of Object.entries(loaded))
-        if (value)
-          loaded[path] = {
-            ...value,
-            contents: this.drafts.get(path) ?? value.contents,
-          }
+      const files = remapRecord(this.state.files)
+      for (const [path, read] of Object.entries(files)) {
+        if (!read?.file) continue
+        files[path] = {
+          ...read,
+          file: {
+            ...read.file,
+            contents: this.drafts.get(path) ?? read.file.contents,
+          },
+        }
+      }
       const layout = remapPaths(this.state.layout, (path) =>
         removed.has(path) ? null : remap(path)
       )
@@ -710,11 +735,10 @@ export class WorkbenchSource {
         else paths.add(change.path)
       }
       this.sourceChanged({
-        loaded,
+        files,
         layout,
         paths: [...paths].sort(),
         liveSync: remapRecord(this.state.liveSync),
-        readError: remapRecord(this.state.readError),
         filePeople: remapRecord(this.state.filePeople),
       })
       const activePath = activePathOf(layout)

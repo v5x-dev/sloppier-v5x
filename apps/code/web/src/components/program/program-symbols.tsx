@@ -101,7 +101,7 @@ export function ProgramSymbols() {
             Some symbols could not be loaded: {client.error}
           </p>
         )}
-        {(!client?.isReady && !client?.error) || client.sourceLoading ? (
+        {!client || client.symbolsLoading ? (
           <p className="p-4 text-sm text-muted-foreground">Loading symbols…</p>
         ) : symbols.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No symbols found.</p>

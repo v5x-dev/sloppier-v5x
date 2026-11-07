@@ -14,7 +14,28 @@ export { positionAt } from "./autocomplete/types"
 export type { CompletionItem, SignatureHelp } from "./autocomplete/types"
 
 export class RequestCancelled extends Error {}
-export type LanguageStatus = "stopped" | "starting" | "ready" | "error"
+
+/** The repository read that runs beside the engine: whether it is in flight, and the failure it left behind. */
+export type SourceState = { loading: boolean; error: string | null }
+
+/**
+ * Where the language service is. Each state holds only what is valid in it: the engine exists only while ready,
+ * and every state that has started carries its source read.
+ */
+export type LanguageState =
+  | { status: "stopped" }
+  | { status: "starting"; source: SourceState }
+  | { status: "ready"; engine: AutocompleteEngine; source: SourceState }
+  | { status: "error"; source: SourceState }
+export type LanguageStatus = LanguageState["status"]
+
+const loadingSource: SourceState = { loading: true, error: null }
+const describeFailure = (error: unknown) =>
+  error
+    ? error instanceof Error
+      ? error.message || "Autocomplete could not load"
+      : String(error)
+    : null
 export const isLanguageFile = (path: string) =>
   /\.(c|cc|cpp|cxx|h|hh|hpp|hxx|inc)$/i.test(path)
 
@@ -34,7 +55,6 @@ export class LanguageService {
     "<",
   ])
   readonly signatureTriggerCharacters = new Set(["(", ",", ")"])
-  private engine?: AutocompleteEngine
   private snapshot = new Map<string, string>()
   private documents = new Map<string, OpenDocument>()
   private listeners = new Set<() => void>()
@@ -55,12 +75,10 @@ export class LanguageService {
     return this.engine?.programSymbols() ?? []
   }
   private readyListeners = new Set<(ready: boolean) => void>()
-  private status: LanguageStatus = "stopped"
+  private state: LanguageState = { status: "stopped" }
   private generation = 0
   private sourceGeneration = 0
-  sourceLoading = false
   private formatter = new SourceFormatter()
-  private lastError: string | null = null
   constructor(
     private template: string,
     private prepareSource: () => Promise<BuildSource>,
@@ -68,13 +86,24 @@ export class LanguageService {
       template: string
     ) => Promise<ApiDatabase> = loadDatabase
   ) {}
+  /** The last failure: a startup error, or a repository read that could not finish. */
   get error() {
-    return this.lastError
+    return this.state.status === "stopped" ? null : this.state.source.error
+  }
+  get sourceLoading() {
+    return this.state.status !== "stopped" && this.state.source.loading
   }
   get isReady() {
-    return Boolean(this.engine) && this.status === "ready"
+    return this.state.status === "ready"
   }
-  getStatus = () => this.status
+  /** Whether the symbol list shows loading rather than its contents: no engine and no failure yet, or a read in flight. */
+  get symbolsLoading() {
+    return this.sourceLoading || (!this.isReady && !this.error)
+  }
+  private get engine() {
+    return this.state.status === "ready" ? this.state.engine : undefined
+  }
+  getStatus = () => this.state.status
   onStatusChange = (listener: () => void) => {
     this.listeners.add(listener)
     return () => {
@@ -87,18 +116,29 @@ export class LanguageService {
       this.readyListeners.delete(listener)
     }
   }
-  private setStatus(status: LanguageStatus, error?: unknown) {
+  /** Moves to `next`, telling status listeners and, when readiness flips, ready listeners. */
+  private commit(next: LanguageState) {
     const wasReady = this.isReady
-    this.status = status
-    this.lastError = error
-      ? error instanceof Error
-        ? error.message || "Autocomplete could not load"
-        : String(error)
-      : null
+    this.state = next
     for (const listener of this.listeners) listener()
     this.symbolsChanged()
     if (wasReady !== this.isReady)
       for (const listener of this.readyListeners) listener(this.isReady)
+  }
+  /**
+   * Updates the repository read beside the current state. Only a failure change is a status change;
+   * toggling the loading flag is not.
+   */
+  private setSource(patch: Partial<SourceState>) {
+    if (this.state.status === "stopped") return
+    this.state = {
+      ...this.state,
+      source: { ...this.state.source, ...patch },
+    }
+    if (patch.error !== undefined) {
+      for (const listener of this.listeners) listener()
+      this.symbolsChanged()
+    }
   }
   private scheduledStart: { cancel: () => void } | undefined
   /**
@@ -106,7 +146,7 @@ export class LanguageService {
    * file should not wait for autocomplete's repository reads and index build.
    */
   scheduleStart() {
-    if (this.status !== "stopped" || this.scheduledStart) return
+    if (this.state.status !== "stopped" || this.scheduledStart) return
     const run = () => {
       this.scheduledStart = undefined
       void this.start()
@@ -122,8 +162,7 @@ export class LanguageService {
   async start() {
     const generation = ++this.generation
     const revision = ++this.sourceGeneration
-    this.sourceLoading = true
-    this.setStatus("starting")
+    this.commit({ status: "starting", source: loadingSource })
     // API suggestions and open buffers become usable before repository reads finish.
     const source = Promise.resolve()
       .then(() => this.prepareSource())
@@ -134,42 +173,42 @@ export class LanguageService {
     try {
       const database = await this.databaseLoader(this.template)
       if (generation !== this.generation) return
-      this.engine = new AutocompleteEngine(database)
-      for (const [path, text] of this.snapshot) this.engine.setFile(path, text)
+      const engine = new AutocompleteEngine(database)
+      for (const [path, text] of this.snapshot) engine.setFile(path, text)
       for (const [path, document] of this.documents)
-        this.engine.setFile(path, document.text.toString())
-      this.setStatus("ready")
+        engine.setFile(path, document.text.toString())
+      this.commit({ status: "ready", engine, source: loadingSource })
       const result = await source
       if (generation !== this.generation || revision !== this.sourceGeneration)
         return
-      this.sourceLoading = false
+      this.setSource({ loading: false })
       if (result.snapshot) this.installSource(result.snapshot)
-      else this.setStatus("ready", result.error)
+      else this.setSource({ error: describeFailure(result.error) })
     } catch (error) {
-      if (generation === this.generation) {
-        this.sourceLoading = false
-        this.setStatus("error", error)
-      }
+      if (generation === this.generation)
+        this.commit({
+          status: "error",
+          source: { loading: false, error: describeFailure(error) },
+        })
     }
   }
   async refreshSource() {
     // Before the first start, the next start reads the current file list.
-    if (this.status === "stopped") return
+    if (this.state.status === "stopped") return
     const generation = this.generation
     const revision = ++this.sourceGeneration
-    this.sourceLoading = true
+    this.setSource({ loading: true })
     this.symbolsChanged()
     const source = await this.prepareSource().catch((error: unknown) => {
-      if (revision === this.sourceGeneration) {
-        this.sourceLoading = false
-        this.setStatus(this.status, error)
-      }
+      if (revision === this.sourceGeneration)
+        this.setSource({ loading: false, error: describeFailure(error) })
       throw error
     })
     if (generation === this.generation && revision === this.sourceGeneration) {
-      this.sourceLoading = false
+      this.setSource({ loading: false })
       this.installSource(source)
-      if (this.isReady && this.lastError) this.setStatus("ready")
+      // A source that now loads clears the failure it left, while the engine can still answer.
+      if (this.isReady && this.error) this.setSource({ error: null })
     }
   }
   private installSource(source: BuildSource) {
@@ -200,10 +239,10 @@ export class LanguageService {
     this.generation++
     this.scheduledStart?.cancel()
     this.scheduledStart = undefined
-    this.setStatus("stopped")
+    const engine = this.engine
+    this.commit({ status: "stopped" })
     this.formatter.stop()
-    this.engine?.clear()
-    this.engine = undefined
+    engine?.clear()
     for (const document of this.documents.values())
       document.text.unobserve(document.observe)
     this.documents.clear()
