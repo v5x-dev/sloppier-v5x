@@ -1,3 +1,9 @@
+import {
+  ArrowsDownUpIcon,
+  BellSimpleIcon,
+  HandGrabbingIcon,
+  TrashIcon,
+} from "@phosphor-icons/react"
 import { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
 import { Button } from "@v5x/ui/components/button"
@@ -15,6 +21,12 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@v5x/ui/components/native-select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@v5x/ui/components/tooltip"
 import { useNavigate } from "@tanstack/react-router"
 import { useMutation } from "convex/react"
 import type { FunctionReturnType } from "convex/server"
@@ -52,32 +64,43 @@ export function PartActions({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          onClick={() => setOpen("borrow")}
-          disabled={onHand === 0}
-          title={onHand === 0 ? "Nothing is on hand to borrow" : undefined}
-        >
-          Borrow
-        </Button>
-        {isAdmin ? (
-          <>
-            <Button variant="outline" onClick={() => setOpen("stock")}>
-              Change stock
-            </Button>
-            <Button variant="ghost" onClick={() => setOpen("level")}>
-              Low-stock level
-            </Button>
+      <TooltipProvider>
+        <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
-              variant="ghost"
-              className="text-destructive"
-              onClick={() => setOpen("delete")}
+              onClick={() => setOpen("borrow")}
+              disabled={onHand === 0}
+              title={onHand === 0 ? "Nothing is on hand to borrow" : undefined}
             >
-              Delete part
+              <HandGrabbingIcon />
+              Borrow
             </Button>
-          </>
-        ) : null}
-      </div>
+            {isAdmin ? (
+              <Button variant="outline" onClick={() => setOpen("stock")}>
+                <ArrowsDownUpIcon />
+                Change stock
+              </Button>
+            ) : null}
+          </div>
+          {isAdmin ? (
+            <div className="flex items-center gap-1">
+              <IconAction
+                label="Low-stock level"
+                onClick={() => setOpen("level")}
+              >
+                <BellSimpleIcon />
+              </IconAction>
+              <IconAction
+                label="Delete part"
+                destructive
+                onClick={() => setOpen("delete")}
+              >
+                <TrashIcon />
+              </IconAction>
+            </div>
+          ) : null}
+        </div>
+      </TooltipProvider>
 
       <Dialog
         open={open === "borrow"}
@@ -153,6 +176,37 @@ function Field({
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
     </div>
+  )
+}
+
+// Rare actions stay one tap away as icons. The label is the accessible name and
+// the tooltip, so nothing relies on the icon alone.
+function IconAction({
+  label,
+  destructive = false,
+  onClick,
+  children,
+}: {
+  label: string
+  destructive?: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger delay={300} render={<span className="inline-flex" />}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={label}
+          className={destructive ? "text-destructive" : undefined}
+          onClick={onClick}
+        >
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   )
 }
 

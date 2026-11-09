@@ -30,7 +30,7 @@ if [[ "$worktree_root" != "$source_root" ]]; then
     cp -L "$source" "$destination"
     chmod 600 "$destination"
     echo "Copied $relative_path (independent of the main checkout)"
-  done < <(find "$source_root" \( -name .git -o -name node_modules \) -prune -o -name .env.local \( -type f -o -type l \) -print0)
+  done < <(find "$source_root" \( -name .git -o -name node_modules \) -prune -o -name '.env*' \( -type f -o -type l \) -print0)
 fi
 
 cd "$worktree_root"
