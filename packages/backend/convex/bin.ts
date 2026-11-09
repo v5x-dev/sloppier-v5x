@@ -4,6 +4,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server"
 import { mutation, query } from "./_generated/server"
 import { requireIdentity, requireWorkspaceMembership } from "./lib/auth"
 import { compareNames } from "./lib/binSort"
+import { screwColorForName } from "./lib/binScrewColors"
 
 type DbCtx = QueryCtx | MutationCtx
 
@@ -175,6 +176,7 @@ export const inventory = query({
             sku: part.sku ?? null,
             partType: part.partType,
             minQuantity: part.minQuantity ?? null,
+            screwColor: screwColorForName(part.name),
             onHand: partStock.reduce((sum, row) => sum + row.quantity, 0),
             stock: partStock.map((row) => ({
               locationId: row.locationId,
@@ -250,6 +252,7 @@ export const partDetail = query({
         sku: part.sku ?? null,
         partType: part.partType,
         minQuantity: part.minQuantity ?? null,
+        screwColor: screwColorForName(part.name),
       },
       locations: locations
         .map((l) => ({ _id: l._id, name: l.name }))

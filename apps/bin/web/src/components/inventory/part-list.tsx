@@ -13,6 +13,7 @@ import { ScrollArea } from "@v5x/ui/components/scroll-area"
 import { cn } from "@v5x/ui/lib/utils"
 import type { FunctionReturnType } from "convex/server"
 import { useState } from "react"
+import { ScrewSwatch } from "@/components/inventory/screw-swatch"
 import {
   iconUrl,
   usePartIcons,
@@ -121,7 +122,7 @@ export function PartList({
                     search={{ part: part._id }}
                     aria-current={selected ? "true" : undefined}
                     className={cn(
-                      "flex items-center gap-3 border-b px-3 py-2 outline-none hover:bg-muted/50 focus-visible:bg-muted/50",
+                      "flex items-center gap-3 border-b py-2 pr-5 pl-3 outline-none hover:bg-muted/50 focus-visible:bg-muted/50",
                       selected &&
                         "bg-muted shadow-[inset_2px_0_0_var(--chart-2)]"
                     )}
@@ -134,7 +135,10 @@ export function PartList({
                       <span className="block text-[0.8rem] leading-snug font-bold">
                         {part.name}
                       </span>
-                      <span className="block text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        {part.screwColor ? (
+                          <ScrewSwatch color={part.screwColor} />
+                        ) : null}
                         {part.sku ?? part.partType}
                       </span>
                     </span>
