@@ -41,6 +41,12 @@ Apps can use packages. Packages cannot import from apps, and apps do not import 
 each other. Code in one workspace reaches another only through its `@v5x/...` name
 and the paths that package exports. `bun run check:boundaries` checks this.
 
+## Committing and pushing
+
+When asked to commit and push while the checkout is on `main`, commit to `main` and
+push to `origin/main`. Do not create a new branch or switch to one for that request.
+If the checkout is on another branch, switch to `main` before committing.
+
 ## Pierre packages
 
 Several of the most important parts of the Code editor come from the Pierre packages:
