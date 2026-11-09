@@ -8,6 +8,7 @@ import type { FunctionReturnType } from "convex/server"
 import type { ReactNode } from "react"
 import { LoanRow } from "@/components/inventory/loan-row"
 import { PartActions } from "@/components/inventory/part-actions"
+import { ScrewSwatch } from "@/components/inventory/screw-swatch"
 import { PartViewer } from "@/components/inventory/part-viewer"
 import { formatDate } from "@/lib/format"
 
@@ -159,6 +160,13 @@ export function PartDetail({
               {data.part.sku ? `${data.part.sku}, ` : ""}
               {data.part.partType}
             </p>
+            {data.part.screwColor ? (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ScrewSwatch color={data.part.screwColor} className="size-3" />
+                <span className="capitalize">{data.part.screwColor.name}</span>
+                {data.part.screwColor.length} long
+              </p>
+            ) : null}
           </header>
 
           <div>
