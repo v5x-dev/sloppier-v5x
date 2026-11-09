@@ -18,7 +18,6 @@ export function EditorMinimap({
   const canvas = useRef<HTMLCanvasElement>(null)
   const [parent, setParent] = useState<HTMLElement | null>(null)
   const [width, setWidth] = useState(0)
-  const [hovered, setHovered] = useState(false)
   useEffect(() => {
     const panel = host.current?.closest<HTMLElement>('[role="tabpanel"]')
     if (!panel || !active) return
@@ -223,14 +222,8 @@ export function EditorMinimap({
       className="absolute top-0 right-0 z-10 cursor-pointer touch-none"
       style={{
         width,
-        backgroundColor: hovered
-          ? "color-mix(in oklab, var(--background), var(--foreground) 5%)"
-          : "var(--background)",
+        backgroundColor: "var(--background)",
       }}
-      onPointerEnter={(event) => {
-        if (event.pointerType !== "touch") setHovered(true)
-      }}
-      onPointerLeave={() => setHovered(false)}
       onPointerDown={(event) => {
         if (event.button !== 0) return
         event.preventDefault()
