@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MobileCallbackRouteImport } from './routes/mobile-callback'
 import { Route as InvitesInvitationIdRouteImport } from './routes/invites/$invitationId'
 import { Route as ProgramsProgramIdRouteImport } from './routes/programs/$programId'
 import { Route as User_managementAuthenticateRouteImport } from './routes/user_management.authenticate'
@@ -31,6 +32,11 @@ const CallbackRoute = CallbackRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MobileCallbackRoute = MobileCallbackRouteImport.update({
+  id: '/mobile-callback',
+  path: '/mobile-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvitesInvitationIdRoute = InvitesInvitationIdRouteImport.update({
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/mobile-callback': typeof MobileCallbackRoute
   '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
   '/user_management/authenticate': typeof User_managementAuthenticateRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/mobile-callback': typeof MobileCallbackRoute
   '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
   '/user_management/authenticate': typeof User_managementAuthenticateRoute
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/mobile-callback': typeof MobileCallbackRoute
   '/invites/$invitationId': typeof InvitesInvitationIdRoute
   '/programs/$programId': typeof ProgramsProgramIdRoute
   '/user_management/authenticate': typeof User_managementAuthenticateRoute
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/'
     | '/callback'
     | '/login'
+    | '/mobile-callback'
     | '/invites/$invitationId'
     | '/programs/$programId'
     | '/user_management/authenticate'
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/'
     | '/callback'
     | '/login'
+    | '/mobile-callback'
     | '/invites/$invitationId'
     | '/programs/$programId'
     | '/user_management/authenticate'
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/'
     | '/callback'
     | '/login'
+    | '/mobile-callback'
     | '/invites/$invitationId'
     | '/programs/$programId'
     | '/user_management/authenticate'
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallbackRoute: typeof CallbackRoute
   LoginRoute: typeof LoginRoute
+  MobileCallbackRoute: typeof MobileCallbackRoute
   InvitesInvitationIdRoute: typeof InvitesInvitationIdRoute
   ProgramsProgramIdRoute: typeof ProgramsProgramIdRoute
   User_managementAuthenticateRoute: typeof User_managementAuthenticateRoute
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mobile-callback': {
+      id: '/mobile-callback'
+      path: '/mobile-callback'
+      fullPath: '/mobile-callback'
+      preLoaderRoute: typeof MobileCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invites/$invitationId': {
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallbackRoute: CallbackRoute,
   LoginRoute: LoginRoute,
+  MobileCallbackRoute: MobileCallbackRoute,
   InvitesInvitationIdRoute: InvitesInvitationIdRoute,
   ProgramsProgramIdRoute: ProgramsProgramIdRoute,
   User_managementAuthenticateRoute: User_managementAuthenticateRoute,

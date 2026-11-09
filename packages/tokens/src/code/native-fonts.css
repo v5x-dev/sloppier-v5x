@@ -1,0 +1,6 @@
+/* Native font tokens. Each value is a font name that the app registers with
+   expo-font (see apps/code/mobile/App.tsx). Merriweather matches the web app's
+   --font-serif. */
+@theme {
+  --font-serif: "Merriweather_400Regular";
+}
