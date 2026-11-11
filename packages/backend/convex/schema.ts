@@ -245,14 +245,16 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_workspace", ["workspaceId"]),
 
-  // On-hand quantity of one part at one location.
+  // On-hand quantity of one part at one location. A part with options (the
+  // C-Channel) keeps a line per option set, in `variant`.
   binStock: defineTable({
     workspaceId: v.id("workspaces"),
     partId: v.id("binParts"),
     locationId: v.id("binLocations"),
+    variant: v.optional(v.string()),
     quantity: v.number(),
   })
-    .index("by_part_location", ["partId", "locationId"])
+    .index("by_part_location_variant", ["partId", "locationId", "variant"])
     .index("by_workspace", ["workspaceId"]),
 
   // A member taking parts out of a location until they return them.
@@ -260,6 +262,7 @@ export default defineSchema({
     workspaceId: v.id("workspaces"),
     partId: v.id("binParts"),
     locationId: v.id("binLocations"),
+    variant: v.optional(v.string()),
     quantity: v.number(),
     borrowerId: v.string(),
     borrowedAt: v.number(),
@@ -273,6 +276,7 @@ export default defineSchema({
     workspaceId: v.id("workspaces"),
     partId: v.id("binParts"),
     locationId: v.id("binLocations"),
+    variant: v.optional(v.string()),
     kind: v.union(
       v.literal("adjust"),
       v.literal("borrow"),

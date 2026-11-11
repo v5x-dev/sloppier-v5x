@@ -44,6 +44,7 @@ export function PartActions({
   workspaceId,
   partId,
   partName,
+  variant,
   isAdmin,
   stock,
   locations,
@@ -52,6 +53,8 @@ export function PartActions({
   workspaceId: Id<"workspaces">
   partId: Id<"binParts">
   partName: string
+  // The option set being acted on, for a part with options (a C-Channel size).
+  variant: string | undefined
   isAdmin: boolean
   stock: Detail["stock"]
   locations: Detail["locations"]
@@ -111,6 +114,7 @@ export function PartActions({
             workspaceId={workspaceId}
             partId={partId}
             partName={partName}
+            variant={variant}
             stock={stock}
             onDone={close}
           />
@@ -122,6 +126,7 @@ export function PartActions({
             workspaceId={workspaceId}
             partId={partId}
             partName={partName}
+            variant={variant}
             locations={locations}
             stock={stock}
             onDone={close}
@@ -240,12 +245,14 @@ function BorrowForm({
   workspaceId,
   partId,
   partName,
+  variant,
   stock,
   onDone,
 }: {
   workspaceId: Id<"workspaces">
   partId: Id<"binParts">
   partName: string
+  variant: string | undefined
   stock: Detail["stock"]
   onDone: () => void
 }) {
@@ -269,6 +276,7 @@ function BorrowForm({
         workspaceId,
         partId,
         locationId: selected.locationId,
+        variant,
         quantity: count,
       })
       onDone()
@@ -321,6 +329,7 @@ function StockForm({
   workspaceId,
   partId,
   partName,
+  variant,
   locations,
   stock,
   onDone,
@@ -328,6 +337,7 @@ function StockForm({
   workspaceId: Id<"workspaces">
   partId: Id<"binParts">
   partName: string
+  variant: string | undefined
   locations: Detail["locations"]
   stock: Detail["stock"]
   onDone: () => void
@@ -377,6 +387,7 @@ function StockForm({
           workspaceId,
           partId,
           locationId: location._id,
+          variant,
           quantity,
           note: reason,
         })
@@ -385,6 +396,7 @@ function StockForm({
           workspaceId,
           partId,
           locationId: location._id,
+          variant,
           delta: mode === "add" ? quantity : -quantity,
           note: reason,
         })

@@ -1,9 +1,18 @@
 import { ConvexError, v } from "convex/values"
-import type { Id } from "./_generated/dataModel"
+import type { Doc, Id } from "./_generated/dataModel"
 import type { MutationCtx, QueryCtx } from "./_generated/server"
 import { mutation, query } from "./_generated/server"
 import { requireIdentity, requireWorkspaceMembership } from "./lib/auth"
 import { compareNames } from "./lib/binSort"
+import {
+  C_CHANNEL_SKU,
+  cChannelLabel,
+  decodeCChannel,
+  defaultCChannel,
+  displayName,
+  encodeCChannel,
+  vexSkuForVariant,
+} from "./lib/binCChannel"
 import { screwColorForName } from "./lib/binScrewColors"
 
 type DbCtx = QueryCtx | MutationCtx
@@ -31,6 +40,49 @@ async function getPartInWorkspace(
   return part
 }
 
+// A C-Channel is the one part with options. Its stock, loans, and history are
+// kept per option set, so each size is counted on its own.
+function hasOptions(part: Doc<"binParts">) {
+  return part.sku === C_CHANNEL_SKU
+}
+
+// The option set a change names. Every change to an option part must name one,
+// and a part without options takes none.
+function variantForChange(part: Doc<"binParts">, variant: string | undefined) {
+  if (!hasOptions(part)) {
+    if (variant !== undefined) {
+      throw new ConvexError(`${part.name} has no options.`)
+    }
+    return undefined
+  }
+  if (variant === undefined) {
+    throw new ConvexError("Choose a material, width, and length first.")
+  }
+  return checkedVariant(variant)
+}
+
+// A read of an option part shows the default size when none is named.
+function variantForRead(part: Doc<"binParts">, variant: string | undefined) {
+  if (!hasOptions(part)) return undefined
+  if (variant === undefined) return encodeCChannel(defaultCChannel)
+  return checkedVariant(variant)
+}
+
+function checkedVariant(variant: string) {
+  if (decodeCChannel(variant) === null) {
+    throw new ConvexError("That C-Channel option does not exist.")
+  }
+  return variant
+}
+
+// The model to draw for a part or option set. A size the catalog has no model
+// for falls back to the part's own SKU, which has none, so it shows as having
+// no model yet.
+function modelSkuFor(part: Doc<"binParts">, variant: string | undefined) {
+  if (variant === undefined) return part.sku ?? null
+  return vexSkuForVariant(variant) ?? part.sku ?? null
+}
+
 async function getLocationInWorkspace(
   ctx: DbCtx,
   workspaceId: Id<"workspaces">,
@@ -46,12 +98,13 @@ async function getLocationInWorkspace(
 async function getStockRow(
   ctx: DbCtx,
   partId: Id<"binParts">,
-  locationId: Id<"binLocations">
+  locationId: Id<"binLocations">,
+  variant: string | undefined
 ) {
   return ctx.db
     .query("binStock")
-    .withIndex("by_part_location", (q) =>
-      q.eq("partId", partId).eq("locationId", locationId)
+    .withIndex("by_part_location_variant", (q) =>
+      q.eq("partId", partId).eq("locationId", locationId).eq("variant", variant)
     )
     .unique()
 }
@@ -61,9 +114,10 @@ async function addStock(
   workspaceId: Id<"workspaces">,
   partId: Id<"binParts">,
   locationId: Id<"binLocations">,
+  variant: string | undefined,
   delta: number
 ) {
-  const row = await getStockRow(ctx, partId, locationId)
+  const row = await getStockRow(ctx, partId, locationId, variant)
   const current = row?.quantity ?? 0
   const next = current + delta
   if (next < 0) {
@@ -76,6 +130,7 @@ async function addStock(
       workspaceId,
       partId,
       locationId,
+      variant,
       quantity: next,
     })
   }
@@ -119,7 +174,8 @@ export const catalogSearch = query({
       .filter(
         (part) =>
           part.name.toLowerCase().includes(needle) ||
-          part.sku.toLowerCase().includes(needle)
+          part.sku.toLowerCase().includes(needle) ||
+          part.alternateSkus.some((sku) => sku.toLowerCase().includes(needle))
       )
       .slice(0, 40)
   },
@@ -174,6 +230,12 @@ export const inventory = query({
             _id: part._id,
             name: part.name,
             sku: part.sku ?? null,
+            options: hasOptions(part),
+            // The picture for the list: a C-Channel shows its default size.
+            pictureSku: modelSkuFor(
+              part,
+              hasOptions(part) ? encodeCChannel(defaultCChannel) : undefined
+            ),
             partType: part.partType,
             minQuantity: part.minQuantity ?? null,
             screwColor: screwColorForName(part.name),
@@ -191,7 +253,10 @@ export const inventory = query({
         .map((loan) => ({
           _id: loan._id,
           partId: loan.partId,
-          partName: partNames.get(loan.partId) ?? "a deleted part",
+          partName: displayName(
+            partNames.get(loan.partId) ?? "a deleted part",
+            loan.variant
+          ),
           locationId: loan.locationId,
           locationName:
             locationNames.get(loan.locationId) ?? "a deleted location",
@@ -205,18 +270,26 @@ export const inventory = query({
   },
 })
 
+// One part's page. For a C-Channel, `variant` picks the option set shown (the
+// default size when omitted); stock, loans, and history are that set's, and
+// `totalOnHand` counts every size. Other parts ignore `variant`.
 export const partDetail = query({
-  args: { workspaceId: v.id("workspaces"), partId: v.id("binParts") },
-  handler: async (ctx, { workspaceId, partId }) => {
+  args: {
+    workspaceId: v.id("workspaces"),
+    partId: v.id("binParts"),
+    variant: v.optional(v.string()),
+  },
+  handler: async (ctx, { workspaceId, partId, variant: requested }) => {
     const { identity, membership } = await requireWorkspaceMembership(
       ctx,
       workspaceId
     )
     const part = await getPartInWorkspace(ctx, workspaceId, partId)
+    const variant = variantForRead(part, requested)
     const [stock, loans, movements, locations] = await Promise.all([
       ctx.db
         .query("binStock")
-        .withIndex("by_part_location", (q) => q.eq("partId", partId))
+        .withIndex("by_part_location_variant", (q) => q.eq("partId", partId))
         .collect(),
       ctx.db
         .query("binLoans")
@@ -232,8 +305,11 @@ export const partDetail = query({
         .collect(),
     ])
     const locationNames = new Map(locations.map((l) => [l._id, l.name]))
-    const openLoans = loans.filter((loan) => loan.returnedAt === undefined)
+    const openLoans = loans
+      .filter((loan) => loan.returnedAt === undefined)
+      .filter((loan) => loan.variant === variant)
     const recent = movements
+      .filter((movement) => movement.variant === variant)
       .sort(
         (a, b) => b.createdAt - a.createdAt || b._creationTime - a._creationTime
       )
@@ -250,15 +326,20 @@ export const partDetail = query({
         _id: part._id,
         name: part.name,
         sku: part.sku ?? null,
+        options: hasOptions(part),
         partType: part.partType,
         minQuantity: part.minQuantity ?? null,
         screwColor: screwColorForName(part.name),
       },
+      variant: variant ?? null,
+      variantLabel: variant === undefined ? null : cChannelLabel(variant),
+      modelSku: modelSkuFor(part, variant),
+      totalOnHand: stock.reduce((sum, row) => sum + row.quantity, 0),
       locations: locations
         .map((l) => ({ _id: l._id, name: l.name }))
         .sort((a, b) => compareNames(a.name, b.name)),
       stock: stock
-        .filter((row) => row.quantity > 0)
+        .filter((row) => row.variant === variant && row.quantity > 0)
         .map((row) => ({
           locationId: row.locationId,
           locationName:
@@ -349,7 +430,7 @@ export const deletePart = mutation({
     const part = await getPartInWorkspace(ctx, workspaceId, partId)
     const stock = await ctx.db
       .query("binStock")
-      .withIndex("by_part_location", (q) => q.eq("partId", partId))
+      .withIndex("by_part_location_variant", (q) => q.eq("partId", partId))
       .collect()
     const onHand = stock.reduce((sum, row) => sum + row.quantity, 0)
     if (onHand > 0) {
@@ -460,12 +541,14 @@ export const adjustStock = mutation({
     workspaceId: v.id("workspaces"),
     partId: v.id("binParts"),
     locationId: v.id("binLocations"),
+    variant: v.optional(v.string()),
     delta: v.number(),
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { identity } = await requireAdmin(ctx, args.workspaceId)
-    await getPartInWorkspace(ctx, args.workspaceId, args.partId)
+    const part = await getPartInWorkspace(ctx, args.workspaceId, args.partId)
+    const variant = variantForChange(part, args.variant)
     await getLocationInWorkspace(ctx, args.workspaceId, args.locationId)
     if (!Number.isInteger(args.delta) || args.delta === 0) {
       throw new ConvexError("Change must be a whole number other than zero.")
@@ -480,12 +563,14 @@ export const adjustStock = mutation({
       args.workspaceId,
       args.partId,
       args.locationId,
+      variant,
       args.delta
     )
     await ctx.db.insert("binMovements", {
       workspaceId: args.workspaceId,
       partId: args.partId,
       locationId: args.locationId,
+      variant,
       kind: "adjust",
       delta: args.delta,
       actorId: identity.subject,
@@ -503,12 +588,14 @@ export const setStock = mutation({
     workspaceId: v.id("workspaces"),
     partId: v.id("binParts"),
     locationId: v.id("binLocations"),
+    variant: v.optional(v.string()),
     quantity: v.number(),
     note: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { identity } = await requireAdmin(ctx, args.workspaceId)
-    await getPartInWorkspace(ctx, args.workspaceId, args.partId)
+    const part = await getPartInWorkspace(ctx, args.workspaceId, args.partId)
+    const variant = variantForChange(part, args.variant)
     await getLocationInWorkspace(ctx, args.workspaceId, args.locationId)
     validInteger(args.quantity, 0, "Count")
     const note = args.note?.trim() || undefined
@@ -516,15 +603,23 @@ export const setStock = mutation({
       throw new ConvexError("Note must be 200 characters or fewer.")
     }
 
-    const row = await getStockRow(ctx, args.partId, args.locationId)
+    const row = await getStockRow(ctx, args.partId, args.locationId, variant)
     const delta = args.quantity - (row?.quantity ?? 0)
     if (delta === 0) return args.quantity
 
-    await addStock(ctx, args.workspaceId, args.partId, args.locationId, delta)
+    await addStock(
+      ctx,
+      args.workspaceId,
+      args.partId,
+      args.locationId,
+      variant,
+      delta
+    )
     await ctx.db.insert("binMovements", {
       workspaceId: args.workspaceId,
       partId: args.partId,
       locationId: args.locationId,
+      variant,
       kind: "adjust",
       delta,
       actorId: identity.subject,
@@ -540,11 +635,13 @@ export const borrow = mutation({
     workspaceId: v.id("workspaces"),
     partId: v.id("binParts"),
     locationId: v.id("binLocations"),
+    variant: v.optional(v.string()),
     quantity: v.number(),
   },
   handler: async (ctx, args) => {
     const { identity } = await requireWorkspaceMembership(ctx, args.workspaceId)
-    await getPartInWorkspace(ctx, args.workspaceId, args.partId)
+    const part = await getPartInWorkspace(ctx, args.workspaceId, args.partId)
+    const variant = variantForChange(part, args.variant)
     const location = await getLocationInWorkspace(
       ctx,
       args.workspaceId,
@@ -552,7 +649,7 @@ export const borrow = mutation({
     )
     validInteger(args.quantity, 1, "Quantity")
 
-    const row = await getStockRow(ctx, args.partId, args.locationId)
+    const row = await getStockRow(ctx, args.partId, args.locationId, variant)
     const onHand = row?.quantity ?? 0
     if (onHand < args.quantity) {
       throw new ConvexError(`Only ${onHand} on hand at ${location.name}.`)
@@ -562,6 +659,7 @@ export const borrow = mutation({
       args.workspaceId,
       args.partId,
       args.locationId,
+      variant,
       -args.quantity
     )
 
@@ -570,6 +668,7 @@ export const borrow = mutation({
       workspaceId: args.workspaceId,
       partId: args.partId,
       locationId: args.locationId,
+      variant,
       quantity: args.quantity,
       borrowerId: identity.subject,
       borrowedAt: now,
@@ -578,6 +677,7 @@ export const borrow = mutation({
       workspaceId: args.workspaceId,
       partId: args.partId,
       locationId: args.locationId,
+      variant,
       kind: "borrow",
       delta: -args.quantity,
       actorId: identity.subject,
@@ -611,6 +711,7 @@ export const returnLoan = mutation({
       workspaceId,
       loan.partId,
       loan.locationId,
+      loan.variant,
       loan.quantity
     )
     await ctx.db.patch(loanId, {
@@ -621,6 +722,7 @@ export const returnLoan = mutation({
       workspaceId,
       partId: loan.partId,
       locationId: loan.locationId,
+      variant: loan.variant,
       kind: "return",
       delta: loan.quantity,
       actorId: identity.subject,
@@ -664,7 +766,10 @@ export const history = query({
       kind: movement.kind,
       delta: movement.delta,
       partId: movement.partId,
-      partName: partNames.get(movement.partId) ?? "a deleted part",
+      partName: displayName(
+        partNames.get(movement.partId) ?? "a deleted part",
+        movement.variant
+      ),
       locationName:
         locationNames.get(movement.locationId) ?? "a deleted location",
       actorName: names.get(movement.actorId) ?? "Teammate",

@@ -21,6 +21,17 @@ from `packages/backend/data/bin/vex-v5rc-legal-parts.csv`:
 - `npx convex run binCatalog:seed` loads it into a deployment. Rows that are
   already there are skipped.
 
+The eight VEX C-channels are one catalog row, C-Channel. Its options are
+material (steel or aluminum), width (2, 3, or 5), and length (1 to 35), and each
+combination is counted on its own. The VEX part numbers stay as alternate SKUs,
+and `convex/lib/binCChannel.ts` maps the sizes the catalog sells to their 3D
+models.
+
+Workspaces that had the eight VEX C-channel parts need one more step after the
+seed: `npx convex run binCatalog:consolidateCChannels`. It moves their stock,
+loans, and history into the C-Channel part and deletes the old parts. Running it
+again does nothing. Each part's own low-stock level is not carried over.
+
 ## Roles
 
 - Admins add parts and locations, change stock, and return any loan.

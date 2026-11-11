@@ -2,6 +2,7 @@ import type { Id } from "./_generated/dataModel"
 import type { MutationCtx } from "./_generated/server"
 import { internalMutation } from "./_generated/server"
 import { binCatalogRows } from "./binCatalogData"
+import { C_CHANNEL_SKU, variantForVexName } from "./lib/binCChannel"
 
 type CatalogRow = (typeof binCatalogRows)[number]
 
@@ -101,3 +102,101 @@ async function unlinkWorkspaceParts(
     }
   }
 }
+
+// Folds the eight VEX C-channel parts that workspaces may hold into the one
+// C-Channel part. Each part's stock, loans, and history move to its option set,
+// and counts are added together where a size is already in the same bin. The
+// part's own low-stock level is not carried over. Safe to run again: once the
+// old parts are gone there is nothing left to move. Run after binCatalog:seed,
+// with: npx convex run binCatalog:consolidateCChannels
+export const consolidateCChannels = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const family = await ctx.db
+      .query("binCatalogParts")
+      .withIndex("by_sku", (q) => q.eq("sku", C_CHANNEL_SKU))
+      .unique()
+    if (!family) {
+      throw new Error("Run binCatalog:seed first, so the C-Channel row exists.")
+    }
+
+    const oldParts = (await ctx.db.query("binParts").collect())
+      .filter((part) => variantForVexName(part.name) !== null)
+      .sort((a, b) => a.createdAt - b.createdAt)
+
+    let folded = 0
+    let stockRows = 0
+    let loans = 0
+    let movements = 0
+    for (const old of oldParts) {
+      const variant = variantForVexName(old.name)
+      if (variant === null) continue
+      let target = await ctx.db
+        .query("binParts")
+        .withIndex("by_workspace_catalog_part", (q) =>
+          q.eq("workspaceId", old.workspaceId).eq("catalogPartId", family._id)
+        )
+        .unique()
+      if (!target) {
+        const targetId = await ctx.db.insert("binParts", {
+          workspaceId: old.workspaceId,
+          catalogPartId: family._id,
+          name: family.name,
+          sku: C_CHANNEL_SKU,
+          partType: family.partType,
+          createdBy: old.createdBy,
+          createdAt: old.createdAt,
+        })
+        target = await ctx.db.get(targetId)
+        if (!target) throw new Error("The C-Channel part did not save.")
+      }
+
+      const stock = await ctx.db
+        .query("binStock")
+        .withIndex("by_part_location_variant", (q) => q.eq("partId", old._id))
+        .collect()
+      for (const row of stock) {
+        const existing = await ctx.db
+          .query("binStock")
+          .withIndex("by_part_location_variant", (q) =>
+            q
+              .eq("partId", target._id)
+              .eq("locationId", row.locationId)
+              .eq("variant", variant)
+          )
+          .unique()
+        if (existing) {
+          await ctx.db.patch(existing._id, {
+            quantity: existing.quantity + row.quantity,
+          })
+          await ctx.db.delete(row._id)
+        } else {
+          await ctx.db.patch(row._id, {
+            partId: target._id,
+            variant,
+          })
+        }
+        stockRows++
+      }
+
+      for (const loan of await ctx.db
+        .query("binLoans")
+        .withIndex("by_part", (q) => q.eq("partId", old._id))
+        .collect()) {
+        await ctx.db.patch(loan._id, { partId: target._id, variant })
+        loans++
+      }
+      for (const movement of await ctx.db
+        .query("binMovements")
+        .withIndex("by_part", (q) => q.eq("partId", old._id))
+        .collect()) {
+        await ctx.db.patch(movement._id, { partId: target._id, variant })
+        movements++
+      }
+      await ctx.db.delete(old._id)
+      folded++
+    }
+
+    return { folded, stockRows, loans, movements }
+  },
+})
