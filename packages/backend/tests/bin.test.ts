@@ -3,6 +3,7 @@ import { convexTest } from "convex-test"
 import { describe, expect, it } from "vitest"
 import schema from "../convex/schema"
 import { api, internal } from "../convex/_generated/api"
+import { C_CHANNEL_SKU } from "../convex/lib/binCChannel"
 
 const modules = import.meta.glob("../convex/**/*.ts")
 
@@ -494,5 +495,191 @@ describe("bin access", () => {
     await expect(
       outsider.query(api.bin.inventory, { workspaceId })
     ).rejects.toThrow("do not have access")
+  })
+})
+
+describe("bin C-channel options", () => {
+  // The one C-Channel part, from the catalog row the seed made for it.
+  async function addCChannel(
+    t: Awaited<ReturnType<typeof setup>>["t"],
+    admin: Awaited<ReturnType<typeof setup>>["admin"],
+    workspaceId: Awaited<ReturnType<typeof setup>>["workspaceId"]
+  ) {
+    const row = await t.run((ctx) =>
+      ctx.db
+        .query("binCatalogParts")
+        .withIndex("by_sku", (q) => q.eq("sku", C_CHANNEL_SKU))
+        .unique()
+    )
+    return admin.mutation(api.bin.createPart, {
+      workspaceId,
+      catalogPartId: row!._id,
+    })
+  }
+
+  it("counts each size on its own, and sums them for the part", async () => {
+    const { t, admin, workspaceId, locationId } = await setup()
+    const partId = await addCChannel(t, admin, workspaceId)
+    await admin.mutation(api.bin.adjustStock, {
+      workspaceId,
+      partId,
+      locationId,
+      variant: "steel-2x35",
+      delta: 4,
+    })
+    await admin.mutation(api.bin.adjustStock, {
+      workspaceId,
+      partId,
+      locationId,
+      variant: "aluminum-5x1",
+      delta: 2,
+    })
+
+    const steel = await admin.query(api.bin.partDetail, {
+      workspaceId,
+      partId,
+      variant: "steel-2x35",
+    })
+    expect(steel.variantLabel).toBe("Steel · 2 × 35")
+    expect(steel.modelSku).toBe("276-2906")
+    expect(steel.stock).toEqual([
+      expect.objectContaining({ locationName: "Cabinet 1", quantity: 4 }),
+    ])
+    expect(steel.totalOnHand).toBe(6)
+
+    const aluminum = await admin.query(api.bin.partDetail, {
+      workspaceId,
+      partId,
+      variant: "aluminum-5x1",
+    })
+    expect(aluminum.stock[0].quantity).toBe(2)
+    // No VEX model for this size, so the viewer falls back to the part's SKU,
+    // which has none.
+    expect(aluminum.modelSku).toBe(C_CHANNEL_SKU)
+  })
+
+  it("requires a size for a C-channel and refuses one for other parts", async () => {
+    const { t, admin, workspaceId, partId, locationId } = await setup()
+    const cChannel = await addCChannel(t, admin, workspaceId)
+    await expect(
+      admin.mutation(api.bin.adjustStock, {
+        workspaceId,
+        partId: cChannel,
+        locationId,
+        delta: 1,
+      })
+    ).rejects.toThrow("Choose a material, width, and length")
+    await expect(
+      admin.mutation(api.bin.adjustStock, {
+        workspaceId,
+        partId: cChannel,
+        locationId,
+        variant: "steel-2x36",
+        delta: 1,
+      })
+    ).rejects.toThrow("does not exist")
+    await expect(
+      admin.mutation(api.bin.adjustStock, {
+        workspaceId,
+        partId,
+        locationId,
+        variant: "steel-2x35",
+        delta: 1,
+      })
+    ).rejects.toThrow("has no options")
+  })
+
+  it("keeps loans and history with the size they were made for", async () => {
+    const { t, admin, member, workspaceId, locationId } = await setup()
+    const partId = await addCChannel(t, admin, workspaceId)
+    await admin.mutation(api.bin.adjustStock, {
+      workspaceId,
+      partId,
+      locationId,
+      variant: "steel-2x35",
+      delta: 3,
+    })
+    await member.mutation(api.bin.borrow, {
+      workspaceId,
+      partId,
+      locationId,
+      variant: "steel-2x35",
+      quantity: 2,
+    })
+
+    const otherSize = await admin.query(api.bin.partDetail, {
+      workspaceId,
+      partId,
+      variant: "steel-3x35",
+    })
+    expect(otherSize.stock).toEqual([])
+    expect(otherSize.loans).toEqual([])
+    expect(otherSize.movements).toEqual([])
+
+    const inventory = await admin.query(api.bin.inventory, { workspaceId })
+    expect(inventory.loans[0].partName).toBe("C-Channel, Steel · 2 × 35")
+    const history = await admin.query(api.bin.history, { workspaceId })
+    expect(history[0].partName).toBe("C-Channel, Steel · 2 × 35")
+  })
+
+  it("folds the old VEX C-channel parts into one C-Channel with their stock", async () => {
+    const { t, admin, member, workspaceId, locationId } = await setup()
+    const oldSteel = await admin.mutation(api.bin.createPart, {
+      workspaceId,
+      name: "1x2x1x35 Steel C-Channel",
+      partType: "Structure",
+    })
+    const oldAluminum = await admin.mutation(api.bin.createPart, {
+      workspaceId,
+      name: "1x5x1x25 Aluminum C-Channel",
+      partType: "Structure",
+    })
+    await admin.mutation(api.bin.adjustStock, {
+      workspaceId,
+      partId: oldSteel,
+      locationId,
+      delta: 5,
+    })
+    await member.mutation(api.bin.borrow, {
+      workspaceId,
+      partId: oldSteel,
+      locationId,
+      quantity: 2,
+    })
+    await admin.mutation(api.bin.adjustStock, {
+      workspaceId,
+      partId: oldAluminum,
+      locationId,
+      delta: 1,
+    })
+
+    const result = await t.mutation(
+      internal.binCatalog.consolidateCChannels,
+      {}
+    )
+    expect(result).toEqual({ folded: 2, stockRows: 2, loans: 1, movements: 3 })
+
+    const inventory = await admin.query(api.bin.inventory, { workspaceId })
+    const cChannels = inventory.parts.filter((part) => part.options)
+    expect(cChannels).toHaveLength(1)
+    expect(cChannels[0].onHand).toBe(4)
+    const steel = await admin.query(api.bin.partDetail, {
+      workspaceId,
+      partId: cChannels[0]._id,
+      variant: "steel-2x35",
+    })
+    expect(steel.stock[0].quantity).toBe(3)
+    expect(steel.loans[0].borrowerName).toBe("Grace")
+    expect(steel.movements).toHaveLength(2)
+    const aluminum = await admin.query(api.bin.partDetail, {
+      workspaceId,
+      partId: cChannels[0]._id,
+      variant: "aluminum-5x25",
+    })
+    expect(aluminum.stock[0].quantity).toBe(1)
+
+    // Running it again finds nothing left to move.
+    const again = await t.mutation(internal.binCatalog.consolidateCChannels, {})
+    expect(again).toEqual({ folded: 0, stockRows: 0, loans: 0, movements: 0 })
   })
 })

@@ -2,10 +2,16 @@ import { ArrowLeftIcon } from "@phosphor-icons/react"
 import { Link } from "@tanstack/react-router"
 import { api } from "@v5x/backend/api"
 import type { Id } from "@v5x/backend/dataModel"
+import {
+  defaultCChannel,
+  displayName,
+  encodeCChannel,
+} from "@v5x/backend/cChannel"
 import { cn } from "@v5x/ui/lib/utils"
 import { useQuery } from "convex/react"
 import type { FunctionReturnType } from "convex/server"
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
+import { CChannelPicker } from "@/components/inventory/c-channel-picker"
 import { LoanRow } from "@/components/inventory/loan-row"
 import { PartActions } from "@/components/inventory/part-actions"
 import { ScrewSwatch } from "@/components/inventory/screw-swatch"
@@ -113,13 +119,20 @@ export function PartDetail({
   workspaceId: Id<"workspaces">
   partId: Id<"binParts">
 }) {
-  const data = useQuery(api.bin.partDetail, { workspaceId, partId })
+  // The size a C-Channel shows. Other parts ignore it.
+  const [size, setSize] = useState(encodeCChannel(defaultCChannel))
+  const data = useQuery(api.bin.partDetail, {
+    workspaceId,
+    partId,
+    variant: size,
+  })
 
   if (data === undefined) {
     return <p className="p-6 text-sm text-muted-foreground">Loading part…</p>
   }
 
   const isAdmin = data.role === "admin"
+  const variant = data.variant ?? undefined
   const onHand = data.stock.reduce((sum, row) => sum + row.quantity, 0)
   // One entry per person, even if they borrowed in several goes.
   const borrowers = [
@@ -136,7 +149,10 @@ export function PartDetail({
       .values(),
   ]
   const outOnLoan = borrowers.reduce((sum, person) => sum + person.quantity, 0)
-  const low = data.part.minQuantity !== null && onHand < data.part.minQuantity
+  // A C-Channel's low-stock level covers every size together.
+  const countedOnHand = data.part.options ? data.totalOnHand : onHand
+  const low =
+    data.part.minQuantity !== null && countedOnHand < data.part.minQuantity
 
   return (
     <article className="@container flex flex-col gap-4 p-6">
@@ -149,7 +165,12 @@ export function PartDetail({
       </Link>
       <div className="grid gap-8 @3xl:grid-cols-[minmax(0,1fr)_20rem]">
         <aside className="@3xl:sticky @3xl:top-6 @3xl:col-start-2 @3xl:row-start-1 @3xl:self-start">
-          <PartViewer sku={data.part.sku} name={data.part.name} />
+          {/* Keyed by model, so a new size never keeps the last size's model. */}
+          <PartViewer
+            key={data.modelSku ?? "none"}
+            sku={data.modelSku}
+            name={displayName(data.part.name, variant)}
+          />
         </aside>
         <div className="flex max-w-2xl min-w-0 flex-col gap-8 @3xl:col-start-1 @3xl:row-start-1">
           <header className="flex flex-col gap-1">
@@ -157,9 +178,14 @@ export function PartDetail({
               {data.part.name}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {data.part.sku ? `${data.part.sku}, ` : ""}
+              {data.part.sku && !data.part.options ? `${data.part.sku}, ` : ""}
               {data.part.partType}
             </p>
+            {data.part.options ? (
+              <div className="mt-3">
+                <CChannelPicker value={size} onChange={setSize} />
+              </div>
+            ) : null}
             {data.part.screwColor ? (
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <ScrewSwatch color={data.part.screwColor} className="size-3" />
@@ -180,6 +206,11 @@ export function PartDetail({
                 {onHand}
               </span>
               <span className="text-muted-foreground">on hand</span>
+              {data.part.options ? (
+                <span className="text-sm text-muted-foreground">
+                  {data.totalOnHand} across all sizes
+                </span>
+              ) : null}
               {outOnLoan > 0 ? (
                 <span className="text-sm text-muted-foreground">
                   {outOnLoan} out on loan
@@ -201,7 +232,8 @@ export function PartDetail({
               <PartActions
                 workspaceId={workspaceId}
                 partId={partId}
-                partName={data.part.name}
+                partName={displayName(data.part.name, variant)}
+                variant={variant}
                 isAdmin={isAdmin}
                 stock={data.stock}
                 locations={data.locations}

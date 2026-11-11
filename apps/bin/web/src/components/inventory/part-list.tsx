@@ -128,8 +128,16 @@ export function PartList({
                     )}
                   >
                     <PartThumb
-                      protobot={part.sku ? partIcons?.[part.sku] : undefined}
-                      entry={part.sku ? manifest?.[part.sku] : undefined}
+                      protobot={
+                        part.pictureSku
+                          ? partIcons?.[part.pictureSku]
+                          : undefined
+                      }
+                      entry={
+                        part.pictureSku
+                          ? manifest?.[part.pictureSku]
+                          : undefined
+                      }
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[0.8rem] leading-snug font-bold">
@@ -139,7 +147,9 @@ export function PartList({
                         {part.screwColor ? (
                           <ScrewSwatch color={part.screwColor} />
                         ) : null}
-                        {part.sku ?? part.partType}
+                        {part.options
+                          ? part.partType
+                          : (part.sku ?? part.partType)}
                       </span>
                     </span>
                     <span
