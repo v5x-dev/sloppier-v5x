@@ -231,6 +231,22 @@ jobs:
           bun run deploy --typecheck enable \
             --cmd-url-env-var-name CONVEX_TARGET_URL \
             --cmd 'if [ "$CONVEX_TARGET_URL" != "$VITE_CONVEX_URL" ]; then echo "Convex deploy key does not match VITE_CONVEX_URL" >&2; exit 1; fi'
+      # Both steps are safe to run on every deploy. The seed brings the bin
+      # catalog in line with the data, and the consolidation does nothing once
+      # the old C-channel parts are gone. They must run after the deploy above,
+      # so the functions they call exist.
+      - name: Update bin catalog
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        working-directory: packages/backend
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          case "$CONVEX_DEPLOY_KEY" in
+            prod:*) ;;
+            *) echo "CONVEX_DEPLOY_KEY must be a production deployment key" >&2; exit 1 ;;
+          esac
+          bunx convex run binCatalog:seed
+          bunx convex run binCatalog:consolidateCChannels
       - name: Deploy Cloudflare Worker
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
