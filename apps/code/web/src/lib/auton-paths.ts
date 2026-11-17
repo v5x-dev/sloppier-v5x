@@ -139,6 +139,30 @@ export function parseAutonPaths(
       })
     }
   }
+  // A source line is found by binary search over the body's newline offsets, not by splitting the prefix for every call.
+  const newlineOffsets = new Map<(typeof functions)[number], number[]>()
+  const lineOf = (fn: (typeof functions)[number], index: number) => {
+    let offsets = newlineOffsets.get(fn)
+    if (!offsets) {
+      offsets = []
+      for (
+        let at = fn.body.indexOf("\n");
+        at !== -1;
+        at = fn.body.indexOf("\n", at + 1)
+      )
+        offsets.push(at)
+      newlineOffsets.set(fn, offsets)
+    }
+    // Lines before `index` are the newlines that start before it.
+    let low = 0
+    let high = offsets.length
+    while (low < high) {
+      const middle = (low + high) >> 1
+      if (offsets[middle] < index) low = middle + 1
+      else high = middle
+    }
+    return fn.startLine + low
+  }
   // Templates set the starting pose in autonomous() before running the
   // selected routine, so every route starts from the last pose set there.
   const poseCall =
@@ -152,14 +176,30 @@ export function parseAutonPaths(
       if (x != null && y != null && heading != null)
         entry = { x, y, heading, start: true }
     }
-  const hasMotion = (body: string, seen = new Set<string>()): boolean => {
-    if (motion.test(body)) return true
-    return functions.some(
-      (fn) =>
-        !seen.has(fn.name) &&
-        new RegExp(`\\b${fn.name}\\s*\\(\\s*\\)`).test(body) &&
-        hasMotion(fn.body, new Set([...seen, fn.name]))
-    )
+  // A routine moves if its body or any helper it can reach contains motion.
+  // Each helper name is expanded once per query, so shared helpers are not re-walked along every call path.
+  const callees = new Map<string, { call: RegExp; bodies: string[] }>()
+  for (const fn of functions) {
+    const callee = callees.get(fn.name) ?? {
+      call: new RegExp(`\\b${fn.name}\\s*\\(\\s*\\)`),
+      bodies: [],
+    }
+    callee.bodies.push(fn.body)
+    callees.set(fn.name, callee)
+  }
+  const hasMotion = (body: string): boolean => {
+    const seen = new Set<string>()
+    const pending = [body]
+    while (pending.length) {
+      const code = pending.pop()!
+      if (motion.test(code)) return true
+      for (const [name, callee] of callees) {
+        if (seen.has(name) || !callee.call.test(code)) continue
+        seen.add(name)
+        pending.push(...callee.bodies)
+      }
+    }
+    return false
   }
   return functions
     .filter((fn) => hasMotion(fn.body))
@@ -596,11 +636,10 @@ export function parseAutonPaths(
             else walk(helper[0], [...stack, name])
             continue
           }
-          const isDelay =
-            name === "delay" && /\bpros::\s*$/.test(body.slice(0, match.index))
-          const receiver = body
-            .slice(0, match.index)
-            .match(/\b([\w]+)\s*\.\s*$/)?.[1]
+          // The checks below only look at the text just before the call; a bounded window keeps long routines linear.
+          const before = body.slice(Math.max(0, match.index - 256), match.index)
+          const isDelay = name === "delay" && /\bpros::\s*$/.test(before)
+          const receiver = before.match(/\b([\w]+)\s*\.\s*$/)?.[1]
           if (
             receiver &&
             receiver !== "chassis" &&
@@ -614,17 +653,14 @@ export function parseAutonPaths(
               command: `${receiver}.${name}(${args.trim()})`,
               source: {
                 file: current.file,
-                line:
-                  current.startLine +
-                  body.slice(0, match.index).split("\n").length -
-                  1,
+                line: lineOf(current, match.index),
               },
             })
           }
           const isDirectDrive =
             template === "ez-template" &&
             name === "drive_set" &&
-            /\bchassis\s*\.\s*$/.test(body.slice(0, match.index))
+            /\bchassis\s*\.\s*$/.test(before)
           if (isDirectDrive) {
             warnings.add(
               "Direct drive motion cannot be estimated; subsequent positions may be inaccurate."
@@ -640,10 +676,7 @@ export function parseAutonPaths(
           else ezCall(name, args, values)
           const source = {
             file: current.file,
-            line:
-              current.startLine +
-              body.slice(0, match.index).split("\n").length -
-              1,
+            line: lineOf(current, match.index),
           }
           if (points[0] !== previousStart) points[0].source = source
           for (const point of points.slice(previousLength))

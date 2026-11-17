@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { parseAutonPaths } from "../src/lib/auton-paths"
 
 const parse = (code: string) =>
@@ -449,4 +449,31 @@ it("records mechanism actions at the current pose with their source", () => {
     },
   ])
   expect(route.points.at(-1)).toMatchObject({ x: 0, y: 12 })
+})
+
+it("checks each shared helper once when deciding whether a routine moves", () => {
+  // Every helper calls the next two, so there are far more call paths than helpers.
+  const helpers = Array.from(
+    { length: 16 },
+    (_, i) => `void helper_${i}() { helper_${i + 1}(); helper_${i + 2}(); }`
+  )
+  const idle = `${helpers.join("\n")}\nvoid red() { helper_0(); }`
+  const spy = vi.spyOn(RegExp.prototype, "test")
+  let routes: ReturnType<typeof parse>
+  let checks: number
+  try {
+    routes = parse(idle)
+  } finally {
+    checks = spy.mock.calls.length
+    spy.mockRestore()
+  }
+  expect(routes).toEqual([])
+  // 17 functions: work stays polynomial. Re-walking every path took 81,550 checks.
+  expect(checks).toBeLessThan(17 ** 3)
+
+  // Motion reachable only through the shared chain still makes `red` a routine.
+  const reachable = parse(
+    `${helpers.slice(0, 15).join("\n")}\nvoid helper_15() { chassis.pid_drive_set(1_in, 100); }\nvoid red() { helper_0(); }`
+  )
+  expect(reachable.map((item) => item.name)).toContain("red")
 })
