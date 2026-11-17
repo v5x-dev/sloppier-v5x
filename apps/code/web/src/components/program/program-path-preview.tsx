@@ -37,6 +37,7 @@ import {
 } from "@phosphor-icons/react"
 import { cn } from "@v5x/ui/lib/utils"
 import { parseAutonPaths, type AutonTemplate } from "@/lib/auton-paths"
+import { readAutonSources } from "@/lib/auton-sources"
 import { pathPoseAt } from "@/lib/path-animation"
 import { exportPathGif } from "@/lib/export-path-gif"
 import { errorMessage } from "@/lib/errors"
@@ -93,6 +94,11 @@ export function ProgramPathPreview({
     drafts.getDraftVersion
   )
   const [retry, setRetry] = useState(0)
+  // Sources read at one committed revision never change, so reopening the panel reuses them.
+  const loadedSources = useRef<{
+    key: string
+    files: Map<string, string>
+  } | null>(null)
   const [selected, setSelected] = useState("")
   useEffect(() => {
     setSelected(readAutonRoute(programId))
@@ -184,35 +190,37 @@ export function ProgramPathPreview({
   }
   useEffect(() => {
     if (!open || !paths) return
+    // Exclude vendored libraries, but include user headers and nested source folders.
+    const candidates = paths.filter(
+      (path) =>
+        /\.(cpp|cc|cxx|h|hpp)$/.test(path) &&
+        !/(^|\/)(?:EZ-Template|JAR-Template|pros|node_modules|\.git)\//i.test(
+          path
+        )
+    )
+    // Without a pinned revision the default branch can move, so only pinned reads are reused.
+    const key = revision
+      ? `${programId}\n${revision}\n${candidates.join("\n")}`
+      : null
     const controller = new AbortController()
     setError(null)
+    const cached = loadedSources.current
+    if (key && cached?.key === key) {
+      setFiles(cached.files)
+      return
+    }
     void (async () => {
-      const source = new Map<string, string>()
-      // Exclude vendored libraries, but include user headers and nested source folders.
-      const candidates = paths.filter(
-        (path) =>
-          /\.(cpp|cc|cxx|h|hpp)$/.test(path) &&
-          !/(^|\/)(?:EZ-Template|JAR-Template|pros|node_modules|\.git)\//i.test(
-            path
-          )
-      )
-      for (const path of candidates) {
-        const { bytes, contentRange } = await readFile({
+      const source = await readAutonSources(candidates, (path) =>
+        readFile({
           programId,
           path,
           ref: revision,
           length: 512 * 1024,
         })
-        if (controller.signal.aborted) return
-        const total = Number(contentRange?.split("/").at(-1))
-        if (total > bytes.byteLength)
-          throw new Error(`${path} is too large to preview completely.`)
-        source.set(
-          path,
-          new TextDecoder("utf-8", { fatal: true }).decode(bytes)
-        )
-      }
-      if (!controller.signal.aborted) setFiles(source)
+      )
+      if (controller.signal.aborted) return
+      if (key) loadedSources.current = { key, files: source }
+      setFiles(source)
     })().catch((reason) => {
       if (!controller.signal.aborted) setError(errorMessage(reason))
     })
@@ -220,14 +228,16 @@ export function ProgramPathPreview({
       controller.abort()
     }
   }, [open, paths, programId, revision, readFile, retry])
+  // Parsing only matters while the panel is open; drafts are picked up when it opens.
   const routes = useMemo(() => {
+    if (!open) return []
     const source = new Map(
       [...(files ?? [])].filter(([path]) => paths?.includes(path))
     )
     for (const [path, text] of drafts.getDrafts())
       if (paths?.includes(path)) source.set(path, text)
     return parseAutonPaths(source, template, trackWidth)
-  }, [files, drafts, paths, template, draftVersion, trackWidth])
+  }, [open, files, drafts, paths, template, draftVersion, trackWidth])
   const route = routes.find((item) => item.id === selected) ?? routes.at(0)
   useEffect(() => {
     if (!open || !route) return
