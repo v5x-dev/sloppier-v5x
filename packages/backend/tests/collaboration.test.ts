@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest"
 import * as Y from "yjs"
 import schema from "../convex/schema"
 import { api, internal } from "../convex/_generated/api"
+import { MAX_REPLAY_UPDATES } from "../convex/crdt"
 
 const modules = import.meta.glob("../convex/**/*.ts")
 async function setup() {
@@ -197,14 +198,14 @@ describe("live document backend", () => {
     )
   })
 
-  test("replay crosses the 100-update page boundary without losing changes", async () => {
+  test("replay crosses the page-size boundary without losing changes", async () => {
     const { t, args, bytes, alice, seed } = await setup()
     await t.mutation(internal.crdt.initializeDocument, {
       ...args,
       bytes,
       actorId: "alice",
     })
-    for (let n = 0; n < 105; n++) {
+    for (let n = 0; n < MAX_REPLAY_UPDATES + 5; n++) {
       const vector = Y.encodeStateVector(seed)
       seed.getText("source").insert(0, `${n}\n`)
       await alice.mutation(api.crdt.appendUpdate, {
@@ -229,7 +230,47 @@ describe("live document backend", () => {
       if (!batch.hasMore) break
     }
     expect(pages).toBe(2)
-    expect(sequence).toBe(106)
+    expect(sequence).toBe(MAX_REPLAY_UPDATES + 6)
+    expect(replay.getText("source").toString()).toBe(
+      seed.getText("source").toString()
+    )
+  })
+
+  test("a long edit history replays in a few large pages", async () => {
+    const { t, args, bytes, alice, seed } = await setup()
+    await t.mutation(internal.crdt.initializeDocument, {
+      ...args,
+      bytes,
+      actorId: "alice",
+    })
+    // Each keystroke pause sends one update, so a file edited for a while has
+    // thousands of rows. Every cold open replays all of them.
+    for (let n = 0; n < 1200; n++) {
+      const vector = Y.encodeStateVector(seed)
+      seed.getText("source").insert(0, "x")
+      await alice.mutation(api.crdt.appendUpdate, {
+        ...args,
+        updateId: `typing-${String(n).padStart(4, "0")}`,
+        bytes: Y.encodeStateAsUpdate(seed, vector).buffer as ArrayBuffer,
+      })
+    }
+    const replay = new Y.Doc()
+    let sequence = 0
+    let pages = 0
+    while (true) {
+      const batch = await alice.query(api.crdt.updatesSince, {
+        ...args,
+        afterSequence: sequence,
+      })
+      pages++
+      for (const update of batch.updates) {
+        Y.applyUpdate(replay, new Uint8Array(update.bytes))
+        sequence = update.sequence
+      }
+      if (!batch.hasMore) break
+    }
+    expect(pages).toBeLessThanOrEqual(2)
+    expect(sequence).toBe(1201)
     expect(replay.getText("source").toString()).toBe(
       seed.getText("source").toString()
     )

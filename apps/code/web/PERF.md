@@ -115,3 +115,31 @@ To measure a production bundle, the demo sign-in gate is development-only. A
 measurement build can temporarily lift that gate in `src/lib/auth.ts`. Restore the
 file before committing. The dev server (`bun run dev`) inflates cold-start timings
 through dev transforms, so use it only for relative comparisons.
+
+## 2026-11-23: open long-edited files without per-update work
+
+A file keeps one CRDT row per saved edit, and a cold open replays every row
+before its editor mounts. Two costs grew with that history:
+
+- Replay fetched 100 rows per page, so a file with 1,200 rows took 13 sequential
+  queries. A page now holds up to 1,000 rows, read lazily within the existing
+  900 KiB budget, so the same file takes 2 queries.
+- The autocomplete index re-tokenized the whole file once per replayed row.
+  Replayed drafts and Yjs transactions are now batched: engine reads flush first,
+  and a microtask indexes what remains. The profile before the change had about
+  2.1 s of the 4.2 s profiled spent in `tokenize` and `indexSource`.
+
+Measured on the local visual demo (`bun run demo:visual ez-template`, Vite dev
+server, local Convex, Desktop Chrome, a fresh browser context for each run, so
+IndexedDB is empty). `src/autons.cpp` had about 1,200 saved edits added for the
+test. Time is from opening the file until its editor is ready, median of 3:
+
+| Measurement | Before | After page size only | After both |
+| --- | ---: | ---: | ---: |
+| `src/autons.cpp`, about 1,200 saved edits | 3,756–3,807 ms | 3,578–3,764 ms | 513–567 ms |
+| `autons.hpp`, one saved edit (baseline) | 244–302 ms | — | 308–313 ms |
+
+The page-size change alone did not move the local number, since locally the cost
+is the indexing. Fewer sequential queries should matter more over a real
+network, but that is not measured here. The dev server and zero network latency
+mean these numbers only compare changes to each other.
