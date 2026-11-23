@@ -1,6 +1,7 @@
 import * as Y from "yjs"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { LanguageService, RequestCancelled } from "../src/lib/language-service"
+import { AutocompleteEngine } from "../src/lib/autocomplete/engine"
 import type { BuildSource } from "../src/lib/build-program"
 import type { ApiDatabase } from "../src/lib/autocomplete/types"
 import vex from "../src/lib/autocomplete/data/vexcode.json"
@@ -113,6 +114,36 @@ describe("local language session", () => {
     Y.applyUpdate(doc, Y.encodeStateAsUpdate(remote), "remote")
     expect((await query()).items.map((s) => s.label)).toContain("spin")
     expect(service.version("main.cpp")).toBeGreaterThan(1)
+    remote.destroy()
+  })
+
+  it("indexes a replayed batch of remote updates once, not once per update", async () => {
+    const { service } = await setup({})
+    const setFile = vi.spyOn(AutocompleteEngine.prototype, "setFile")
+    const mainCalls = () =>
+      setFile.mock.calls.filter(([path]) => path === "main.cpp").length
+    // Before the editor mounts, a cold open's replay reports each saved update as a draft.
+    let contents = ""
+    for (let n = 0; n < 200; n++) {
+      contents = `int value${n};\n${contents}`
+      service.updateFile("main.cpp", contents)
+    }
+    await Promise.resolve()
+    expect(mainCalls()).toBeLessThanOrEqual(2)
+    expect(service.programSymbols().map((s) => s.name)).toContain("value0")
+    // Once the document is open, a replayed batch of Yjs transactions is indexed the same way.
+    setFile.mockClear()
+    const { doc } = open(service, "")
+    const remote = new Y.Doc()
+    Y.applyUpdate(remote, Y.encodeStateAsUpdate(doc))
+    const shared = remote.getText("source")
+    for (let n = 0; n < 200; n++) {
+      const vector = Y.encodeStateVector(remote)
+      shared.insert(0, `int open${n};\n`)
+      Y.applyUpdate(doc, Y.encodeStateAsUpdate(remote, vector), "remote")
+    }
+    await Promise.resolve()
+    expect(mainCalls()).toBeLessThanOrEqual(3)
     remote.destroy()
   })
   it("keeps live documents over snapshots and removes deleted declarations", async () => {

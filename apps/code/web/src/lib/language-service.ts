@@ -57,6 +57,8 @@ export class LanguageService {
   readonly signatureTriggerCharacters = new Set(["(", ",", ")"])
   private snapshot = new Map<string, string>()
   private documents = new Map<string, OpenDocument>()
+  // Open documents whose text changed since they were last indexed.
+  private dirtyDocuments = new Set<string>()
   private listeners = new Set<() => void>()
   private symbolListeners = new Set<() => void>()
   private symbolVersion = 0
@@ -72,6 +74,7 @@ export class LanguageService {
     for (const listener of this.symbolListeners) listener()
   }
   programSymbols() {
+    this.flushDocuments()
     return this.engine?.programSymbols() ?? []
   }
   private readyListeners = new Set<(ready: boolean) => void>()
@@ -213,8 +216,11 @@ export class LanguageService {
   }
   private installSource(source: BuildSource) {
     for (const path of this.snapshot.keys())
-      if (!(path in source.files) && !this.documents.has(path))
+      if (!(path in source.files) && !this.documents.has(path)) {
         this.engine?.removeFile(path)
+        // A batched update must not bring back a file the repository no longer has.
+        this.dirtyDocuments.delete(path)
+      }
     this.snapshot.clear()
     const decoder = new TextDecoder("utf-8", { fatal: true })
     for (const [path, bytes] of Object.entries(source.files)) {
@@ -230,10 +236,9 @@ export class LanguageService {
   updateFile(path: string, text: string) {
     if (!isLanguageFile(path) && !/(^|\/)\.clang-format$/.test(path)) return
     this.snapshot.set(path, text)
-    if (!this.documents.has(path) && this.engine?.getFile(path) !== text) {
-      this.engine?.setFile(path, text)
-      this.symbolsChanged()
-    }
+    // A cold open's replay sends one draft per saved update before the document opens here.
+    if (!this.documents.has(path) && this.engine?.getFile(path) !== text)
+      this.markDirty(path)
   }
   stop() {
     this.generation++
@@ -246,7 +251,29 @@ export class LanguageService {
     for (const document of this.documents.values())
       document.text.unobserve(document.observe)
     this.documents.clear()
+    this.dirtyDocuments.clear()
     this.snapshot.clear()
+  }
+  /**
+   * Yjs reports every transaction, and a cold open replays one per saved
+   * update. Indexing each one re-tokenizes the whole file each time, so changes
+   * are batched: any engine read flushes first, and a microtask covers the rest.
+   */
+  private markDirty(path: string) {
+    if (!this.dirtyDocuments.size) queueMicrotask(() => this.flushDocuments())
+    this.dirtyDocuments.add(path)
+  }
+  private flushDocuments() {
+    if (!this.dirtyDocuments.size) return
+    const paths = [...this.dirtyDocuments]
+    this.dirtyDocuments.clear()
+    for (const path of paths) {
+      // An open document is its live text; any other path is its newest snapshot or draft.
+      const document = this.documents.get(path)
+      const text = document ? document.text.toString() : this.snapshot.get(path)
+      if (text !== undefined) this.engine?.setFile(path, text)
+    }
+    this.symbolsChanged()
   }
   openDocument(path: string, text: Y.Text) {
     if (!isLanguageFile(path)) return () => {}
@@ -257,8 +284,7 @@ export class LanguageService {
       version: 1,
       observe: () => {
         document.version++
-        this.engine?.setFile(path, text.toString())
-        this.symbolsChanged()
+        this.markDirty(path)
       },
     }
     this.documents.set(path, document)
@@ -267,6 +293,8 @@ export class LanguageService {
     this.symbolsChanged()
     return () => {
       if (this.documents.get(path) !== document) return
+      // Index any batched edits before the document leaves the engine's view.
+      this.flushDocuments()
       if (this.snapshot.has(path)) this.snapshot.set(path, text.toString())
       else this.engine?.removeFile(path)
       this.documents.delete(path)
@@ -278,6 +306,7 @@ export class LanguageService {
   }
   private check(signal: AbortSignal) {
     if (signal.aborted || !this.isReady) throw new RequestCancelled()
+    this.flushDocuments()
     return this.engine!
   }
   async completion(path: string, position: Position, signal: AbortSignal) {

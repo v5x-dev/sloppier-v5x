@@ -4,6 +4,8 @@ import { describe, expect, test } from "vitest"
 import * as Y from "yjs"
 import schema from "../convex/schema"
 import { api, internal } from "../convex/_generated/api"
+import type { Id } from "../convex/_generated/dataModel"
+import { MAX_REPLAY_UPDATES } from "../convex/crdt"
 
 const modules = import.meta.glob("../convex/**/*.ts")
 async function setup() {
@@ -52,6 +54,43 @@ async function setup() {
     alice: t.withIdentity({ subject: "alice" }),
     bob: t.withIdentity({ subject: "bob" }),
   }
+}
+
+// Writes saved edits straight into the update log. Real edits arrive one
+// appendUpdate mutation each, and a thousand mutations is too slow for a unit
+// test. These tests exercise paging in updatesSince, not the append path.
+async function seedEdits(
+  t: Awaited<ReturnType<typeof setup>>["t"],
+  args: { programId: Id<"programs"> },
+  documentId: Id<"crdtDocuments">,
+  seed: Y.Doc,
+  count: number,
+  firstSequence: number
+) {
+  const rows: ArrayBuffer[] = []
+  for (let n = 0; n < count; n++) {
+    const vector = Y.encodeStateVector(seed)
+    seed.getText("source").insert(0, `${firstSequence + n}\n`)
+    rows.push(Y.encodeStateAsUpdate(seed, vector).buffer as ArrayBuffer)
+  }
+  await t.run(async (ctx) => {
+    for (const [index, bytes] of rows.entries()) {
+      const sequence = firstSequence + index
+      await ctx.db.insert("crdtUpdates", {
+        programId: args.programId,
+        documentId,
+        sequence,
+        updateId: `edit-${String(sequence).padStart(6, "0")}`,
+        actorId: "alice",
+        bytes,
+        storageStatus: "persisted",
+        createdAt: 1,
+      })
+    }
+    await ctx.db.patch(documentId, {
+      lastSequence: firstSequence + count - 1,
+    })
+  })
 }
 
 describe("live document backend", () => {
@@ -197,22 +236,14 @@ describe("live document backend", () => {
     )
   })
 
-  test("replay crosses the 100-update page boundary without losing changes", async () => {
+  test("replay crosses the page-size boundary without losing changes", async () => {
     const { t, args, bytes, alice, seed } = await setup()
-    await t.mutation(internal.crdt.initializeDocument, {
+    const documentId = await t.mutation(internal.crdt.initializeDocument, {
       ...args,
       bytes,
       actorId: "alice",
     })
-    for (let n = 0; n < 105; n++) {
-      const vector = Y.encodeStateVector(seed)
-      seed.getText("source").insert(0, `${n}\n`)
-      await alice.mutation(api.crdt.appendUpdate, {
-        ...args,
-        updateId: `update-${String(n).padStart(4, "0")}`,
-        bytes: Y.encodeStateAsUpdate(seed, vector).buffer as ArrayBuffer,
-      })
-    }
+    await seedEdits(t, args, documentId, seed, MAX_REPLAY_UPDATES + 5, 2)
     const replay = new Y.Doc()
     let sequence = 0
     let pages = 0
@@ -229,7 +260,39 @@ describe("live document backend", () => {
       if (!batch.hasMore) break
     }
     expect(pages).toBe(2)
-    expect(sequence).toBe(106)
+    expect(sequence).toBe(MAX_REPLAY_UPDATES + 6)
+    expect(replay.getText("source").toString()).toBe(
+      seed.getText("source").toString()
+    )
+  })
+
+  test("a long edit history replays in a few large pages", async () => {
+    const { t, args, bytes, alice, seed } = await setup()
+    const documentId = await t.mutation(internal.crdt.initializeDocument, {
+      ...args,
+      bytes,
+      actorId: "alice",
+    })
+    // Each keystroke pause sends one update, so a file edited for a while has
+    // thousands of rows. Every cold open replays all of them.
+    await seedEdits(t, args, documentId, seed, 1200, 2)
+    const replay = new Y.Doc()
+    let sequence = 0
+    let pages = 0
+    while (true) {
+      const batch = await alice.query(api.crdt.updatesSince, {
+        ...args,
+        afterSequence: sequence,
+      })
+      pages++
+      for (const update of batch.updates) {
+        Y.applyUpdate(replay, new Uint8Array(update.bytes))
+        sequence = update.sequence
+      }
+      if (!batch.hasMore) break
+    }
+    expect(pages).toBeLessThanOrEqual(2)
+    expect(sequence).toBe(1201)
     expect(replay.getText("source").toString()).toBe(
       seed.getText("source").toString()
     )

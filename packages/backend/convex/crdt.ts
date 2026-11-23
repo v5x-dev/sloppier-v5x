@@ -12,7 +12,9 @@ import { requireProgramMembership } from "./lib/auth"
 
 const MAX_UPDATE_BYTES = 512 * 1024
 const MAX_REPLAY_BYTES = 900 * 1024
-const MAX_REPLAY_UPDATES = 100
+// Each page is one round trip, and a cold open replays the whole history, so
+// pages hold many small keystroke updates. The byte cap bounds large ones.
+export const MAX_REPLAY_UPDATES = 1000
 
 export const appendUpdate = mutation({
   args: {
@@ -135,21 +137,22 @@ export const updatesSince = query({
     if (!Number.isSafeInteger(afterSequence) || afterSequence < 0) {
       throw new ConvexError("Sequence must be a non-negative integer.")
     }
-    const candidates = await ctx.db
+    // Read lazily and stop at the page limit. Reading a fixed count up front
+    // would load every candidate, so one large update could exceed read limits.
+    const updates = []
+    let responseBytes = 0
+    let hasMore = false
+    for await (const update of ctx.db
       .query("crdtUpdates")
       .withIndex("by_document_sequence", (q) =>
         q.eq("documentId", document._id).gt("sequence", afterSequence)
       )
-      .order("asc")
-      .take(MAX_REPLAY_UPDATES + 1)
-
-    const updates = []
-    let responseBytes = 0
-    for (const update of candidates) {
+      .order("asc")) {
       if (
         updates.length >= MAX_REPLAY_UPDATES ||
         responseBytes + update.bytes.byteLength > MAX_REPLAY_BYTES
       ) {
+        hasMore = true
         break
       }
       updates.push(update)
@@ -160,7 +163,7 @@ export const updatesSince = query({
       documentId: document._id,
       lastSequence: document.lastSequence,
       updates,
-      hasMore: candidates.length > updates.length,
+      hasMore,
     }
   },
 })
